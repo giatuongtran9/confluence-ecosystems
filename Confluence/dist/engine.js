@@ -3,7 +3,7 @@ const Game = (() => {
  const D = typeof module !== 'undefined' ? require('./data.js') : { CARD, CARDS, LEADERS, RELICS };
  const card = id => D.CARD[id];
  const mod = (r, k, base = 1) => D.LEADERS.find(l => l.id === r.leader)?.mods?.[k] ?? base;
- const tier = id => ['Normal', 'Rare', 'Epic', 'Legendary', 'Mythic'].indexOf(card(id).rarity);
+ const tier = id => ['Normal', 'Rare', 'Epic', 'Legendary'].indexOf(card(id).rarity);
  const xy = s => ({ x: s % 3, y: Math.floor(s / 3) }), isCenter = (x, y) => x === 1 && y === 1, isCorner = (x, y) => x !== 1 && y !== 1, isEdge = (x, y) => (x === 1) !== (y === 1), sharesRowOrCol = (a, b) => a.x === b.x || a.y === b.y;
  const kind = s => s === 4 ? 'center' : [0, 2, 6, 8].includes(s) ? 'corner' : 'edge';
  const adjacent = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
@@ -11,7 +11,7 @@ const Game = (() => {
  function shuffle(r, a) { a = [...a]; for (let i = a.length - 1; i > 0; i--) { let j = Math.floor(rand(r) * (i + 1)); [a[i], a[j]] = [a[j], a[i]] } return a }
  function instance(r, id) { return { uid: ++r.uid, id, permanentAtkBonus: 0, threshold: 0 } }
  function newRun(leader, meta = {}, seed = Date.now() >>> 0) {
-  const r = { version: 3, leader, seed, uid: 0, roster: [], health: 100 + (meta.vitality || 0) * 5 + (D.LEADERS.find(l => l.id === leader)?.mods?.health || 0), maxHealth: 100 + (meta.vitality || 0) * 5 + (D.LEADERS.find(l => l.id === leader)?.mods?.health || 0), legacyPower: (meta.power || 0) * .02, phase: 'draft', draftReason: 'first', coins: 0, depth: -1, lane: 1, visited: [], relics: [], cleared: 0, stats: { kills: 0, leaks: 0, growth: 0 }, map: [] };
+  const r = { version: 3, leader, seed, uid: 0, roster: [], health: 100 + (meta.vitality || 0) * 5 + (D.LEADERS.find(l => l.id === leader)?.mods?.health || 0), maxHealth: 100 + (meta.vitality || 0) * 5 + (D.LEADERS.find(l => l.id === leader)?.mods?.health || 0), legacyPower: (meta.power || 0) * .02, phase: 'draft', draftReason: 'first', depth: -1, lane: 1, visited: [], relics: [], cleared: 0, stats: { kills: 0, leaks: 0, growth: 0 }, map: [] };
   for (let row = 0; row < 16; row++) {
    r.map.push(Array.from({ length: row === 15 ? 1 : 3 }, (_, lane) => {
     let type = 'battle';
@@ -26,16 +26,14 @@ const Game = (() => {
   }
   r.offers = offers(r, true); return r;
  }
- function rewardWeights(r, first = false) { let stage = first ? 1 : Math.min(16, r.depth + 2), elite = !first && r.node?.type === 'elite'; return stage < 5 ? [72, 28, 0, 0, 0] : stage < 10 ? (elite ? [40, 40, 20, 0, 0] : [55, 35, 10, 0, 0]) : elite ? [35, 35, 24, 6, 0] : [50, 32, 15, 3, 0] }
+ function rewardWeights(r, first = false) { let stage = first ? 1 : Math.min(16, r.depth + 2), elite = !first && r.node?.type === 'elite'; return stage < 5 ? [72, 28, 0, 0] : stage < 10 ? (elite ? [40, 40, 20, 0] : [55, 35, 10, 0]) : elite ? [35, 35, 24, 6] : [50, 32, 15, 3] }
  function offers(r, first = false, exclude = []) {
-  let weights = rewardWeights(r, first), pool = D.CARDS.filter(c => !c.retired && (!first || c.baseAtk > 0) && weights[tier(c.id)] > 0 && !exclude.includes(c.id)), out = [];
+  let weights = rewardWeights(r, first), pool = D.CARDS.filter(c => (!first || c.baseAtk > 0) && weights[tier(c.id)] > 0 && !exclude.includes(c.id)), out = [];
   while (out.length < 3 && pool.length) {
    const available = weights.map((w, i) => pool.some(c => tier(c.id) === i) ? w : 0);
    let roll = rand(r) * available.reduce((a, v) => a + v, 0), chosen = 0;
-   for (let i = 0; i < available.length; i++) { roll -= available[i]; if (roll < 0) { chosen = i; break } }
-   let options = pool.filter(c => tier(c.id) === chosen), genre = D.LEADERS.find(l => l.id === r.leader)?.genre;
-   let total = options.reduce((n, c) => n + (c.genre === genre ? 1.5 : 1), 0), pickRoll = rand(r) * total, pick = options[options.length - 1];
-   for (const c of options) { pickRoll -= c.genre === genre ? 1.5 : 1; if (pickRoll < 0) { pick = c; break } }
+   for (let i = 0; i < 4; i++) { roll -= available[i]; if (roll < 0) { chosen = i; break } }
+   let options = pool.filter(c => tier(c.id) === chosen), pick = options[Math.floor(rand(r) * options.length)];
    out.push(pick.id); pool = pool.filter(c => c.id !== pick.id)
   }
   return out;
@@ -45,7 +43,7 @@ const Game = (() => {
  function available(r) { if (r.phase !== 'map') return []; return (r.map[r.depth + 1] || []).filter(n => r.depth < 0 || n.row === 15 || Math.abs(n.lane - r.lane) <= 1) }
  function chooseNode(r, id) { const n = available(r).find(n => n.id === id); if (!n) return false; r.depth = n.row; r.lane = n.lane; r.node = n; r.visited.push(id); r.phase = ['battle', 'elite', 'boss'].includes(n.type) ? 'ready' : 'event'; return true }
  function skipDraft(r) { if (r.phase !== 'draft' || r.draftReason === 'first') return false; r.offers = []; r.phase = r.depth === 15 ? 'won' : 'map'; return true }
- function rerollDraft(r) { if (r.phase !== 'draft' || (r.coins || 0) < 10) return false; const next = offers(r, r.draftReason === 'first', r.offers); if (next.length !== 3) return false; r.coins -= 10; r.offers = next; return true }
+ function rerollDraft(r) { if (r.phase !== 'draft' || r.health <= 8 || (r.draftRerolls || 0) >= 1) return false; const next = offers(r, r.draftReason === 'first', r.offers); if (next.length !== 3) return false; r.health -= 8; r.draftRerolls = (r.draftRerolls || 0) + 1; r.offers = next; return true }
 
  function reward(r) { r.draftRerolls = 0; r.phase = 'draft'; r.draftReason = 'reward'; r.offers = offers(r) }
  function addRelic(r, id) { if (r.relics.includes(id)) return; r.relics.push(id); if (id === 'heart') { r.maxHealth += 20; r.health = Math.min(r.maxHealth, r.health + 10) } }
@@ -99,41 +97,38 @@ const Game = (() => {
  function highestGrowth(b, u) { return Math.max(0, ...allies(b, u).filter(v => !token(v)).map(v => v.permanentAtkBonus || 0)) }
 
  const CULT_RELICS = ['flyingSword', 'guqin', 'weiqiBoard', 'inkBrush', 'mountainScroll', 'soulBanner', 'demonBlade'];
- const APEX_FORMS = ['dragonCubApex','tigerCubApex','xuanwuCubApex','phoenixCubApex','monkeyCubApex','swordImmortal', 'melodicSaint', 'formationMaster', 'talismanSovereign', 'landscapeSage', 'soulReapingDemon', 'bloodFiendMaster'];
+ const APEX_FORMS = ['swordImmortal', 'melodicSaint', 'formationMaster', 'talismanSovereign', 'landscapeSage', 'soulReapingDemon', 'bloodFiendMaster'];
  function isCultivationRelic(u) { return CULT_RELICS.includes(u.id) }
  function isApexImmortal(u) { return APEX_FORMS.includes(u.id) || u.realm === 4 }
 
- function practitionerRealmForQi(qi = 0) { return qi >= 175 ? 3 : qi >= 85 ? 2 : qi >= 30 ? 1 : 0 }
-
  function updatePractitionerRealm(b, u) {
-  if (!isPractitioner(u)) return;
-  const qi = u.qi || 0, newRealm = practitionerRealmForQi(qi), oldRealm = u.realm || 0;
-  u.realm = newRealm;
-  if (newRealm !== oldRealm || u.id !== cultivationRealmIds[newRealm]) {
-   const nextId = cultivationRealmIds[newRealm];
-   if (u.id !== nextId) evolve(b, u, nextId);
-   const stats = [[6, 1.5], [18, 1.2], [40, 1.0], [75, .75]][newRealm];
-   u.baseAtk = stats[0]; u.attackInterval = stats[1];
-   if (newRealm > oldRealm) {
-    const title = ['Qi-Refining', 'Foundation Establishment', 'Golden Core', 'Nascent Soul'][newRealm];
-    log(b, `${card(u.id).name} breaks through to ${title}!`); fx(b, 'growth', u, null, title.toUpperCase());
-   }
+  if (u.id !== 'practitioner') return;
+  const qi = u.qi || 0;
+  let newRealm = 0;
+  if (qi >= 175) newRealm = 3;
+  else if (qi >= 85) newRealm = 2;
+  else if (qi >= 30) newRealm = 1;
+  if (newRealm !== (u.realm || 0)) {
+   u.realm = newRealm;
+   if (newRealm === 1) { u.baseAtk = 18; u.attackInterval = 1.2; log(b, `${u.name} breaks through to Foundation Establishment (Trúc Cơ)!`); fx(b, 'growth', u, null, 'FOUNDATION'); }
+   else if (newRealm === 2) { u.baseAtk = 40; u.attackInterval = 1.0; log(b, `${u.name} breaks through to Golden Core (Kim Đan)!`); fx(b, 'growth', u, null, 'GOLDEN CORE'); }
+   else if (newRealm === 3) { u.baseAtk = 75; u.attackInterval = 0.75; log(b, `${u.name} manifests the Nascent Soul (Nguyên Anh)!`); fx(b, 'growth', u, null, 'NASCENT SOUL'); }
    persist(b, u);
   }
  }
+
  function runtime(b, u, slot, phantom = false) {
   const d = card(u.id), pos = xy(slot);
   let baseAtk = d.baseAtk;
   let attackInterval = d.attackInterval;
-  if (isPractitioner(u)) {
-   const r = practitionerRealmForQi(u.qi || 0);
-   if (r === 0) { baseAtk = 6; attackInterval = 1.5; }
-   else if (r === 1) { baseAtk = 18; attackInterval = 1.2; }
+  if (u.id === 'practitioner') {
+   const r = u.realm || 0;
+   if (r === 1) { baseAtk = 18; attackInterval = 1.2; }
    else if (r === 2) { baseAtk = 40; attackInterval = 1.0; }
-   else { baseAtk = 75; attackInterval = 0.75; }
+   else if (r >= 3) { baseAtk = 75; attackInterval = 0.75; }
   }
   return {
-   ...u, ...pos, slot, name: d.name, genre: d.genre, lineage: u.lineage || d.lineage, lineageTier: u.lineageTier || d.lineageTier, baseAtk, attackInterval,
+   ...u, ...pos, slot, name: d.name, genre: d.genre, baseAtk, attackInterval,
    currentCooldown: .15 + rand(b.run) * .25,
    threshold: { current: u.threshold || 0, max: d.max || 0, onTrigger: null },
    state: 'active', stateRemaining: 0, removed: false, phantom, mimic: 0, scale: phantom ? .5 : 1,
@@ -142,7 +137,7 @@ const Game = (() => {
    ventAt: 0, herbAt: 12, sacrificeAt: 18, offeringSpeed: 0, eliteHits: 0, feedAt: d.id === 'herald' ? 12 : 6,
    summonAt: 12, madnessAt: 8, flash: 0, spatialRole: { isCenter, isCorner, isEdge, sharesRowOrCol },
    onAdjacentAttack: null, onAdjacentStateFlip: null, onAdjacentTrigger: null,
-   qi: u.qi || 0, realm: isPractitioner(u) ? practitionerRealmForQi(u.qi || 0) : (u.realm || 0), swordQi: u.swordQi || 0, souls: u.souls || 0, bladeKills: u.bladeKills || 0, demonAtkBonus: u.demonAtkBonus || 0,
+   qi: u.qi || 0, realm: u.realm || 0, souls: u.souls || 0, bladeKills: u.bladeKills || 0, demonAtkBonus: u.demonAtkBonus || 0,
    bloomAt: 8, mistAt: 4, brewAt: 0, brewGrassAt: 0, missileAt: 5, banishAt: 10
   }
  }
@@ -164,7 +159,6 @@ const Game = (() => {
   const picked = shuffle(r, r.roster).slice(0, 9), slots = shuffle(r, [0, 1, 2, 3, 4, 5, 6, 7, 8]);
   b.units = picked.map((u, i) => runtime(b, u, slots[i]));
   b.units.sort((a, z) => a.uid - z.uid);
-  b.units.filter(isPractitioner).forEach(u => updatePractitionerRealm(b, u));
   b.units.forEach(u => prepareHooks(b, u));
   b.units.forEach(u => record(b, u));
   r.phase = 'combat'; r.lastDraw = picked.map(u => u.uid);
@@ -178,9 +172,8 @@ const Game = (() => {
   if (b.openingResolved) return; b.openingResolved = true;
   const snap = new Map(b.units.map(u => [u.uid, base(u)]));
   for (const u of b.units.filter(u => u.id === 'mass')) u.mimic = Math.max(0, ...neighbors(b, u).map(v => snap.get(v.uid) - base(u)));
-  // Only cards with an explicit opening-summon rule create a token here.
-  for (const u of [...b.units].filter(v => !v.removed && !token(v) && ['shepherd'].includes(v.id))) summon(b, u);
-  for (const u of [...b.units].filter(v => !v.removed && !token(v) && ['cub', 'heir', 'herald', 'alchemist', 'harvester'].includes(family(v)))) devour(b, u);
+  for (const u of [...b.units].filter(v => !v.removed && !token(v))) summon(b, u);
+  for (const u of [...b.units].filter(v => !v.removed && !token(v) && ['heir', 'herald', 'alchemist', 'harvester'].includes(family(v)))) devour(b, u);
   for (const u of b.units.filter(v => !v.removed && v.id === 'herb')) teamCharge(b, u, 3);
   flushEvents(b);
  }
@@ -209,7 +202,7 @@ const Game = (() => {
  }
 
  function sensor(b, u) { return support(b, 'sensor') && u.id !== 'sensor' ? 1 : 0 }
- function crit(b, u) { const lt = lineageTierIds[u.id]?.tier || 0, lineageCrit = u.lineage === 'tiger' && lt >= 1 ? .15 : u.lineage === 'monkey' && lt >= 1 ? .10 : 0; return Math.max(0, Math.min(1, u.critGift ? 1 : .1 + mod(b.run, 'crit', 0) + (b.run.relics.includes('lens') ? .1 : 0) + sensor(b, u) * .1 + (support(b, 'core') && u.id !== 'core' ? .15 : 0) + lineageCrit)) }
+ function crit(b, u) { return Math.max(0, Math.min(1, u.critGift ? 1 : .1 + mod(b.run, 'crit', 0) + (b.run.relics.includes('lens') ? .1 : 0) + sensor(b, u) * .1 + (support(b, 'core') && u.id !== 'core' ? .15 : 0))) }
  function downtime(b, u, duration, state) { if (support(b, 'smelter')) duration -= 1; if (state === 'dormant' && support(b, 'medium')) duration -= 2; if (['burnout', 'overheat'].includes(state) && support(b, 'vent')) duration *= .5; return Math.max(.5, duration) }
 
  function flip(b, u, state, duration = 0) {
@@ -306,7 +299,6 @@ const Game = (() => {
    event(b, 'kill', { source, bleedCarry: (e.bleeds || []).filter(d => d.until > b.time).map(d => ({ ...d })), bleeding: (e.bleeds || []).some(d => d.until > b.time), burning: (e.burns || []).some(d => d.until > b.time) });
    if (source) {
     record(b, source).kills++;
-    if (source.lineage === 'tiger' && (lineageTierIds[source.id]?.tier || 0) >= 4) for (const runner of living(b)) status(b, runner, 'stun', 1.5, 0, source);
     if (!source.removed && !token(source)) {
      if (source.id === 'asura') grantGrowth(b, source, 1);
      if (source.id === 'demonBlade') {
@@ -336,13 +328,11 @@ const Game = (() => {
   if (e.hp <= 0 || e.gone) return;
   let torment = normal && !!support(b, 'totem');
   let critical = u.id === 'asura' && (e.shredUntil > b.time || e.nanoUntil > b.time) || rand(b.run) < crit(b, u);
-  if (critical) { const tigerBleedCrit = u.lineage === 'tiger' && (lineageTierIds[u.id]?.tier || 0) >= 2 && (e.bleeds || []).some(d => d.until > b.time); n *= (tigerBleedCrit ? 3 : 2) + sensor(b, u) * .3 + mod(b.run, 'critDamage', 0); }
+  if (critical) n *= 2 + sensor(b, u) * .3 + mod(b.run, 'critDamage', 0);
   if (critical && u.id === 'nanite') { e.nanoUntil = b.time + 3; u.naniteCrits = (u.naniteCrits || 0) + 1; if (u.naniteCrits % 6 === 0) grantGrowth(b, u, 1); }
   if (critical && u.id === 'asura') { u.critCount = (u.critCount || 0) + 1; if (u.critCount % 6 === 0) grantGrowth(b, u, 1); }
   let defense = (u.id === 'railgun' ? 0 : e.defense) * (e.shredUntil > b.time ? .5 : e.nanoUntil > b.time ? .75 : 1);
   damage(b, e, n * (normal ? 1 : mod(b.run, 'damage')) * mod(b.run, (e.elite || e.boss || e.champion) ? 'eliteDamage' : 'normalDamage') * (1 - defense * (torment ? .75 : 1)) * (e.vulnerableUntil > b.time ? 1 + e.vulnerability : 1), u, normal ? 'direct' : 'ability');
-  if (species(u) === 'flameToad') dot(b,e,'burn',3,3,u);
-  if (species(u) === 'scuttler') status(b,e,'slow',2,.15,u);
   if (torment && e.hp > 0) { dot(b, e, 'bleed', 2, 4, u); const totem = support(b, 'totem'); interact(b, totem, u, 'torment', '25% armor penetration + 2 DPS Bleed for 4s'); }
   if (critical && sensor(b, u)) { const src = support(b, 'sensor'); interact(b, src, u, 'critical', 'amplified critical strike'); }
   if (critical && normal) for (const v of allies(b, u).filter(v => v.id === 'core')) tick(b, v, 1, u);
@@ -352,7 +342,7 @@ const Game = (() => {
  function chooseTarget(b, u) {
   let es = living(b);
   if (species(u) === 'hound') { let low = es.filter(e => e.hp / e.maxHp < .3); if (low.length) return low[0] }
-  if (u.id === 'executioner' || u.lineage === 'tiger' && (lineageTierIds[u.id]?.tier || 0) >= 3) { let elite = es.find(e => e.elite || e.boss || e.champion); if (elite) return elite }
+  if (u.id === 'executioner') { let elite = es.find(e => e.elite || e.boss || e.champion); if (elite) return elite }
   return es[0]
  }
 
@@ -366,33 +356,7 @@ const Game = (() => {
   if (u.id === 'wraith' && (target.elite || target.boss || target.champion)) power *= 1.5;
   if (u.id === 'cannon') target.shredUntil = b.time + 2;
 
-  if (family(u) === 'cub') {
-   const path=u.lineage || 'dragon', tier=lineageTierIds[u.id]?.tier || 0;
-   if(path==='dragon') {
-    const targets=living(b), count=tier>=4?6:tier>=3?4:tier>=2&&u.attackCount%4===0?3:2, mult=tier>=2&&u.attackCount%4===0?2:1;
-    for(const e of targets.slice(0,count)) hit(b,u,e,power*mult);
-   }
-   else if(path==='tiger') { const execute=tier>=3&&target.hp/target.maxHp<.4?3:1; hit(b,u,target,power*(tier>=4?4:1)*execute); if(tier>=2) dot(b,target,'bleed',3,4,u); }
-   else if(path==='xuanwu') {
-    hit(b,u,target,power); status(b,target,'slow',2,.2,u);
-    if(tier>=2) venom(b,target,4,4,u);
-    if(tier>=2&&u.attackCount%5===0) for(const e of living(b)) trueHit(b,u,e,120);
-    if(tier>=3&&(target.swift||target.speedBoostUntil>b.time)){ trueHit(b,u,target,60); status(b,target,'stun',1,u); }
-    if(tier>=4){ if(u.attackCount%2===0) warp(b,target,2,u); else venom(b,target,6,4,u); }
-   }
-   else if(path==='phoenix') {
-    hit(b,u,target,power); dot(b,target,'burn',5,4,u);
-    if(tier>=2) { const next=living(b).find(e=>e!==target); if(next){ dot(b,next,'burn',5,4,u); status(b,next,'vulnerable',3,.15,u); } status(b,target,'vulnerable',3,.15,u); }
-    if(tier>=4) trueHit(b,u,target,power*.25);
-   }
-   else if(path==='monkey') {
-    const targets=living(b), count=tier>=4?8:tier>=3?3:1;
-    if(tier>=4) { for(const e of targets.slice(0,count)){ trueHit(b,u,e,power*1.5); e.auras=[]; e.speedBoostUntil=0; if(e.baseSpeed!=null)e.speed=e.baseSpeed; } }
-    else for(const e of targets.slice(0,count)) hit(b,u,e,power);
-    if(tier>=2&&!token(u)&&u.attackCount%6===0){ const clone=spawnToken(b,u,u.id,false,{lineage:path,lineageTier:tier,tokenAtk:rawAtk(u)*.5,attackInterval:u.attackInterval}); if(clone) interact(b,u,clone,'clone','Sixth strike → 50%-ATK temporary clone'); }
-   }
-   else hit(b,u,target,power);
-  } else if (isPractitioner(u)) {
+  if (u.id === 'practitioner') {
    u.qi = (u.qi || 0) + 1;
    updatePractitionerRealm(b, u);
    persist(b, u);
@@ -498,7 +462,7 @@ const Game = (() => {
  }
  function spawn(b) {
   let plan = b.plan, idx = b.spawned, boss = b.run.node.type === 'boss' && idx === plan.count - 1, champion = !!plan.trial && idx === plan.count - 1, elite = !boss && !champion && (b.run.node.type === 'elite' && idx % 4 === 0), armored = !boss && !champion && !elite && (plan.encounter === 'armor' ? idx % 3 !== 2 : !plan.encounter && b.run.depth > 3 && idx % 5 === 3), swift = !boss && !champion && !elite && !armored && (plan.encounter === 'fast' ? idx % 3 !== 2 : !plan.encounter && b.run.depth > 1 && idx % 4 === 2), hp = boss ? plan.bossHp : champion ? plan.trial.hp : plan.hp * (elite ? 2 : armored ? 1.45 : 1);
-  b.enemies.push({ uid: ++b.enemyUid, p: 0, hp, maxHp: hp, speed: (champion ? .31 : plan.speed) * (boss ? .95 : swift ? 1.6 : armored ? .85 : 1), leak: boss ? b.run.maxHealth : champion ? plan.trial.leak : elite ? 6 : armored ? 3 : 2, defense: armored ? .4 : elite ? .25 : (boss || champion) ? .2 : 0, boss, champion, maxProgress: 0, elite, armored, swift, bornAt: b.time, enraged: false, gone: false, slows: [], frozenUntil: 0, shredUntil: 0, bleeds: [], burns: [], venoms: [], vulnerableUntil: 0, vulnerability: 0, auras: [] });
+  b.enemies.push({ uid: ++b.enemyUid, p: 0, hp, maxHp: hp, speed: (champion ? .31 : plan.speed) * (boss ? .95 : swift ? 1.6 : armored ? .85 : 1), leak: boss ? b.run.maxHealth : champion ? plan.trial.leak : elite ? 6 : armored ? 3 : 2, defense: armored ? .4 : elite ? .25 : (boss || champion) ? .2 : 0, boss, champion, maxProgress: 0, elite, armored, swift, bornAt: b.time, enraged: false, gone: false, slows: [], frozenUntil: 0, shredUntil: 0, bleeds: [], burns: [], vulnerableUntil: 0, vulnerability: 0, auras: [] });
   b.spawned++;
  }
 
@@ -516,19 +480,10 @@ const Game = (() => {
   }
   for (const e of living(b)) {
    if ((e.boss || e.champion) && !e.enraged && b.time - e.bornAt >= 45) { e.enraged = true; e.frozenUntil = 0; log(b, `${e.champion ? 'Harbinger' : 'The Unraveler'} enrages: +25% movement speed; immune to freeze, stun and knockback.`) }
-   e.bleeds = e.bleeds.filter(z => z.until > b.time); e.burns = (e.burns || []).filter(z => z.until > b.time); e.venoms = (e.venoms || []).filter(z => z.until > b.time); for (const dot of [...e.bleeds, ...e.burns, ...e.venoms]) damage(b, e, dot.dps * dt * (e.vulnerableUntil > b.time ? 1 + e.vulnerability : 1), b.units.find(u => u.uid === dot.owner) || null, 'dot'); if (e.gone) continue;
+   e.bleeds = e.bleeds.filter(z => z.until > b.time); e.burns = (e.burns || []).filter(z => z.until > b.time); for (const dot of [...e.bleeds, ...e.burns]) damage(b, e, dot.dps * dt * (e.vulnerableUntil > b.time ? 1 + e.vulnerability : 1), b.units.find(u => u.uid === dot.owner) || null, 'dot'); if (e.gone) continue;
    e.slows = e.slows.filter(s => s.until > b.time); let aura = b.units.some(v => !v.removed && v.id === 'wraith') ? ((e.boss || e.champion) ? .15 : .3) : 0; let slow = Math.max(aura, ...e.slows.map(s => s.power)), move = e.frozenUntil > b.time ? 0 : 1 - slow; e.p += e.speed * dt * move * (e.enraged ? 1.25 : 1) * (b.run.relics.includes('frost') ? .9 : 1);
 
-   e.maxProgress = Math.max(e.maxProgress || 0, e.p); if (e.p >= 16) {
-    if (e.champion) recordTrial(b, e, false);
-    const guardian=b.units.find(v=>!v.removed&&v.lineage==='xuanwu'&&(lineageTierIds[v.id]?.tier||0)>=4&&(v.savedLeaks||0)<2);
-    if (guardian) { guardian.savedLeaks=(guardian.savedLeaks||0)+1; e.gone=true; interact(b,guardian,e,'save',`Xuanwu prevents leak ${guardian.savedLeaks}/2`); continue; }
-    e.gone = true;
-    const leakLoss=e.boss ? b.run.maxHealth : Math.max(1, e.leak + mod(b.run, 'leak', 0) - (b.run.relics.includes('mercy') ? 1 : 0));
-    b.run.health = Math.max(0, b.run.health - leakLoss); b.metrics.leaks++; b.run.stats.leaks++;
-    b.metrics.leakTypes ??= {}; const leakType = e.boss ? 'boss' : e.champion ? 'harbinger' : e.elite ? 'elite' : e.armored ? 'armored' : e.swift ? 'fast' : 'normal'; b.metrics.leakTypes[leakType] = (b.metrics.leakTypes[leakType] || 0) + 1; fx(b, 'leak', null, e, `−${leakLoss}`);
-    if (b.run.health <= 0) { const phoenix=b.units.find(v=>!v.removed&&v.lineage==='phoenix'&&(lineageTierIds[v.id]?.tier||0)>=4); if(phoenix&&!b.run.phoenixRevived){b.run.phoenixRevived=true;b.run.health=1;interact(b,phoenix,e,'revive','Phoenix revival → restore 1 HP');}else{finish(b,false);break} }
-   }
+   e.maxProgress = Math.max(e.maxProgress || 0, e.p); if (e.p >= 16) { if (e.champion) recordTrial(b, e, false); e.gone = true; b.run.health = Math.max(0, b.run.health - (e.boss ? b.run.maxHealth : Math.max(1, e.leak + mod(b.run, 'leak', 0) - (b.run.relics.includes('mercy') ? 1 : 0)))); b.metrics.leaks++; b.run.stats.leaks++; b.metrics.leakTypes ??= {}; const leakType = e.boss ? 'boss' : e.champion ? 'harbinger' : e.elite ? 'elite' : e.armored ? 'armored' : e.swift ? 'fast' : 'normal'; b.metrics.leakTypes[leakType] = (b.metrics.leakTypes[leakType] || 0) + 1; fx(b, 'leak', null, e, `−${e.leak}`); if (b.run.health <= 0) { finish(b, false); break } }
   }
   flushEvents(b); b.effects.forEach(e => e.ttl -= dt); b.effects = b.effects.filter(e => e.ttl > 0); b.enemies = b.enemies.filter(e => !e.gone);
   if (!b.done && b.spawned >= b.plan.count && living(b).length === 0) finish(b, true);
@@ -536,10 +491,7 @@ const Game = (() => {
 
  function recordTrial(b, e, killed) { const result = { stage: b.run.depth + 1, killed, hpRemaining: Math.round(e.hp), maxHp: e.maxHp, progress: Math.min(16, e.maxProgress || e.p), seconds: Math.round(b.time - e.bornAt) }; b.metrics.trial = result; }
  function finish(b, won) {
-  if (b.done) return;
   b.done = true; b.won = won; let r = b.run;
-  const coinsEarned = r.node?.type === 'boss' ? 500 : r.node?.type === 'elite' ? 200 : 100;
-  r.coins = (r.coins || 0) + coinsEarned; b.metrics.coinsEarned = coinsEarned;
   for (const u of b.units.filter(u => !u.phantom)) {
    let src = r.roster.find(v => v.uid === u.uid); if (!src) continue;
    persist(b, u); src.threshold = abilityGauge(u) ? u.threshold.current : 0; src.naniteCrits = u.naniteCrits || 0; src.critCount = u.critCount || 0
@@ -555,15 +507,13 @@ const Game = (() => {
  function favored(b, u) { return ['heir', 'herald', 'alchemist', 'harvester'].includes(family(u)) ? neighbors(b, u).some(v => preyEligible(u, v)) : card(u.id).fav === 'neighbor' && neighbors(b, u).length > 0 }
 
  const family = u => card(u.id).evolvedFrom || u.id;
- const cultivationRealmIds = ['practitioner', 'cultivationFoundation', 'cultivationGoldenCore', 'cultivationNascentSoul'];
- const isPractitioner = u => family(u) === 'practitioner' && !APEX_FORMS.includes(u.id);
  const token = u => !!(u.phantom || u.token || card(u.id)?.token);
  const abilityGauge = u => ['jade', 'conduit', 'mage', 'eye', 'lantern', 'weaver', 'core'].includes(family(u));
  function persist(b, u) {
   if (token(u)) return;
   const src = b.run.roster.find(v => v.uid === u.uid);
   if (src) {
-   for (const k of ['id', 'permanentAtkBonus', 'permanentSpeed', 'upgradePath', 'lineage', 'lineageStacks', 'meals', 'qiGrowth', 'returns', 'witnesses', 'qi', 'realm', 'swordQi', 'souls', 'bladeKills', 'demonAtkBonus']) {
+   for (const k of ['id', 'permanentAtkBonus', 'permanentSpeed', 'upgradePath', 'meals', 'qiGrowth', 'returns', 'witnesses', 'qi', 'realm', 'souls', 'bladeKills', 'demonAtkBonus']) {
     if (u[k] !== undefined) src[k] = u[k];
    }
   }
@@ -583,7 +533,7 @@ const Game = (() => {
      if (u.id === 'herald' && ev.type === 'displaced' && ev.source?.id !== 'herald') { u.madnessPower = (u.madnessPower || 0) + ev.tiles * 30; interact(b, ev.source, u, 'madness-feed', 'displacement → stored Madness damage'); }
      if (u.id === 'herald' && ev.type === 'consumed') { u.madnessPower = (u.madnessPower || 0) + 100; interact(b, ev.consumer, u, 'madness-feed', 'consumption → +100 next Madness damage'); }
      if (u.id === 'reaper' && support(b, 'reaper') === u && ev.type === 'kill' && ev.bleedCarry?.length) { const e = living(b)[0]; if (e) { e.bleeds.push(...ev.bleedCarry.filter(d => d.until > b.time).map(d => ({ ...d }))); interact(b, u, u, 'bleed-inheritance', 'BLEED INHERITANCE → surviving runner; expiry preserved'); } }
-     if (u.id === 'broodkeeper' && support(b, 'broodkeeper') === u && ev.type === 'consumed' && BLOODLINE_FODDER.includes(species(ev.unit)) && rand(b.run) < .35) { const preySpecies = species(ev.unit), offspring = breedCopy[preySpecies] || preyToken[preySpecies]; const v = spawnToken(b, u, offspring, false, { origin: preySpecies, tokenAtk: rawAtk(ev.unit), attackInterval: ev.unit.attackInterval }); if (v) interact(b, u, v, 'recycle', `35% global recall → ${card(preySpecies).name} token; original stays deleted`); }
+     if (u.id === 'broodkeeper' && support(b, 'broodkeeper') === u && ev.type === 'consumed' && ['familiar', 'hound'].includes(species(ev.unit)) && rand(b.run) < .35) { const v = spawnToken(b, u, preyToken[species(ev.unit)], false, { origin: species(ev.unit), tokenAtk: rawAtk(ev.unit), attackInterval: ev.unit.attackInterval }); if (v) interact(b, u, v, 'recycle', '35% recall → prey token; original stays deleted'); }
      if (ev.type === 'consumed' && species(ev.unit) === 'lamb' && u === support(b, 'lantern')) { tick(b, u, 3, ev.unit); interact(b, ev.unit, u, 'soul', 'Mourning Lamb → +3 Echoes'); }
      if (u.id === 'soulwell' && ev.type === 'consumed') { const haunted = card(species(ev.unit))?.genre === 'Haunted'; for (const e of living(b).slice(0, 3)) trueHit(b, u, e, haunted ? 300 + teamPower(b) : 80 + teamPower(b) * .5); interact(b, ev.unit, u, 'soul-payoff', haunted ? 'HAUNTED HARVEST → greater soul missiles' : 'foreign loss → soul missiles'); }
      if (u.id === 'lantern' && (ev.type === 'kill' || ev.type === 'shutdown' && ev.unit !== u)) tick(b, u, 1, ev.source || ev.unit);
@@ -601,7 +551,6 @@ const Game = (() => {
  function evolve(b, u, id) {
   if (token(u) || u.removed || u.id === id) return;
   const before = u.id, d = card(id);
-  if (id === 'swordImmortal' && before !== 'swordImmortal') u.swordQi = 0;
   u.id = id; u.name = d.name; u.genre = d.genre; u.baseAtk = d.baseAtk; u.attackInterval = d.attackInterval;
   u.threshold = { current: 0, max: d.max || 0, onTrigger: () => trigger(b, u) };
   prepareHooks(b, u); persist(b, u); record(b, u).id = id;
@@ -611,9 +560,9 @@ const Game = (() => {
   fx(b, 'growth', u, null, 'EVOLVED');
  }
 
- function evolutionProgress(u) { switch (family(u)) { case 'jade': return { current: u.qiGrowth || 0, max: 18 }; case 'cub': return { current: u.lineageStacks || 0, max: 6 }; case 'heir': return { current: u.meals || 0, max: 3 }; case 'spirit': return { current: u.returns || 0, max: 5 }; case 'monk': return { current: u.witnesses || 0, max: 3 }; default: return null } }
+ function evolutionProgress(u) { switch (family(u)) { case 'jade': return { current: u.qiGrowth || 0, max: 18 }; case 'heir': return { current: u.meals || 0, max: 3 }; case 'spirit': return { current: u.returns || 0, max: 5 }; case 'monk': return { current: u.witnesses || 0, max: 3 }; default: return null } }
  const species = u => token(u) ? (u.origin || card(u.id).species) : family(u);
- function preyEligible(predator, prey) { if (prey.removed || predator === prey) return false; const diets = { cub: ['serpentFodder','hound','scuttler','flameToad','peachFodder'], heir: ['hound'], herald: ['mass', 'larva'], alchemist: ['lotus', 'herb'], harvester: ['lamb'] }; return card(predator.id).genre === card(species(prey))?.genre && (diets[family(predator)] || []).includes(species(prey)); }
+ function preyEligible(predator, prey) { if (prey.removed || predator === prey) return false; const diets = { heir: ['familiar', 'hound'], herald: ['mass', 'larva'], alchemist: ['lotus', 'herb'], harvester: ['lamb'] }; return card(predator.id).genre === card(species(prey))?.genre && (diets[family(predator)] || []).includes(species(prey)); }
  function consume(b, consumer, victim, reason = 'Devour', reward = 0) {
   if (consumer.removed || victim.removed || consumer === victim) return false;
   const isToken = token(victim); victim.removed = true;
@@ -632,24 +581,16 @@ const Game = (() => {
   if (u.removed || token(u)) return false;
   const prey = neighbors(b, u).filter(v => preyEligible(u, v)).sort((a, z) => Number(token(z)) - Number(token(a)) || rawAtk(a) - rawAtk(z) || a.slot - z.slot)[0];
   if (!prey) return false;
-  const mealSpecies = species(prey), mealPath = family(u) === 'cub' ? cubPathForPrey[mealSpecies] : null;
-  if (family(u) === 'cub' && !u.lineage && mealPath) u.lineage = mealPath;
-  const matchingMeal = family(u) === 'cub' && !!mealPath && mealPath === u.lineage;
-  const reward = family(u) === 'cub' ? (matchingMeal ? 4 : 3) : u.id === 'progenitor' ? 6 : family(u) === 'heir' ? 3 : u.id === 'alchemist' ? 3 : u.id === 'harvester' ? 6 : 10;
+  const reward = u.id === 'progenitor' ? 6 : family(u) === 'heir' ? 3 : u.id === 'alchemist' ? 3 : u.id === 'harvester' ? 6 : 10;
   const reason = u.id === 'harvester' ? 'Sacrifice' : u.id === 'alchemist' ? 'Refinement' : 'Devour';
   consume(b, u, prey, reason, reward);
   if (u.id === 'alchemist') { teamCharge(b, u, 3); event(b, 'refined', { unit: u }); }
   if (u.id === 'harvester') for (const e of living(b).slice(0, 3)) trueHit(b, u, e, rawAtk(u) * 2);
-  if (family(u) === 'cub') {
-   u.meals = (u.meals || 0) + 1;
-   if (matchingMeal) u.lineageStacks = (u.lineageStacks || 0) + 1;
-   const tier = lineageTierIds[u.id]?.tier || 0, nextTier = Math.min(3, Math.floor((u.lineageStacks || 0) / 2));
-   if (nextTier > tier) evolve(b, u, cubForms[u.lineage][nextTier - 1]);
-   persist(b, u);
-  } else if (family(u) === 'heir') {
+  if (family(u) === 'heir') {
    u.bloodAwakened = true; u.meals = (u.meals || 0) + 1;
    if (u.id === 'progenitor') u.feastUntil = b.time + 6 * mod(b.run, 'buffDuration');
-   persist(b, u); if (u.id === 'heir' && u.meals >= 3) evolve(b, u, 'progenitor');
+   persist(b, u);
+   if (u.id === 'heir' && u.meals >= 3) evolve(b, u, 'progenitor');
   } else if (u.id === 'herald') u.madnessAt = Math.max((u.lastMadness ?? -4) + 4, (u.madnessAt ?? b.time + 8) - 4);
   flushEvents(b); return true;
  }
@@ -662,25 +603,17 @@ const Game = (() => {
   v.parentUid = parent.uid; v.origin = species(parent); v.token = true; v.scale = 1; v.tokenAtk = rawAtk(parent); v.attackInterval = parent.attackInterval; v.breedAt = b.time + 1;
   Object.assign(v, extra); prepareHooks(b, v); b.units.push(v); record(b, v); interact(b, parent, v, 'summon', 'summoned disposable token'); return v;
  }
- const BLOODLINE_FODDER = ['serpentFodder','hound','scuttler','flameToad','peachFodder'];
- const preyToken = { lotus: 'petal', lotusRoot: 'lotusBlossom', familiar: 'imp', hound: 'houndToken', serpentFodder: 'scaleImp', scuttler: 'carapaceToken', flameToad: 'emberToken', peachFodder: 'peachToken', lamb: 'lambToken' };
- const breedCopy = { familiar: 'familiar', hound: 'hound', serpentFodder: 'serpentFodder', scuttler: 'scuttler', flameToad: 'flameToad', peachFodder: 'peachFodder' };
- const cubPathForPrey = { serpentFodder:'dragon', hound:'tiger', scuttler:'xuanwu', flameToad:'phoenix', peachFodder:'monkey' };
- const cubForms = { dragon:['dragonCubT1','dragonCubT2','dragonCubT3','dragonCubApex'], tiger:['tigerCubT1','tigerCubT2','tigerCubT3','tigerCubApex'], xuanwu:['xuanwuCubT1','xuanwuCubT2','xuanwuCubT3','xuanwuCubApex'], phoenix:['phoenixCubT1','phoenixCubT2','phoenixCubT3','phoenixCubApex'], monkey:['monkeyCubT1','monkeyCubT2','monkeyCubT3','monkeyCubApex'] };
- const cubRelics = { dragon:'dragonPearl', tiger:'tigerSeal', xuanwu:'earthTablet', phoenix:'phoenixTree', monkey:'goldenStaff' };
- const lineageTierIds = Object.fromEntries(Object.entries(cubForms).flatMap(([path,ids])=>ids.map((id,i)=>[id,{path,tier:i+1}])));
+ const preyToken = { lotus: 'petal', lotusRoot: 'lotusBlossom', familiar: 'imp', hound: 'houndToken', lamb: 'lambToken' };
  function summon(b, u) {
-  if (token(u) || u.id === 'hound') return;
-  // Explicit summon abilities keep their named token; bred Bloodline fodder uses its own card identity.
-  const id = preyToken[species(u)]; if (id) return spawnToken(b, u, id, true);
+  if (token(u)) return; const id = preyToken[species(u)]; if (id) return spawnToken(b, u, id, true);
   if (u.id === 'shepherd') return spawnToken(b, u, 'lambToken', false, { origin: 'lamb', tokenAtk: card('lamb').baseAtk, attackInterval: card('lamb').attackInterval });
  }
  function breed(b, u) {
-  const kind = species(u), offspring = breedCopy[kind] || preyToken[kind]; if (!offspring || b.time < (u.breedAt || 1)) return; u.breedAt = b.time + 1;
+  const kind = species(u); if (!preyToken[kind] || b.time < (u.breedAt || 1)) return; u.breedAt = b.time + 1;
   if (!neighbors(b, u).some(v => species(v) === kind)) return;
   if (![0, 1, 2, 3, 4, 5, 6, 7, 8].some(slot => !b.units.some(v => !v.removed && v.slot === slot) && adjacent(u, xy(slot)))) return;
   (b.metrics.breedingChecks ??= 0); b.metrics.breedingChecks++;
-  if (rand(b.run) < .1) spawnToken(b, u, offspring, true);
+  if (rand(b.run) < .1) spawnToken(b, u, preyToken[kind], true);
  }
  function workshopOptions(r, uid) {
   const u = r.roster.find(v => String(v.uid) === String(uid)); if (!u) return [];
@@ -702,7 +635,6 @@ const Game = (() => {
  function warp(b, e, tiles, source = null) { if (e.gone || e.hp <= 0) return; const before = e.p; e.p = Math.max(0, e.p - ((e.boss || e.champion) ? e.enraged ? 0 : tiles * .5 : tiles)); if (source && before > e.p) event(b, 'displaced', { source, tiles: before - e.p }); }
  function pulseMadness(b, u) { const stored = u.madnessPower || 0; u.madnessPower = 0; for (const e of living(b)) { const late = e.p >= 12; trueHit(b, u, e, 200 + teamPower(b) * .75 + stored); if (late) warp(b, e, 5); } u.lastMadness = b.time; u.madnessAt = b.time + 8; interact(b, u, u, 'madness', `MADNESS → +${Math.round(stored)} stored damage released`); fx(b, 'pulse', u, null, 'MADNESS'); }
  function dot(b, e, type, dps, seconds, u) { if (e.hp <= 0 || e.gone) return; const key = type === 'burn' ? 'burns' : 'bleeds'; e[key] ??= []; e[key] = e[key].filter(x => x.until > b.time); if (type === 'bleed' && card(species(u))?.genre === 'Bloodline' && support(b, 'matriarch')) seconds += b.units.filter(v => !v.removed && ['familiar', 'hound'].includes(species(v))).length * .5; e[key].push({ until: b.time + seconds, dps: dps * mod(b.run, 'damage') * mod(b.run, (e.elite || e.boss || e.champion) ? 'eliteDamage' : 'normalDamage'), owner: u.uid }); }
- function venom(b, e, dps, seconds, u) { if (e.hp <= 0 || e.gone) return; e.venoms ??= []; e.venoms = e.venoms.filter(x => x.until > b.time); e.venoms.push({ until: b.time + seconds, dps: dps * mod(b.run, 'damage'), owner: u.uid }); }
  function trueHit(b, u, e, n) { damage(b, e, n * mod(b.run, 'damage') * mod(b.run, (e.elite || e.boss || e.champion) ? 'eliteDamage' : 'normalDamage') * (e.vulnerableUntil > b.time ? 1 + e.vulnerability : 1), u, 'ability'); fx(b, 'spell', u, e, 'TRUE'); }
 
  function extras(b, u, dt) {
@@ -711,11 +643,8 @@ const Game = (() => {
   if (u.id === 'shepherd' && b.time >= (u.pastureAt || 8)) { u.pastureAt = b.time + 8; summon(b, u); }
   if (u.id === 'soulwell' && living(b).length && b.time >= (u.soulPulseAt || 6)) { u.soulPulseAt = b.time + 6; for (const e of living(b).slice(0, 3)) trueHit(b, u, e, 160 + teamPower(b) * .75); }
   if (u.id === 'jade' && b.time >= (u.catalystAt || 1)) { u.catalystAt = b.time + 1; const v = neighbors(b, u).find(v => species(v) === 'catalyst'); if (v) { const paths = ['might', 'flow', 'storm'], path = paths[Math.floor(b.time / 4) % 3]; consume(b, u, v, 'Catalyst', 0); u.upgradePath = path; evolve(b, u, 'immortal'); if (path === 'might') growth(b, u, 12); if (path === 'flow') u.permanentSpeed = (u.permanentSpeed || 0) + .2; persist(b, u); interact(b, v, u, 'adaptation', path.toUpperCase() + ' cultivation awakening'); } }
-  if (['lotus', 'lamb'].includes(u.id) && b.time >= (u.summonAt || 0)) { summon(b, u); u.summonAt = b.time + 12; }
-  if (['cub', 'heir', 'herald', 'alchemist', 'harvester'].includes(family(u)) && b.time >= (u.feedAt || 6)) { devour(b, u); u.feedAt = b.time + (u.id === 'herald' ? 12 : 6); }
-  if (u.lineage === 'dragon' && (lineageTierIds[u.id]?.tier || 0) >= 4 && living(b).length && b.time >= (u.dragonPulseAt || 8)) { u.dragonPulseAt=b.time+8; for(const e of living(b)) warp(b,e,2,u); }
-  if (u.lineage === 'phoenix' && (lineageTierIds[u.id]?.tier || 0) >= 3 && living(b).length && b.time >= (u.phoenixPulseAt || 8)) { u.phoenixPulseAt=b.time+8; for(const e of living(b)){const total=(e.burns||[]).filter(d=>d.until>b.time).reduce((n,d)=>n+d.dps*Math.max(0,d.until-b.time),0); if(total){damage(b,e,total,u,'ability');e.burns=e.burns.filter(d=>d.until<=b.time);}} interact(b,u,u,'flare','Phoenix detonation → active Burns consumed'); }
-  if (family(u) === 'cub' && (lineageTierIds[u.id]?.tier || 0) === 3) { const relic=cubRelics[u.lineage]; const v=neighbors(b,u,false).find(x=>!x.removed&&x.id===relic); if(v){ consume(b,u,v,'Ancestral Ascension',0); evolve(b,u,cubForms[u.lineage][3]); } }
+  if (['lotus', 'familiar', 'hound', 'lamb'].includes(u.id) && b.time >= (u.summonAt || 0)) { summon(b, u); u.summonAt = b.time + 12; }
+  if (['heir', 'herald', 'alchemist', 'harvester'].includes(family(u)) && b.time >= (u.feedAt || 6)) { devour(b, u); u.feedAt = b.time + (u.id === 'herald' ? 12 : 6); }
   if (u.id === 'lotus') { u.threshold.current = Math.min(18, u.threshold.current + dt); if (u.threshold.current >= 18) refine(b, u); }
   if (u.id === 'crystal' && b.time >= (u.crystalAt || 4)) { teamCharge(b, u, 2); u.crystalAt = b.time + 4; }
   if (u.id === 'netrunner' && b.time >= (u.hackAt || 5)) { const e = living(b).sort((a, z) => z.speed - a.speed)[0]; if (e) { status(b, e, 'slow', 3, .5, u); interact(b, u, u, 'hack', 'fastest runner slowed 50%'); } u.hackAt = b.time + 5; }
@@ -734,30 +663,22 @@ const Game = (() => {
   // 2. Cloud-Mist Spirit Grass releases spiritual dew every 4s
   if (u.id === 'herbGrass' && b.time >= (u.mistAt || 4)) {
    u.mistAt = b.time + 4;
-   for (const v of b.units.filter(v => !v.removed && isPractitioner(v))) {
+   for (const v of b.units.filter(v => !v.removed && (v.id === 'practitioner' || v.realm != null))) {
     v.qi = (v.qi || 0) + 2;
     updatePractitionerRealm(b, v);
     interact(b, u, v, 'mist', '+2 Qi spiritual dew');
    }
   }
 
-  // 3. Cultivators consume adjacent Lotus Blossoms. Sword Immortals convert
-  // each 30 post-ascension Qi into +2 permanent ATK without reusing old Qi.
-  if (isPractitioner(u) || u.id === 'swordImmortal') {
+  // 3. Priority Devour: Practitioner eats adjacent Lotus Blossom
+  if (u.id === 'practitioner') {
    const adjBlossom = neighbors(b, u, false).find(v => v.id === 'lotusBlossom' && !v.removed);
    if (adjBlossom) {
     adjBlossom.removed = true;
     u.qi = (u.qi || 0) + 15;
-    if (isPractitioner(u)) {
-     growth(b, u, 2);
-     updatePractitionerRealm(b, u);
-     interact(b, adjBlossom, u, 'devour', 'Devoured Blossom: +15 Qi, +2 permanent ATK');
-    } else {
-     u.swordQi = (u.swordQi || 0) + 15;
-     let converted = 0;
-     while (u.swordQi >= 30) { u.swordQi -= 30; growth(b, u, 2); converted += 2; }
-     interact(b, adjBlossom, u, 'devour', `Sword Immortal absorbs Blossom: +15 Qi${converted ? `, +${converted} permanent ATK` : `, ${u.swordQi}/30 Qi toward +2 ATK`}`);
-    }
+    growth(b, u, 2);
+    updatePractitionerRealm(b, u);
+    interact(b, adjBlossom, u, 'devour', 'Devoured Blossom: +15 Qi, +2 ATK');
     persist(b, u);
    }
   }
@@ -769,7 +690,7 @@ const Game = (() => {
     if (adjBlossom) {
      u.brewAt = b.time + 6;
      adjBlossom.removed = true;
-     const target = allies(b, u).filter(v => isPractitioner(v) && !v.removed).sort((a, z) => (a.realm || 0) - (z.realm || 0) || (a.qi || 0) - (z.qi || 0))[0];
+     const target = allies(b, u).filter(v => v.id === 'practitioner' && !v.removed).sort((a, z) => (a.realm || 0) - (z.realm || 0) || (a.qi || 0) - (z.qi || 0))[0];
      if (target) {
       target.qi = (target.qi || 0) + 35;
       growth(b, target, 4);
@@ -783,7 +704,7 @@ const Game = (() => {
     const adjGrass = neighbors(b, u, false).find(v => v.id === 'herbGrass' && !v.removed);
     if (adjGrass) {
      u.brewGrassAt = b.time + 8;
-     const target = allies(b, u).filter(v => isPractitioner(v) && !v.removed).sort((a, z) => (a.realm || 0) - (z.realm || 0) || (a.qi || 0) - (z.qi || 0))[0];
+     const target = allies(b, u).filter(v => v.id === 'practitioner' && !v.removed).sort((a, z) => (a.realm || 0) - (z.realm || 0) || (a.qi || 0) - (z.qi || 0))[0];
      if (target) {
       target.qi = (target.qi || 0) + 18;
       growth(b, target, 3);
@@ -815,7 +736,7 @@ const Game = (() => {
   }
 
   // 7. Relic Evolution: Nascent Soul Practitioner consumes adjacent Relic
-  if (isPractitioner(u) && (u.qi || 0) >= 175 && (u.realm || 0) === 3) {
+  if (u.id === 'practitioner' && (u.realm || 0) === 3) {
    const relicMap = {
     flyingSword: 'swordImmortal',
     guqin: 'melodicSaint',
@@ -853,6 +774,6 @@ const Game = (() => {
   if (abilityGauge(u) && u.threshold.current >= u.threshold.max) tick(b, u, 0);
  }
 
- return { cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, cornerSection, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, practitionerRealmForQi, isPractitioner, isCultivationRelic, isApexImmortal };
+ return { species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, cornerSection, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, isCultivationRelic, isApexImmortal };
 })();
 if (typeof module !== 'undefined') module.exports = Game;
