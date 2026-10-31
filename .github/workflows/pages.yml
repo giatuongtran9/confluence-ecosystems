@@ -26,7 +26,8 @@ jobs:
       - name: Prepare static game site
         run: |
           mkdir -p public
-          cp -R Confluence/dist/. public/
+          cp index.html data.js engine.js app.js style.css public/
+          cp -R assets public/assets
           touch public/.nojekyll
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
