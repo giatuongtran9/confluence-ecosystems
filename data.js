@@ -117,10 +117,11 @@ const RARITIES = [
   { "id": "Normal", "color": "#cbd5e1", "label": "Normal" },
   { "id": "Rare", "color": "#67e8f9", "label": "Rare" },
   { "id": "Epic", "color": "#c084fc", "label": "Epic" },
-  { "id": "Legendary", "color": "#facc15", "label": "Legendary" }
+  { "id": "Legendary", "color": "#facc15", "label": "Legendary" },
+  { "id": "Mythic", "color": "#f472d0", "label": "Mythic" }
 ];
 
-// --- 49 DRAFTABLE CARDS (11 CULTIVATION + 38 OTHER GENRES) ---
+// --- CURRENT DRAFTABLE CARDS (retired records remain in LEGACY_CARDS for old saves) ---
 const CARDS = [
   // 1. Spirit Lotus Root
   {
@@ -196,7 +197,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["attacker", "scaling"],
     "ecosystem": "Cultivation · Ascension",
-    "rules": "Gains +1 Qi on hit. Devours adjacent Lotus Blossoms for +15 Qi and +2 permanent ATK. Advances realms permanently across the run: Foundation at 30 Qi (ATK 18, 1.2s, 2-tile pierce); Golden Core at 85 Qi (ATK 40, 1.0s, 50% splash); Nascent Soul at 175 Qi (ATK 75, 0.75s, 3 highest-HP targets). If adjacent to an eligible Relic at Nascent Soul, permanently consumes it to evolve into an Apex Immortal!",
+    "rules": "Gains +1 Qi on hit. Devours adjacent Lotus Blossoms for +15 Qi and +2 permanent ATK. Advances permanently into earned card forms: Foundation Establishment (Rare) at 30 Qi (ATK 18, 1.2s, 2-tile pierce); Golden Core (Epic) at 85 Qi (ATK 40, 1.0s, 50% splash); Nascent Soul (Legendary) at 175 Qi (ATK 75, 0.75s, 3 highest-HP targets). If adjacent to an eligible Relic at Nascent Soul, permanently consumes it to evolve into an Apex Immortal!",
     "synergy": "Lotus Blossoms, Spirit Grass, Cauldron Pills, and Relics."
   },
   // 5. Ancient Flying Sword
@@ -370,7 +371,8 @@ const CARDS = [
   },
   {
     "id": "heir",
-    "name": "Blood Heir",
+    "name": "Blood Heir (Legacy)",
+    "retired": true,
     "vn": "Huyết Tự",
     "genre": "Bloodline",
     "baseAtk": 18,
@@ -382,8 +384,8 @@ const CARDS = [
     "rarity": "Rare",
     "tags": ["attacker"],
     "evolveTo": "progenitor",
-    "rules": "Strike the leading runner. At opening and every 6s, consume one adjacent Bloodline Scarlet Familiar or Crimson Hound, including their tokens. Tokens first, then lowest-ATK eligible original. Gain +3 permanent ATK per meal, with no attack-count growth. Originals are permanently lost; tokens preserve originals. Same fixed meal reward for either. After 3 meals, evolve into Bloodline Progenitor.",
-    "synergy": "Scarlet Familiar, Crimson Hound, and Crimson Broodkeeper."
+    "rules": "Strike the leading runner. At opening and every 6s, consume one adjacent Crimson Hound, including its tokens. Tokens first, then lowest-ATK eligible original. Gain +3 permanent ATK per meal, with no attack-count growth. Originals are permanently lost; tokens preserve originals. Same fixed meal reward for either. After 3 meals, evolve into Bloodline Progenitor.",
+    "synergy": "Crimson Hound, Crimson Broodkeeper, and Bloodline fodder."
   },
   {
     "id": "hound",
@@ -395,11 +397,11 @@ const CARDS = [
     "sprite": 10,
     "icon": "爪",
     "fav": "center",
-    "ecosystem": "Execution · summoning",
+    "ecosystem": "Execution · Bloodline fodder",
     "rarity": "Normal",
     "tags": ["predator", "fodder"],
-    "rules": "Prioritize runners below 30% health and deal double damage to them. At opening and every 12s, summon a Hound Phantom token into an adjacent empty slot.",
-    "synergy": "Blood Heir, Crimson Broodkeeper, and Scarlet Familiar."
+    "rules": "Prioritize runners below 30% health and deal double damage to them. Same-species Hound neighbors breed temporary Crimson Hound copies at the shared 10% per-second chance into an empty orthogonal slot. Eligible prey for the Primordial Blood Cub and legacy Blood Heir; consumed Hounds can also trigger the Broodkeeper.",
+    "synergy": "Primordial Blood Cub, Crimson Broodkeeper, and other Crimson Hounds."
   },
   {
     "id": "conduit",
@@ -546,7 +548,7 @@ const CARDS = [
     "rarity": "Normal",
     "tags": [],
     "rules": "All ally attacks gain 25% armor penetration and inflict Bleed: 2 DPS for 4s, with no stack limit. Bleed stacks are independent and expire separately. Multiple Totems do not stack.",
-    "synergy": "Scarlet Familiar, Executioner, and Abyssal Reaper."
+    "synergy": "Crimson Hound, Executioner, and Abyssal Reaper."
   },
   {
     "id": "executioner",
@@ -631,24 +633,7 @@ const CARDS = [
     "rules": "Shorten ally Dormant duration by 2s (minimum 0.5s). When an ally is consumed or enters Dormant, capture their spirit. Every 6s, fire a soul volley at the 2 leading runners dealing 60 + highest ally raw ATK.",
     "synergy": "Restless Spirit, Nine-Abyss Wraith, and Grave Lantern."
   },
-  {
-    "id": "familiar",
-    "name": "Scarlet Familiar",
-    "vn": "Huyết Bộc",
-    "genre": "Bloodline",
-    "rarity": "Normal",
-    "baseAtk": 10,
-    "attackInterval": 1.1,
-    "max": 0,
-    "asset": "familiar",
-    "tags": ["fodder"],
-    "fav": "neighbor",
-    "icon": "✧",
-    "ecosystem": "Predation · bleeding",
-    "rules": "Strike the leading runner and apply Bleed: 3 DPS for 4s, with no stack limit. Breeds disposable tokens into empty orthogonal slots. Eligible prey for Blood Heir.",
-    "synergy": "Blood Heir, Crimson Broodkeeper, and Blood Altar."
-  },
-  {
+    {
     "id": "altar",
     "name": "Blood Altar",
     "vn": "Huyết Tế Đàn",
@@ -664,7 +649,7 @@ const CARDS = [
     "growthRole": "engine",
     "ecosystem": "Sacrifice · neighborhood growth",
     "rules": "Whenever an ally is consumed or an enemy dies while bleeding, grant all orthogonally adjacent original allies +1 permanent ATK.",
-    "synergy": "Blood Heir, Crimson Hound, and Scarlet Familiar."
+    "synergy": "Blood Heir, Primordial Blood Cub, and Crimson Hound."
   },
   {
     "id": "crystal",
@@ -819,7 +804,7 @@ const CARDS = [
     "icon": "✧",
     "ecosystem": "Bleed · burn exploitation",
     "rules": "Strike the leading runner. Deal 2.5× damage to runners suffering from Bleed or Burn.",
-    "synergy": "Iron Maiden Totem, Furnace Bellows, and Scarlet Familiar."
+    "synergy": "Iron Maiden Totem, Furnace Bellows, and Blood Altar."
   },
   {
     "id": "reaper",
@@ -836,7 +821,7 @@ const CARDS = [
     "icon": "✧",
     "ecosystem": "Bleed · soul detonation",
     "rules": "Strike the 2 leading runners and apply Bleed: 5 DPS for 4s. If a target has 4 or more Bleed stacks, detonate all remaining Bleed damage for 1.5× bonus ability damage.",
-    "synergy": "Iron Maiden Totem, Scarlet Familiar, and Asura Monk."
+    "synergy": "Iron Maiden Totem, Crimson Hound, and Asura Monk."
   },
   {
     "id": "larva",
@@ -955,8 +940,8 @@ const CARDS = [
     "fav": "team",
     "icon": "✧",
     "ecosystem": "Predation · recycling",
-    "rules": "When an adjacent Bloodline familiar or hound is consumed, roll a 35% chance to immediately spawn a replacement prey token.",
-    "synergy": "Blood Heir, Scarlet Familiar, and Crimson Hound."
+    "rules": "Whenever any of the five Bloodline fodders is consumed anywhere on the field, roll a 35% chance to spawn a temporary token copy of that same fodder species into any empty slot. Original and token meals can trigger it; the original remains lost.",
+    "synergy": "Primordial Blood Cub and all five Bloodline fodders."
   },
   {
     "id": "matriarch",
@@ -972,13 +957,265 @@ const CARDS = [
     "fav": "team",
     "icon": "✧",
     "ecosystem": "Predation · swarm haste",
-    "rules": "Grant Bloodline prey +40% attack speed. Bloodline Bleed duration increases by 0.5s per deployed familiar and hound.",
-    "synergy": "Scarlet Familiar, Crimson Hound, and Iron Maiden Totem."
-  }
+    "rules": "Grant Bloodline prey +40% attack speed. Bloodline Bleed duration increases by 0.5s per deployed Crimson Hound.",
+    "synergy": "Primordial Blood Cub, Crimson Hound, and Iron Maiden Totem."
+  },
+{
+  "id": "cub",
+  "name": "Primordial Blood Cub",
+  "vn": "Thái Cổ Ấu Thú",
+  "genre": "Bloodline",
+  "rarity": "Normal",
+  "baseAtk": 9,
+  "attackInterval": 1.2,
+  "max": 0,
+  "asset": "heir",
+  "icon": "♜",
+  "fav": "neighbor",
+  "tags": [
+    "attacker",
+    "predator"
+  ],
+  "ecosystem": "Bloodline · first-meal destiny",
+  "rules": "Attacks runners and devours orthogonally adjacent Bloodline prey at combat opening and every 6 seconds. Its first meal permanently locks one lineage. Every meal grants permanent ATK: +4 for matching prey, +3 for off-lineage prey. Matching meals alone add evolution stacks; it evolves at 2, 4, and 6 matching stacks. Bloodline fodder breeds temporary copies of its own species at a 10% per-second same-species adjacency chance into an empty orthogonal slot.",
+  "synergy": "Five Bloodline prey, their attacking offspring, and matching ancestral relics."
+},
+{
+  "id": "serpentFodder",
+  "name": "Horned Serpent",
+  "vn": "Giao Xà",
+  "genre": "Bloodline",
+  "rarity": "Normal",
+  "baseAtk": 12,
+  "attackInterval": 1.2,
+  "max": 0,
+  "asset": "familiar",
+  "icon": "🐉",
+  "fav": "neighbor",
+  "tags": [
+    "fodder",
+    "attacker"
+  ],
+  "ecosystem": "Bloodline · Azure Dragon prey",
+  "rules": "Attacks enemies. Its first meal can imprint the Azure Dragon lineage. Same-species neighbors roll once per second for a 10% chance to spawn a temporary Horned Serpent copy into an empty orthogonal slot.",
+  "synergy": "Primordial Blood Cub and other Horned Serpents."
+},
+{
+  "id": "scuttler",
+  "name": "Iron-Shelled Scuttler",
+  "vn": "Thiết Giáp Miêu",
+  "genre": "Bloodline",
+  "rarity": "Normal",
+  "baseAtk": 14,
+  "attackInterval": 1.5,
+  "max": 0,
+  "asset": "behemoth",
+  "icon": "🐢",
+  "fav": "neighbor",
+  "tags": [
+    "fodder",
+    "attacker"
+  ],
+  "ecosystem": "Bloodline · Xuanwu prey",
+  "rules": "Attacks enemies and slows targets by 15% for 2 seconds. Its first meal can imprint the Black Tortoise & Serpent lineage. Same-species neighbors can breed a temporary Iron-Shelled Scuttler copy using the shared 10%-per-second rule.",
+  "synergy": "Primordial Blood Cub and other Iron-Shelled Scuttlers."
+},
+{
+  "id": "flameToad",
+  "name": "Flame Toad",
+  "vn": "Hỏa Diệm Thiềm Thừ",
+  "genre": "Bloodline",
+  "rarity": "Normal",
+  "baseAtk": 11,
+  "attackInterval": 1.1,
+  "max": 0,
+  "asset": "bellows",
+  "icon": "🐸",
+  "fav": "neighbor",
+  "tags": [
+    "fodder",
+    "attacker"
+  ],
+  "ecosystem": "Bloodline · Vermilion Phoenix prey",
+  "rules": "Attacks enemies and applies Burn: 3 DPS for 3 seconds. Its first meal can imprint the Vermilion Phoenix lineage. Same-species neighbors can breed a temporary Flame Toad copy using the shared 10%-per-second rule.",
+  "synergy": "Primordial Blood Cub and other Flame Toads."
+},
+{
+  "id": "peachFodder",
+  "name": "Spirit Peach Fodder",
+  "vn": "Linh Đào",
+  "genre": "Bloodline",
+  "rarity": "Normal",
+  "baseAtk": 10,
+  "attackInterval": 0.9,
+  "max": 0,
+  "asset": "lotus",
+  "icon": "🍑",
+  "fav": "neighbor",
+  "tags": [
+    "fodder",
+    "attacker"
+  ],
+  "ecosystem": "Bloodline · Divine Monkey prey",
+  "rules": "Attacks enemies with swift strikes. Its first meal can imprint the Divine Monkey lineage. Same-species neighbors can breed a temporary Spirit Peach Fodder copy using the shared 10%-per-second rule.",
+  "synergy": "Primordial Blood Cub and other Spirit Peach Fodder."
+},
+{
+  "id": "dragonPearl",
+  "name": "Dragon Pearl",
+  "vn": "Dragon Pearl",
+  "genre": "Bloodline",
+  "rarity": "Epic",
+  "baseAtk": 0,
+  "attackInterval": 0,
+  "max": 0,
+  "asset": "totem",
+  "icon": "✧",
+  "fav": "team",
+  "tags": [
+    "relic",
+    "bloodline-relic"
+  ],
+  "ecosystem": "Bloodline · ancestral relic",
+  "rules": "When adjacent to the matching Tier 3 Cub, consume this relic to unlock the Azure Dragon Apex form.",
+  "synergy": "Primordial Blood Cub and matching lineage."
+},
+{
+  "id": "tigerSeal",
+  "name": "Slaughter Tiger Seal",
+  "vn": "Slaughter Tiger Seal",
+  "genre": "Bloodline",
+  "rarity": "Epic",
+  "baseAtk": 0,
+  "attackInterval": 0,
+  "max": 0,
+  "asset": "totem",
+  "icon": "✧",
+  "fav": "team",
+  "tags": [
+    "relic",
+    "bloodline-relic"
+  ],
+  "ecosystem": "Bloodline · ancestral relic",
+  "rules": "When adjacent to the matching Tier 3 Cub, consume this relic to unlock the White Tiger Apex form.",
+  "synergy": "Primordial Blood Cub and matching lineage."
+},
+{
+  "id": "earthTablet",
+  "name": "Heavy Earth Tablet",
+  "vn": "Heavy Earth Tablet",
+  "genre": "Bloodline",
+  "rarity": "Epic",
+  "baseAtk": 0,
+  "attackInterval": 0,
+  "max": 0,
+  "asset": "totem",
+  "icon": "✧",
+  "fav": "team",
+  "tags": [
+    "relic",
+    "bloodline-relic"
+  ],
+  "ecosystem": "Bloodline · ancestral relic",
+  "rules": "When adjacent to the matching Tier 3 Cub, consume this relic to unlock the Black Tortoise & Serpent Apex form.",
+  "synergy": "Primordial Blood Cub and matching lineage."
+},
+{
+  "id": "phoenixTree",
+  "name": "Phoenix Flame Tree",
+  "vn": "Phoenix Flame Tree",
+  "genre": "Bloodline",
+  "rarity": "Epic",
+  "baseAtk": 0,
+  "attackInterval": 0,
+  "max": 0,
+  "asset": "totem",
+  "icon": "✧",
+  "fav": "team",
+  "tags": [
+    "relic",
+    "bloodline-relic"
+  ],
+  "ecosystem": "Bloodline · ancestral relic",
+  "rules": "When adjacent to the matching Tier 3 Cub, consume this relic to unlock the Vermilion Phoenix Apex form.",
+  "synergy": "Primordial Blood Cub and matching lineage."
+},
+{
+  "id": "goldenStaff",
+  "name": "Golden-Hooped Staff",
+  "vn": "Golden-Hooped Staff",
+  "genre": "Bloodline",
+  "rarity": "Epic",
+  "baseAtk": 0,
+  "attackInterval": 0,
+  "max": 0,
+  "asset": "totem",
+  "icon": "✧",
+  "fav": "team",
+  "tags": [
+    "relic",
+    "bloodline-relic"
+  ],
+  "ecosystem": "Bloodline · ancestral relic",
+  "rules": "When adjacent to the matching Tier 3 Cub, consume this relic to unlock the Divine Monkey Apex form.",
+  "synergy": "Primordial Blood Cub and matching lineage."
+}
 ];
 
-// --- FORMS (7 APEX FORMS + 4 EARNED FORMS) ---
+// --- FORMS (7 APEX FORMS + 7 EARNED FORMS) ---
 const FORMS = [
+  // Earned realm forms for the Qi-Refining Practitioner lineage
+  {
+    "id": "cultivationFoundation",
+    "name": "Foundation Practitioner",
+    "vn": "Trúc Cơ Tu Giả",
+    "genre": "Cultivation",
+    "baseAtk": 18,
+    "attackInterval": 1.2,
+    "rarity": "Rare",
+    "asset": "jade",
+    "icon": "築",
+    "fav": "neighbor",
+    "tags": ["cultivation-realm", "attacker", "scaling"],
+    "evolvedFrom": "practitioner",
+    "draftable": false,
+    "rules": "Foundation realm · 30 Qi. Attacks pierce the two leading runners. Devours adjacent Lotus Blossoms for +15 Qi and +2 permanent ATK. Advances to Golden Core at 85 Qi.",
+    "synergy": "Spirit Lotus Blossoms, Spirit Grass, and Cauldron Pills."
+  },
+  {
+    "id": "cultivationGoldenCore",
+    "name": "Golden Core Daoist",
+    "vn": "Kim Đan Chân Nhân",
+    "genre": "Cultivation",
+    "baseAtk": 40,
+    "attackInterval": 1.0,
+    "rarity": "Epic",
+    "asset": "jade",
+    "icon": "丹",
+    "fav": "neighbor",
+    "tags": ["cultivation-realm", "attacker", "scaling"],
+    "evolvedFrom": "practitioner",
+    "draftable": false,
+    "rules": "Golden Core realm · 85 Qi. Attacks the target and deals 50% splash damage to nearby runners. Devours adjacent Lotus Blossoms for +15 Qi and +2 permanent ATK. Advances to Nascent Soul at 175 Qi.",
+    "synergy": "Spirit Lotus Blossoms, Spirit Grass, Cauldron Pills, and Cultivation Relics."
+  },
+  {
+    "id": "cultivationNascentSoul",
+    "name": "Nascent Soul Sovereign",
+    "vn": "Nguyên Anh Lão Tổ",
+    "genre": "Cultivation",
+    "baseAtk": 75,
+    "attackInterval": 0.75,
+    "rarity": "Legendary",
+    "asset": "jade",
+    "icon": "魂",
+    "fav": "neighbor",
+    "tags": ["cultivation-realm", "attacker", "scaling"],
+    "evolvedFrom": "practitioner",
+    "draftable": false,
+    "rules": "Nascent Soul realm · 175 Qi. Attacks the three highest-HP runners. Devours adjacent Lotus Blossoms for +15 Qi and +2 permanent ATK. At this realm, an adjacent eligible Cultivation Relic is consumed to awaken an Apex Immortal.",
+    "synergy": "Cultivation Relics and the full Practitioner lineage."
+  },
   // 1. Sword Immortal
   {
     "id": "swordImmortal",
@@ -987,7 +1224,7 @@ const FORMS = [
     "genre": "Cultivation",
     "baseAtk": 150,
     "attackInterval": 0.5,
-    "rarity": "Legendary",
+    "rarity": "Mythic",
     "asset": "immortal",
     "sprite": 0,
     "icon": "劍",
@@ -995,7 +1232,7 @@ const FORMS = [
     "tags": ["apex", "pierce", "boss-slayer"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Every 4th attack releases a Ten-Thousand Sword Torrent piercing all 16 perimeter tiles, dealing unbuffed ATK damage and stripping 30% current HP from the highest-HP target. Triggers Relic Resonance when adjacent to another Relic (+20% damage, +25% relic speed).",
+    "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Every 4th attack releases a Ten-Thousand Sword Torrent piercing all 16 perimeter tiles, dealing unbuffed ATK damage and stripping 30% current HP from the highest-HP target. Triggers Relic Resonance when adjacent to another Relic (+20% damage, +25% relic speed).",
     "synergy": "Ancient Flying Sword, Relic Resonance."
   },
   // 2. Melodic Saint
@@ -1006,7 +1243,7 @@ const FORMS = [
     "genre": "Cultivation",
     "baseAtk": 95,
     "attackInterval": 1.0,
-    "rarity": "Legendary",
+    "rarity": "Mythic",
     "asset": "bell",
     "sprite": 0,
     "icon": "♫",
@@ -1025,7 +1262,7 @@ const FORMS = [
     "genre": "Cultivation",
     "baseAtk": 110,
     "attackInterval": 1.1,
-    "rarity": "Legendary",
+    "rarity": "Mythic",
     "asset": "altar",
     "sprite": 0,
     "icon": "▨",
@@ -1044,7 +1281,7 @@ const FORMS = [
     "genre": "Cultivation",
     "baseAtk": 120,
     "attackInterval": 0.7,
-    "rarity": "Legendary",
+    "rarity": "Mythic",
     "asset": "totem",
     "sprite": 0,
     "icon": "✎",
@@ -1063,7 +1300,7 @@ const FORMS = [
     "genre": "Cultivation",
     "baseAtk": 95,
     "attackInterval": 1.3,
-    "rarity": "Legendary",
+    "rarity": "Mythic",
     "asset": "lantern",
     "sprite": 0,
     "icon": "▧",
@@ -1082,7 +1319,7 @@ const FORMS = [
     "genre": "Cultivation",
     "baseAtk": 140,
     "attackInterval": 0.55,
-    "rarity": "Legendary",
+    "rarity": "Mythic",
     "asset": "totem",
     "sprite": 0,
     "icon": "☠",
@@ -1101,7 +1338,7 @@ const FORMS = [
     "genre": "Cultivation",
     "baseAtk": 180,
     "attackInterval": 0.35,
-    "rarity": "Legendary",
+    "rarity": "Mythic",
     "asset": "heir",
     "sprite": 0,
     "icon": "🗡",
@@ -1152,7 +1389,7 @@ const FORMS = [
     "draftable": false,
     "asset": "heir",
     "growthRole": "evolved-engine",
-    "rules": "Strike two leading runners. At opening and every 6s, consume one adjacent Bloodline familiar or hound token/original. Gain +6 permanent ATK and +20% speed for 6s per meal. Heal 1 HP per three credited kills, up to 6 HP per battle.",
+    "rules": "Strike two leading runners. At opening and every 6s, consume one adjacent Crimson Hound token or original. Gain +6 permanent ATK and +20% speed for 6s per meal. Heal 1 HP per three credited kills, up to 6 HP per battle.",
     "synergy": "Breeding Bloodline prey and Crimson Broodkeeper."
   },
   {
@@ -1195,7 +1432,467 @@ const FORMS = [
     "growthRole": "evolved-engine",
     "rules": "Attacks against defense-shredded enemies always critically strike. Apply a separate Bleed stack: 6 DPS for 4s. Every six critical hits across battles and every credited kill grant +1 permanent ATK.",
     "synergy": "Autocannon, Nanites, and Abyssal Reaper."
-  }
+  },
+{
+  "id": "dragonCubT1",
+  "name": "Horned Drake Cub",
+  "vn": "Horned Drake Cub",
+  "genre": "Bloodline",
+  "rarity": "Rare",
+  "baseAtk": 22,
+  "attackInterval": 1.1,
+  "max": 0,
+  "asset": "heir",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-dragon"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "dragon",
+  "lineageTier": 1,
+  "rules": "Hits the 2 leading runners. This ability is inherited by all higher Dragon evolutions.",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "dragonCubT2",
+  "name": "Storm Dragon Noble",
+  "vn": "Storm Dragon Noble",
+  "genre": "Bloodline",
+  "rarity": "Epic",
+  "baseAtk": 48,
+  "attackInterval": 1.0,
+  "max": 0,
+  "asset": "heir",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-dragon"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "dragon",
+  "lineageTier": 2,
+  "rules": "Inherits the 2-runner strike. Every fourth attack hits 3 runners for double damage; higher Dragon evolutions retain both abilities.",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "dragonCubT3",
+  "name": "Nine-Cloud Sky Dragon",
+  "vn": "Nine-Cloud Sky Dragon",
+  "genre": "Bloodline",
+  "rarity": "Legendary",
+  "baseAtk": 85,
+  "attackInterval": 0.85,
+  "max": 0,
+  "asset": "heir",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-dragon"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "dragon",
+  "lineageTier": 3,
+  "rules": "Inherits the Dragon’s 2-runner strike and every-fourth-attack double strike. Hits the 4 leading runners; these abilities remain at Apex.",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "dragonCubApex",
+  "name": "Primordial Azure Dragon",
+  "vn": "Primordial Azure Dragon",
+  "genre": "Bloodline",
+  "rarity": "Mythic",
+  "baseAtk": 160,
+  "attackInterval": 0.7,
+  "max": 0,
+  "asset": "heir",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-dragon"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "dragon",
+  "lineageTier": 4,
+  "rules": "Inherits all lower Dragon attacks and hits the 6 leading runners. Every 8 seconds knocks all runners back 2 tiles.",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "tigerCubT1",
+  "name": "Fanged Tiger Cub",
+  "vn": "Fanged Tiger Cub",
+  "genre": "Bloodline",
+  "rarity": "Rare",
+  "baseAtk": 24,
+  "attackInterval": 1.0,
+  "max": 0,
+  "asset": "heir",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-tiger"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "tiger",
+  "lineageTier": 1,
+  "rules": "15% extra critical chance. This ability remains through every higher Tiger evolution.",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "tigerCubT2",
+  "name": "Blood-Stripe Saber",
+  "vn": "Blood-Stripe Saber",
+  "genre": "Bloodline",
+  "rarity": "Epic",
+  "baseAtk": 52,
+  "attackInterval": 0.9,
+  "max": 0,
+  "asset": "heir",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-tiger"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "tiger",
+  "lineageTier": 2,
+  "rules": "Inherits 15% extra critical chance. Attacks apply Bleed (3 DPS for 4s); critical strikes against bleeding targets deal triple damage. These abilities remain through higher Tiger evolutions.",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "tigerCubT3",
+  "name": "Slaughter War Tiger",
+  "vn": "Slaughter War Tiger",
+  "genre": "Bloodline",
+  "rarity": "Legendary",
+  "baseAtk": 95,
+  "attackInterval": 0.75,
+  "max": 0,
+  "asset": "heir",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-tiger"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "tiger",
+  "lineageTier": 3,
+  "rules": "Inherits 15% extra critical chance, Bleed (3 DPS for 4s), and triple critical damage against bleeding targets. Prioritizes elites and deals triple damage to targets below 40% health; inherited abilities remain at Apex.",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "tigerCubApex",
+  "name": "White Tiger God of Slaughter",
+  "vn": "White Tiger God of Slaughter",
+  "genre": "Bloodline",
+  "rarity": "Mythic",
+  "baseAtk": 210,
+  "attackInterval": 0.55,
+  "max": 0,
+  "asset": "heir",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-tiger"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "tiger",
+  "lineageTier": 4,
+  "rules": "Inherits the Tiger Cub’s 15% extra critical chance, Bleed, triple critical damage against bleeding targets, elite priority, and triple damage below 40% health. Deals quadruple damage; kills stun all runners for 1.5 seconds.",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "xuanwuCubT1",
+  "name": "Xuanwu Hatchling",
+  "vn": "Xuanwu Hatchling",
+  "genre": "Bloodline",
+  "rarity": "Rare",
+  "baseAtk": 18,
+  "attackInterval": 1.4,
+  "max": 0,
+  "asset": "heir",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-xuanwu"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "xuanwu",
+  "lineageTier": 1,
+  "rules": "Inherits through every higher Xuanwu evolution: attacks slow targets by 20% for 2 seconds.",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "xuanwuCubT2",
+  "name": "Mountain-Back Behemoth",
+  "vn": "Mountain-Back Behemoth",
+  "genre": "Bloodline",
+  "rarity": "Epic",
+  "baseAtk": 42,
+  "attackInterval": 1.3,
+  "max": 0,
+  "asset": "heir",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-xuanwu"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "xuanwu",
+  "lineageTier": 2,
+  "rules": "Inherits the 20% slow. Attacks apply Venom (4 DPS for 4s); every fifth attack deals 120 true damage to all runners. These abilities remain through higher Xuanwu evolutions.",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "xuanwuCubT3",
+  "name": "Abyssal Twin Sovereigns",
+  "vn": "Abyssal Twin Sovereigns",
+  "genre": "Bloodline",
+  "rarity": "Legendary",
+  "baseAtk": 80,
+  "attackInterval": 1.1,
+  "max": 0,
+  "asset": "heir",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-xuanwu"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "xuanwu",
+  "lineageTier": 3,
+  "rules": "Inherits the Xuanwu slow, Venom, and every-fifth-attack true-damage pulse. When a runner is speed-boosted, deals 60 true damage and stuns it for 1 second; these abilities remain at Apex.",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "xuanwuCubApex",
+  "name": "Xuanwu Divine Heaven-Bearer",
+  "vn": "Xuanwu Divine Heaven-Bearer",
+  "genre": "Bloodline",
+  "rarity": "Mythic",
+  "baseAtk": 150,
+  "attackInterval": 0.9,
+  "max": 0,
+  "asset": "heir",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-xuanwu"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "xuanwu",
+  "lineageTier": 4,
+  "rules": "Inherits all lower Xuanwu abilities. Alternates added Venom and 2-tile knockback on attacks; prevents up to 2 leaks per battle.",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "phoenixCubT1",
+  "name": "Fire-Fledged Chick",
+  "vn": "Fire-Fledged Chick",
+  "genre": "Bloodline",
+  "rarity": "Rare",
+  "baseAtk": 20,
+  "attackInterval": 1.1,
+  "max": 0,
+  "asset": "heir",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-phoenix"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "phoenix",
+  "lineageTier": 1,
+  "rules": "Attacks apply stacking Burn (5 DPS for 4s). This ability remains through every higher Phoenix evolution.",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "phoenixCubT2",
+  "name": "Blazing Sun Crane",
+  "vn": "Blazing Sun Crane",
+  "genre": "Bloodline",
+  "rarity": "Epic",
+  "baseAtk": 46,
+  "attackInterval": 0.95,
+  "max": 0,
+  "asset": "heir",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-phoenix"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "phoenix",
+  "lineageTier": 2,
+  "rules": "Inherits stacking Burn. Burns spread to the next runner, and attacks make targets take 15% more damage for 3s; these abilities remain through higher Phoenix evolutions.",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "phoenixCubT3",
+  "name": "Nirvana Flame Bird",
+  "vn": "Nirvana Flame Bird",
+  "genre": "Bloodline",
+  "rarity": "Legendary",
+  "baseAtk": 82,
+  "attackInterval": 0.8,
+  "max": 0,
+  "asset": "heir",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-phoenix"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "phoenix",
+  "lineageTier": 3,
+  "rules": "Inherits Burn spread and 15% increased damage taken. Every 8 seconds consumes active Burns, dealing their remaining damage immediately; inherited abilities remain at Apex.",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "phoenixCubApex",
+  "name": "Immortal Vermilion Phoenix",
+  "vn": "Immortal Vermilion Phoenix",
+  "genre": "Bloodline",
+  "rarity": "Mythic",
+  "baseAtk": 175,
+  "attackInterval": 0.65,
+  "max": 0,
+  "asset": "heir",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-phoenix"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "phoenix",
+  "lineageTier": 4,
+  "rules": "Inherits all lower Phoenix abilities and deals 25% extra true fire damage on attacks. Once per run, revives after lethal damage with 1 HP.",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "monkeyCubT1",
+  "name": "Stone Simian Cub",
+  "vn": "Stone Simian Cub",
+  "genre": "Bloodline",
+  "rarity": "Rare",
+  "baseAtk": 16,
+  "attackInterval": 0.8,
+  "max": 0,
+  "asset": "heir",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-monkey"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "monkey",
+  "lineageTier": 1,
+  "rules": "Fast attacks grant 10 percentage points of extra critical chance. This ability remains through every higher Monkey evolution.",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "monkeyCubT2",
+  "name": "Four-Eared Macaque",
+  "vn": "Four-Eared Macaque",
+  "genre": "Bloodline",
+  "rarity": "Epic",
+  "baseAtk": 38,
+  "attackInterval": 0.7,
+  "max": 0,
+  "asset": "heir",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-monkey"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "monkey",
+  "lineageTier": 2,
+  "rules": "Inherits 10 percentage points of extra critical chance. Every sixth attack summons a temporary 50%-ATK clone; these abilities remain through higher Monkey evolutions.",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "monkeyCubT3",
+  "name": "Heaven-Shaking Ape King",
+  "vn": "Heaven-Shaking Ape King",
+  "genre": "Bloodline",
+  "rarity": "Legendary",
+  "baseAtk": 75,
+  "attackInterval": 0.6,
+  "max": 0,
+  "asset": "heir",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-monkey"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "monkey",
+  "lineageTier": 3,
+  "rules": "Inherits Monkey critical chance and the sixth-attack clone. Attacks cleave the 3 leading runners; inherited abilities remain at Apex.",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "monkeyCubApex",
+  "name": "Great Sage Equal to Heaven",
+  "vn": "Great Sage Equal to Heaven",
+  "genre": "Bloodline",
+  "rarity": "Mythic",
+  "baseAtk": 185,
+  "attackInterval": 0.45,
+  "max": 0,
+  "asset": "heir",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-monkey"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "monkey",
+  "lineageTier": 4,
+  "rules": "Inherits all lower Monkey abilities. Strikes up to 8 runners for 150% ATK as true damage and strips active speed boosts and buffs.",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+}
 ];
 
 // --- TOKENS (1 CULTIVATION BLOSSOM + 5 EXISTING) ---
@@ -1249,7 +1946,7 @@ const TOKENS = [
     "draftable": false,
     "fav": "neighbor",
     "ecosystem": "Tokens · predation",
-    "rules": "Temporary Scarlet Familiar token.",
+    "rules": "Legacy temporary token from the retired Scarlet Familiar. Not eligible prey for current Bloodline predators.",
     "synergy": "Blood Heir and Blood Altar."
   },
   {
@@ -1302,10 +1999,108 @@ const TOKENS = [
     "ecosystem": "Tokens · sacrifice",
     "rules": "Temporary Mourning Lamb token spawned by Veil Shepherd.",
     "synergy": "Soul Harvester and Soul Well."
-  }
+  },
+{
+  "id": "scaleImp",
+  "name": "Scale Imp",
+  "vn": "Scale Imp",
+  "genre": "Bloodline",
+  "rarity": "Normal",
+  "baseAtk": 12,
+  "attackInterval": 1.2,
+  "tags": [
+    "token",
+    "fodder"
+  ],
+  "token": true,
+  "draftable": false,
+  "fav": "neighbor",
+  "species": "serpentFodder",
+  "ecosystem": "Bloodline · attacking offspring",
+  "rules": "Legacy standalone offspring token. Breeding now creates a temporary copy with the parent fodder species identity; eligible offspring can be devoured by the Primordial Blood Cub.",
+  "synergy": "Bloodline Cub and matching fodder."
+},
+{
+  "id": "carapaceToken",
+  "name": "Carapace Token",
+  "vn": "Carapace Token",
+  "genre": "Bloodline",
+  "rarity": "Normal",
+  "baseAtk": 14,
+  "attackInterval": 1.5,
+  "tags": [
+    "token",
+    "fodder"
+  ],
+  "token": true,
+  "draftable": false,
+  "fav": "neighbor",
+  "species": "scuttler",
+  "ecosystem": "Bloodline · attacking offspring",
+  "rules": "Legacy standalone offspring token. Breeding now creates a temporary copy with the parent fodder species identity; eligible offspring can be devoured by the Primordial Blood Cub.",
+  "synergy": "Bloodline Cub and matching fodder."
+},
+{
+  "id": "emberToken",
+  "name": "Ember Tadpole",
+  "vn": "Ember Tadpole",
+  "genre": "Bloodline",
+  "rarity": "Normal",
+  "baseAtk": 11,
+  "attackInterval": 1.1,
+  "tags": [
+    "token",
+    "fodder"
+  ],
+  "token": true,
+  "draftable": false,
+  "fav": "neighbor",
+  "species": "flameToad",
+  "ecosystem": "Bloodline · attacking offspring",
+  "rules": "Legacy standalone offspring token. Breeding now creates a temporary copy with the parent fodder species identity; eligible offspring can be devoured by the Primordial Blood Cub.",
+  "synergy": "Bloodline Cub and matching fodder."
+},
+{
+  "id": "peachToken",
+  "name": "Spirit Peach Token",
+  "vn": "Spirit Peach Token",
+  "genre": "Bloodline",
+  "rarity": "Normal",
+  "baseAtk": 10,
+  "attackInterval": 0.9,
+  "tags": [
+    "token",
+    "fodder"
+  ],
+  "token": true,
+  "draftable": false,
+  "fav": "neighbor",
+  "species": "peachFodder",
+  "ecosystem": "Bloodline · attacking offspring",
+  "rules": "Legacy standalone offspring token. Breeding now creates a temporary copy with the parent fodder species identity; eligible offspring can be devoured by the Primordial Blood Cub.",
+  "synergy": "Bloodline Cub and matching fodder."
+}
 ];
 
 const LEGACY_CARDS = [
+  {
+    "id": "familiar",
+    "retired": true,
+    "name": "Scarlet Familiar",
+    "vn": "Huyết Bộc",
+    "genre": "Bloodline",
+    "rarity": "Normal",
+    "baseAtk": 10,
+    "attackInterval": 1.1,
+    "max": 0,
+    "asset": "familiar",
+    "tags": ["fodder"],
+    "fav": "neighbor",
+    "icon": "✧",
+    "ecosystem": "Predation · bleeding",
+    "rules": "Strike the leading runner and apply Bleed: 3 DPS for 4s, with no stack limit. Legacy-only card. Scarlet Familiar is retired from current runs and is not eligible prey for the Blood Cub, Blood Heir, or Progenitor.",
+    "synergy": "Legacy Blood Heir and Blood Altar."
+  },
   { "id": "jade", "name": "Jade Disciple", "genre": "Cultivation", "baseAtk": 14, "attackInterval": 1.5, "max": 36, "rarity": "Rare", "draftable": false, "evolveTo": "immortal" },
   { "id": "herb", "name": "Spirit Herb Spring", "genre": "Cultivation", "baseAtk": 0, "attackInterval": 0, "rarity": "Normal", "draftable": false },
   { "id": "lotus", "name": "Spirit Lotus", "genre": "Cultivation", "rarity": "Normal", "baseAtk": 0, "attackInterval": 0, "max": 18, "draftable": false },
