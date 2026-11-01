@@ -1043,3 +1043,16 @@ body.has-dock .combat-focus-card{margin-bottom:10px}
 .in-combat .board .field-card .field-atk{display:inline-flex!important;align-items:baseline!important;flex-wrap:nowrap!important;gap:2px!important;white-space:nowrap!important;width:max-content!important;min-width:0!important;max-width:90%!important;padding:0 2px!important;font-size:8px!important;line-height:1!important}
 .in-combat .board .field-card .field-atk small{display:inline!important;font-size:5px!important;line-height:1!important;white-space:nowrap!important}
 @media(max-width:720px){.in-combat .board{width:100%!important;max-width:none!important;margin:0!important}.in-combat .board .field-card .field-atk{font-size:7px!important;padding:0 2px!important}.in-combat .board .field-card .field-atk small{font-size:4px!important}}
+/* Full-width combat battlefield: let its square aspect ratio determine height, not viewport height. */
+.in-combat .shell {
+  width: 100%;
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+.in-combat .board {
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+}
