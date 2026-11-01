@@ -1056,3 +1056,13 @@ body.has-dock .combat-focus-card{margin-bottom:10px}
   margin-left: 0;
   margin-right: 0;
 }
+
+
+/* Edge-to-edge combat battlefield: remove parent width constraints on mobile. */
+@media (max-width: 720px) {
+  .in-combat .shell { width: 100%; max-width: none; margin: 0; padding-left: 0; padding-right: 0; }
+  .in-combat .combat-layout,
+  .in-combat .arena-panel { width: 100%; max-width: none; margin-left: 0; margin-right: 0; }
+  .in-combat .arena-panel { padding: 0; }
+  .in-combat .board { width: 100%; max-width: none; margin-left: 0; margin-right: 0; }
+}
