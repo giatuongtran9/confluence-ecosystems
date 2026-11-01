@@ -1034,3 +1034,6 @@ body.has-dock .combat-focus-card{margin-bottom:10px}
 
 /* Leader-selected battlefield callout */
 .battlefield-callout{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border:1px solid #58654b;border-left:3px solid var(--gold);border-radius:4px;background:#101a16;color:var(--ink)}.battlefield-callout b{font-size:12px;color:var(--gold)}.battlefield-callout span{font-size:11px;color:var(--muted);line-height:1.5}
+/* Compact, single-line in-grid ATK badge; intentionally last to beat older mobile rules. */
+.in-combat .board .field-card .field-atk{display:inline-flex;align-items:baseline;gap:2px;white-space:nowrap;width:max-content;min-width:0;max-width:90%;padding:1px 3px;font-size:7px;line-height:1;color:#fff1d1}
+.in-combat .board .field-card .field-atk small{font-size:5px;line-height:1;letter-spacing:0}
