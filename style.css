@@ -1066,3 +1066,9 @@ body.has-dock .combat-focus-card{margin-bottom:10px}
   .in-combat .arena-panel { padding: 0; }
   .in-combat .board { width: 100%; max-width: none; margin-left: 0; margin-right: 0; }
 }
+
+/* Approved per-scene geometry: keep the 5x5 route overlay registered to each image's central 3x3. */
+.board .track-grid{pointer-events:none}
+.in-combat .board .field-card .realistic-unit{top:-10%!important;left:20%!important;width:60%!important;height:60%!important}
+
+.board .field-card:before{bottom:46%!important;height:8%!important}

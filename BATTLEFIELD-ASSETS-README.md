@@ -1,24 +1,35 @@
-# Leader-specific battlefield update
+# Battlefield image and overlay calibration
 
-## Files
-- `app.js` — chooses and displays the battlefield assigned to the selected leader for the run. The ready panel names the battlefield; combat keeps the 3×3 center deployment slots and the 16-tile clockwise outer enemy route.
-- `style.css` — uses the selected scene art behind the existing 5×5 game board while preserving the art's aspect ratio stretched to the square board bounds so its full edge stays under the fixed 5×5 coordinate grid.
-- `assets/battlefields/*.jpg` — the nine supplied battlefield images, renamed for the game.
-
-## Install
-Replace the repository-root `app.js` and `style.css` with these files. Copy the whole `assets/battlefields/` folder into the repository's existing `assets/` folder. Keep the existing `assets/battlefield-realistic.png` as a fallback.
+The nine supplied square battlefield images replace the existing files in `assets/battlefields/`. Leader selection continues to choose a theme; combat keeps the existing logical nine-card deployment and sixteen-stop clockwise enemy route.
 
 ## Leader mapping
-| Leader | Battlefield | Source image |
-|---|---|---|
-| Shen (`shen`) | Cultivation | IMG_1841 |
-| Yara (`yara`) | Haunted | IMG_1833 |
-| Vesper (`vesper`) | Bloodline Fantasy | IMG_1851 |
-| Lyra (`lyra`) | Arcane Magic | IMG_1844 |
-| Rook (`rook`) | Post-Apocalyptic | IMG_1832 |
-| Orion (`orion`) | Science Fiction | IMG_1835 |
-| Nyx (`nyx`) | Cyberpunk | IMG_1834 |
-| Morrow (`morrow`) | Dark Fantasy | IMG_1836 |
-| Naal (`naal`) | Cosmic Horror | IMG_1838 |
 
-The combat engine itself is unchanged: card coordinates remain the nine inner cells and the enemy route remains the sixteen perimeter cells. The supplied art has perspective differences; the game overlay still uses the same square 5×5 logical coordinates for all scenes, so inspect the alignment in a browser before release. The art is fitted to the full board bounds to prevent the image crop from shifting the outer track and center grid.
+| Leader | Theme | Supplied image | Asset |
+|---|---|---|---|
+| Shen (`shen`) | Cultivation | IMG_1872 | `cultivation.jpg` |
+| Yara (`yara`) | Haunted | IMG_1861 | `haunted.jpg` |
+| Vesper (`vesper`) | Bloodline Fantasy | IMG_1864 | `bloodline-fantasy.jpg` |
+| Lyra (`lyra`) | Arcane Magic | IMG_1868 | `arcane-magic.jpg` |
+| Rook (`rook`) | Post-Apocalyptic | IMG_1869 | `post-apocalyptic.jpg` |
+| Orion (`orion`) | Science Fiction | IMG_1873 | `science-fiction.jpg` |
+| Nyx (`nyx`) | Cyberpunk | IMG_1866 | `cyberpunk.jpg` |
+| Morrow (`morrow`) | Dark Fantasy | IMG_1867 | `dark-fantasy.jpg` |
+| Naal (`naal`) | Cosmic Horror | IMG_1865 | `cosmic-horror.jpg` |
+
+`app.js` stores per-image percentage bounds for the visible central 3×3. Card containers use those bounds, and both the enemy route and battle-effect endpoints are transformed through the same image-specific tile pitch. The game engine's 3×3 card positions, 16-cell route order, enemy progression, and combat rules are unchanged.
+
+## Overlay calibration (percent of full square image)
+
+| Leader | Left | Top | Width | Height |
+|---|---:|---:|---:|---:|
+| Orion | 33.0% | 32.9% | 34.2% | 34.2% |
+| Shen | 33.2% | 32.1% | 33.8% | 35.2% |
+| Rook | 33.3% | 33.3% | 33.6% | 33.6% |
+| Lyra | 33.7% | 33.7% | 32.9% | 32.9% |
+| Morrow | 33.4% | 33.4% | 33.2% | 33.2% |
+| Nyx | 33.2% | 33.5% | 33.4% | 33.4% |
+| Naal | 33.6% | 33.2% | 33.0% | 33.7% |
+| Vesper | 33.2% | 33.0% | 33.6% | 33.8% |
+| Yara | 33.0% | 32.9% | 34.0% | 34.0% |
+
+The outer route uses the same per-scene cell pitch, one cell beyond the central grid on each side. The existing clockwise order is retained.
