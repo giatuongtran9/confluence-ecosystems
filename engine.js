@@ -58,7 +58,7 @@ const Game = (() => {
  function allies(b, u) { return b.units.filter(v => !v.removed && v !== u) }
  function support(b, id) { return b.units.filter(v => !v.removed && v.id === id).sort((a, z) => Number(a.uid) - Number(z.uid))[0] }
  function living(b) { return b.enemies.filter(e => e.hp > 0 && !e.gone).sort((a, z) => z.p - a.p || a.uid - z.uid) }
- function log(b, text) { b.log.unshift({ t: b.time, text }); b.log.length = Math.min(36, b.log.length) }
+ 
  function fx(b, type, u, e, text) { b.effects.push({ type, x: u?.x + 1, y: u?.y + 1, tx: e ? track(e.p).x : u?.x + 1, ty: e ? track(e.p).y : u?.y + 1, text, ttl: type === 'beam' ? .35 : .7 }); if (b.effects.length > 90) b.effects.shift() }
  const ENCOUNTERS = { packs: { id: 'packs', name: 'Swarm packs', test: 'Area damage', desc: 'Runners arrive in groups of three with reduced health.', tip: 'Soul-Wailing Bell or piercing strikes help hit several runners.' }, armor: { id: 'armor', name: 'Iron procession', test: 'Armor penetration', desc: 'Most runners wear armor blocking 40% damage.', tip: 'True damage and defense shred bypass armor.' }, fast: { id: 'fast', name: 'Rush runners', test: 'Crowd control', desc: 'Most runners move 60% faster.', tip: 'Slows, stuns, and knockbacks buy time.' } };
  function encounterFor(n) { if (!n || !['battle', 'elite'].includes(n.type) || n.row === 0) return null; return ENCOUNTERS[['packs', 'armor', 'fast'][(n.row + (n.lane ?? 1)) % 3]] }
@@ -116,7 +116,7 @@ const Game = (() => {
    u.baseAtk = stats[0]; u.attackInterval = stats[1];
    if (newRealm > oldRealm) {
     const title = ['Qi-Refining', 'Foundation Establishment', 'Golden Core', 'Nascent Soul'][newRealm];
-    log(b, `${card(u.id).name} breaks through to ${title}!`); fx(b, 'growth', u, null, title.toUpperCase());
+     fx(b, 'growth', u, null, title.toUpperCase());
    }
    persist(b, u);
   }
@@ -160,7 +160,7 @@ const Game = (() => {
 
  function deploy(r) {
   if (r.phase !== 'ready') throw Error('Deployment requires a selected battle');
-  const b = { run: r, time: 0, units: [], enemies: [], effects: [], log: [], metrics: { kills: 0, leaks: 0, growth: 0, triggers: 0, devours: 0 }, spawned: 0, enemyUid: 0, spawnAt: 0, done: false, won: false, statusEvents: 0 };
+  const b = { run: r, time: 0, units: [], enemies: [], effects: [],  metrics: { kills: 0, leaks: 0, growth: 0, triggers: 0, devours: 0 }, spawned: 0, enemyUid: 0, spawnAt: 0, done: false, won: false, statusEvents: 0 };
   const picked = shuffle(r, r.roster).slice(0, 9), slots = shuffle(r, [0, 1, 2, 3, 4, 5, 6, 7, 8]);
   b.units = picked.map((u, i) => runtime(b, u, slots[i]));
   b.units.sort((a, z) => a.uid - z.uid);
@@ -170,7 +170,7 @@ const Game = (() => {
   r.phase = 'combat'; r.lastDraw = picked.map(u => u.uid);
   startAbilities(b);
   b.plan = wavePlan(r);
-  log(b, `${picked.length} cards drawn and deployed. All attacks have global reach.`);
+  
   return b;
  }
 
@@ -225,7 +225,7 @@ const Game = (() => {
   }
   if (state !== 'active') event(b, 'shutdown', { unit: u, state });
   if (previous === 'dormant' && state === 'active' && family(u) === 'spirit') { growth(b, u, 1); u.returns = (u.returns || 0) + 1; persist(b, u); if (u.id === 'spirit' && u.returns >= 5) evolve(b, u, 'wraith'); }
-  if (state !== 'active') log(b, `${card(u.id).name}: ${state} for ${u.stateRemaining.toFixed(1)}s.`);
+  if (state !== 'active') 
   if (family(u) === 'spirit' && state === 'dormant') for (const e of living(b)) status(b, e, 'slow', 3, .25, u);
  }
 
@@ -248,9 +248,9 @@ const Game = (() => {
    case 'spirit': flip(b, u, 'dormant', 5); break;
    case 'cannon': flip(b, u, 'burnout', 6); break;
    case 'heir': break;
-   case 'jade': grantGrowth(b, u, 3); u.qiGrowth = (u.qiGrowth || 0) + 3; persist(b, u); event(b, 'breakthrough', { unit: u }); if (u.id === 'jade' && u.qiGrowth >= 18) evolve(b, u, 'immortal'); interact(b, u.triggerSource || u, u, 'breakthrough', 'breakthrough, +3 permanent ATK'); log(b, 'Jade Disciple breaks through: +3 permanent ATK.'); break;
+   case 'jade': grantGrowth(b, u, 3); u.qiGrowth = (u.qiGrowth || 0) + 3; persist(b, u); event(b, 'breakthrough', { unit: u }); if (u.id === 'jade' && u.qiGrowth >= 18) evolve(b, u, 'immortal'); interact(b, u.triggerSource || u, u, 'breakthrough', 'breakthrough, +3 permanent ATK');  break;
    case 'conduit': for (const v of allies(b, u)) { v.hasteUntil = b.time + 4 * mod(b.run, 'buffDuration'); interact(b, u, v, 'haste', '+15% team attack speed for 4s'); } fx(b, 'pulse', u, null, 'HASTE'); break;
-   case 'mage': interact(b, u.triggerSource || u, u, 'chain', 'Chain Lightning released'); for (const e of living(b).slice(0, 5)) hit(b, u, e, 240 + rawAtk(u) * 3 + teamPower(b) * 1.5, false); for (const v of allies(b, u).filter(v => ['jade', 'conduit'].includes(family(v)) && !token(v))) { tick(b, v, 2, u); interact(b, u, v, 'spell-charge', 'spell → +2 progress'); } fx(b, 'pulse', u, null, 'CHAIN'); log(b, 'Storm Archmage releases Chain Lightning.'); break;
+   case 'mage': interact(b, u.triggerSource || u, u, 'chain', 'Chain Lightning released'); for (const e of living(b).slice(0, 5)) hit(b, u, e, 240 + rawAtk(u) * 3 + teamPower(b) * 1.5, false); for (const v of allies(b, u).filter(v => ['jade', 'conduit'].includes(family(v)) && !token(v))) { tick(b, v, 2, u); interact(b, u, v, 'spell-charge', 'spell → +2 progress'); } fx(b, 'pulse', u, null, 'CHAIN');  break;
    case 'eye': u.nextTrigger = b.time + 4; for (const e of living(b).slice(0, 2)) status(b, e, 'vulnerable', 4, .15, u); interact(b, u.triggerSource || u, u, 'warp', 'control gauge filled · Warp'); for (const e of living(b).slice(0, 2)) { trueHit(b, u, e, 150 + teamPower(b) * .75); warp(b, e, 4, u); fx(b, 'warp', u, e, (e.boss || e.champion) ? (e.enraged ? 'RESIST' : 'WARP −2') : 'WARP −4') } break;
    case 'lantern': u.nextTrigger = b.time + 2; for (const e of living(b)) hit(b, u, e, 45, false); interact(b, u, u, 'echo-burst', '10 Echoes → shockwave'); break;
    case 'weaver': u.nova = true; for (const e of living(b).slice(0, 4)) { hit(b, u, e, 180 + rawAtk(u) * 3 + teamPower(b), false); status(b, e, 'vulnerable', 4, .2, u); } u.nova = false; interact(b, u, u, 'nova', 'Rune Nova → four targets + Vulnerable'); break;
@@ -287,7 +287,7 @@ const Game = (() => {
     persist(b, banner);
     if (banner.souls === 100 && !banner.soulMaxLogged) {
      banner.soulMaxLogged = true;
-     log(b, 'Ten-Thousand Soul Banner reached MAX SOULS (100/100)! Ready for Relic Ascension.');
+     
      fx(b, 'state', banner, null, 'SOULS 100/100');
     }
    }
@@ -515,7 +515,7 @@ const Game = (() => {
    if (u.attackInterval > 0) { u.currentCooldown -= dt; let guard = 0; while (u.currentCooldown <= 0 && u.state === 'active' && guard++ < 5) { if (!attack(b, u)) { u.currentCooldown = .05; break } u.currentCooldown += u.attackInterval / speed(b, u) } }
   }
   for (const e of living(b)) {
-   if ((e.boss || e.champion) && !e.enraged && b.time - e.bornAt >= 45) { e.enraged = true; e.frozenUntil = 0; log(b, `${e.champion ? 'Harbinger' : 'The Unraveler'} enrages: +25% movement speed; immune to freeze, stun and knockback.`) }
+   if ((e.boss || e.champion) && !e.enraged && b.time - e.bornAt >= 45) { e.enraged = true; e.frozenUntil = 0;  }
    e.bleeds = e.bleeds.filter(z => z.until > b.time); e.burns = (e.burns || []).filter(z => z.until > b.time); e.venoms = (e.venoms || []).filter(z => z.until > b.time); for (const dot of [...e.bleeds, ...e.burns, ...e.venoms]) damage(b, e, dot.dps * dt * (e.vulnerableUntil > b.time ? 1 + e.vulnerability : 1), b.units.find(u => u.uid === dot.owner) || null, 'dot'); if (e.gone) continue;
    e.slows = e.slows.filter(s => s.until > b.time); let aura = b.units.some(v => !v.removed && v.id === 'wraith') ? ((e.boss || e.champion) ? .15 : .3) : 0; let slow = Math.max(aura, ...e.slows.map(s => s.power)), move = e.frozenUntil > b.time ? 0 : 1 - slow; e.p += e.speed * dt * move * (e.enraged ? 1.25 : 1) * (b.run.relics.includes('frost') ? .9 : 1);
 
@@ -607,7 +607,7 @@ const Game = (() => {
   prepareHooks(b, u); persist(b, u); record(b, u).id = id;
   (b.metrics.evolutions ??= []).push({ uid: u.uid, from: before, to: id, time: b.time });
   interact(b, u, u, 'evolution', `EVOLUTION · ${card(before).name} → ${d.name}`);
-  log(b, `${card(before).name} evolves into ${d.name}; permanent growth retained.`);
+  
   fx(b, 'growth', u, null, 'EVOLVED');
  }
 
@@ -623,7 +623,7 @@ const Game = (() => {
   const item = { uid: victim.uid, id: victim.id, slot: victim.slot, by: consumer.id, byUid: consumer.uid, toSlot: consumer.slot, bonus: consumer.permanentAtkBonus - before, reason, token: isToken, permanent: !isToken };
   (b.metrics.consumed ??= []).push(item);
   interact(b, victim, consumer, 'devour', `${isToken ? 'TOKEN CONSUMED · parent safe' : 'ORIGINAL PERMANENTLY LOST'}; +${item.bonus} ATK`);
-  log(b, `${card(consumer.id).name}: ${reason} ${card(victim.id).name}; +${item.bonus} ATK. ${isToken ? 'Parent unaffected.' : 'Permanently deleted from roster.'}`);
+  
   event(b, 'consumed', { unit: victim, consumer, reason });
   return true;
  }
@@ -836,7 +836,7 @@ const Game = (() => {
     evolve(b, u, evolveTo);
     u.realm = 4;
     persist(b, u);
-    log(b, `${u.name} fuses with ${card(adjRelic.id).name} and ascends to ${card(evolveTo).name}!`);
+    
    }
   }
 
