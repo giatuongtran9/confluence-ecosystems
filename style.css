@@ -1078,3 +1078,54 @@ body.has-dock .combat-focus-card{margin-bottom:10px}
 /* Keep the live 75% combat cell box and placement. */
 .in-combat .board .field-card .cultivation-unit-sprite{position:absolute;top:-25%;left:12.5%;width:75%;height:75%;object-fit:contain;background:none;image-rendering:auto;filter:drop-shadow(2px 5px 3px #12171080);animation:bob 3.8s ease-in-out infinite;z-index:2}
 .in-combat .board .field-card.inactive .cultivation-unit-sprite{filter:grayscale(.8) brightness(.6);animation:none}
+
+
+/* Stable combat board and unobstructed, grounded field sprites. */
+.in-combat .board {
+  width: min(100%, 1000px) !important;
+  max-width: min(100%, 1000px) !important;
+  height: auto !important;
+  aspect-ratio: 1 / 1;
+  flex: 0 0 auto;
+  margin-inline: auto !important;
+}
+.in-combat .board .field-card .realistic-unit,
+.in-combat .board .field-card .cultivation-unit-sprite {
+  top: auto !important;
+  bottom: 10% !important;
+  animation: none !important;
+}
+.in-combat .board .field-card .field-atk {
+  position: absolute !important;
+  top: 2% !important;
+  left: 12% !important;
+  right: auto !important;
+  bottom: auto !important;
+  z-index: 7 !important;
+  display: inline-block !important;
+  width: auto !important;
+  max-width: none !important;
+  padding: 1px 3px !important;
+  border: 1px solid #bca875 !important;
+  border-radius: 3px !important;
+  background: #101711e8 !important;
+  color: #fff1cc !important;
+  font: 800 8px/1.1 system-ui, sans-serif !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap !important;
+}
+.in-combat .board .field-card .field-atk small { display: none !important; }
+.in-combat .board .field-card .realm-pill {
+  top: 3% !important;
+  left: auto !important;
+  right: 3% !important;
+  z-index: 6 !important;
+  max-width: 45%;
+  padding: 1px 3px;
+  font-size: 6px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.devour-ghost > span { display: none !important; }
+
+.in-combat .board .field-card:before { bottom: 12% !important; height: 8% !important; }
