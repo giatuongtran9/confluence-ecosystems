@@ -1072,3 +1072,7 @@ body.has-dock .combat-focus-card{margin-bottom:10px}
 .in-combat .board .field-card .realistic-unit{top:-25%!important;left:12.5%!important;width:75%!important;height:75%!important}
 
 .board .field-card:before{bottom:46%!important;height:8%!important}
+
+/* Dedicated transparent PNGs for the four cultivation practitioner realms. Keep the live 75% cell box and placement. */
+.in-combat .board .field-card .cultivation-unit-sprite{position:absolute;top:-25%;left:12.5%;width:75%;height:75%;object-fit:contain;background:none;image-rendering:auto;filter:drop-shadow(2px 5px 3px #12171080);animation:bob 3.8s ease-in-out infinite;z-index:2}
+.in-combat .board .field-card.inactive .cultivation-unit-sprite{filter:grayscale(.8) brightness(.6);animation:none}
