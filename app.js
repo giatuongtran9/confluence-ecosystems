@@ -78,7 +78,8 @@ const btn=(a,t,c='',extra='')=>`<button data-action="${a}" class="${c}" ${extra}
 function sprite(i){return `<span class="sprite" aria-hidden="true" style="background-position:${i%4*100/3}% ${Math.floor(i/4)*100/3}%"></span>`}
 const modelIds=['jade','herb','spirit','bell','heir','hound','conduit','mage','cannon','smelter','sensor','railgun','mantis','vent','totem','executioner','eye','mass','lotus','cauldron','lantern','medium','familiar','altar','crystal','weaver','bellows','behemoth','nanite','core','netrunner','plasma','leech','reaper','larva','herald','monk','petal','imp'];
 const unitAtlas=new Image();unitAtlas.src='assets/units-realistic.png';
-function art(c){let id=c.asset||c.evolvedFrom||c.id;if(id==='houndToken')id='hound';if(id==='echo')id='spirit';let i=modelIds.indexOf(id);if(i<0)i=2;return `<span class="sprite realistic-unit ${c.evolvedFrom?'ascended':''}" aria-hidden="true" style="background-position:${i%6*20}% ${Math.floor(i/6)*100/6}%"></span>`;}
+const cultivationRealmSprites={practitioner:'assets/cultivation-sprites/qi-refining-practitioner.png',cultivationFoundation:'assets/cultivation-sprites/foundation-practitioner.png',cultivationGoldenCore:'assets/cultivation-sprites/golden-core-daoist.png',cultivationNascentSoul:'assets/cultivation-sprites/nascent-soul-sovereign.png'};
+function art(c){const cultivationSprite=cultivationRealmSprites[c.id];if(cultivationSprite)return `<img class="sprite cultivation-unit-sprite" aria-hidden="true" alt="" src="${cultivationSprite}">`;let id=c.asset||c.evolvedFrom||c.id;if(id==='houndToken')id='hound';if(id==='echo')id='spirit';let i=modelIds.indexOf(id);if(i<0)i=2;return `<span class="sprite realistic-unit ${c.evolvedFrom?'ascended':''}" aria-hidden="true" style="background-position:${i%6*20}% ${Math.floor(i/6)*100/6}%"></span>`;}
 
 const BATTLEFIELDS=Object.freeze({
   shen:{theme:'Cultivation',asset:'assets/battlefields/cultivation.jpg?v=20261102-1'},
