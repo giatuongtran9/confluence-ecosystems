@@ -67,7 +67,7 @@ const Game = (() => {
   b.metrics.interactions ??= {}; b.feedback ??= []; const key = [from?.uid ?? 'track', to?.uid ?? 'track', kind].join(':');
   const row = b.metrics.interactions[key] ??= { from: from?.id || null, to: to?.id || null, fromUid: from?.uid, toUid: to?.uid, kind, label, count: 0, last: -99 }; row.count++;
   if (b.time - row.last < .75) return; row.last = b.time;
-  const event = { seq: ++b.feedbackSeq || (b.feedbackSeq = 1), t: b.time, fromUid: from?.uid, toUid: to?.uid, fromSlot: from?.slot, toSlot: to?.slot, kind, text: `${from ? card(from.id).name : 'Track'}${to && to !== from ? ' → ' + (card(to.id)?.name || 'Enemy') : ''}: ${label}` }; b.feedback.push(event); if (b.feedback.length > 40) b.feedback.shift();
+  const event = { seq: ++b.feedbackSeq || (b.feedbackSeq = 1), t: b.time, fromUid: from?.uid, toUid: to?.uid, fromSlot: from?.slot, toSlot: to?.slot, kind, text: `${(from && card(from.id)?.name) || (from && from.hp != null ? 'Runner' : 'Track')}${to && to !== from ? ' → ' + (card(to.id)?.name || 'Enemy') : ''}: ${label}` }; b.feedback.push(event); if (b.feedback.length > 40) b.feedback.shift();
  }
  function report(b) {
   const cards = b.units.map(u => ({ ...record(b, u), consumed: !!u.removed })).sort((a, z) => z.damage - a.damage);
@@ -98,10 +98,136 @@ const Game = (() => {
  function teamPower(b) { return b.units.filter(u => !u.removed && !token(u)).reduce((n, u) => n + (u.permanentAtkBonus || 0), 0) }
  function highestGrowth(b, u) { return Math.max(0, ...allies(b, u).filter(v => !token(v)).map(v => v.permanentAtkBonus || 0)) }
 
+ const APEX_FORMS = [
+  'dragonCubApex','tigerCubApex','xuanwuCubApex','phoenixCubApex','monkeyCubApex',
+  'swordImmortal', 'melodicSaint', 'formationMaster', 'talismanSovereign', 'landscapeSage', 'soulReapingDemon', 'bloodFiendMaster',
+  'ruleArchitect', 'allSeeingOverseer', 'curfewDirector', 'forensicDemiurge', 'backroomsWarden',
+  'slitMouthedSovereign', 'terminusBus', 'midnightOperator', 'mirrorQueen', 'livingTaboo'
+ ];
  const CULT_RELICS = ['flyingSword', 'guqin', 'weiqiBoard', 'inkBrush', 'mountainScroll', 'soulBanner', 'demonBlade'];
- const APEX_FORMS = ['dragonCubApex','tigerCubApex','xuanwuCubApex','phoenixCubApex','monkeyCubApex','swordImmortal', 'melodicSaint', 'formationMaster', 'talismanSovereign', 'landscapeSage', 'soulReapingDemon', 'bloodFiendMaster'];
- function isCultivationRelic(u) { return CULT_RELICS.includes(u.id) }
- function isApexImmortal(u) { return APEX_FORMS.includes(u.id) || u.realm === 4 }
+ const isCultivationRelic = u => CULT_RELICS.includes(u.id);
+
+ const urbanRelicMap = {
+  ruleboard: 'ruleArchitect',
+  panopticon: 'allSeeingOverseer',
+  redPhone: 'curfewDirector',
+  boneSaw: 'forensicDemiurge',
+  elevatorKey: 'backroomsWarden'
+ };
+ const isUrbanRelic = u => Object.keys(urbanRelicMap).includes(u.id) || (card(u.id).genre === 'Haunted' && (card(u.id).tags || []).includes('urban-relic'));
+ const isApexImmortal = u => APEX_FORMS.includes(u.id) || u.realm === 4;
+
+ // Quái Đàm Đô Thị: Investigator & Urban Legend constants
+ const urbanInvestigatorIds = ['investigator', 'occultDetective', 'anomalySpecialist', 'ruleEnforcer'];
+ const isUrbanInvestigator = u => family(u) === 'investigator' && !APEX_FORMS.includes(u.id);
+ const urbanLegendFamilies = ['kuchisake', 'nightBus', 'payphone', 'morgueMirror', 'mannequin'];
+ const urbanLegendTiers = {
+  kuchisake: ['kuchisake', 'scissorBanshee', 'slitMouthedSovereign'],
+  nightBus: ['nightBus', 'ghostRoute', 'terminusBus'],
+  payphone: ['payphone', 'hauntedSwitchboard', 'midnightOperator'],
+  morgueMirror: ['morgueMirror', 'doppelMirror', 'mirrorQueen'],
+  mannequin: ['mannequin', 'stalker', 'livingTaboo']
+ };
+ const isUrbanLegend = u => urbanLegendFamilies.includes(family(u));
+
+ function urbanInvestigatorRealmForDread(dread = 0) { return dread >= 140 ? 3 : dread >= 70 ? 2 : dread >= 25 ? 1 : 0; }
+
+ function updateUrbanInvestigatorRealm(b, u) {
+  if (!isUrbanInvestigator(u)) return;
+  const dread = u.dread || 0, newRealm = urbanInvestigatorRealmForDread(dread), oldRealm = u.realm || 0;
+  u.realm = newRealm;
+  if (newRealm !== oldRealm || u.id !== urbanInvestigatorIds[newRealm]) {
+   const nextId = urbanInvestigatorIds[newRealm];
+   if (u.id !== nextId) evolve(b, u, nextId);
+   const stats = [[8, 1.3], [24, 1.1], [50, 0.85], [90, 0.65]][newRealm];
+   u.baseAtk = stats[0]; u.attackInterval = stats[1];
+   if (newRealm > oldRealm) {
+    const title = ['Investigator', 'Occult Detective', 'Anomaly Specialist', 'Rule Enforcer'][newRealm];
+    fx(b, 'growth', u, null, title.toUpperCase());
+   }
+   persist(b, u);
+  }
+ }
+
+ function grantUrbanViolation(b, u, amount = 1) {
+  if (!u || !isUrbanLegend(u)) return;
+  u.violations = (u.violations || 0) + amount;
+  updateUrbanLegendLineage(b, u);
+  for (const neighbor of neighbors(b, u, false).filter(v => isUrbanLegend(v))) {
+   neighbor.violations = (neighbor.violations || 0) + amount * 0.5;
+   updateUrbanLegendLineage(b, neighbor);
+  }
+ }
+
+ function updateUrbanLegendLineage(b, u) {
+  const fam = family(u);
+  if (!urbanLegendFamilies.includes(fam)) return;
+  const v = u.violations || 0;
+  const forms = urbanLegendTiers[fam];
+  if (!forms) return;
+  const targetTier = v >= 45 ? 2 : v >= 15 ? 1 : 0;
+  const targetId = forms[targetTier];
+  if (u.id !== targetId && !APEX_FORMS.includes(u.id)) {
+   evolve(b, u, targetId);
+   persist(b, u);
+  }
+ }
+
+ function triggerBlackout(b) {
+  const hasDirector = b.units.some(v => !v.removed && v.id === 'curfewDirector');
+  const dur = (hasDirector ? 7.0 : 3.5) * mod(b.run, 'buffDuration');
+  b.curfewUntil = Math.max(b.curfewUntil || 0, b.time + dur);
+  for (const e of living(b)) { e.panicUntil = Math.max(e.panicUntil || 0, b.time + 2.5); e.panic = true; }
+  fx(b, 'curfew', null, null, 'TẮT ĐÈN · GIỜ GIỚI NGHIÊM');
+  for (const v of b.units.filter(v => !v.removed && card(v.id).genre === 'Haunted')) {
+   v.blackouts = (v.blackouts || 0) + 1;
+   grantGrowth(b, v, 1);
+   persist(b, v);
+   if (family(v) === 'payphone') {
+    for (const e of living(b)) {
+     hit(b, v, e, atk(b, v));
+     if ((e.ruleMarks || 0) > 0) status(b, e, 'stun', 1.0, 0, v);
+    }
+    fx(b, 'pulse', v, null, 'CURFEW RING');
+   }
+   if (family(v) === 'morgueMirror') {
+    const clone = spawnToken(b, v, 'mirrorClone', false, { tokenAtk: rawAtk(v), attackInterval: v.attackInterval });
+    if (clone) interact(b, v, clone, 'reflection', 'Blackout manifested mirror clone');
+   }
+  }
+ }
+
+ function addRuleMark(b, e, n = 1, source = null) {
+  if (e.hp <= 0 || e.gone) return;
+  e.ruleMarks = Math.min(5, (e.ruleMarks || 0) + n);
+  b.metrics.violations = (b.metrics.violations || 0) + n;
+  b.totalRuleMarks = (b.totalRuleMarks || 0) + n;
+
+  for (const v of b.units.filter(v => !v.removed && isUrbanInvestigator(v))) {
+   const gain = (b.curfewUntil > b.time ? n * 2 : n);
+   v.dread = (v.dread || 0) + gain;
+   updateUrbanInvestigatorRealm(b, v);
+   interact(b, null, v, 'dread', `+${gain} Dread recorded`);
+  }
+
+  if (source && isUrbanLegend(source)) {
+   grantUrbanViolation(b, source, n);
+  }
+  // Security Monitor drops Incident Dossier on violations
+  for (const cam of b.units.filter(v => !v.removed && v.id === 'securityCam')) {
+   if (rand(b.run) < 0.40) {
+    spawnToken(b, cam, 'dossier', true);
+   }
+  }
+
+  fx(b, 'violation', source || e, e, 'PHẠM QUY');
+
+  const threshold = support(b, 'ruleboard') ? 4 : 5;
+  if (b.totalRuleMarks >= threshold) {
+   b.totalRuleMarks -= threshold;
+   triggerBlackout(b);
+  }
+ }
 
  function practitionerRealmForQi(qi = 0) { return qi >= 175 ? 3 : qi >= 85 ? 2 : qi >= 30 ? 1 : 0 }
 
@@ -125,6 +251,11 @@ const Game = (() => {
   const d = card(u.id), pos = xy(slot);
   let baseAtk = d.baseAtk;
   let attackInterval = d.attackInterval;
+  if (isUrbanInvestigator(u)) {
+   const r = urbanInvestigatorRealmForDread(u.dread || 0);
+   const stats = [[8, 1.3], [24, 1.1], [50, 0.85], [90, 0.65]][r];
+   baseAtk = stats[0]; attackInterval = stats[1];
+  }
   if (isPractitioner(u)) {
    const r = practitionerRealmForQi(u.qi || 0);
    if (r === 0) { baseAtk = 6; attackInterval = 1.5; }
@@ -138,11 +269,11 @@ const Game = (() => {
    threshold: { current: u.threshold || 0, max: d.max || 0, onTrigger: null },
    state: 'active', stateRemaining: 0, removed: false, phantom, mimic: 0, scale: phantom ? .5 : 1,
    attackCount: 0, naniteCrits: u.naniteCrits || 0, critCount: u.critCount || 0, breedAt: 1, overclock: false,
-   cycle: 0, clockRemaining: 0, critGift: false, herbSpeed: 0, emptySpeed: 0, hasteUntil: 0, lastFlip: -99,
+   cycle: 0, clockRemaining: 0, critGift: false, manualUntil: 0, herbSpeed: 0, emptySpeed: 0, hasteUntil: 0, lastFlip: -99,
    ventAt: 0, herbAt: 12, sacrificeAt: 18, offeringSpeed: 0, eliteHits: 0, feedAt: d.id === 'herald' ? 12 : 6,
    summonAt: 12, madnessAt: 8, flash: 0, spatialRole: { isCenter, isCorner, isEdge, sharesRowOrCol },
    onAdjacentAttack: null, onAdjacentStateFlip: null, onAdjacentTrigger: null,
-   qi: u.qi || 0, realm: isPractitioner(u) ? practitionerRealmForQi(u.qi || 0) : (u.realm || 0), swordQi: u.swordQi || 0, souls: u.souls || 0, bladeKills: u.bladeKills || 0, demonAtkBonus: u.demonAtkBonus || 0,
+   qi: u.qi || 0, realm: isPractitioner(u) ? practitionerRealmForQi(u.qi || 0) : (isUrbanInvestigator(u) ? urbanInvestigatorRealmForDread(u.dread || 0) : (u.realm || 0)), dread: u.dread || 0, violations: u.violations || 0, blackouts: u.blackouts || 0, busSweepAt: 8, abductAt: 6, swordQi: u.swordQi || 0, souls: u.souls || 0, bladeKills: u.bladeKills || 0, demonAtkBonus: u.demonAtkBonus || 0,
    bloomAt: 8, mistAt: 4, brewAt: 0, brewGrassAt: 0, missileAt: 5, banishAt: 10
   }
  }
@@ -165,6 +296,8 @@ const Game = (() => {
   b.units = picked.map((u, i) => runtime(b, u, slots[i]));
   b.units.sort((a, z) => a.uid - z.uid);
   b.units.filter(isPractitioner).forEach(u => updatePractitionerRealm(b, u));
+  b.units.filter(isUrbanInvestigator).forEach(u => updateUrbanInvestigatorRealm(b, u));
+  b.units.filter(isUrbanLegend).forEach(u => updateUrbanLegendLineage(b, u));
   b.units.forEach(u => prepareHooks(b, u));
   b.units.forEach(u => record(b, u));
   r.phase = 'combat'; r.lastDraw = picked.map(u => u.uid);
@@ -182,6 +315,20 @@ const Game = (() => {
   for (const u of [...b.units].filter(v => !v.removed && !token(v) && ['shepherd'].includes(v.id))) summon(b, u);
   for (const u of [...b.units].filter(v => !v.removed && !token(v) && ['cub', 'heir', 'herald', 'alchemist', 'harvester'].includes(family(v)))) devour(b, u);
   for (const u of b.units.filter(v => !v.removed && v.id === 'herb')) teamCharge(b, u, 3);
+  for (const u of b.units.filter(u => u.id === 'ruleEnforcer' && !u.removed)) {
+   const relic = neighbors(b, u, false).find(v => !v.removed && urbanRelicMap[v.id]);
+   if (relic) {
+    const apexId = urbanRelicMap[relic.id];
+    interact(b, relic, u, 'awaken', `Rule Enforcer binds ${card(relic.id).name} → ${card(apexId).name} awakens!`);
+    consume(b, u, relic, 'Containment Binding', 0);
+    evolve(b, u, apexId);
+    fx(b, 'growth', u, null, card(apexId).name.toUpperCase());
+    persist(b, u);
+   }
+  }
+  if (b.units.some(u => !u.removed && u.id === 'ruleArchitect')) {
+   b.architectActive = true;
+  }
   flushEvents(b);
  }
 
@@ -196,20 +343,34 @@ const Game = (() => {
  function atk(b, u) {
   let m = 1 + (b.run.relics.includes('blade') ? .12 : 0) + (b.run.legacyPower || 0);
   if (allies(b, u).some(v => family(v) === 'spirit' && (v.state === 'dormant' || v.spiritBuffUntil > b.time))) m += .2 * mod(b.run, 'buffPower');
-  if (isApexImmortal(u) && neighbors(b, u, false).some(v => !v.removed && isCultivationRelic(v))) m *= 1.2;
+  if (isApexImmortal(u) && neighbors(b, u, false).some(v => !v.removed && (isCultivationRelic(v) || isUrbanRelic(v)))) m *= 1.2;
+  if (card(u.id).genre === 'Haunted' && b.curfewUntil > b.time) m *= (u.id === 'ruleArchitect' ? 2.5 : 1.2);
   return (rawAtk(u) + (u.id === 'railgun' ? highestGrowth(b, u) * 2 : 0)) * m * mod(b.run, 'damage')
  }
 
  function speed(b, u) {
-  let n = 1 + (b.run.relics.includes('clock') ? .1 : 0) + (u.emptySpeed + (u.offeringSpeed || 0) + (u.hasteUntil > b.time ? .15 : 0) + (u.feastUntil > b.time ? .2 : 0) + (neighbors(b, u).some(v => v.id === 'netrunner' && v.state === 'active') ? .15 : 0)) * mod(b.run, 'buffPower');
+  let n = 1 + (b.run.relics.includes('clock') ? .1 : 0) + (u.emptySpeed + (u.offeringSpeed || 0) + (u.hasteUntil > b.time ? .15 : 0) + (u.manualUntil > b.time ? .25 : 0) + (u.feastUntil > b.time ? .2 : 0) + (neighbors(b, u).some(v => v.id === 'netrunner' && v.state === 'active') ? .15 : 0)) * mod(b.run, 'buffPower');
   if (allies(b, u).some(v => v.id === 'mantis' && v.overclock)) n += .15 * mod(b.run, 'buffPower');
   if (support(b, 'matriarch') && ['familiar', 'hound'].includes(species(u))) n += .4 * mod(b.run, 'buffPower');
-  if (isCultivationRelic(u) && neighbors(b, u, false).some(v => !v.removed && isApexImmortal(v))) n *= 1.25;
+  if ((isCultivationRelic(u) || isUrbanRelic(u)) && neighbors(b, u, false).some(v => !v.removed && isApexImmortal(v))) n *= 1.25;
+  const inBlackout = b.curfewUntil > b.time;
+  const hasDirector = b.units.some(v => !v.removed && v.id === 'curfewDirector');
+  if (card(u.id).genre === 'Haunted' && inBlackout) n *= hasDirector ? 1.8 : 1.4;
+  if (family(u) === 'mannequin' && (inBlackout || allies(b, u).some(v => v.state !== 'active'))) {
+   n *= (u.id === 'livingTaboo' && inBlackout ? 3.0 : 2.5);
+  }
   return n * (1 + (u.permanentSpeed || 0)) * (u.overclock ? 1 + 2 * mod(b.run, 'buffPower') : 1) * mod(b.run, 'speed')
  }
 
  function sensor(b, u) { return support(b, 'sensor') && u.id !== 'sensor' ? 1 : 0 }
- function crit(b, u) { const lt = lineageTierIds[u.id]?.tier || 0, lineageCrit = u.lineage === 'tiger' && lt >= 1 ? .15 : u.lineage === 'monkey' && lt >= 1 ? .10 : 0; return Math.max(0, Math.min(1, u.critGift ? 1 : .1 + mod(b.run, 'crit', 0) + (b.run.relics.includes('lens') ? .1 : 0) + sensor(b, u) * .1 + (support(b, 'core') && u.id !== 'core' ? .15 : 0) + lineageCrit)) }
+ function crit(b, u) {
+  const lt = lineageTierIds[u.id]?.tier || 0, lineageCrit = u.lineage === 'tiger' && lt >= 1 ? .15 : u.lineage === 'monkey' && lt >= 1 ? .10 : 0;
+  if (u.id === 'livingTaboo' && b.curfewUntil > b.time) return 1.0;
+  if (family(u) === 'mannequin' && allies(b, u).some(v => v.state !== 'active')) return 1.0;
+  if (u.critGift) return 1.0;
+  const manualCrit = (u.manualUntil && u.manualUntil > b.time) ? 0.15 : 0;
+  return Math.max(0, Math.min(1, .1 + mod(b.run, 'crit', 0) + (b.run.relics.includes('lens') ? .1 : 0) + sensor(b, u) * .1 + (support(b, 'core') && u.id !== 'core' ? .15 : 0) + lineageCrit + manualCrit));
+ }
  function downtime(b, u, duration, state) { if (support(b, 'smelter')) duration -= 1; if (state === 'dormant' && support(b, 'medium')) duration -= 2; if (['burnout', 'overheat'].includes(state) && support(b, 'vent')) duration *= .5; return Math.max(.5, duration) }
 
  function flip(b, u, state, duration = 0) {
@@ -274,6 +435,7 @@ const Game = (() => {
 
  function damage(b, e, n, source = null, channel = 'direct') {
   if (e.hp <= 0 || e.gone) return 0;
+  if (e.ruleMarks) n *= (1 + e.ruleMarks * 0.08);
   const actual = Math.min(e.hp, Math.max(0, n));
   if (source) { const row = record(b, source); row.damage += actual; row[channel] += actual; }
   e.hp -= actual;
@@ -301,6 +463,27 @@ const Game = (() => {
       damage(b, other, 160 * mod(b.run, 'damage'), demon, 'ability');
      }
     }
+   }
+
+   // Director of Curfew restores player health on kills
+   const curfewDir = b.units.find(v => !v.removed && v.id === 'curfewDirector');
+   if (curfewDir) {
+    curfewDir.curfewKills = (curfewDir.curfewKills || 0) + 1;
+    if (curfewDir.curfewKills % 5 === 0 && b.run.health < b.run.maxHealth) {
+     b.run.health = Math.min(b.run.maxHealth, b.run.health + 1);
+     interact(b, curfewDir, null, 'heal', 'Curfew Director: 5 kills → restore 1 HP');
+     fx(b, 'growth', curfewDir, null, '+1 HP');
+    }
+   }
+
+   // Cursed Chain Letter spreads rumor on infected enemy death.
+   // This grants each deployed legend +1 directly; it is contagion, not adjacent resonance.
+   if (e.rumorInfected) {
+    for (const legend of b.units.filter(v => !v.removed && isUrbanLegend(v))) {
+     legend.violations = (legend.violations || 0) + 1;
+     updateUrbanLegendLineage(b, legend);
+    }
+    fx(b, 'spell', null, e, 'RUMOR SPREAD');
    }
 
    event(b, 'kill', { source, bleedCarry: (e.bleeds || []).filter(d => d.until > b.time).map(d => ({ ...d })), bleeding: (e.bleeds || []).some(d => d.until > b.time), burning: (e.burns || []).some(d => d.until > b.time) });
@@ -336,7 +519,11 @@ const Game = (() => {
   if (e.hp <= 0 || e.gone) return;
   let torment = normal && !!support(b, 'totem');
   let critical = u.id === 'asura' && (e.shredUntil > b.time || e.nanoUntil > b.time) || rand(b.run) < crit(b, u);
-  if (critical) { const tigerBleedCrit = u.lineage === 'tiger' && (lineageTierIds[u.id]?.tier || 0) >= 2 && (e.bleeds || []).some(d => d.until > b.time); n *= (tigerBleedCrit ? 3 : 2) + sensor(b, u) * .3 + mod(b.run, 'critDamage', 0); }
+  if (critical) {
+   const tigerBleedCrit = u.lineage === 'tiger' && (lineageTierIds[u.id]?.tier || 0) >= 2 && (e.bleeds || []).some(d => d.until > b.time);
+   const mannequinCritBonus = family(u) === 'mannequin' && (b.curfewUntil > b.time || allies(b, u).some(v => v.state !== 'active')) ? 1 : 0;
+   n *= (tigerBleedCrit ? 3 : 2) + sensor(b, u) * .3 + mod(b.run, 'critDamage', 0) + mannequinCritBonus;
+  }
   if (critical && u.id === 'nanite') { e.nanoUntil = b.time + 3; u.naniteCrits = (u.naniteCrits || 0) + 1; if (u.naniteCrits % 6 === 0) grantGrowth(b, u, 1); }
   if (critical && u.id === 'asura') { u.critCount = (u.critCount || 0) + 1; if (u.critCount % 6 === 0) grantGrowth(b, u, 1); }
   let defense = (u.id === 'railgun' ? 0 : e.defense) * (e.shredUntil > b.time ? .5 : e.nanoUntil > b.time ? .75 : 1);
@@ -352,6 +539,7 @@ const Game = (() => {
  function chooseTarget(b, u) {
   let es = living(b);
   if (species(u) === 'hound') { let low = es.filter(e => e.hp / e.maxHp < .3); if (low.length) return low[0] }
+  if (family(u) === 'kuchisake') { let fastest = [...es].sort((a, z) => z.speed - a.speed)[0]; if (fastest) return fastest; }
   if (u.id === 'executioner' || u.lineage === 'tiger' && (lineageTierIds[u.id]?.tier || 0) >= 3) { let elite = es.find(e => e.elite || e.boss || e.champion); if (elite) return elite }
   return es[0]
  }
@@ -458,6 +646,168 @@ const Game = (() => {
     for (const e of living(b).slice(0, 4)) { hit(b, u, e, power * 2.8); dot(b, e, 'bleed', 50, 4, u); }
    }
   }
+    else if (isUrbanInvestigator(u) || ['ruleArchitect', 'allSeeingOverseer', 'curfewDirector', 'forensicDemiurge', 'backroomsWarden'].includes(u.id)) {
+   if (u.id === 'allSeeingOverseer') {
+    for (const e of living(b)) {
+     hit(b, u, e, power);
+     addRuleMark(b, e, 1, u);
+     if (e.speed > 0.32 || e.swift || e.enraged) {
+      status(b, e, 'freeze', 2.0, 0, u);
+     }
+    }
+    fx(b, 'beam', u, target, 'PANOPTICON');
+   } else if (u.id === 'curfewDirector') {
+    hit(b, u, target, power * ((target.ruleMarks || 0) > 0 ? 2.0 : 1.0));
+    addRuleMark(b, target, 1, u);
+   } else if (u.id === 'forensicDemiurge') {
+    hit(b, u, target, power);
+    dot(b, target, 'bleed', 50, 4, u);
+    if (u.attackCount % 4 === 0 && (target.elite || target.boss || target.champion)) {
+     damage(b, target, target.maxHp * 0.12, u, 'ability');
+     fx(b, 'spell', u, target, '−12% MAX HP');
+    }
+   } else if (u.id === 'backroomsWarden') {
+    for (const e of living(b).slice(0, 3)) {
+     hit(b, u, e, power);
+     addRuleMark(b, e, 1, u);
+    }
+    if (b.time >= (u.backroomsAt || 6)) {
+     u.backroomsAt = b.time + 6;
+     for (const e of living(b).slice(0, 3)) {
+      dot(b, e, 'bleed', 150, 4.0 * mod(b.run, 'buffDuration'), u);
+      warp(b, e, 6, u);
+      fx(b, 'warp', u, e, 'BACKROOMS');
+     }
+    }
+   }
+   const r = urbanInvestigatorRealmForDread(u.dread || 0);
+   if (u.id === 'ruleArchitect') {
+    for (const e of living(b).slice(0, 4)) { trueHit(b, u, e, power); addRuleMark(b, e, 1, u); }
+    if (u.attackCount % 4 === 0) {
+     for (const e of living(b).filter(e => (e.ruleMarks || 0) > 0)) { trueHit(b, u, e, 240 + teamPower(b) * 2); fx(b, 'curfew', u, e, 'DETONATE'); }
+    }
+   } else if (r === 0) {
+    hit(b, u, target, power); addRuleMark(b, target, 1, u);
+   } else if (r === 1) {
+    for (const e of living(b).slice(0, 2)) { hit(b, u, e, power); addRuleMark(b, e, 1, u); }
+   } else if (r === 2) {
+    hit(b, u, target, power); addRuleMark(b, target, 1, u);
+    for (const e of living(b).filter(e => (e.ruleMarks || 0) > 0).slice(0, 3)) { hit(b, u, e, power * 2); }
+   } else if (r >= 3) {
+    const top3 = [...living(b)].sort((a, z) => z.hp - a.hp).slice(0, 3);
+    for (const e of top3) { trueHit(b, u, e, power); addRuleMark(b, e, 1, u); }
+   }
+  }
+  else if (family(u) === 'kuchisake') {
+   const marks = target.ruleMarks || 0;
+   const mult = marks > 0 ? (u.id === 'slitMouthedSovereign' ? 3.5 : 2.0) : 1.0;
+   hit(b, u, target, power * mult);
+   const dps = u.id === 'slitMouthedSovereign' ? 35 : u.id === 'scissorBanshee' ? 15 : 5;
+   dot(b, target, 'bleed', dps, 4, u);
+   if (target.speed > 0.30) addRuleMark(b, target, 1, u);
+   if (u.id === 'scissorBanshee') {
+    const second = living(b).find(e => e !== target);
+    if (second) hit(b, u, second, power * 0.5);
+   }
+   if (u.id === 'slitMouthedSovereign') {
+    if (!target.boss && !target.champion && target.hp / target.maxHp < 0.15) {
+     damage(b, target, target.hp, u, 'direct');
+     fx(b, 'shot', u, target, 'EXECUTE');
+    }
+    if (u.attackCount % 6 === 0 && target.boss) {
+     damage(b, target, target.hp * 0.10, u, 'ability');
+     fx(b, 'spell', u, target, '−10% CURRENT HP');
+    }
+   }
+  }
+  else if (family(u) === 'nightBus') {
+   const targetP = target.p;
+   const targetEdge = Math.floor(Math.max(0, Math.min(15.999, targetP)) / 4);
+   const swept = u.id === 'terminusBus'
+    ? living(b).filter(e => Math.floor(Math.max(0, Math.min(15.999, e.p)) / 4) === targetEdge)
+    : living(b).filter(e => Math.abs(e.p - targetP) <= (u.id === 'ghostRoute' ? 2.5 : 2));
+   for (const e of swept) {
+    hit(b, u, e, power);
+    if ((e.ruleMarks || 0) >= 1) {
+     warp(b, e, u.id === 'terminusBus' ? 5 : 3, u);
+     grantUrbanViolation(b, u, 1);
+    } else {
+     addRuleMark(b, e, 1, u);
+    }
+   }
+   if (u.id === 'terminusBus' && b.time >= (u.abductAt || 6)) {
+    u.abductAt = b.time + 6;
+    for (const e of living(b).slice(0, 2)) {
+     dot(b, e, 'bleed', 140, 3 * mod(b.run, 'buffDuration'), u);
+     warp(b, e, 5, u);
+     fx(b, 'warp', u, e, 'BUS 44');
+    }
+   }
+  }
+  else if (family(u) === 'payphone') {
+   const ringEvery = u.id === 'midnightOperator' ? 2 : 3;
+   if (u.attackCount % ringEvery === 0) {
+    for (const e of living(b)) {
+     hit(b, u, e, power * (u.id === 'midnightOperator' ? 1.5 : 1.0));
+     if (u.id === 'midnightOperator' ? e.panicUntil > b.time : (e.ruleMarks || 0) > 0) {
+      status(b, e, 'stun', u.id === 'midnightOperator' ? 2.0 : 0.8, 0, u);
+      grantUrbanViolation(b, u, 1);
+     }
+    }
+    if (u.id === 'midnightOperator' && b.curfewUntil > b.time) b.curfewUntil += 1.5;
+    fx(b, 'pulse', u, null, 'REDIAL');
+   } else {
+    hit(b, u, target, power);
+   }
+  }
+  else if (family(u) === 'morgueMirror') {
+   hit(b, u, target, power);
+   const adjAllies = neighbors(b, u, false);
+   if (adjAllies.length) {
+    const highestAdj = Math.max(...adjAllies.map(rawAtk));
+    const bonusPct = u.id === 'mirrorQueen' ? 1.0 : u.id === 'doppelMirror' ? 0.5 : 0.25;
+    damage(b, target, highestAdj * bonusPct, u, 'ability');
+    if (u.id === 'mirrorQueen') {
+     const cluster = living(b).filter(e => e !== target && (e.frozenUntil > b.time || (e.stuns || []).some(v => v.until > b.time)) && Math.abs(e.p - target.p) <= 2);
+     for (const e of cluster) damage(b, e, highestAdj, u, 'ability');
+    }
+    if ((target.ruleMarks || 0) > 0 || b.curfewUntil > b.time) grantUrbanViolation(b, u, 1);
+   }
+  }
+  else if (u.id === 'redRaincoat') {
+   hit(b, u, target, power);
+   if (target.slows.length || target.frozenUntil > b.time) {
+    trueHit(b, u, target, 18);
+    addRuleMark(b, target, 1, u);
+   }
+  }
+  else if (u.id === 'stair13') {
+   hit(b, u, target, power);
+   if (cornerSection(u.slot, target)) {
+    damage(b, target, 35, u, 'ability');
+    addRuleMark(b, target, 1, u);
+    if ((target.ruleMarks || 0) >= 5) warp(b, target, 2, u);
+   }
+  }
+  else if (u.id === 'chainLetter') {
+   hit(b, u, target, power);
+   target.rumorInfected = true;
+   for (const legend of b.units.filter(v => !v.removed && isUrbanLegend(v))) {
+    legend.violations = (legend.violations || 0) + 1;
+    updateUrbanLegendLineage(b, legend);
+   }
+   fx(b, 'spell', u, target, 'RUMOR');
+  }
+  else if (family(u) === 'mannequin') {
+   const speedUp = (b.curfewUntil > b.time || allies(b, u).some(v => v.state !== 'active'));
+   const mult = u.id === 'livingTaboo' ? 3.0 : speedUp ? 2.5 : 1.0;
+   hit(b, u, target, power * mult);
+   if (u.id === 'stalker') status(b, target, 'slow', 3, 0.30, u);
+   if (u.id === 'livingTaboo' && target.p >= 14.5) {
+    damage(b, target, target.hp, u, 'direct');
+    fx(b, 'shot', u, target, 'AMBUSH');
+   }
+  }
   else if (u.id === 'bell') { let empowered = b.time - u.lastFlip <= 2; if (empowered) interact(b, u.lastFlipSource || u, u, 'bell', 'state change → empowered ring + stun'); for (const e of living(b)) { hit(b, u, e, power + (empowered ? 24 * mod(b.run, 'damage') : 0)); status(b, e, 'slow', 1.5, .25, u); if (empowered) status(b, e, 'stun', .75, 0, u) } }
   else if (u.id === 'railgun') { const has = sensor(b, u); if (has) interact(b, support(b, 'sensor'), u, 'railgun', 'Sensor → five-target volley + knockback'); for (const e of living(b).slice(0, has ? 5 : 3)) { hit(b, u, e, power); if (has) warp(b, e, 1, u) } fx(b, 'beam', u, target, ''); }
   else if (['immortal', 'progenitor', 'bellows', 'reaper'].includes(u.id)) { for (const [targetIndex, e] of living(b).slice(0, u.id === 'immortal' || u.id === 'bellows' ? 3 : 2).entries()) { let n = power * (u.id === 'immortal' && targetIndex > 0 ? .55 : 1); u.detonating = u.id === 'reaper' && e.bleeds.filter(d => d.until > b.time).length >= 4; if (u.detonating) { const burst = e.bleeds.reduce((sum, d) => sum + d.dps * Math.max(0, d.until - b.time), 0); e.bleeds = []; n *= 3; damage(b, e, burst * 1.5 * (e.vulnerableUntil > b.time ? 1 + e.vulnerability : 1), u, 'ability'); } hit(b, u, e, n); u.detonating = false; if (u.id === 'reaper') dot(b, e, 'bleed', 5, 4, u); if (u.id === 'bellows') dot(b, e, 'burn', 5, 4, u); } }
@@ -498,7 +848,10 @@ const Game = (() => {
  }
  function spawn(b) {
   let plan = b.plan, idx = b.spawned, boss = b.run.node.type === 'boss' && idx === plan.count - 1, champion = !!plan.trial && idx === plan.count - 1, elite = !boss && !champion && (b.run.node.type === 'elite' && idx % 4 === 0), armored = !boss && !champion && !elite && (plan.encounter === 'armor' ? idx % 3 !== 2 : !plan.encounter && b.run.depth > 3 && idx % 5 === 3), swift = !boss && !champion && !elite && !armored && (plan.encounter === 'fast' ? idx % 3 !== 2 : !plan.encounter && b.run.depth > 1 && idx % 4 === 2), hp = boss ? plan.bossHp : champion ? plan.trial.hp : plan.hp * (elite ? 2 : armored ? 1.45 : 1);
-  b.enemies.push({ uid: ++b.enemyUid, p: 0, hp, maxHp: hp, speed: (champion ? .31 : plan.speed) * (boss ? .95 : swift ? 1.6 : armored ? .85 : 1), leak: boss ? b.run.maxHealth : champion ? plan.trial.leak : elite ? 6 : armored ? 3 : 2, defense: armored ? .4 : elite ? .25 : (boss || champion) ? .2 : 0, boss, champion, maxProgress: 0, elite, armored, swift, bornAt: b.time, enraged: false, gone: false, slows: [], frozenUntil: 0, shredUntil: 0, bleeds: [], burns: [], venoms: [], vulnerableUntil: 0, vulnerability: 0, auras: [] });
+  const newEnemy = { uid: ++b.enemyUid, p: 0, hp, maxHp: hp, speed: (champion ? .31 : plan.speed) * (boss ? .95 : swift ? 1.6 : armored ? .85 : 1), leak: boss ? b.run.maxHealth : champion ? plan.trial.leak : elite ? 6 : armored ? 3 : 2, defense: armored ? .4 : elite ? .25 : (boss || champion) ? .2 : 0, boss, champion, maxProgress: 0, elite, armored, swift, bornAt: b.time, enraged: false, gone: false, panic: false, panicUntil: 0, retreatingUntil: 0, slows: [], frozenUntil: 0, shredUntil: 0, bleeds: [], burns: [], venoms: [], vulnerableUntil: 0, vulnerability: 0, auras: [] };
+  b.enemies.push(newEnemy);
+  const architect = b.units.find(v => !v.removed && v.id === 'ruleArchitect');
+  if (architect) addRuleMark(b, newEnemy, 2, architect);
   b.spawned++;
  }
 
@@ -517,10 +870,18 @@ const Game = (() => {
   for (const e of living(b)) {
    if ((e.boss || e.champion) && !e.enraged && b.time - e.bornAt >= 45) { e.enraged = true; e.frozenUntil = 0;  }
    e.bleeds = e.bleeds.filter(z => z.until > b.time); e.burns = (e.burns || []).filter(z => z.until > b.time); e.venoms = (e.venoms || []).filter(z => z.until > b.time); for (const dot of [...e.bleeds, ...e.burns, ...e.venoms]) damage(b, e, dot.dps * dt * (e.vulnerableUntil > b.time ? 1 + e.vulnerability : 1), b.units.find(u => u.uid === dot.owner) || null, 'dot'); if (e.gone) continue;
-   e.slows = e.slows.filter(s => s.until > b.time); let aura = b.units.some(v => !v.removed && v.id === 'wraith') ? ((e.boss || e.champion) ? .15 : .3) : 0; let slow = Math.max(aura, ...e.slows.map(s => s.power)), move = e.frozenUntil > b.time ? 0 : 1 - slow; e.p += e.speed * dt * move * (e.enraged ? 1.25 : 1) * (b.run.relics.includes('frost') ? .9 : 1);
+   e.slows = e.slows.filter(s => s.until > b.time); e.panic = e.panicUntil > b.time; let aura = b.units.some(v => !v.removed && v.id === 'wraith') ? ((e.boss || e.champion) ? .15 : .3) : 0; let slow = Math.max(aura, ...e.slows.map(s => s.power)), move = e.frozenUntil > b.time ? 0 : 1 - slow;
+   if (b.curfewUntil > b.time) move *= 0.75; e.p += e.speed * dt * move * (e.enraged ? 1.25 : 1) * (b.run.relics.includes('frost') ? .9 : 1);
 
+   if (e.retreatingUntil > b.time) e.p -= e.speed * dt * move * (e.enraged ? 1.25 : 1) * (b.run.relics.includes('frost') ? .9 : 1) * 2;
    e.maxProgress = Math.max(e.maxProgress || 0, e.p); if (e.p >= 16) {
     if (e.champion) recordTrial(b, e, false);
+    if (b.units.some(v => !v.removed && v.id === 'ruleArchitect') && !b.room404Saved) {
+     b.room404Saved = true; e.gone = true;
+     interact(b, null, e, 'room404', 'Room 404 trapped the runner · leak prevented');
+     fx(b, 'warp', null, e, 'PHÒNG 404');
+     continue;
+    }
     const guardian=b.units.find(v=>!v.removed&&v.lineage==='xuanwu'&&(lineageTierIds[v.id]?.tier||0)>=4&&(v.savedLeaks||0)<2);
     if (guardian) { guardian.savedLeaks=(guardian.savedLeaks||0)+1; e.gone=true; interact(b,guardian,e,'save',`Xuanwu prevents leak ${guardian.savedLeaks}/2`); continue; }
     e.gone = true;
@@ -563,7 +924,7 @@ const Game = (() => {
   if (token(u)) return;
   const src = b.run.roster.find(v => v.uid === u.uid);
   if (src) {
-   for (const k of ['id', 'permanentAtkBonus', 'permanentSpeed', 'upgradePath', 'lineage', 'lineageStacks', 'meals', 'qiGrowth', 'returns', 'witnesses', 'qi', 'realm', 'swordQi', 'souls', 'bladeKills', 'demonAtkBonus']) {
+   for (const k of ['id', 'permanentAtkBonus', 'permanentSpeed', 'upgradePath', 'lineage', 'lineageStacks', 'meals', 'qiGrowth', 'returns', 'witnesses', 'qi', 'realm', 'swordQi', 'souls', 'bladeKills', 'demonAtkBonus', 'dread', 'violations', 'blackouts']) {
     if (u[k] !== undefined) src[k] = u[k];
    }
   }
@@ -611,7 +972,20 @@ const Game = (() => {
   fx(b, 'growth', u, null, 'EVOLVED');
  }
 
- function evolutionProgress(u) { switch (family(u)) { case 'jade': return { current: u.qiGrowth || 0, max: 18 }; case 'cub': return { current: u.lineageStacks || 0, max: 6 }; case 'heir': return { current: u.meals || 0, max: 3 }; case 'spirit': return { current: u.returns || 0, max: 5 }; case 'monk': return { current: u.witnesses || 0, max: 3 }; default: return null } }
+ function evolutionProgress(u) { switch (family(u)) { case 'jade': return { current: u.qiGrowth || 0, max: 18 }; case 'cub': return { current: u.lineageStacks || 0, max: 6 }; case 'heir': return { current: u.meals || 0, max: 3 }; case 'spirit': return { current: u.returns || 0, max: 5 }; case 'monk': return { current: u.witnesses || 0, max: 3 };
+   case 'investigator': {
+    const dread = u.dread || 0;
+    if (dread >= 140) return { current: 140, max: 140, label: 'Ready for Rule Binding' };
+    if (dread >= 70) return { current: dread, max: 140 };
+    if (dread >= 25) return { current: dread, max: 70 };
+    return { current: dread, max: 25 };
+   }
+   case 'kuchisake': case 'nightBus': case 'payphone': case 'morgueMirror': {
+    const v = u.violations || 0;
+    if (v >= 45) return { current: 45, max: 45, label: 'Mythic Apex Achieved' };
+    if (v >= 15) return { current: v, max: 45 };
+    return { current: v, max: 15 };
+   } default: return null } }
  const species = u => token(u) ? (u.origin || card(u.id).species) : family(u);
  function preyEligible(predator, prey) { if (prey.removed || predator === prey) return false; const diets = { cub: ['serpentFodder','hound','scuttler','flameToad','peachFodder'], heir: ['hound'], herald: ['mass', 'larva'], alchemist: ['lotus', 'herb'], harvester: ['lamb'] }; return card(predator.id).genre === card(species(prey))?.genre && (diets[family(predator)] || []).includes(species(prey)); }
  function consume(b, consumer, victim, reason = 'Devour', reward = 0) {
@@ -699,7 +1073,7 @@ const Game = (() => {
  }
  function teamCharge(b, u, n) { for (const v of allies(b, u).filter(v => abilityGauge(v) && !token(v))) { tick(b, v, n, u); interact(b, u, v, 'charge', `+${n} ability progress`); } }
  function refine(b, u) { const v = allies(b, u).filter(v => v.attackInterval > 0 && !token(v)).sort((a, z) => a.permanentAtkBonus - z.permanentAtkBonus || a.uid - z.uid)[0]; if (!v) return false; u.refinements = (u.refinements || 0) + 1; growth(b, v, 6); teamCharge(b, u, 3); interact(b, u, v, 'refinement', 'refine → +6 permanent ATK; root survives'); u.threshold.current = 0; u.refineAt = b.time + 18; return true; }
- function warp(b, e, tiles, source = null) { if (e.gone || e.hp <= 0) return; const before = e.p; e.p = Math.max(0, e.p - ((e.boss || e.champion) ? e.enraged ? 0 : tiles * .5 : tiles)); if (source && before > e.p) event(b, 'displaced', { source, tiles: before - e.p }); }
+ function warp(b, e, tiles, source = null) { if (e.gone || e.hp <= 0) return; const before = e.p; e.p = Math.max(0, e.p - ((e.boss || e.champion) ? e.enraged ? 0 : tiles * .5 : tiles)); e.retreatingUntil = Math.max(e.retreatingUntil || 0, b.time + 2.5); e.panicUntil = Math.max(e.panicUntil || 0, b.time + 2.5); e.panic = true; if (source && before > e.p) event(b, 'displaced', { source, tiles: before - e.p }); }
  function pulseMadness(b, u) { const stored = u.madnessPower || 0; u.madnessPower = 0; for (const e of living(b)) { const late = e.p >= 12; trueHit(b, u, e, 200 + teamPower(b) * .75 + stored); if (late) warp(b, e, 5); } u.lastMadness = b.time; u.madnessAt = b.time + 8; interact(b, u, u, 'madness', `MADNESS → +${Math.round(stored)} stored damage released`); fx(b, 'pulse', u, null, 'MADNESS'); }
  function dot(b, e, type, dps, seconds, u) { if (e.hp <= 0 || e.gone) return; const key = type === 'burn' ? 'burns' : 'bleeds'; e[key] ??= []; e[key] = e[key].filter(x => x.until > b.time); if (type === 'bleed' && card(species(u))?.genre === 'Bloodline' && support(b, 'matriarch')) seconds += b.units.filter(v => !v.removed && ['familiar', 'hound'].includes(species(v))).length * .5; e[key].push({ until: b.time + seconds, dps: dps * mod(b.run, 'damage') * mod(b.run, (e.elite || e.boss || e.champion) ? 'eliteDamage' : 'normalDamage'), owner: u.uid }); }
  function venom(b, e, dps, seconds, u) { if (e.hp <= 0 || e.gone) return; e.venoms ??= []; e.venoms = e.venoms.filter(x => x.until > b.time); e.venoms.push({ until: b.time + seconds, dps: dps * mod(b.run, 'damage'), owner: u.uid }); }
@@ -707,6 +1081,71 @@ const Game = (() => {
 
  function extras(b, u, dt) {
   breed(b, u); if (token(u)) return;
+
+  // Forensic Coroner examines adjacent Incident Dossier
+  if (u.id === 'coroner' && b.time >= (u.autopsyAt || 5)) {
+   u.autopsyAt = b.time + 5;
+   const adjDossier = neighbors(b, u, false).find(v => v.id === 'dossier' && !v.removed);
+   if (adjDossier) {
+    adjDossier.removed = true;
+    const recipient = neighbors(b, u, false).filter(v => !v.removed && !token(v) && card(v.id).genre === 'Haunted').sort((a, z) => rawAtk(a) - rawAtk(z))[0] || u;
+    growth(b, recipient, 3);
+    const investigator = b.units.find(v => !v.removed && isUrbanInvestigator(v));
+    if (investigator) {
+     investigator.dread = (investigator.dread || 0) + 10;
+     updateUrbanInvestigatorRealm(b, investigator);
+    }
+    interact(b, u, recipient, 'autopsy', 'Dossier examined: +3 perm ATK, +10 Dread');
+    fx(b, 'growth', recipient, null, '+3 ATK');
+   }
+  }
+
+  // Black-Box Cryptographer decodes adjacent Incident Dossier into Survival Manual
+  if (u.id === 'decoder' && b.time >= (u.decodeAt || 6)) {
+   u.decodeAt = b.time + 6;
+   const adjDossier = neighbors(b, u, false).find(v => v.id === 'dossier' && !v.removed);
+   if (adjDossier) {
+    adjDossier.removed = true;
+    const dur = 4 * mod(b.run, 'buffDuration');
+    for (const ally of b.units.filter(v => !v.removed && card(v.id).genre === 'Haunted')) {
+     ally.manualUntil = Math.max(ally.manualUntil || 0, b.time + dur);
+    }
+    const investigator = b.units.find(v => !v.removed && isUrbanInvestigator(v));
+    if (investigator) {
+     investigator.dread = (investigator.dread || 0) + 8;
+     updateUrbanInvestigatorRealm(b, investigator);
+    }
+    interact(b, u, null, 'manual', 'Survival Manual decoded: +25% team speed, +15% crit, +8 Dread');
+    fx(b, 'pulse', u, null, 'SURVIVAL MANUAL');
+   }
+  }
+
+  // Emergency Broadcast drops Dossier every 8s
+  if (u.id === 'radioPA' && b.time >= (u.paAt || 8)) {
+   u.paAt = b.time + 8;
+   spawnToken(b, u, 'dossier', false);
+   for (const e of living(b).filter(e => (e.ruleMarks || 0) > 0)) {
+    status(b, e, 'slow', 3, 0.25, u);
+   }
+   fx(b, 'pulse', u, null, 'CURFEW WARNING');
+  }
+
+  // Panopticon Monitor scans all 16 tiles every 4s
+  if (u.id === 'panopticon' && b.time >= (u.panopticonAt || 4)) {
+   u.panopticonAt = b.time + 4;
+   const fastRunners = [...living(b)].sort((a, z) => z.speed - a.speed).slice(0, 3);
+   for (const e of fastRunners) {
+    addRuleMark(b, e, 1, u);
+   }
+  }
+
+  // Liminal Keycard warps leading marked runners every 7s
+  if (u.id === 'elevatorKey' && b.time >= (u.keyAt || 7)) {
+   u.keyAt = b.time + 7;
+   for (const e of living(b).filter(e => (e.ruleMarks || 0) > 0).slice(0, 2)) {
+    warp(b, e, 3, u);
+   }
+  }
   if (u.resonanceLevel && b.time >= (u.resonateAt || 6)) { u.resonateAt = b.time + 6; teamCharge(b, u, u.resonanceLevel); }
   if (u.id === 'shepherd' && b.time >= (u.pastureAt || 8)) { u.pastureAt = b.time + 8; summon(b, u); }
   if (u.id === 'soulwell' && living(b).length && b.time >= (u.soulPulseAt || 6)) { u.soulPulseAt = b.time + 6; for (const e of living(b).slice(0, 3)) trueHit(b, u, e, 160 + teamPower(b) * .75); }
@@ -853,6 +1292,6 @@ const Game = (() => {
   if (abilityGauge(u) && u.threshold.current >= u.threshold.max) tick(b, u, 0);
  }
 
- return { cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, cornerSection, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, practitionerRealmForQi, isPractitioner, isCultivationRelic, isApexImmortal };
+ return { cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, cornerSection, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, practitionerRealmForQi, isPractitioner, isCultivationRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation };
 })();
 if (typeof module !== 'undefined') module.exports = Game;
