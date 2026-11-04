@@ -96,8 +96,8 @@ const Game = (() => {
     b.effects.push({ type: 'impact', x: point.x, y: point.y, tx: point.x, ty: point.y, text: `−${Math.round(baseDmg)}`, ttl: 1.0 });
    }
    grantUrbanViolation(b, stair, 1);
-   addRuleMark(b, e, 1, null);
-   if ((e.ruleMarks || 0) >= 5) {
+   addTabooMark(b, e, 'stair13', 1, stair);
+   if (getTabooMark(e, 'stair13') >= 2) {
     const warpTiles = stair.id === 'penroseLabyrinth' ? 4 : 2;
     const before = e.p;
     warp(b, e, warpTiles, stair);
@@ -128,7 +128,7 @@ const Game = (() => {
    dot(b, e, 'bleed', u.id === 'crimsonHarbinger' ? 30 : 10, 4, u);
    status(b, e, 'slow', 2.0, 0.35, u);
    grantUrbanViolation(b, u, 1);
-   addRuleMark(b, e, 1, null);
+   addTabooMark(b, e, 'redRaincoat', 1, u);
 
    if (inBlackout && (e.panic || lookedBack)) {
     for (const nearby of living(b).filter(other => Math.abs(other.p - currentProgress) <= 2.0)) {
@@ -238,6 +238,34 @@ const Game = (() => {
  }
  const isUrbanInvestigator = u => family(u) === 'investigator' && !APEX_FORMS.includes(u.id);
  const urbanLegendFamilies = ['kuchisake', 'nightBus', 'payphone', 'morgueMirror', 'mannequin', 'stair13', 'redRaincoat'];
+ const URBAN_LEGEND_MARK_NAMES = { kuchisake: 'Scissor Slit', nightBus: 'Phantom Fare', payphone: 'Dead Wire', morgueMirror: 'Mirror Stigma', mannequin: 'Stillness Hex', stair13: 'Penrose Stumble', redRaincoat: 'Look-Back Omen' };
+ function getTabooMark(e, fam) { return e && e.tabooMarks ? (e.tabooMarks[fam] || 0) : 0 }
+ function totalTabooMarks(e) { return Object.values(e?.tabooMarks || {}).reduce((sum, value) => sum + (Number(value) || 0), 0) }
+ function hasLegendMark(e, fam) { return getTabooMark(e, fam) > 0 }
+ function breaksLegendNaturalRule(b, u, e) {
+  if (!e || e.gone || e.hp <= 0) return false;
+  const fam = family(u);
+  const panicked = e.panic || e.panicUntil > b.time;
+  const fleeing = e.retreatingUntil > b.time;
+  if (fam === 'kuchisake') return e.speed > 0.30 || panicked || fleeing;
+  if (fam === 'nightBus') return e.speed > 0.40 || panicked || fleeing;
+  if (fam === 'payphone') return panicked || fleeing;
+  if (fam === 'morgueMirror') return flank(u.slot, e) || panicked || fleeing || e.frozenUntil > b.time || (e.stuns || []).some(v => v.until > b.time);
+  if (fam === 'mannequin') return e.speed > 0.40 || panicked || fleeing;
+  if (fam === 'stair13') return false; // This legend is activated only by its step/corner crossing trap.
+  if (fam === 'redRaincoat') return fleeing || e.p < (e.previousP ?? e.p) || (e.slows || []).some(v => v.until > b.time);
+  return false;
+ }
+ function isLegendTarget(b, u, e) { const fam = family(u); return !!e && !e.gone && e.hp > 0 && (hasLegendMark(e, fam) || breaksLegendNaturalRule(b, u, e)); }
+ function markNaturalBreach(b, u, e) { const fam = family(u); return breaksLegendNaturalRule(b, u, e) ? addTabooMark(b, e, fam, 1, u) : 0 }
+ function addTabooMark(b, e, fam, n = 1, source = null) {
+  if (!e || e.gone || e.hp <= 0 || !urbanLegendFamilies.includes(fam) || n <= 0) return 0;
+  e.tabooMarks ||= { kuchisake: 0, nightBus: 0, payphone: 0, morgueMirror: 0, mannequin: 0, stair13: 0, redRaincoat: 0 };
+  e.tabooMarks[fam] = (e.tabooMarks[fam] || 0) + n;
+  fx(b, 'violation', source || e, e, `+${n} ${URBAN_LEGEND_MARK_NAMES[fam]}`);
+  return n;
+ }
+
  const urbanLegendTiers = {
   kuchisake: ['kuchisake', 'scissorBanshee', 'slitMouthedSovereign'],
   nightBus: ['nightBus', 'ghostRoute', 'terminusBus'],
@@ -625,10 +653,11 @@ const Game = (() => {
  function chooseTarget(b, u) {
   let es = living(b);
   if (species(u) === 'hound') { let low = es.filter(e => e.hp / e.maxHp < .3); if (low.length) return low[0] }
-  if (family(u) === 'kuchisake') { let fastest = [...es].sort((a, z) => z.speed - a.speed)[0]; if (fastest) return fastest; }
-  if (['nightBus', 'payphone', 'morgueMirror', 'mannequin'].includes(family(u))) {
-   const violators = es.filter(e => tabooBreaker(b, e) || (family(u) === 'morgueMirror' && flank(u.slot, e)));
-   if (violators.length) return violators[0];
+  if (isUrbanLegend(u)) {
+   const valid = es.filter(e => isLegendTarget(b, u, e));
+   if (!valid.length) return null;
+   if (family(u) === 'kuchisake') return [...valid].sort((a, z) => z.speed - a.speed)[0];
+   return valid[0];
   }
   if (u.id === 'executioner' || u.lineage === 'tiger' && (lineageTierIds[u.id]?.tier || 0) >= 3) { let elite = es.find(e => e.elite || e.boss || e.champion); if (elite) return elite }
   return es[0]
@@ -636,13 +665,8 @@ const Game = (() => {
 
  function attack(b, u) {
   const target = chooseTarget(b, u); if (!target) return false;
+  if (isUrbanLegend(u) && !isLegendTarget(b, u, target)) return false;
   const inBlackout = b.curfewUntil > b.time;
-  const tabooBreak = e => tabooBreaker(b, e);
-  if (family(u) === 'kuchisake' && !inBlackout && !living(b).some(e => tabooBreaker(b, e))) return false;
-  if (family(u) === 'nightBus' && !living(b).some(tabooBreak)) return false;
-  if (family(u) === 'payphone' && !living(b).some(tabooBreak)) return false;
-  if (family(u) === 'morgueMirror' && !inBlackout && !living(b).some(e => tabooBreak(e) || flank(u.slot, e))) return false;
-  if (family(u) === 'mannequin' && !inBlackout && !living(b).some(tabooBreak) && !allies(b, u).some(v => v.state !== 'active')) return false;
   if (u.id === 'allSeeingOverseer' && !living(b).some(e => e.swift || e.enraged || e.speedBoostUntil > b.time || e.speed > 0.40)) return false;
   u.attackCount++; record(b, u).attacks++; u.flash = .18; let power = atk(b, u);
   for (const v of allies(b, u)) {
@@ -771,7 +795,7 @@ const Game = (() => {
     for (const e of living(b).slice(0, 3)) {
      hit(b, u, e, power);
      grantUrbanViolation(b, u, 1);
-   addRuleMark(b, e, 1, null);
+     addRuleMark(b, e, 1, null);
     }
     if (b.time >= (u.backroomsAt || 6)) {
      u.backroomsAt = b.time + 6;
@@ -813,17 +837,17 @@ const Game = (() => {
     u.lastRunnerReact = u.lastRunnerReact || {};
     if (b.time - (u.lastRunnerReact[target.uid] || -99) < 1.5) return false;
     u.lastRunnerReact[target.uid] = b.time;
-   } else if (!(target.speed > 0.40 || target.panic || target.panicUntil > b.time || target.retreatingUntil > b.time || (target.ruleMarks || 0) > 0)) {
+   } else if (!isLegendTarget(b, u, target)) {
     return false;
    }
-   const marks = target.ruleMarks || 0;
+   const marks = getTabooMark(target, 'kuchisake');
    const mult = marks > 0 ? (u.id === 'slitMouthedSovereign' ? 3.5 : 2.0) : 1.0;
    hit(b, u, target, power * mult);
    const dps = u.id === 'slitMouthedSovereign' ? 35 : u.id === 'scissorBanshee' ? 15 : 5;
    dot(b, target, 'bleed', dps, 4, u);
-   addRuleMark(b, target, 1, u);
+   markNaturalBreach(b, u, target);
    if (u.id === 'scissorBanshee') {
-    const second = living(b).find(e => e !== target);
+    const second = living(b).find(e => e !== target && isLegendTarget(b, u, e));
     if (second) hit(b, u, second, power * 0.5);
    }
    if (u.id === 'slitMouthedSovereign') {
@@ -847,17 +871,17 @@ const Game = (() => {
     if (b.time - (u.lastRunnerReact[target.uid] || -99) < 1.5) return false;
     u.lastRunnerReact[target.uid] = b.time;
    }
-   const violators = living(b).filter(e => tabooBreaker(b, e));
+   const violators = living(b).filter(e => isLegendTarget(b, u, e));
    if (!violators.length) return false;
    for (const e of violators.slice(0, u.id === 'terminusBus' ? 4 : 2)) {
     hit(b, u, e, power);
-    if (!e.gone && e.hp > 0) addRuleMark(b, e, 1, null);
+    if (!e.gone && e.hp > 0) markNaturalBreach(b, u, e);
     grantUrbanViolation(b, u, 1);
    }
   }
   else if (family(u) === 'payphone') {
    const inBlackout = b.curfewUntil > b.time;
-   const violators = living(b).filter(e => tabooBreaker(b, e));
+   const violators = living(b).filter(e => isLegendTarget(b, u, e));
    if (!violators.length) return false;
    const ringEvery = u.id === 'midnightOperator' ? 2 : 3;
    const isRing = inBlackout || u.attackCount % ringEvery === 0;
@@ -870,6 +894,7 @@ const Game = (() => {
      if (u.id === 'midnightOperator') status(b, e, 'stun', 1.2, 0, u);
      else if (u.id === 'hauntedSwitchboard' && inBlackout) status(b, e, 'stun', 1.0, 0, u);
      else status(b, e, 'slow', 2.0, 0.30, u);
+     markNaturalBreach(b, u, e);
      grantUrbanViolation(b, u, 1);
     }
     if (u.id === 'midnightOperator' && inBlackout) {
@@ -878,8 +903,9 @@ const Game = (() => {
     }
     fx(b, 'pulse', u, null, 'REDIAL');
    } else {
-    if (!tabooBreaker(b, target)) return false;
+    if (!isLegendTarget(b, u, target)) return false;
     hit(b, u, target, power);
+    markNaturalBreach(b, u, target);
    }
   }
   else if (family(u) === 'morgueMirror') {
@@ -889,7 +915,7 @@ const Game = (() => {
     if (b.time - (u.lastRunnerReact[target.uid] || -99) < 1.5) return false;
     u.lastRunnerReact[target.uid] = b.time;
    } else {
-    const stares = flank(u.slot, target) || (target.ruleMarks || 0) > 0 || target.panic || target.panicUntil > b.time || target.retreatingUntil > b.time || target.frozenUntil > b.time || (target.stuns || []).some(v => v.until > b.time);
+    const stares = flank(u.slot, target) || hasLegendMark(target, 'morgueMirror') || target.panic || target.panicUntil > b.time || target.retreatingUntil > b.time || target.frozenUntil > b.time || (target.stuns || []).some(v => v.until > b.time);
     if (!stares) return false;
    }
    hit(b, u, target, power);
@@ -902,8 +928,9 @@ const Game = (() => {
      const cluster = living(b).filter(e => e !== target && (e.frozenUntil > b.time || (e.stuns || []).some(v => v.until > b.time)) && Math.abs(e.p - target.p) <= 2);
      for (const e of cluster) damage(b, e, highestAdj, u, 'ability');
     }
-    if ((target.ruleMarks || 0) > 0 || inBlackout) grantUrbanViolation(b, u, 1);
    }
+   markNaturalBreach(b, u, target);
+   grantUrbanViolation(b, u, 1);
   }
   else if (u.id === 'chainLetter') {
    target.rumorInfected = true;
@@ -913,16 +940,15 @@ const Game = (() => {
   }
   else if (family(u) === 'mannequin') {
    const inBlackout = b.curfewUntil > b.time;
-   const tabooBroken = tabooBreaker(b, target) || allies(b, u).some(v => v.state !== 'active');
-   if (!inBlackout && !tabooBroken) return false;
+   if (!isLegendTarget(b, u, target)) return false;
    u.lastRunnerReact = u.lastRunnerReact || {};
    if (b.time - (u.lastRunnerReact[target.uid] || -99) < 1.5) return false;
    u.lastRunnerReact[target.uid] = b.time;
    const mult = u.id === 'livingTaboo' ? 3.0 : inBlackout ? 2.5 : 1.0;
    hit(b, u, target, power * mult);
    if (u.id === 'stalker') status(b, target, 'slow', 3, 0.30, u);
-   const brokeTaboo = tabooBreaker(b, target) || inBlackout;
-   if (brokeTaboo) { grantUrbanViolation(b, u, 1); addRuleMark(b, target, 1, null); }
+   markNaturalBreach(b, u, target);
+   grantUrbanViolation(b, u, 1);
   }
   else if (u.id === 'bell') { let empowered = b.time - u.lastFlip <= 2; if (empowered) interact(b, u.lastFlipSource || u, u, 'bell', 'state change → empowered ring + stun'); for (const e of living(b)) { hit(b, u, e, power + (empowered ? 24 * mod(b.run, 'damage') : 0)); status(b, e, 'slow', 1.5, .25, u); if (empowered) status(b, e, 'stun', .75, 0, u) } }
   else if (u.id === 'railgun') { const has = sensor(b, u); if (has) interact(b, support(b, 'sensor'), u, 'railgun', 'Sensor → five-target volley + knockback'); for (const e of living(b).slice(0, has ? 5 : 3)) { hit(b, u, e, power); if (has) warp(b, e, 1, u) } fx(b, 'beam', u, target, ''); }
@@ -982,7 +1008,7 @@ const Game = (() => {
  }
  function spawn(b) {
   let plan = b.plan, idx = b.spawned, boss = b.run.node.type === 'boss' && idx === plan.count - 1, champion = !!plan.trial && idx === plan.count - 1, elite = !boss && !champion && (b.run.node.type === 'elite' && idx % 4 === 0), armored = !boss && !champion && !elite && (plan.encounter === 'armor' ? idx % 3 !== 2 : !plan.encounter && b.run.depth > 3 && idx % 5 === 3), swift = !boss && !champion && !elite && !armored && (plan.encounter === 'fast' ? idx % 3 !== 2 : !plan.encounter && b.run.depth > 1 && idx % 4 === 2), hp = boss ? plan.bossHp : champion ? plan.trial.hp : plan.hp * (elite ? 2 : armored ? 1.45 : 1);
-  const newEnemy = { uid: ++b.enemyUid, p: 0, hp, maxHp: hp, speed: (champion ? .31 : plan.speed) * (boss ? .95 : swift ? 1.6 : armored ? .85 : 1), leak: boss ? b.run.maxHealth : champion ? plan.trial.leak : elite ? 6 : armored ? 3 : 2, defense: armored ? .4 : elite ? .25 : (boss || champion) ? .2 : 0, boss, champion, maxProgress: 0, elite, armored, swift, bornAt: b.time, enraged: false, gone: false, panic: false, panicUntil: 0, retreatingUntil: 0, slows: [], frozenUntil: 0, shredUntil: 0, bleeds: [], burns: [], venoms: [], vulnerableUntil: 0, vulnerability: 0, auras: [] };
+  const newEnemy = { uid: ++b.enemyUid, p: 0, hp, maxHp: hp, speed: (champion ? .31 : plan.speed) * (boss ? .95 : swift ? 1.6 : armored ? .85 : 1), leak: boss ? b.run.maxHealth : champion ? plan.trial.leak : elite ? 6 : armored ? 3 : 2, defense: armored ? .4 : elite ? .25 : (boss || champion) ? .2 : 0, boss, champion, maxProgress: 0, elite, armored, swift, bornAt: b.time, enraged: false, gone: false, panic: false, panicUntil: 0, retreatingUntil: 0, slows: [], frozenUntil: 0, shredUntil: 0, bleeds: [], burns: [], venoms: [], vulnerableUntil: 0, vulnerability: 0, auras: [], tabooMarks: { kuchisake: 0, nightBus: 0, payphone: 0, morgueMirror: 0, mannequin: 0, stair13: 0, redRaincoat: 0 } };
   b.enemies.push(newEnemy);
   const architect = b.units.find(v => !v.removed && v.id === 'ruleArchitect');
   if (architect) addRuleMark(b, newEnemy, 2, architect);
@@ -1231,7 +1257,7 @@ const Game = (() => {
   if (family(u) === 'nightBus' && b.time >= u.busSweepAt && living(b).length) {
    u.busSweepAt = b.time + 8;
    const lead = living(b)[0], edge = Math.floor(lead.p / 4);
-   const targets = living(b).filter(e => (e.ruleMarks || 0) >= 2 && (u.id === 'ghostRoute' ? Math.abs(e.p - lead.p) <= 3 : Math.floor(e.p / 4) === edge));
+   const targets = living(b).filter(e => getTabooMark(e, 'nightBus') >= 2 && (u.id === 'ghostRoute' ? Math.abs(e.p - lead.p) <= 3 : Math.floor(e.p / 4) === edge));
    for (const e of targets) {
     const before = e.p;
     warp(b, e, u.id === 'terminusBus' ? 5 : 3, u);
@@ -1307,7 +1333,7 @@ const Game = (() => {
    const fastRunners = [...living(b)].sort((a, z) => z.speed - a.speed).slice(0, 3);
    for (const e of fastRunners) {
     grantUrbanViolation(b, u, 1);
-   addRuleMark(b, e, 1, null);
+     addRuleMark(b, e, 1, null);
    }
   }
 
@@ -1434,6 +1460,6 @@ const Game = (() => {
   if (abilityGauge(u) && u.threshold.current >= u.threshold.max) tick(b, u, 0);
  }
 
- return { addQi, addDread, acceptsQi, acceptsDread, isCultivationApex, isUrbanAuthority, bindUrbanRelic, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, practitionerRealmForQi, isPractitioner, isCultivationRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation };
+ return { addQi, addDread, acceptsQi, acceptsDread, isCultivationApex, isUrbanAuthority, bindUrbanRelic, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, practitionerRealmForQi, isPractitioner, isCultivationRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, breaksLegendNaturalRule, markNaturalBreach, URBAN_LEGEND_MARK_NAMES };
 })();
 if (typeof module !== 'undefined') module.exports = Game;

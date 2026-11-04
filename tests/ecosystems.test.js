@@ -15,7 +15,7 @@ function battle(ids, slots = ids.map((_, i) => i)) {
  return b;
 }
 function enemy(b, p=4, hp=100000) {
- const e={uid:b.enemies.length+1,p,hp,maxHp:hp,speed:.336,defense:0,gone:false,slows:[],bleeds:[],burns:[],venoms:[],auras:[],ruleMarks:0};
+ const e={uid:b.enemies.length+1,p,hp,maxHp:hp,speed:.336,defense:0,gone:false,slows:[],bleeds:[],burns:[],venoms:[],auras:[],ruleMarks:0,tabooMarks:{kuchisake:0,nightBus:0,payphone:0,morgueMirror:0,mannequin:0,stair13:0,redRaincoat:0}};
  b.enemies.push(e); return e;
 }
 test('grass brewing starts at 8s, shares cadence and temporary speed expires',()=>{
@@ -81,10 +81,13 @@ test('rumors reward one contact spread per source and infected deaths',()=>{
  enemy(b,4.1);G.spreadRumor(b,e);assert.equal(b.units[1].violations,1);
  G.damage(b,e,e.hp,b.units[0],'ability');assert.equal(b.units[1].violations,2);
 });
-test('Midnight Bus only attacks taboo-breakers; marked runners can be swept backward',()=>{
+test('Urban Legend marks are independent and Midnight Bus ignores another legend mark',()=>{
  const b=battle(['nightBus']),u=b.units[0],e=enemy(b,6);
- assert.equal(G.attack(b,u),false);assert.equal(e.p,6);assert.equal(e.ruleMarks,0);
- e.ruleMarks=1;G.attack(b,u);assert.equal(e.p,6);assert.equal(e.ruleMarks,2);assert.equal(u.violations,1);
+ assert.equal(G.attack(b,u),false);assert.equal(e.p,6);assert.equal(G.getTabooMark(e,'nightBus'),0);
+ e.tabooMarks.kuchisake=1;
+ assert.equal(G.attack(b,u),false);assert.equal(e.p,6);assert.equal(G.getTabooMark(e,'nightBus'),0);
+ e.speed=.5;assert.equal(G.attack(b,u),true);assert.equal(G.getTabooMark(e,'nightBus'),1);assert.equal(u.violations,1);
+ e.speed=.5;assert.equal(G.attack(b,u),true);assert.equal(G.getTabooMark(e,'nightBus'),2);
  b.time=8;G.extras(b,u,.1);assert.equal(e.p,3);
  const v=u.violations;G.extras(b,u,.1);assert.equal(e.p,3);assert.equal(u.violations,v);
 });
@@ -94,11 +97,20 @@ test('all seven Urban Legend families expose violation progress',()=>{
   const b=battle([id]);const value=G.evolutionProgress(b.units[0]);assert.ok(value);assert.equal(value.current,0);
  }
 });
+test('seven taboo-mark types track per runner without a shared cap',()=>{
+ const b=battle(['nightBus']),e=enemy(b);
+ for(const type of ['kuchisake','nightBus','payphone','morgueMirror','mannequin','stair13','redRaincoat']) G.addTabooMark(b,e,type,2);
+ assert.equal(G.totalTabooMarks(e),14);
+ assert.equal(G.hasLegendMark(e,'nightBus'),true);
+ assert.equal(G.isLegendTarget(b,b.units[0],e),true);
+ e.tabooMarks.nightBus=0;e.speed=.3;
+ assert.equal(G.isLegendTarget(b,b.units[0],e),false);
+});
 test('Payphone and Mannequin do not attack ordinary runners',()=>{
  for(const id of ['payphone','mannequin']){const b=battle([id]);const e=enemy(b,4);assert.equal(G.attack(b,b.units[0]),false);assert.equal(e.hp,100000);assert.equal(b.units[0].violations,0);}
 });
 test('Mannequin earns a violation only when it punishes a taboo-breaker',()=>{
- const b=battle(['mannequin']);const e=enemy(b,4);e.ruleMarks=1;G.attack(b,b.units[0]);assert.equal(b.units[0].violations,1);assert.ok(e.ruleMarks>=2);
+ const b=battle(['mannequin']);const e=enemy(b,4);e.speed=.5;G.attack(b,b.units[0]);assert.equal(b.units[0].violations,1);assert.equal(G.getTabooMark(e,'mannequin'),1);assert.equal(G.getTabooMark(e,'kuchisake'),0);
 });
 
 test('Red Hotline and Director grant haste without healing',()=>{
