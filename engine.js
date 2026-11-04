@@ -53,7 +53,31 @@ const Game = (() => {
  const ring = [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [4, 1], [4, 2], [4, 3], [4, 4], [3, 4], [2, 4], [1, 4], [0, 4], [0, 3], [0, 2], [0, 1]];
  function track(p) { p = Math.max(0, Math.min(15.999, p)); let i = Math.floor(p), f = p - i, a = ring[i], z = ring[(i + 1) % 16]; return { x: a[0] + (z[0] - a[0]) * f, y: a[1] + (z[1] - a[1]) * f } }
  function flank(s, e) { let p = track(e.p); return s === 1 ? p.y < .55 : s === 3 ? p.x < .55 : s === 5 ? p.x > 3.45 : s === 7 ? p.y > 3.45 : false }
- function cornerSection(s, e) { const p = track(e.p), q = xy(s); return Math.abs(p.x - (q.x === 0 ? 0 : 4)) + Math.abs(p.y - (q.y === 0 ? 0 : 4)) <= 1.25 }
+ const STAIR_TRAP_CORNERS = [0, 4, 8, 12];
+ function trackEffect(b, type, fromP, toP, text) {
+  const from = track(fromP), to = track(toP);
+  b.effects.push({ type, x: from.x, y: from.y, tx: to.x, ty: to.y, text, ttl: 1.0 });
+ }
+ function triggerStairTraps(b, e, fromP, toP) {
+  if (toP <= fromP) return;
+  const stairs = b.units.filter(u => !u.removed && u.id === 'stair13');
+  if (!stairs.length) return;
+  for (const corner of STAIR_TRAP_CORNERS) {
+   const crossed = corner === 0 ? fromP === 0 && toP > 0 : fromP < corner && toP >= corner;
+   if (!crossed) continue;
+   for (const stair of stairs) {
+    const dealt = damage(b, e, 35, stair, 'ability');
+    const point = track(e.p);
+    b.effects.push({ type: 'impact', x: point.x, y: point.y, tx: point.x, ty: point.y, text: `−${Math.round(dealt)}`, ttl: 1.0 });
+    addRuleMark(b, e, 1, stair);
+    if ((e.ruleMarks || 0) >= 5) {
+     const before = e.p;
+     warp(b, e, 2, stair);
+     if (e.p < before) trackEffect(b, 'warp', before, e.p, `WARP −${(before - e.p).toFixed(1).replace(/\.0$/, '')}`);
+    }
+   }
+  }
+ }
  function neighbors(b, u, diagonal = false) { return b.units.filter(v => !v.removed && v !== u && (diagonal ? Math.max(Math.abs(v.x - u.x), Math.abs(v.y - u.y)) === 1 : adjacent(u, v))) }
  function allies(b, u) { return b.units.filter(v => !v.removed && v !== u) }
  function support(b, id) { return b.units.filter(v => !v.removed && v.id === id).sort((a, z) => Number(a.uid) - Number(z.uid))[0] }
@@ -783,11 +807,6 @@ const Game = (() => {
   }
   else if (u.id === 'stair13') {
    hit(b, u, target, power);
-   if (cornerSection(u.slot, target)) {
-    damage(b, target, 35, u, 'ability');
-    addRuleMark(b, target, 1, u);
-    if ((target.ruleMarks || 0) >= 5) warp(b, target, 2, u);
-   }
   }
   else if (u.id === 'chainLetter') {
    hit(b, u, target, power);
@@ -871,9 +890,11 @@ const Game = (() => {
    if ((e.boss || e.champion) && !e.enraged && b.time - e.bornAt >= 45) { e.enraged = true; e.frozenUntil = 0;  }
    e.bleeds = e.bleeds.filter(z => z.until > b.time); e.burns = (e.burns || []).filter(z => z.until > b.time); e.venoms = (e.venoms || []).filter(z => z.until > b.time); for (const dot of [...e.bleeds, ...e.burns, ...e.venoms]) damage(b, e, dot.dps * dt * (e.vulnerableUntil > b.time ? 1 + e.vulnerability : 1), b.units.find(u => u.uid === dot.owner) || null, 'dot'); if (e.gone) continue;
    e.slows = e.slows.filter(s => s.until > b.time); e.panic = e.panicUntil > b.time; let aura = b.units.some(v => !v.removed && v.id === 'wraith') ? ((e.boss || e.champion) ? .15 : .3) : 0; let slow = Math.max(aura, ...e.slows.map(s => s.power)), move = e.frozenUntil > b.time ? 0 : 1 - slow;
-   if (b.curfewUntil > b.time) move *= 0.75; e.p += e.speed * dt * move * (e.enraged ? 1.25 : 1) * (b.run.relics.includes('frost') ? .9 : 1);
-
-   if (e.retreatingUntil > b.time) e.p -= e.speed * dt * move * (e.enraged ? 1.25 : 1) * (b.run.relics.includes('frost') ? .9 : 1) * 2;
+   if (b.curfewUntil > b.time) move *= 0.75;
+   const previousProgress = e.p, wasRetreating = e.retreatingUntil > b.time;
+   e.p += e.speed * dt * move * (e.enraged ? 1.25 : 1) * (b.run.relics.includes('frost') ? .9 : 1);
+   if (wasRetreating) e.p -= e.speed * dt * move * (e.enraged ? 1.25 : 1) * (b.run.relics.includes('frost') ? .9 : 1) * 2;
+   if (!wasRetreating && e.p > previousProgress) triggerStairTraps(b, e, previousProgress, e.p);
    e.maxProgress = Math.max(e.maxProgress || 0, e.p); if (e.p >= 16) {
     if (e.champion) recordTrial(b, e, false);
     if (b.units.some(v => !v.removed && v.id === 'ruleArchitect') && !b.room404Saved) {
@@ -1292,6 +1313,6 @@ const Game = (() => {
   if (abilityGauge(u) && u.threshold.current >= u.threshold.max) tick(b, u, 0);
  }
 
- return { cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, cornerSection, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, practitionerRealmForQi, isPractitioner, isCultivationRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation };
+ return { cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, practitionerRealmForQi, isPractitioner, isCultivationRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation };
 })();
 if (typeof module !== 'undefined') module.exports = Game;
