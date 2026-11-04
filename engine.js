@@ -144,6 +144,7 @@ const Game = (() => {
  function allies(b, u) { return b.units.filter(v => !v.removed && v !== u) }
  function support(b, id) { return b.units.filter(v => !v.removed && v.id === id).sort((a, z) => Number(a.uid) - Number(z.uid))[0] }
  function living(b) { return b.enemies.filter(e => e.hp > 0 && !e.gone).sort((a, z) => z.p - a.p || a.uid - z.uid) }
+ function tabooBreaker(b, e) { return (e.ruleMarks || 0) > 0 || e.panicUntil > b.time || e.retreatingUntil > b.time || e.speed > 0.40 || e.frozenUntil > b.time || (e.stuns || []).some(v => v.until > b.time) }
  
  function fx(b, type, u, e, text) { b.effects.push({ type, x: u?.x + 1, y: u?.y + 1, tx: e ? track(e.p).x : u?.x + 1, ty: e ? track(e.p).y : u?.y + 1, text, ttl: type === 'beam' ? .35 : .7 }); if (b.effects.length > 90) b.effects.shift() }
  const ENCOUNTERS = { packs: { id: 'packs', name: 'Swarm packs', test: 'Area damage', desc: 'Runners arrive in groups of three with reduced health.', tip: 'Soul-Wailing Bell or piercing strikes help hit several runners.' }, armor: { id: 'armor', name: 'Iron procession', test: 'Armor penetration', desc: 'Most runners wear armor blocking 40% damage.', tip: 'True damage and defense shred bypass armor.' }, fast: { id: 'fast', name: 'Rush runners', test: 'Crowd control', desc: 'Most runners move 60% faster.', tip: 'Slows, stuns, and knockbacks buy time.' } };
@@ -313,7 +314,7 @@ const Game = (() => {
    grantGrowth(b, v, 1);
    persist(b, v);
    if (family(v) === 'payphone') {
-    const violators = living(b).filter(e => (e.ruleMarks || 0) > 0 || e.panic || e.panicUntil > b.time || e.retreatingUntil > b.time || e.speed > 0.40);
+    const violators = living(b).filter(e => tabooBreaker(b, e));
     for (const e of violators) {
      const mult = (v.id === 'midnightOperator' || v.id === 'hauntedSwitchboard') ? 1.5 : 1.0;
      hit(b, v, e, atk(b, v) * mult);
@@ -626,7 +627,7 @@ const Game = (() => {
   if (species(u) === 'hound') { let low = es.filter(e => e.hp / e.maxHp < .3); if (low.length) return low[0] }
   if (family(u) === 'kuchisake') { let fastest = [...es].sort((a, z) => z.speed - a.speed)[0]; if (fastest) return fastest; }
   if (['nightBus', 'payphone', 'morgueMirror', 'mannequin'].includes(family(u))) {
-   const violators = es.filter(e => (e.ruleMarks || 0) > 0 || e.panic || e.panicUntil > 0 || e.retreatingUntil > 0 || e.speed > 0.40 || e.frozenUntil > 0 || (e.stuns || []).length > 0 || (family(u) === 'morgueMirror' && flank(u.slot, e)));
+   const violators = es.filter(e => tabooBreaker(b, e) || (family(u) === 'morgueMirror' && flank(u.slot, e)));
    if (violators.length) return violators[0];
   }
   if (u.id === 'executioner' || u.lineage === 'tiger' && (lineageTierIds[u.id]?.tier || 0) >= 3) { let elite = es.find(e => e.elite || e.boss || e.champion); if (elite) return elite }
@@ -636,8 +637,8 @@ const Game = (() => {
  function attack(b, u) {
   const target = chooseTarget(b, u); if (!target) return false;
   const inBlackout = b.curfewUntil > b.time;
-  const tabooBreak = e => (e.ruleMarks || 0) > 0 || e.panic || e.panicUntil > b.time || e.retreatingUntil > b.time || e.speed > 0.40 || e.frozenUntil > b.time || (e.stuns || []).some(v => v.until > b.time);
-  if (family(u) === 'kuchisake' && !inBlackout && !living(b).some(e => (e.ruleMarks || 0) > 0 || e.panic || e.panicUntil > b.time || e.retreatingUntil > b.time || e.speed > 0.40)) return false;
+  const tabooBreak = e => tabooBreaker(b, e);
+  if (family(u) === 'kuchisake' && !inBlackout && !living(b).some(e => tabooBreaker(b, e))) return false;
   if (family(u) === 'nightBus' && !living(b).some(tabooBreak)) return false;
   if (family(u) === 'payphone' && !living(b).some(tabooBreak)) return false;
   if (family(u) === 'morgueMirror' && !inBlackout && !living(b).some(e => tabooBreak(e) || flank(u.slot, e))) return false;
@@ -846,7 +847,7 @@ const Game = (() => {
     if (b.time - (u.lastRunnerReact[target.uid] || -99) < 1.5) return false;
     u.lastRunnerReact[target.uid] = b.time;
    }
-   const violators = living(b).filter(e => (e.ruleMarks || 0) > 0 || e.panic || e.panicUntil > b.time || e.speed > 0.40 || e.retreatingUntil > b.time);
+   const violators = living(b).filter(e => tabooBreaker(b, e));
    if (!violators.length) return false;
    for (const e of violators.slice(0, u.id === 'terminusBus' ? 4 : 2)) {
     hit(b, u, e, power);
@@ -856,7 +857,7 @@ const Game = (() => {
   }
   else if (family(u) === 'payphone') {
    const inBlackout = b.curfewUntil > b.time;
-   const violators = living(b).filter(e => (e.ruleMarks || 0) > 0 || e.panic || e.panicUntil > b.time || e.retreatingUntil > b.time);
+   const violators = living(b).filter(e => tabooBreaker(b, e));
    if (!violators.length) return false;
    const ringEvery = u.id === 'midnightOperator' ? 2 : 3;
    const isRing = inBlackout || u.attackCount % ringEvery === 0;
@@ -877,7 +878,7 @@ const Game = (() => {
     }
     fx(b, 'pulse', u, null, 'REDIAL');
    } else {
-    if (!(target.ruleMarks > 0 || target.panic || target.panicUntil > b.time || target.retreatingUntil > b.time)) return false;
+    if (!tabooBreaker(b, target)) return false;
     hit(b, u, target, power);
    }
   }
@@ -912,7 +913,7 @@ const Game = (() => {
   }
   else if (family(u) === 'mannequin') {
    const inBlackout = b.curfewUntil > b.time;
-   const tabooBroken = (target.ruleMarks || 0) > 0 || target.panic || target.panicUntil > b.time || target.retreatingUntil > b.time || target.speed > 0.40 || allies(b, u).some(v => v.state !== 'active');
+   const tabooBroken = tabooBreaker(b, target) || allies(b, u).some(v => v.state !== 'active');
    if (!inBlackout && !tabooBroken) return false;
    u.lastRunnerReact = u.lastRunnerReact || {};
    if (b.time - (u.lastRunnerReact[target.uid] || -99) < 1.5) return false;
@@ -920,7 +921,7 @@ const Game = (() => {
    const mult = u.id === 'livingTaboo' ? 3.0 : inBlackout ? 2.5 : 1.0;
    hit(b, u, target, power * mult);
    if (u.id === 'stalker') status(b, target, 'slow', 3, 0.30, u);
-   const brokeTaboo = (target.ruleMarks || 0) > 0 || target.panic || target.panicUntil > b.time || target.retreatingUntil > b.time || target.speed > 0.40 || inBlackout;
+   const brokeTaboo = tabooBreaker(b, target) || inBlackout;
    if (brokeTaboo) { grantUrbanViolation(b, u, 1); addRuleMark(b, target, 1, null); }
   }
   else if (u.id === 'bell') { let empowered = b.time - u.lastFlip <= 2; if (empowered) interact(b, u.lastFlipSource || u, u, 'bell', 'state change → empowered ring + stun'); for (const e of living(b)) { hit(b, u, e, power + (empowered ? 24 * mod(b.run, 'damage') : 0)); status(b, e, 'slow', 1.5, .25, u); if (empowered) status(b, e, 'stun', .75, 0, u) } }
