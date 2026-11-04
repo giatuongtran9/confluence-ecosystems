@@ -81,12 +81,48 @@ test('rumors reward one contact spread per source and infected deaths',()=>{
  enemy(b,4.1);G.spreadRumor(b,e);assert.equal(b.units[1].violations,1);
  G.damage(b,e,e.hp,b.units[0],'ability');assert.equal(b.units[1].violations,2);
 });
-test('Bus attacks do not warp; timed sweep requires two marks',()=>{
+test('Midnight Bus only attacks taboo-breakers; marked runners can be swept backward',()=>{
  const b=battle(['nightBus']),u=b.units[0],e=enemy(b,6);
- G.attack(b,u);assert.equal(e.p,6);assert.equal(e.ruleMarks,1);
- b.time=8;G.extras(b,u,.1);assert.equal(e.p,6);
- G.attack(b,u);assert.equal(e.p,6);b.time=16;G.extras(b,u,.1);assert.equal(e.p,3);
+ assert.equal(G.attack(b,u),false);assert.equal(e.p,6);assert.equal(e.ruleMarks,0);
+ e.ruleMarks=1;G.attack(b,u);assert.equal(e.p,6);assert.equal(e.ruleMarks,2);assert.equal(u.violations,1);
+ b.time=8;G.extras(b,u,.1);assert.equal(e.p,3);
  const v=u.violations;G.extras(b,u,.1);assert.equal(e.p,3);assert.equal(u.violations,v);
+});
+
+test('all seven Urban Legend families expose violation progress',()=>{
+ for(const id of ['kuchisake','nightBus','payphone','morgueMirror','mannequin','stair13','redRaincoat']){
+  const b=battle([id]);const value=G.evolutionProgress(b.units[0]);assert.ok(value);assert.equal(value.current,0);
+ }
+});
+test('Payphone and Mannequin do not attack ordinary runners',()=>{
+ for(const id of ['payphone','mannequin']){const b=battle([id]);const e=enemy(b,4);assert.equal(G.attack(b,b.units[0]),false);assert.equal(e.hp,100000);assert.equal(b.units[0].violations,0);}
+});
+test('Mannequin earns a violation only when it punishes a taboo-breaker',()=>{
+ const b=battle(['mannequin']);const e=enemy(b,4);e.ruleMarks=1;G.attack(b,b.units[0]);assert.equal(b.units[0].violations,1);assert.ok(e.ruleMarks>=2);
+});
+
+test('Red Hotline and Director grant haste without healing',()=>{
+ const b=battle(['redPhone','curfewDirector','mannequin'],[0,1,8]);
+ const health=b.run.health;
+ G.startAbilities(b);
+ assert.ok(b.units[2].hotlineUntil>=10);
+ assert.equal(b.run.health,health);
+ assert.equal(G.speed(b,b.units[2]),1.92);
+});
+test('Emergency Broadcast slow and dossier use separate 6s/8s timers',()=>{
+ const b=battle(['radioPA']);const e=enemy(b,4);e.ruleMarks=1;
+ b.time=6;G.extras(b,b.units[0],.1);
+ assert.ok(e.slows.some(s=>s.power===.25));
+ assert.equal(b.units.some(u=>u.id==='dossier'),false);
+ b.time=8;G.extras(b,b.units[0],.1);
+ assert.equal(b.units.some(u=>u.id==='dossier'),true);
+});
+test('Noticeboard adds two Dread to Coroner and Decoder dossier processing',()=>{
+ const b=battle(['coroner','decoder','ruleboard','investigator'],[0,1,2,3]);
+ const dossier=G.spawnToken(b,b.units[2],'dossier');Object.assign(dossier,{x:b.units[0].x+1,y:b.units[0].y,slot:8});
+ b.time=5;G.extras(b,b.units[0],.1);assert.equal(b.units[3].dread,12);
+ const other=G.spawnToken(b,b.units[2],'dossier');Object.assign(other,{x:b.units[1].x+1,y:b.units[1].y,slot:9});
+ b.time=6;G.extras(b,b.units[1],.1);assert.equal(b.units[3].dread,22);
 });
 test('Matriarch covers all five original and token species without stacking',()=>{
  for(const id of ['serpentFodder','hound','scuttler','flameToad','peachFodder']){
@@ -218,6 +254,7 @@ test('Red Raincoat Specter triggers Blackout from 5 taboo look-back/retreat viol
  e.ruleMarks = 5; // Capped marks should not block taboo violation counting
 
  for (let i = 0; i < 5; i++) {
+  b.time = i * 1.6;
   e.p = 5;
   e.retreatingUntil = b.time + 1.0;
   G.step(b, 0.1);
