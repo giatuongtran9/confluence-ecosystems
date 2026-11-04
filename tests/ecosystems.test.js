@@ -134,3 +134,65 @@ test('WebP maps cover every current Cultivation and Bloodline draft card and Ape
  for(const c of [...D.CARDS.filter(c=>!c.retired),...D.FORMS.filter(c=>G.isApexImmortal(c))].filter(c=>['Cultivation','Bloodline'].includes(c.genre)))assert.match(ctx.maps[c.id]||'',/-sprites-webp\/.*\.webp(?:\?.*)?$/);
  assert.ok(!source.includes('assets/bloodline-sprites/'));assert.ok(!source.includes('assets/cultivation-sprites/'));
 });
+
+test('The 13th Step and Red Raincoat are purely reactive and evolve to Mythic Apexes', () => {
+ const b = battle(['stair13', 'redRaincoat']);
+ const e = enemy(b, 2);
+ assert.equal(G.attack(b, b.units[0]), false, 'stair13 should not attack normally');
+ assert.equal(G.attack(b, b.units[1]), false, 'redRaincoat should not attack normally');
+
+ b.units[0].violations = 15;
+ G.grantUrbanViolation(b, b.units[0], 0);
+ assert.equal(b.units[0].id, 'infiniteStair');
+
+ b.units[0].violations = 45;
+ G.grantUrbanViolation(b, b.units[0], 0);
+ assert.equal(b.units[0].id, 'penroseLabyrinth');
+
+ b.units[1].violations = 15;
+ G.grantUrbanViolation(b, b.units[1], 0);
+ assert.equal(b.units[1].id, 'bloodPhantasm');
+
+ b.units[1].violations = 45;
+ G.grantUrbanViolation(b, b.units[1], 0);
+ assert.equal(b.units[1].id, 'crimsonHarbinger');
+});
+
+test('Blackout has 6s duration with an 8s lockout grace period and 1.5s runner guardrail', () => {
+ const b = battle(['kuchisake']);
+ b.time = 0;
+ G.grantUrbanViolation(b, b.units[0], 5);
+ assert.equal(b.curfewUntil, 6.0, 'Blackout duration should be 6s');
+ assert.equal(b.blackoutLockoutUntil, 14.0, 'Lockout should be 6s + 8s = 14s');
+
+ // During blackout, another 5 violations should not retrigger
+ G.grantUrbanViolation(b, b.units[0], 5);
+ assert.equal(b.curfewUntil, 6.0);
+
+ // During 8s lockout grace period, should not retrigger
+ b.time = 7;
+ G.grantUrbanViolation(b, b.units[0], 5);
+ assert.equal(b.curfewUntil, 6.0);
+
+ // After lockout expires (t=15), triggers again
+ b.time = 15;
+ G.grantUrbanViolation(b, b.units[0], 5);
+ assert.equal(b.curfewUntil, 21.0);
+
+ // Guardrail: 1.5s per runner reaction limit during blackout
+ const e = enemy(b, 2);
+ b.curfewUntil = 30; b.time = 22;
+ assert.equal(G.attack(b, b.units[0]), true, 'First reaction allowed');
+ assert.equal(G.attack(b, b.units[0]), false, 'Immediate reaction throttled by 1.5s guardrail');
+ b.time = 23.6;
+ assert.equal(G.attack(b, b.units[0]), true, 'Allowed after 1.5s');
+});
+
+test('Architecture A rule mark application does not trigger Architecture B Blackout', () => {
+ const b = battle(['investigator']);
+ const e = enemy(b, 2);
+ for (let i = 0; i < 10; i++) {
+  G.addRuleMark(b, e, 1, b.units[0]);
+ }
+ assert.equal(b.curfewUntil, undefined, 'Blackout should not trigger from Architecture A marks alone');
+});

@@ -60,21 +60,81 @@ const Game = (() => {
  }
  function triggerStairTraps(b, e, fromP, toP) {
   if (toP <= fromP) return;
-  const stairs = b.units.filter(u => !u.removed && u.id === 'stair13');
+  const stairs = b.units.filter(u => !u.removed && family(u) === 'stair13');
   if (!stairs.length) return;
-  for (const corner of STAIR_TRAP_CORNERS) {
-   const crossed = corner === 0 ? fromP === 0 && toP > 0 : fromP < corner && toP >= corner;
-   if (!crossed) continue;
-   for (const stair of stairs) {
-    const dealt = damage(b, e, 35, stair, 'ability');
-    const point = track(e.p);
-    b.effects.push({ type: 'impact', x: point.x, y: point.y, tx: point.x, ty: point.y, text: `−${Math.round(dealt)}`, ttl: 1.0 });
-    addRuleMark(b, e, 1, stair);
-    if ((e.ruleMarks || 0) >= 5) {
-     const before = e.p;
-     warp(b, e, 2, stair);
-     if (e.p < before) trackEffect(b, 'warp', before, e.p, `WARP −${(before - e.p).toFixed(1).replace(/\.0$/, '')}`);
+  const inBlackout = b.curfewUntil > b.time;
+  const crossedCorner = STAIR_TRAP_CORNERS.some(corner => corner === 0 ? (fromP === 0 && toP > 0) : (fromP < corner && toP >= corner));
+  const oldSteps = Math.floor(fromP * 4);
+  const newSteps = Math.floor(toP * 4);
+  const normalStep13 = newSteps > oldSteps && (newSteps % 13 === 0);
+  const blackoutStep4 = inBlackout && newSteps > oldSteps && (newSteps % 4 === 0);
+
+  if (!crossedCorner && !normalStep13 && !blackoutStep4) return;
+
+  for (const stair of stairs) {
+   stair.lastRunnerReact = stair.lastRunnerReact || {};
+   if (inBlackout && b.time - (stair.lastRunnerReact[e.uid] || -99) < 1.5) continue;
+   if (inBlackout) stair.lastRunnerReact[e.uid] = b.time;
+
+   const baseDmg = stair.id === 'penroseLabyrinth' ? 180 : stair.id === 'infiniteStair' ? 75 : 35;
+   if (inBlackout && blackoutStep4) {
+    const isPanicked = e.panic || e.panicUntil > b.time;
+    if (isPanicked && e.hp / e.maxHp < 0.25) {
+     damage(b, e, e.hp, stair, 'direct');
+     fx(b, 'curfew', stair, e, 'TERMINAL DESCENT');
+    } else {
+     const voidDmg = baseDmg * (isPanicked ? 2.5 : 1.5);
+     damage(b, e, voidDmg, stair, 'ability');
+     status(b, e, 'stun', 2.0, 0, stair);
+     e.p = Math.floor(e.p);
+     fx(b, 'warp', stair, e, 'PENROSE TRAPDOOR');
     }
+   } else {
+    damage(b, e, baseDmg, stair, 'ability');
+    status(b, e, 'slow', 1.2, 0.40, stair);
+    const point = track(e.p);
+    b.effects.push({ type: 'impact', x: point.x, y: point.y, tx: point.x, ty: point.y, text: `−${Math.round(baseDmg)}`, ttl: 1.0 });
+   }
+   addRuleMark(b, e, 1, stair);
+   if ((e.ruleMarks || 0) >= 5) {
+    const warpTiles = stair.id === 'penroseLabyrinth' ? 4 : 2;
+    const before = e.p;
+    warp(b, e, warpTiles, stair);
+    if (e.p < before) trackEffect(b, 'warp', before, e.p, `WARP −${(before - e.p).toFixed(1).replace(/\.0$/, '')}`);
+   }
+  }
+ }
+
+ function triggerRedRaincoatTraps(b, e, previousProgress, currentProgress, wasRetreating) {
+  const raincoats = b.units.filter(u => !u.removed && family(u) === 'redRaincoat');
+  if (!raincoats.length) return;
+  const inBlackout = b.curfewUntil > b.time;
+  const lookedBack = wasRetreating || currentProgress < previousProgress;
+  let crowding = false;
+  if (inBlackout) {
+   crowding = living(b).some(other => other !== e && Math.abs(other.p - currentProgress) <= 2.0);
+  }
+  if (!lookedBack && !crowding) return;
+
+  for (const u of raincoats) {
+   u.lastRunnerReact = u.lastRunnerReact || {};
+   if (inBlackout && b.time - (u.lastRunnerReact[e.uid] || -99) < 1.5) continue;
+   if (inBlackout) u.lastRunnerReact[e.uid] = b.time;
+
+   const baseDmg = u.id === 'crimsonHarbinger' ? 120 : u.id === 'bloodPhantasm' ? 45 : 18;
+   const mult = inBlackout ? ((e.panic || lookedBack) ? 3.0 : 2.0) : 1.0;
+   damage(b, e, baseDmg * mult, u, 'direct');
+   dot(b, e, 'bleed', u.id === 'crimsonHarbinger' ? 30 : 10, 4, u);
+   status(b, e, 'slow', 2.0, 0.35, u);
+   addRuleMark(b, e, 1, u);
+
+   if (inBlackout && (e.panic || lookedBack)) {
+    for (const nearby of living(b).filter(other => Math.abs(other.p - currentProgress) <= 2.0)) {
+     status(b, nearby, 'slow', 3.0, 0.60, u);
+    }
+    fx(b, 'curfew', u, e, 'CRIMSON DELUGE');
+   } else {
+    fx(b, 'shot', u, e, 'DO NOT LOOK BACK');
    }
   }
  }
@@ -126,7 +186,8 @@ const Game = (() => {
   'dragonCubApex','tigerCubApex','xuanwuCubApex','phoenixCubApex','monkeyCubApex',
   'swordImmortal', 'melodicSaint', 'formationMaster', 'talismanSovereign', 'landscapeSage', 'soulReapingDemon', 'bloodFiendMaster',
   'ruleArchitect', 'allSeeingOverseer', 'curfewDirector', 'forensicDemiurge', 'backroomsWarden',
-  'slitMouthedSovereign', 'terminusBus', 'midnightOperator', 'mirrorQueen', 'livingTaboo'
+  'slitMouthedSovereign', 'terminusBus', 'midnightOperator', 'mirrorQueen', 'livingTaboo',
+  'penroseLabyrinth', 'crimsonHarbinger'
  ];
  const CULT_RELICS = ['flyingSword', 'guqin', 'weiqiBoard', 'inkBrush', 'mountainScroll', 'soulBanner', 'demonBlade'];
  const isCultivationRelic = u => CULT_RELICS.includes(u.id);
@@ -173,13 +234,15 @@ const Game = (() => {
   interact(b, relic, u, 'awaken', `${card(apexId).name} awakens!`);
  }
  const isUrbanInvestigator = u => family(u) === 'investigator' && !APEX_FORMS.includes(u.id);
- const urbanLegendFamilies = ['kuchisake', 'nightBus', 'payphone', 'morgueMirror', 'mannequin'];
+ const urbanLegendFamilies = ['kuchisake', 'nightBus', 'payphone', 'morgueMirror', 'mannequin', 'stair13', 'redRaincoat'];
  const urbanLegendTiers = {
   kuchisake: ['kuchisake', 'scissorBanshee', 'slitMouthedSovereign'],
   nightBus: ['nightBus', 'ghostRoute', 'terminusBus'],
   payphone: ['payphone', 'hauntedSwitchboard', 'midnightOperator'],
   morgueMirror: ['morgueMirror', 'doppelMirror', 'mirrorQueen'],
-  mannequin: ['mannequin', 'stalker', 'livingTaboo']
+  mannequin: ['mannequin', 'stalker', 'livingTaboo'],
+  stair13: ['stair13', 'infiniteStair', 'penroseLabyrinth'],
+  redRaincoat: ['redRaincoat', 'bloodPhantasm', 'crimsonHarbinger']
  };
  const isUrbanLegend = u => urbanLegendFamilies.includes(family(u));
 
@@ -210,6 +273,13 @@ const Game = (() => {
    neighbor.violations = (neighbor.violations || 0) + amount * 0.5;
    updateUrbanLegendLineage(b, neighbor);
   }
+  if (b.time >= (b.blackoutLockoutUntil || 0) && b.time >= (b.curfewUntil || 0)) {
+   b.urbanViolationsForBlackout = (b.urbanViolationsForBlackout || 0) + amount;
+   if (b.urbanViolationsForBlackout >= 5) {
+    b.urbanViolationsForBlackout = 0;
+    triggerBlackout(b);
+   }
+  }
  }
 
  function updateUrbanLegendLineage(b, u) {
@@ -227,19 +297,26 @@ const Game = (() => {
  }
 
  function triggerBlackout(b) {
-  const hasDirector = b.units.some(v => !v.removed && v.id === 'curfewDirector');
-  const dur = (hasDirector ? 7.0 : 3.5) * mod(b.run, 'buffDuration');
-  b.curfewUntil = Math.max(b.curfewUntil || 0, b.time + dur);
+  const legends = b.units.filter(v => !v.removed && isUrbanLegend(v));
+  if (!legends.length) return;
+  if (b.time < (b.blackoutLockoutUntil || 0) || b.curfewUntil > b.time) return;
+
+  const dur = 6.0 * mod(b.run, 'buffDuration');
+  b.curfewUntil = b.time + dur;
+  b.blackoutLockoutUntil = b.curfewUntil + 8.0;
   for (const e of living(b)) { e.panicUntil = Math.max(e.panicUntil || 0, b.time + 2.5); e.panic = true; }
-  fx(b, 'curfew', null, null, 'TẮT ĐÈN · GIỜ GIỚI NGHIÊM');
-  for (const v of b.units.filter(v => !v.removed && card(v.id).genre === 'Haunted')) {
+  fx(b, 'curfew', null, null, 'TẮT ĐÈN · BLACKOUT FRENZY');
+  for (const v of legends) {
    v.blackouts = (v.blackouts || 0) + 1;
    grantGrowth(b, v, 1);
    persist(b, v);
    if (family(v) === 'payphone') {
     for (const e of living(b)) {
-     hit(b, v, e, atk(b, v));
-     if ((e.ruleMarks || 0) > 0) status(b, e, 'stun', 1.0, 0, v);
+     hit(b, v, e, atk(b, v) * (v.id === 'midnightOperator' ? 1.5 : 1.0));
+     if ((e.ruleMarks || 0) > 0 || e.panic) {
+      status(b, e, 'stun', v.id === 'midnightOperator' ? 2.0 : 0.8, 0, v);
+      grantUrbanViolation(b, v, 1);
+     }
     }
     fx(b, 'pulse', v, null, 'CURFEW RING');
    }
@@ -259,7 +336,7 @@ const Game = (() => {
   b.totalRuleMarks = (b.totalRuleMarks || 0) + n;
 
   for (const v of b.units.filter(v => !v.removed && acceptsDread(v))) {
-   const gain = (b.curfewUntil > b.time ? n * 2 : n);
+   const gain = n;
    addDread(b, v, gain);
    interact(b, null, v, 'dread', `+${gain} Dread recorded`);
   }
@@ -275,12 +352,6 @@ const Game = (() => {
   }
 
   fx(b, 'violation', source || e, e, 'PHẠM QUY');
-
-  const threshold = support(b, 'ruleboard') ? 4 : 5;
-  if (b.totalRuleMarks >= threshold) {
-   b.totalRuleMarks -= threshold;
-   triggerBlackout(b);
-  }
  }
 
  function practitionerRealmForQi(qi = 0) { return qi >= 175 ? 3 : qi >= 85 ? 2 : qi >= 30 ? 1 : 0 }
@@ -726,13 +797,24 @@ const Game = (() => {
     for (const e of top3) { trueHit(b, u, e, power); addRuleMark(b, e, 1, u); }
    }
   }
+  else if (family(u) === 'redRaincoat' || family(u) === 'stair13') {
+   return false;
+  }
   else if (family(u) === 'kuchisake') {
+   const inBlackout = b.curfewUntil > b.time;
+   if (inBlackout) {
+    u.lastRunnerReact = u.lastRunnerReact || {};
+    if (b.time - (u.lastRunnerReact[target.uid] || -99) < 1.5) return false;
+    u.lastRunnerReact[target.uid] = b.time;
+   } else if (target.speed <= 0.30 && !target.panic && !(target.retreatingUntil > b.time) && (target.ruleMarks || 0) <= 0) {
+    return false;
+   }
    const marks = target.ruleMarks || 0;
    const mult = marks > 0 ? (u.id === 'slitMouthedSovereign' ? 3.5 : 2.0) : 1.0;
    hit(b, u, target, power * mult);
    const dps = u.id === 'slitMouthedSovereign' ? 35 : u.id === 'scissorBanshee' ? 15 : 5;
    dot(b, target, 'bleed', dps, 4, u);
-   if (target.speed > 0.30) addRuleMark(b, target, 1, u);
+   addRuleMark(b, target, 1, u);
    if (u.id === 'scissorBanshee') {
     const second = living(b).find(e => e !== target);
     if (second) hit(b, u, second, power * 0.5);
@@ -749,28 +831,49 @@ const Game = (() => {
    }
   }
   else if (family(u) === 'nightBus') {
+   const inBlackout = b.curfewUntil > b.time;
+   if (inBlackout) {
+    u.lastRunnerReact = u.lastRunnerReact || {};
+    if (b.time - (u.lastRunnerReact[target.uid] || -99) < 1.5) return false;
+    u.lastRunnerReact[target.uid] = b.time;
+   }
    for (const e of living(b).slice(0, u.id === 'terminusBus' ? 4 : 2)) {
     hit(b, u, e, power);
     addRuleMark(b, e, 1, u);
    }
   }
   else if (family(u) === 'payphone') {
+   const inBlackout = b.curfewUntil > b.time;
+   if (inBlackout) {
+    u.lastRunnerReact = u.lastRunnerReact || {};
+    if (b.time - (u.lastRunnerReact[target.uid] || -99) < 1.5) return false;
+    u.lastRunnerReact[target.uid] = b.time;
+   }
    const ringEvery = u.id === 'midnightOperator' ? 2 : 3;
-   if (u.attackCount % ringEvery === 0) {
+   if (inBlackout || u.attackCount % ringEvery === 0) {
     for (const e of living(b)) {
      hit(b, u, e, power * (u.id === 'midnightOperator' ? 1.5 : 1.0));
-     if (u.id === 'midnightOperator' ? e.panicUntil > b.time : (e.ruleMarks || 0) > 0) {
+     if (u.id === 'midnightOperator' ? (e.panicUntil > b.time || e.panic) : (e.ruleMarks || 0) > 0) {
       status(b, e, 'stun', u.id === 'midnightOperator' ? 2.0 : 0.8, 0, u);
       grantUrbanViolation(b, u, 1);
      }
     }
-    if (u.id === 'midnightOperator' && b.curfewUntil > b.time) b.curfewUntil += 1.5;
+    if (u.id === 'midnightOperator' && inBlackout) {
+     b.curfewUntil += 1.5;
+     b.blackoutLockoutUntil = b.curfewUntil + 8.0;
+    }
     fx(b, 'pulse', u, null, 'REDIAL');
    } else {
     hit(b, u, target, power);
    }
   }
   else if (family(u) === 'morgueMirror') {
+   const inBlackout = b.curfewUntil > b.time;
+   if (inBlackout) {
+    u.lastRunnerReact = u.lastRunnerReact || {};
+    if (b.time - (u.lastRunnerReact[target.uid] || -99) < 1.5) return false;
+    u.lastRunnerReact[target.uid] = b.time;
+   }
    hit(b, u, target, power);
    const adjAllies = neighbors(b, u, false);
    if (adjAllies.length) {
@@ -781,18 +884,8 @@ const Game = (() => {
      const cluster = living(b).filter(e => e !== target && (e.frozenUntil > b.time || (e.stuns || []).some(v => v.until > b.time)) && Math.abs(e.p - target.p) <= 2);
      for (const e of cluster) damage(b, e, highestAdj, u, 'ability');
     }
-    if ((target.ruleMarks || 0) > 0 || b.curfewUntil > b.time) grantUrbanViolation(b, u, 1);
+    if ((target.ruleMarks || 0) > 0 || inBlackout) grantUrbanViolation(b, u, 1);
    }
-  }
-  else if (u.id === 'redRaincoat') {
-   hit(b, u, target, power);
-   if (target.slows.length || target.frozenUntil > b.time) {
-    trueHit(b, u, target, 18);
-    addRuleMark(b, target, 1, u);
-   }
-  }
-  else if (u.id === 'stair13') {
-   hit(b, u, target, power);
   }
   else if (u.id === 'chainLetter') {
    target.rumorInfected = true;
@@ -801,8 +894,15 @@ const Game = (() => {
    fx(b, 'spell', u, target, 'RUMOR');
   }
   else if (family(u) === 'mannequin') {
-   const speedUp = (b.curfewUntil > b.time || allies(b, u).some(v => v.state !== 'active'));
-   const mult = u.id === 'livingTaboo' ? 3.0 : speedUp ? 2.5 : 1.0;
+   const inBlackout = b.curfewUntil > b.time;
+   if (inBlackout) {
+    u.lastRunnerReact = u.lastRunnerReact || {};
+    if (b.time - (u.lastRunnerReact[target.uid] || -99) < 1.5) return false;
+    u.lastRunnerReact[target.uid] = b.time;
+   } else if (!allies(b, u).some(v => v.state !== 'active') && (target.ruleMarks || 0) <= 0) {
+    return false;
+   }
+   const mult = u.id === 'livingTaboo' ? 3.0 : inBlackout ? 2.5 : 1.0;
    hit(b, u, target, power * mult);
    if (u.id === 'stalker') status(b, target, 'slow', 3, 0.30, u);
    if (u.id === 'livingTaboo' && target.p >= 14.5) {
@@ -896,6 +996,7 @@ const Game = (() => {
    e.p += e.speed * dt * move * (e.enraged ? 1.25 : 1) * (b.run.relics.includes('frost') ? .9 : 1);
    if (wasRetreating) e.p -= e.speed * dt * move * (e.enraged ? 1.25 : 1) * (b.run.relics.includes('frost') ? .9 : 1) * 2;
    if (!wasRetreating && e.p > previousProgress) triggerStairTraps(b, e, previousProgress, e.p);
+   triggerRedRaincoatTraps(b, e, previousProgress, e.p, wasRetreating);
    e.maxProgress = Math.max(e.maxProgress || 0, e.p); if (e.p >= 16) {
     if (e.champion) recordTrial(b, e, false);
     if (b.units.some(v => !v.removed && v.id === 'ruleArchitect') && !b.room404Saved) {

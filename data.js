@@ -356,7 +356,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["attacker", "investigator", "urban-scaling"],
     "ecosystem": "Quái Đàm · Anomaly Log",
-    "rules": "Attacks add 1 Violation Mark to surviving targets, up to 5 per runner. Each newly applied team mark grants +1 Dread (+2 during Blackout). Advances at 25/70/140 Dread. Rule Enforcer binds an adjacent Cursed Containment Relic immediately, including during battle. After ascension, every 30 newly earned Dread grants +2 permanent ATK; old Dread is not reused.",
+    "rules": "Attacks add 1 Violation Mark to surviving targets, up to 5 per runner. Each newly applied team mark grants +1 Dread . Advances at 25/70/140 Dread. Rule Enforcer binds an adjacent Cursed Containment Relic immediately, including during battle. After ascension, every 30 newly earned Dread grants +2 permanent ATK; old Dread is not reused.",
     "synergy": "Incident Dossiers, Forensic Coroner, and Cursed Containment Relics."
   },
   // 2. Security Monitor (Architecture A Producer)
@@ -450,7 +450,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "urban-relic", "rules"],
     "ecosystem": "Quái Đàm · Containment Relic",
-    "rules": "Reduces the team Blackout trigger requirement from 5 marks to 4 marks. Whenever Blackout occurs, grants all deployed Haunted allies +1 permanent ATK. When orthogonally adjacent to a Rule Enforcer, awakens The Architect of Taboos!",
+    "rules": "Enhances containment efficiency: Incident Dossiers grant +2 bonus Dread when examined or decoded. When orthogonally adjacent to a Rule Enforcer, awakens The Architect of Taboos!",
     "synergy": "Rule Enforcer (Legendary Investigator) and all Urban Legends."
   },
   // 7. Panopticon Monitor (Relic 2 -> The All-Seeing Overseer)
@@ -486,7 +486,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "urban-relic", "curfew"],
     "ecosystem": "Quái Đàm · Containment Relic",
-    "rules": "Extends all team Blackouts by 2.0s. Whenever Blackout begins, immediately heals 5 player HP. When orthogonally adjacent to a Rule Enforcer, awakens the Director of Curfew!",
+    "rules": "Establishes Emergency Hotline: On battle start, immediately restores 8 player HP and grants all Haunted allies +20% attack speed for 10s. When orthogonally adjacent to a Rule Enforcer, awakens the Director of Curfew!",
     "synergy": "Rule Enforcer (Legendary Investigator) and Blackout triggers."
   },
   // 9. Coroner's Bone Saw (Relic 4 -> Forensic Demiurge)
@@ -650,9 +650,9 @@ const CARDS = [
     "asset": "spirit",
     "icon": "✧",
     "fav": "team",
-    "tags": ["attacker", "urban-legend", "retribution"],
+    "tags": ["attacker", "urban-lineage", "retribution"],
     "ecosystem": "Quái Đàm · Do Not Look Back",
-    "rules": "Rule: 'Do Not Look Back.' Attacks the leading runner. Whenever any runner is slowed, warped, or stunned, immediately strikes them for 18 true damage and inflicts 1 Violation Mark.",
+    "rules": "Rule: 'Do Not Look Back.' Reactive trap · does not attack normally. Slashes runners who turn back, retreat, or get warped/slowed, dealing 18 true damage, applying bleed, and leaving a blood pool. In Blackout, triggers against turning or crowding runners, dealing double shadow damage. Self-ascends across battles into Blood-Drenched Phantasm (Epic, 15) and Harbinger of the Crimson Rain (Mythic, 45)!",
     "synergy": "Control cards, Midnight Bus 44, The Midnight Caller, and Void Eye."
   },
   // 18. The 13th Step
@@ -668,9 +668,9 @@ const CARDS = [
     "asset": "totem",
     "icon": "✧",
     "fav": "neighbor",
-    "tags": ["trap", "urban-legend"],
+    "tags": ["trap", "urban-lineage", "vertigo"],
     "ecosystem": "Quái Đàm · Infinite Staircase",
-    "rules": "Rule: 'Never Count the Steps.' Lays curse marks on perimeter corners dealing 35 magic damage and adding 1 Violation Mark when runners pass. At 5+ marks, runners are warped back 2 tiles.",
+    "rules": "Rule: 'Never Count the Steps.' Reactive trap · does not attack normally. Lays curse marks on corners and triggers every 13th step, dealing 35 damage, causing stumble, and warping repeat violators. During Blackout, triggers every 4th step, banishing victims into the Penrose Trapdoor. Self-ascends across battles into Infinite Spiral Staircase (Epic, 15) and The Penrose Labyrinth (Mythic, 45)!",
     "synergy": "Night Investigator, Slit-Mouthed Woman, and corner track tiles."
   },
 
@@ -1370,7 +1370,7 @@ const FORMS = [
     "tags": ["investigator", "urban-realm", "pierce"],
     "evolvedFrom": "investigator",
     "draftable": false,
-    "rules": "Occult rank · 25 Dread. Attacks pierce the 2 leading runners and inflict 1 Violation Mark on hit. Records +1 Dread per violation (+2 during Blackout). Advances to Anomaly Specialist at 70 Dread.",
+    "rules": "Occult rank · 25 Dread. Attacks pierce the 2 leading runners and inflict 1 Violation Mark on hit. Records +1 Dread per violation . Advances to Anomaly Specialist at 70 Dread.",
     "synergy": "All Urban Legends and Rule Violations."
   },
   {
@@ -1388,7 +1388,7 @@ const FORMS = [
     "tags": ["investigator", "urban-realm", "aoe"],
     "evolvedFrom": "investigator",
     "draftable": false,
-    "rules": "Anomaly rank · 70 Dread. Attacks release an anomaly shockwave hitting 3 violators for double damage. Records +1 Dread per violation (+2 in Blackout). Advances to Rule Enforcer at 140 Dread.",
+    "rules": "Anomaly rank · 70 Dread. Attacks release an anomaly shockwave hitting 3 violators for double damage. Records +1 Dread per violation . Advances to Rule Enforcer at 140 Dread.",
     "synergy": "All Urban Legends and Rule Violations."
   },
   {
@@ -1427,7 +1427,7 @@ const FORMS = [
     "tags": ["apex", "urban-apex", "taboo-master"],
     "evolvedFrom": "investigator",
     "draftable": false,
-    "rules": "Rule 0: Existence Is a Violation. All runners spawn with 2 Violation Marks (+16% damage). Attacks deal 2.5× true damage during Blackout. Once per battle, traps a leaking runner in Room 404, preventing the leak. Triggers Rule Resonance when adjacent to another Urban Legend or Relic (+20% damage, +25% speed). Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
+    "rules": "Rule 0: Existence Is a Violation. All runners spawn with 2 Violation Marks (+16% damage). Attacks deal 2.5× true damage to violators. Once per battle, traps a leaking runner in Room 404, preventing the leak. Triggers Rule Resonance when adjacent to another Urban Legend or Relic (+20% damage, +25% speed). Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
     "synergy": "Cursed Noticeboard and Rule Resonance."
   },
   // 2. Panopticon Monitor -> The All-Seeing Overseer
@@ -1465,7 +1465,7 @@ const FORMS = [
     "tags": ["apex", "urban-apex", "curfew-master"],
     "evolvedFrom": "investigator",
     "draftable": false,
-    "rules": "Rule: 'Indefinite Curfew.' Extends Blackout duration to 7.0s (9.8s with Yara). During Blackout, all Haunted allies gain +80% attack speed and restore 1 HP per 5 kills. Attacks deal double damage to violators. Triggers Rule Resonance when adjacent to another Urban Legend or Relic. Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
+    "rules": "Rule: 'Indefinite Curfew.' Establishes permanent containment protocol: all Haunted allies gain +60% attack speed and restore 1 HP per 5 kills. Attacks deal double damage to violators. Triggers Rule Resonance when adjacent to another Urban Legend or Relic. Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
     "synergy": "Red Hotline and Rule Resonance."
   },
   // 4. Coroner's Bone Saw -> Forensic Demiurge
@@ -1692,6 +1692,80 @@ const FORMS = [
     "draftable": false,
     "rules": "The apex manifestation of taboo. During Blackout, attacks at 3.0× speed with 100% critical chance. Once per battle, if a runner reaches tile 15, instantly ambushes and executes it before it can leak. Triggers Rule Resonance when adjacent to another Urban Legend.",
     "synergy": "Blackouts and Rule Resonance."
+  },
+  // Lineage 6: Red Raincoat Specter
+  {
+    "id": "bloodPhantasm",
+    "name": "Blood-Drenched Phantasm",
+    "vn": "Huyết Ảnh Áo Mưa",
+    "genre": "Haunted",
+    "rarity": "Epic",
+    "baseAtk": 46,
+    "attackInterval": 0.9,
+    "max": 0,
+    "asset": "spirit",
+    "icon": "✧",
+    "fav": "team",
+    "tags": ["urban-form", "bleed", "retribution"],
+    "evolvedFrom": "redRaincoat",
+    "draftable": false,
+    "rules": "Rule: 'Do Not Look Back.' Reactive trap · does not attack normally. Slashes runners who turn back or retreat for 45 true damage, heavy bleed, and spreading blood pools. In Blackout, triggers against turning or crowding runners, dealing double shadow damage. Witnessing 45 total violations across battles awakens Harbinger of the Crimson Rain!",
+    "synergy": "Bleed, Retribution, and Harbinger of the Crimson Rain."
+  },
+  {
+    "id": "crimsonHarbinger",
+    "name": "Harbinger of the Crimson Rain",
+    "vn": "Huyết Vũ Sứ Giả",
+    "genre": "Haunted",
+    "rarity": "Mythic",
+    "baseAtk": 195,
+    "attackInterval": 0.5,
+    "max": 0,
+    "asset": "spirit",
+    "icon": "✧",
+    "fav": "team",
+    "tags": ["apex", "urban-apex", "crimson-deluge"],
+    "evolvedFrom": "redRaincoat",
+    "draftable": false,
+    "rules": "'The Crimson Deluge.' Reactive slashes critically hit for 3.0× damage. During Blackout, sudden turns or running within 2 tiles of another runner triggers lethal dismemberment; fleeing or panicked victims take triple damage and unleash a crimson mist slowing nearby runners by 60%. Triggers Rule Resonance when adjacent to another Urban Legend.",
+    "synergy": "Bleed, Panic, and Rule Resonance."
+  },
+  // Lineage 7: The 13th Step
+  {
+    "id": "infiniteStair",
+    "name": "Infinite Spiral Staircase",
+    "vn": "Cầu Thang Vô Hạn",
+    "genre": "Haunted",
+    "rarity": "Epic",
+    "baseAtk": 45,
+    "attackInterval": 1.2,
+    "max": 0,
+    "asset": "totem",
+    "icon": "✧",
+    "fav": "neighbor",
+    "tags": ["urban-form", "trap", "vertigo"],
+    "evolvedFrom": "stair13",
+    "draftable": false,
+    "rules": "Rule: 'Never Count the Steps.' Reactive trap · does not attack normally. Corner and step traps deal 75 magic damage and inflict Stumble & Vertigo. During Blackout, triggers every 4th step, banishing victims for 2.0s into the void. Witnessing 45 total violations across battles awakens The Penrose Labyrinth!",
+    "synergy": "Traps, Vertigo, and The Penrose Labyrinth."
+  },
+  {
+    "id": "penroseLabyrinth",
+    "name": "The Penrose Labyrinth",
+    "vn": "Mê Cung Penrose",
+    "genre": "Haunted",
+    "rarity": "Mythic",
+    "baseAtk": 180,
+    "attackInterval": 0.6,
+    "max": 0,
+    "asset": "totem",
+    "icon": "✧",
+    "fav": "neighbor",
+    "tags": ["apex", "urban-apex", "endless-drop"],
+    "evolvedFrom": "stair13",
+    "draftable": false,
+    "rules": "'The Endless Drop.' Corner and step traps inflict severe Vertigo and warp violators back 4 tiles. During Blackout, every 4th step triggers Penrose Trapdoor: victims vanish for 2.0s taking continuous crushing void damage; panicked or fleeing victims suffer Terminal Descent execution. Triggers Rule Resonance when adjacent to another Urban Legend.",
+    "synergy": "Warps, Panicked runners, and Rule Resonance."
   },
 
   // Earned realm forms for the Qi-Refining Practitioner lineage
