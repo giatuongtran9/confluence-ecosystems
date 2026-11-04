@@ -158,7 +158,7 @@ const CARDS = [
     "fav": "team",
     "tags": ["plant", "qi", "fodder"],
     "ecosystem": "Cultivation · Dan Dao",
-    "rules": "Every 4s, releases spiritual dew across the grid, granting +2 Qi to all deployed Cultivators. If orthogonally adjacent to a Cauldron, can be refined into a Qi Gathering Pill (+18 Qi, +3 permanent ATK, +15% permanent attack speed).",
+    "rules": "Every 4s, grants +2 Qi to all deployed Practitioners and Cultivation Apex forms. Adjacent Cauldrons can brew renewable grass into +18 Qi, +3 permanent ATK before ascension, and +15% temporary speed for 8s (modified by buff duration; refreshes without stacking).",
     "synergy": "Qi-Refining Practitioner and Nine-Turn Alchemy Cauldron."
   },
   // 3. Nine-Turn Alchemy Cauldron
@@ -178,7 +178,7 @@ const CARDS = [
     "tags": ["alchemy", "refiner"],
     "growthRole": "engine",
     "ecosystem": "Cultivation · Dan Dao",
-    "rules": "Attacks track. Every 6s, refines one orthogonally adjacent Spirit Lotus Blossom into a Breakthrough Dan (+35 Qi, +4 permanent ATK) or adjacent Spirit Grass into a Qi Gathering Pill (+18 Qi, +3 permanent ATK, +15% permanent speed), delivered to the lowest-realm Practitioner.",
+    "rules": "First brews at 8s, then one recipe every 8s. Prioritizes an adjacent Lotus Blossom (+35 Qi, +4 permanent ATK before ascension); otherwise uses adjacent renewable Spirit Grass (+18 Qi, +3 permanent ATK before ascension, +15% temporary speed for 8s). Targets the lowest-Qi Practitioner first, then a Cultivation Apex. Apex recipients convert every 30 new Qi into +2 permanent ATK instead of the direct ATK reward. No valid target: no ingredient is consumed. Consumed/refined/breakthrough events also trigger an elixir: +1 team ATK and heal 1 HP, at most once every 8s.",
     "synergy": "Spirit Lotus Root, Cloud-Mist Spirit Grass, Qi-Refining Practitioner."
   },
   // 4. Qi-Refining Practitioner
@@ -324,7 +324,7 @@ const CARDS = [
     "baseAtk": 28,
     "attackInterval": 1.5,
     "max": 0,
-    "asset": "heir",
+    "asset": "atlasCaster",
     "sprite": 0,
     "icon": "🗡",
     "fav": "neighbor",
@@ -356,7 +356,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["attacker", "investigator", "urban-scaling"],
     "ecosystem": "Quái Đàm · Anomaly Log",
-    "rules": "Attacks the leading runner. Rule 0: Whenever any runner commits a Rule Violation, records +1 Dread (+2 during Blackout). Advances through clearance ranks: Occult Detective (Rare, 25 Dread), Anomaly Specialist (Epic, 70 Dread), and Rule Enforcer (Legendary, 140 Dread). At Legendary rank, binds an adjacent Cursed Containment Relic to awaken 1 of 5 Mythic Anomaly Authorities!",
+    "rules": "Attacks add 1 Violation Mark to surviving targets, up to 5 per runner. Each newly applied team mark grants +1 Dread (+2 during Blackout). Advances at 25/70/140 Dread. Rule Enforcer binds an adjacent Cursed Containment Relic immediately, including during battle. After ascension, every 30 newly earned Dread grants +2 permanent ATK; old Dread is not reused.",
     "synergy": "Incident Dossiers, Forensic Coroner, and Cursed Containment Relics."
   },
   // 2. Security Monitor (Architecture A Producer)
@@ -412,7 +412,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["refiner", "forensics"],
     "ecosystem": "Quái Đàm · Forensics",
-    "rules": "Attacks runners. Every 5s, examines an orthogonally adjacent Incident Dossier token, clearing it from the grid. Grants the lowest-ATK adjacent Haunted ally +3 permanent ATK and delivers +10 Dread directly to the team's Investigator.",
+    "rules": "Every 5s, examines an adjacent Incident Dossier token. Grants the lowest-ATK adjacent original Haunted ally (or itself) +3 permanent ATK and delivers +10 Dread to the lowest-Dread Investigator, prioritizing Investigators over ascended Authorities. Authorities convert every 30 new Dread into +2 permanent ATK.",
     "synergy": "Security Monitor, Emergency Broadcast, and Night Investigator."
   },
   // 5. Black-Box Cryptographer (Architecture A Processor)
@@ -430,7 +430,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["refiner", "buffer"],
     "ecosystem": "Quái Đàm · Forensics",
-    "rules": "Attacks runners. Every 6s, decodes an adjacent Incident Dossier into a Survival Manual, granting all deployed Haunted allies +25% attack speed and +15% critical chance for 4s (5.6s with Yara) and granting +8 Dread to the Investigator.",
+    "rules": "Every 6s, decodes an adjacent Incident Dossier, granting all deployed Haunted allies +25% attack speed and +15% critical chance for 4s (modified by buff duration). Grants +8 Dread to the lowest-Dread Investigator, prioritizing Investigators over ascended Authorities. Authorities convert every 30 new Dread into +2 permanent ATK.",
     "synergy": "Security Monitor, Emergency Broadcast, and Night Investigator."
   },
 
@@ -560,7 +560,7 @@ const CARDS = [
     "fav": "team",
     "tags": ["control", "urban-lineage", "banish"],
     "ecosystem": "Quái Đàm · Autonomous Legend",
-    "rules": "Rule: 'All Passengers Must Disembark.' Attacks pierce 2 runners. Every 8s, sweeps a 4-tile edge, warping all runners with 2+ Violation Marks backward 3 tiles. Self-ascends across battles into Ghost Route Express (Epic, 15) and Terminus Bus 44 (Mythic, 45)!",
+    "rules": "Attacks pierce 2 runners and add 1 Violation Mark to each surviving target, up to 5. Every 8s, sweeps the leading runner's 4-tile edge and warps runners with 2+ marks backward 3 tiles. Each successful sweep displacement earns +1 violation. Evolves at 15/45 violations; adjacent Urban Legends share 50% of earned violations.",
     "synergy": "Crowded tracks, Warps, and other Urban Legends."
   },
   // 13. The Midnight Caller (Autonomous Legend 3)
@@ -634,7 +634,7 @@ const CARDS = [
     "fav": "team",
     "tags": ["attacker", "contagion"],
     "ecosystem": "Quái Đàm · Folklore Contagion",
-    "rules": "Attacks apply Folklore Rumors. Whenever an infected runner dies or touches another runner, the rumor spreads, dealing 20 true damage and granting +1 Violation count to all deployed Urban Legends.",
+    "rules": "Attacks infect runners with Folklore Rumors. Each infected runner can spread once by contact to an uninfected runner within 0.45 track tiles. On death it can infect another within 1.5 tiles. A contact spread or infected death grants all deployed original Urban Legends +1 evolution progress; newly infected recipients take 20 true damage. Ordinary attacks grant no evolution progress.",
     "synergy": "All 5 Autonomous Urban Legends."
   },
   // 17. Red Raincoat Specter
@@ -673,24 +673,7 @@ const CARDS = [
     "rules": "Rule: 'Never Count the Steps.' Lays curse marks on perimeter corners dealing 35 magic damage and adding 1 Violation Mark when runners pass. At 5+ marks, runners are warped back 2 tiles.",
     "synergy": "Night Investigator, Slit-Mouthed Woman, and corner track tiles."
   },
-{
-    "id": "heir",
-    "name": "Blood Heir (Legacy)",
-    "retired": true,
-    "vn": "Huyết Tự",
-    "genre": "Bloodline",
-    "baseAtk": 18,
-    "attackInterval": 1.6,
-    "sprite": 8,
-    "icon": "♜",
-    "fav": "neighbor",
-    "ecosystem": "Predation · permanent growth",
-    "rarity": "Rare",
-    "tags": ["attacker"],
-    "evolveTo": "progenitor",
-    "rules": "Strike the leading runner. At opening and every 6s, consume one adjacent Crimson Hound, including its tokens. Tokens first, then lowest-ATK eligible original. Gain +3 permanent ATK per meal, with no attack-count growth. Originals are permanently lost; tokens preserve originals. Same fixed meal reward for either. After 3 meals, evolve into Bloodline Progenitor.",
-    "synergy": "Crimson Hound, Crimson Broodkeeper, and Bloodline fodder."
-  },
+
   {
     "id": "hound",
     "name": "Crimson Hound",
@@ -704,7 +687,7 @@ const CARDS = [
     "ecosystem": "Execution · Bloodline fodder",
     "rarity": "Normal",
     "tags": ["predator", "fodder"],
-    "rules": "Prioritize runners below 30% health and deal double damage to them. Same-species Hound neighbors breed temporary Crimson Hound copies at the shared 10% per-second chance into an empty orthogonal slot. Eligible prey for the Primordial Blood Cub and legacy Blood Heir; consumed Hounds can also trigger the Broodkeeper.",
+    "rules": "Prioritize runners below 30% health and deal double damage to them. Same-species Hound neighbors breed temporary Crimson Hound copies at the shared 10% per-second chance into an empty orthogonal slot. Eligible prey for the Primordial Blood Cub; consumed Hounds can also trigger the Broodkeeper.",
     "synergy": "Primordial Blood Cub, Crimson Broodkeeper, and other Crimson Hounds."
   },
   {
@@ -919,7 +902,7 @@ const CARDS = [
     "growthRole": "engine",
     "ecosystem": "Sacrifice · neighborhood growth",
     "rules": "Whenever an ally is consumed or an enemy dies while bleeding, grant all orthogonally adjacent original allies +1 permanent ATK.",
-    "synergy": "Blood Heir, Primordial Blood Cub, and Crimson Hound."
+    "synergy": "Primordial Blood Cub and all five Bloodline fodders."
   },
   {
     "id": "crystal",
@@ -1136,7 +1119,7 @@ const CARDS = [
     "baseAtk": 14,
     "attackInterval": 1.4,
     "max": 0,
-    "asset": "familiar",
+    "asset": "atlasCreature",
     "tags": [],
     "fav": "team",
     "icon": "✧",
@@ -1153,13 +1136,13 @@ const CARDS = [
     "baseAtk": 22,
     "attackInterval": 1.8,
     "max": 0,
-    "asset": "heir",
+    "asset": "atlasCaster",
     "tags": [],
     "fav": "team",
     "icon": "✧",
     "ecosystem": "Predation · swarm haste",
-    "rules": "Grant Bloodline prey +40% attack speed. Bloodline Bleed duration increases by 0.5s per deployed Crimson Hound.",
-    "synergy": "Primordial Blood Cub, Crimson Hound, and Iron Maiden Totem."
+    "rules": "Grants all five Bloodline fodder species and their tokens +40% attack speed: Horned Serpent, Crimson Hound, Iron-Shelled Scuttler, Flame Toad, and Spirit Peach. Bloodline Bleed duration increases by 0.5s per deployed Bloodline fodder original or token. Duplicate Matriarch auras do not stack.",
+    "synergy": "Primordial Blood Cub, all five Bloodline fodders, and Bleed support."
   },
 {
   "id": "cub",
@@ -1170,7 +1153,7 @@ const CARDS = [
   "baseAtk": 9,
   "attackInterval": 1.2,
   "max": 0,
-  "asset": "heir",
+  "asset": "atlasCaster",
   "icon": "♜",
   "fav": "neighbor",
   "tags": [
@@ -1190,7 +1173,7 @@ const CARDS = [
   "baseAtk": 12,
   "attackInterval": 1.2,
   "max": 0,
-  "asset": "familiar",
+  "asset": "atlasCreature",
   "icon": "🐉",
   "fav": "neighbor",
   "tags": [
@@ -1444,7 +1427,7 @@ const FORMS = [
     "tags": ["apex", "urban-apex", "taboo-master"],
     "evolvedFrom": "investigator",
     "draftable": false,
-    "rules": "Rule 0: Existence Is a Violation. All runners spawn with 2 Violation Marks (+16% damage). Attacks deal 2.5× true damage during Blackout. Once per battle, traps a leaking runner in Room 404, preventing the leak. Triggers Rule Resonance when adjacent to another Urban Legend or Relic (+20% damage, +25% speed).",
+    "rules": "Rule 0: Existence Is a Violation. All runners spawn with 2 Violation Marks (+16% damage). Attacks deal 2.5× true damage during Blackout. Once per battle, traps a leaking runner in Room 404, preventing the leak. Triggers Rule Resonance when adjacent to another Urban Legend or Relic (+20% damage, +25% speed). Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
     "synergy": "Cursed Noticeboard and Rule Resonance."
   },
   // 2. Panopticon Monitor -> The All-Seeing Overseer
@@ -1463,7 +1446,7 @@ const FORMS = [
     "tags": ["apex", "urban-apex", "panopticon"],
     "evolvedFrom": "investigator",
     "draftable": false,
-    "rules": "Rule: 'No Blind Spots.' Attacks pierce all 16 track tiles simultaneously. Whenever any runner attempts to speed up, sprint, or enrage, freezes them in stasis for 2.0s and strips their speed boosts. Triggers Rule Resonance when adjacent to another Urban Legend or Relic.",
+    "rules": "Rule: 'No Blind Spots.' Attacks pierce all 16 track tiles simultaneously. Whenever any runner attempts to speed up, sprint, or enrage, freezes them in stasis for 2.0s and strips their speed boosts. Triggers Rule Resonance when adjacent to another Urban Legend or Relic. Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
     "synergy": "Panopticon Monitor and Rule Resonance."
   },
   // 3. Red Hotline -> Director of Curfew
@@ -1482,7 +1465,7 @@ const FORMS = [
     "tags": ["apex", "urban-apex", "curfew-master"],
     "evolvedFrom": "investigator",
     "draftable": false,
-    "rules": "Rule: 'Indefinite Curfew.' Extends Blackout duration to 7.0s (9.8s with Yara). During Blackout, all Haunted allies gain +80% attack speed and restore 1 HP per 5 kills. Attacks deal double damage to violators. Triggers Rule Resonance when adjacent to another Urban Legend or Relic.",
+    "rules": "Rule: 'Indefinite Curfew.' Extends Blackout duration to 7.0s (9.8s with Yara). During Blackout, all Haunted allies gain +80% attack speed and restore 1 HP per 5 kills. Attacks deal double damage to violators. Triggers Rule Resonance when adjacent to another Urban Legend or Relic. Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
     "synergy": "Red Hotline and Rule Resonance."
   },
   // 4. Coroner's Bone Saw -> Forensic Demiurge
@@ -1501,7 +1484,7 @@ const FORMS = [
     "tags": ["apex", "urban-apex", "dissection"],
     "evolvedFrom": "investigator",
     "draftable": false,
-    "rules": "Rule: 'Living Autopsy.' Attacks against marked runners inflict true necrosis (50 DPS Bleed ignoring armor). Every 4th attack strips 12% max HP from Elites, Harbingers, and Bosses. Triggers Rule Resonance when adjacent to another Urban Legend or Relic.",
+    "rules": "Rule: 'Living Autopsy.' Attacks against marked runners inflict true necrosis (50 DPS Bleed ignoring armor). Every 4th attack strips 12% max HP from Elites, Harbingers, and Bosses. Triggers Rule Resonance when adjacent to another Urban Legend or Relic. Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
     "synergy": "Coroner's Bone Saw and Rule Resonance."
   },
   // 5. Liminal Keycard -> Warden of the Backrooms
@@ -1520,7 +1503,7 @@ const FORMS = [
     "tags": ["apex", "urban-apex", "liminal-space"],
     "evolvedFrom": "investigator",
     "draftable": false,
-    "rules": "Rule: 'Floor Does Not Exist.' Attacks pierce 3 runners. Every 6s, banishes the 3 leading runners into non-Euclidean elevator shafts for 4.0s (taking 150 DPS) and dropping them 6 tiles backward on return. Triggers Rule Resonance when adjacent to another Urban Legend or Relic.",
+    "rules": "Rule: 'Floor Does Not Exist.' Attacks pierce 3 runners. Every 6s, banishes the 3 leading runners into non-Euclidean elevator shafts for 4.0s (taking 150 DPS) and dropping them 6 tiles backward on return. Triggers Rule Resonance when adjacent to another Urban Legend or Relic. Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
     "synergy": "Liminal Keycard and Rule Resonance."
   },
 
@@ -1578,7 +1561,7 @@ const FORMS = [
     "tags": ["urban-form", "banish", "warp"],
     "evolvedFrom": "nightBus",
     "draftable": false,
-    "rules": "Sweeps hit 6 tiles for 1.5× damage. Every 6s, banishes the leading marked runner into the bus for 2.5s. Witnessing 45 total violations across battles awakens Terminus Bus 44!",
+    "rules": "Attacks pierce 2 runners and add 1 Violation Mark to surviving targets. Every 8s, sweeps a 6-tile span around the leading runner: runners with 2+ marks are warped back 3 tiles and hit for 1.5× ATK. Successful sweep displacements earn +1 violation each. At 45 violations becomes Terminus Bus 44.",
     "synergy": "Crowded tracks and Terminus Bus 44."
   },
   {
@@ -1596,7 +1579,7 @@ const FORMS = [
     "tags": ["apex", "urban-apex", "abduction"],
     "evolvedFrom": "nightBus",
     "draftable": false,
-    "rules": "'The Final Stop.' Attacks pierce 4 runners. Every 6s, abducts the 2 leading runners into the ghost bus for 3.0s × buffDuration, dealing 140 DPS while removed from the track and dumping them 5 tiles backward. Triggers Rule Resonance when adjacent to another Urban Legend.",
+    "rules": "Attacks pierce 4 runners and add 1 Violation Mark to surviving targets. Every 8s, sweeps the leading runner's 4-tile edge, warping runners with 2+ marks back 5 tiles. Every 6s, applies 140 DPS Bleed for 3s (modified by buff duration) to the 2 leading runners and warps them back 5 tiles. Triggers Relic Resonance beside a relic.",
     "synergy": "Track control, Warps, and Rule Resonance."
   },
   // Lineage 3: The Midnight Payphone
@@ -1779,7 +1762,7 @@ const FORMS = [
     "tags": ["apex", "pierce", "boss-slayer"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Every 4th attack releases a Ten-Thousand Sword Torrent piercing all 16 perimeter tiles, dealing unbuffed ATK damage and stripping 30% current HP from the highest-HP target. Triggers Relic Resonance when adjacent to another Relic (+20% damage, +25% relic speed).",
+    "rules": "Every 4th attack releases a Ten-Thousand Sword Torrent piercing all 16 perimeter tiles, dealing unbuffed ATK damage and stripping 30% current HP from the highest-HP target. Triggers Relic Resonance when adjacent to another Relic (+20% damage, +25% relic speed). Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
     "synergy": "Ancient Flying Sword, Relic Resonance."
   },
   // 2. Melodic Saint
@@ -1798,7 +1781,7 @@ const FORMS = [
     "tags": ["apex", "control", "detonate"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Strikes hit all 16 tiles simultaneously, applying Dissonance (45% slow). At 5 stacks, Dissonance explodes for 260 magic damage and stuns for 1.5s. Triggers Relic Resonance when adjacent to another Relic.",
+    "rules": "Strikes hit all 16 tiles simultaneously, applying Dissonance (45% slow). At 5 stacks, Dissonance explodes for 260 magic damage and stuns for 1.5s. Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
     "synergy": "Celestial Guqin, Relic Resonance."
   },
   // 3. Formation Master
@@ -1817,7 +1800,7 @@ const FORMS = [
     "tags": ["apex", "trap", "stasis"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Places alternating Black and White Go stones on the track. Black pushes enemies backward 3 tiles; White traps enemies in a 2s stasis prison. Sequence triggers 400 true damage. Triggers Relic Resonance when adjacent to another Relic.",
+    "rules": "Places alternating Black and White Go stones on the track. Black pushes enemies backward 3 tiles; White traps enemies in a 2s stasis prison. Sequence triggers 400 true damage. Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
     "synergy": "Star-River Weiqi Board, Relic Resonance."
   },
   // 4. Talisman Sovereign
@@ -1836,7 +1819,7 @@ const FORMS = [
     "tags": ["apex", "execute", "amp"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Inscribes decrees on active track sections. Enemies take +70% damage from all allies. Any target below 15% HP is instantly executed. Triggers Relic Resonance when adjacent to another Relic.",
+    "rules": "Inscribes decrees on active track sections. Enemies take +70% damage from all allies. Any target below 15% HP is instantly executed. Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
     "synergy": "Dragon-Tail Ink Brush, Relic Resonance."
   },
   // 5. Landscape Sage
@@ -1855,7 +1838,7 @@ const FORMS = [
     "tags": ["apex", "banish"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Every 8s, banishes the highest-threat enemy into the scroll for 5s. Target takes 90 crushing damage/sec while completely removed from the track. Triggers Relic Resonance when adjacent to another Relic.",
+    "rules": "Every 8s, banishes the highest-threat enemy into the scroll for 5s. Target takes 90 crushing damage/sec while completely removed from the track. Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
     "synergy": "Mountain-River Scroll, Relic Resonance."
   },
   // 6. Soul-Reaping Heavenly Demon
@@ -1874,7 +1857,7 @@ const FORMS = [
     "tags": ["apex", "demonic", "chain"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Attacks fire a continuous volley of 5 homing skulls. Every perimeter kill triggers an unholy soul detonation dealing 160 shadow damage in a 3-tile radius (no HP healing). Triggers Relic Resonance when adjacent to another Relic.",
+    "rules": "Attacks fire a continuous volley of 5 homing skulls. Every perimeter kill triggers an unholy soul detonation dealing 160 shadow damage in a 3-tile radius (no HP healing). Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
     "synergy": "Ten-Thousand Soul Banner, Relic Resonance."
   },
   // 7. Blood-Fiend Sword Master
@@ -1886,14 +1869,14 @@ const FORMS = [
     "baseAtk": 180,
     "attackInterval": 0.35,
     "rarity": "Mythic",
-    "asset": "heir",
+    "asset": "atlasCaster",
     "sprite": 0,
     "icon": "🗡",
     "fav": "team",
     "tags": ["apex", "demonic", "cleave"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Attacks at blinding speed. Every 4th attack sweeps across an entire 4-tile perimeter edge for 280% damage, leaving a pool of boiling blood dealing 50 bleed damage/sec (no HP healing). Triggers Relic Resonance when adjacent to another Relic.",
+    "rules": "Attacks at blinding speed. Every 4th attack sweeps across an entire 4-tile perimeter edge for 280% damage, leaving a pool of boiling blood dealing 50 bleed damage/sec (no HP healing). Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
     "synergy": "Blood-Drinking Demon Blade, Relic Resonance."
   },
   // 4 Other Earned Forms
@@ -1918,27 +1901,7 @@ const FORMS = [
     "rules": "Strike the leading runner for full attack damage and the next two for 55% each. Retain breakthroughs: each other ally attack adds 1 ability tick; at 36, gain +3 permanent ATK.",
     "synergy": "Rapid attackers, ability-gauge batteries, and late payoffs."
   },
-  {
-    "id": "progenitor",
-    "max": 0,
-    "name": "Bloodline Progenitor",
-    "vn": "Huyết Tộc Thủy Tổ",
-    "genre": "Bloodline",
-    "baseAtk": 35,
-    "attackInterval": 1.4,
-    "sprite": 8,
-    "icon": "♜",
-    "fav": "neighbor",
-    "ecosystem": "Predation · permanent growth",
-    "rarity": "Legendary",
-    "tags": [],
-    "evolvedFrom": "heir",
-    "draftable": false,
-    "asset": "heir",
-    "growthRole": "evolved-engine",
-    "rules": "Strike two leading runners. At opening and every 6s, consume one adjacent Crimson Hound token or original. Gain +6 permanent ATK and +20% speed for 6s per meal. Heal 1 HP per three credited kills, up to 6 HP per battle.",
-    "synergy": "Breeding Bloodline prey and Crimson Broodkeeper."
-  },
+
   {
     "id": "wraith",
     "name": "Nine-Abyss Wraith",
@@ -1989,7 +1952,7 @@ const FORMS = [
   "baseAtk": 22,
   "attackInterval": 1.1,
   "max": 0,
-  "asset": "heir",
+  "asset": "atlasCaster",
   "icon": "♜",
   "fav": "team",
   "tags": [
@@ -2012,7 +1975,7 @@ const FORMS = [
   "baseAtk": 48,
   "attackInterval": 1.0,
   "max": 0,
-  "asset": "heir",
+  "asset": "atlasCaster",
   "icon": "♜",
   "fav": "team",
   "tags": [
@@ -2035,7 +1998,7 @@ const FORMS = [
   "baseAtk": 85,
   "attackInterval": 0.85,
   "max": 0,
-  "asset": "heir",
+  "asset": "atlasCaster",
   "icon": "♜",
   "fav": "team",
   "tags": [
@@ -2058,7 +2021,7 @@ const FORMS = [
   "baseAtk": 160,
   "attackInterval": 0.7,
   "max": 0,
-  "asset": "heir",
+  "asset": "atlasCaster",
   "icon": "♜",
   "fav": "team",
   "tags": [
@@ -2081,7 +2044,7 @@ const FORMS = [
   "baseAtk": 24,
   "attackInterval": 1.0,
   "max": 0,
-  "asset": "heir",
+  "asset": "atlasCaster",
   "icon": "♜",
   "fav": "team",
   "tags": [
@@ -2104,7 +2067,7 @@ const FORMS = [
   "baseAtk": 52,
   "attackInterval": 0.9,
   "max": 0,
-  "asset": "heir",
+  "asset": "atlasCaster",
   "icon": "♜",
   "fav": "team",
   "tags": [
@@ -2127,7 +2090,7 @@ const FORMS = [
   "baseAtk": 95,
   "attackInterval": 0.75,
   "max": 0,
-  "asset": "heir",
+  "asset": "atlasCaster",
   "icon": "♜",
   "fav": "team",
   "tags": [
@@ -2150,7 +2113,7 @@ const FORMS = [
   "baseAtk": 210,
   "attackInterval": 0.55,
   "max": 0,
-  "asset": "heir",
+  "asset": "atlasCaster",
   "icon": "♜",
   "fav": "team",
   "tags": [
@@ -2173,7 +2136,7 @@ const FORMS = [
   "baseAtk": 18,
   "attackInterval": 1.4,
   "max": 0,
-  "asset": "heir",
+  "asset": "atlasCaster",
   "icon": "♜",
   "fav": "team",
   "tags": [
@@ -2196,7 +2159,7 @@ const FORMS = [
   "baseAtk": 42,
   "attackInterval": 1.3,
   "max": 0,
-  "asset": "heir",
+  "asset": "atlasCaster",
   "icon": "♜",
   "fav": "team",
   "tags": [
@@ -2219,7 +2182,7 @@ const FORMS = [
   "baseAtk": 80,
   "attackInterval": 1.1,
   "max": 0,
-  "asset": "heir",
+  "asset": "atlasCaster",
   "icon": "♜",
   "fav": "team",
   "tags": [
@@ -2242,7 +2205,7 @@ const FORMS = [
   "baseAtk": 150,
   "attackInterval": 0.9,
   "max": 0,
-  "asset": "heir",
+  "asset": "atlasCaster",
   "icon": "♜",
   "fav": "team",
   "tags": [
@@ -2265,7 +2228,7 @@ const FORMS = [
   "baseAtk": 20,
   "attackInterval": 1.1,
   "max": 0,
-  "asset": "heir",
+  "asset": "atlasCaster",
   "icon": "♜",
   "fav": "team",
   "tags": [
@@ -2288,7 +2251,7 @@ const FORMS = [
   "baseAtk": 46,
   "attackInterval": 0.95,
   "max": 0,
-  "asset": "heir",
+  "asset": "atlasCaster",
   "icon": "♜",
   "fav": "team",
   "tags": [
@@ -2311,7 +2274,7 @@ const FORMS = [
   "baseAtk": 82,
   "attackInterval": 0.8,
   "max": 0,
-  "asset": "heir",
+  "asset": "atlasCaster",
   "icon": "♜",
   "fav": "team",
   "tags": [
@@ -2334,7 +2297,7 @@ const FORMS = [
   "baseAtk": 175,
   "attackInterval": 0.65,
   "max": 0,
-  "asset": "heir",
+  "asset": "atlasCaster",
   "icon": "♜",
   "fav": "team",
   "tags": [
@@ -2357,7 +2320,7 @@ const FORMS = [
   "baseAtk": 16,
   "attackInterval": 0.8,
   "max": 0,
-  "asset": "heir",
+  "asset": "atlasCaster",
   "icon": "♜",
   "fav": "team",
   "tags": [
@@ -2380,7 +2343,7 @@ const FORMS = [
   "baseAtk": 38,
   "attackInterval": 0.7,
   "max": 0,
-  "asset": "heir",
+  "asset": "atlasCaster",
   "icon": "♜",
   "fav": "team",
   "tags": [
@@ -2403,7 +2366,7 @@ const FORMS = [
   "baseAtk": 75,
   "attackInterval": 0.6,
   "max": 0,
-  "asset": "heir",
+  "asset": "atlasCaster",
   "icon": "♜",
   "fav": "team",
   "tags": [
@@ -2426,7 +2389,7 @@ const FORMS = [
   "baseAtk": 185,
   "attackInterval": 0.45,
   "max": 0,
-  "asset": "heir",
+  "asset": "atlasCaster",
   "icon": "♜",
   "fav": "team",
   "tags": [
@@ -2497,7 +2460,7 @@ const TOKENS = [
     "fav": "neighbor",
     "species": "lotusRoot",
     "ecosystem": "Cultivation · Dan Dao",
-    "rules": "Spawned by Spirit Lotus Root. An adjacent Practitioner devours it immediately for +15 Qi and +2 permanent ATK. An adjacent Cauldron brews it into a Breakthrough Dan (+35 Qi, +4 permanent ATK). Eaten tokens do not harm the parent root.",
+    "rules": "An adjacent Practitioner absorbs this token for +15 Qi and +2 permanent ATK. Cultivation Apex forms absorb it for +15 Qi toward their 30-Qi growth cycle. A Cauldron can instead brew it into +35 Qi and +4 permanent ATK before ascension. Consuming the token preserves its parent root.",
     "synergy": "Qi-Refining Practitioner, Nine-Turn Alchemy Cauldron."
   },
   {
@@ -2517,23 +2480,7 @@ const TOKENS = [
     "rules": "Temporary Spirit Lotus token.",
     "synergy": "Alchemical Adept."
   },
-  {
-    "id": "imp",
-    "name": "Blood Imp",
-    "vn": "Blood Imp",
-    "genre": "Bloodline",
-    "rarity": "Normal",
-    "baseAtk": 10,
-    "attackInterval": 1.1,
-    "asset": "familiar",
-    "tags": ["token", "fodder"],
-    "token": true,
-    "draftable": false,
-    "fav": "neighbor",
-    "ecosystem": "Tokens · predation",
-    "rules": "Legacy temporary token from the retired Scarlet Familiar. Not eligible prey for current Bloodline predators.",
-    "synergy": "Blood Heir and Blood Altar."
-  },
+
   {
     "id": "houndToken",
     "name": "Hound Phantom",
@@ -2549,7 +2496,7 @@ const TOKENS = [
     "fav": "center",
     "ecosystem": "Tokens · predation",
     "rules": "Temporary Crimson Hound token.",
-    "synergy": "Blood Heir and Crimson Broodkeeper."
+    "synergy": "Primordial Blood Cub and Crimson Broodkeeper."
   },
   {
     "id": "echo",
@@ -2678,24 +2625,7 @@ const LEGACY_CARDS = [
   { "id": "soulwell", "name": "Soul Well", "genre": "Haunted", "baseAtk": 0, "attackInterval": 0, "rarity": "Epic", "draftable": false, "retired": true },
   { "id": "wraith", "name": "Nine-Abyss Wraith", "genre": "Haunted", "baseAtk": 28, "attackInterval": 0.7, "rarity": "Epic", "draftable": false, "retired": true },
 
-  {
-    "id": "familiar",
-    "retired": true,
-    "name": "Scarlet Familiar",
-    "vn": "Huyết Bộc",
-    "genre": "Bloodline",
-    "rarity": "Normal",
-    "baseAtk": 10,
-    "attackInterval": 1.1,
-    "max": 0,
-    "asset": "familiar",
-    "tags": ["fodder"],
-    "fav": "neighbor",
-    "icon": "✧",
-    "ecosystem": "Predation · bleeding",
-    "rules": "Strike the leading runner and apply Bleed: 3 DPS for 4s, with no stack limit. Legacy-only card. Scarlet Familiar is retired from current runs and is not eligible prey for the Blood Cub, Blood Heir, or Progenitor.",
-    "synergy": "Legacy Blood Heir and Blood Altar."
-  },
+
   { "id": "jade", "name": "Jade Disciple", "genre": "Cultivation", "baseAtk": 14, "attackInterval": 1.5, "max": 36, "rarity": "Rare", "draftable": false, "evolveTo": "immortal" },
   { "id": "herb", "name": "Spirit Herb Spring", "genre": "Cultivation", "baseAtk": 0, "attackInterval": 0, "rarity": "Normal", "draftable": false },
   { "id": "lotus", "name": "Spirit Lotus", "genre": "Cultivation", "rarity": "Normal", "baseAtk": 0, "attackInterval": 0, "max": 18, "draftable": false },

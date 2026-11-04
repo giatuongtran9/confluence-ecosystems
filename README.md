@@ -19,3 +19,13 @@ Then visit http://localhost:8000. No package installation or backend is required
 The game files (`index.html`, JavaScript, CSS, and `assets/`) are at the repository root. The extracted original project, tests, and design notes are retained under `Confluence/`. The ZIP archive has been removed.
 
 GitHub Actions deploys the playable root files to GitHub Pages on each push to `main`.
+
+
+## Regression checks
+
+Run `node --test tests/ecosystems.test.js` (Node.js 18 or later). The suite checks
+brewing cadence, temporary buffs, post-ascension growth, Haunted triggers, save
+compatibility, Bloodline feeding invariants, Matriarch coverage, and WebP mapping.
+
+Cultivation and Bloodline sprites use the `*-sprites-webp` folders. Original PNG
+sprite folders are no longer needed. Existing battlefield backgrounds are retained.
