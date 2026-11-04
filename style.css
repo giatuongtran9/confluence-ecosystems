@@ -946,3 +946,28 @@ body.has-dock .shell{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))
   white-space: nowrap !important;
 }
 .in-combat .board .field-card .field-atk small { display: none !important; }
+
+/* Blackout Frenzy Indicator HUD */
+.blackout-hud{width:min(100%,1000px);margin:2px auto 6px;min-height:0}
+.blackout-banner{border-radius:6px;padding:8px 12px;font-size:11px;transition:all .25s ease;display:flex;flex-direction:column;gap:4px}
+.blackout-banner.state-frenzy{background:linear-gradient(90deg,#2b0e14,#180913);border:1px solid #e24b61;box-shadow:0 0 16px rgba(226,75,97,.35);animation:frenzyPulse 1.8s ease-in-out infinite}
+.blackout-banner.state-lockout{background:linear-gradient(90deg,#1c1d18,#111412);border:1px solid #7c6838}
+.blackout-banner.state-ready{background:linear-gradient(90deg,#121e18,#0e1713);border:1px solid #3d5646}
+.blackout-header{display:flex;justify-content:space-between;align-items:center;font-weight:700}
+.blackout-badge{font-size:10px;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.frenzy-badge{color:#ff7285}
+.lockout-badge{color:#d1b16c}
+.ready-badge{color:#a7d8b2}
+.blackout-timer{font-size:13px;font-family:monospace;font-weight:700}
+.state-frenzy .blackout-timer{color:#ff7285}
+.state-lockout .blackout-timer{color:#e5c47a}
+.blackout-counter{font-size:12px;font-weight:700;color:#d2e4d0}
+.blackout-meter{height:4px;background:rgba(0,0,0,.5);border-radius:2px;overflow:hidden}
+.blackout-meter i{display:block;height:100%;border-radius:2px;transition:width .15s linear}
+.state-frenzy .blackout-meter i{background:linear-gradient(90deg,#ff4d64,#f472d0);box-shadow:0 0 8px #ff4d64}
+.state-lockout .blackout-meter i{background:linear-gradient(90deg,#826e38,#c9ab5f)}
+.state-ready .blackout-meter i{background:linear-gradient(90deg,#447b59,#a3d99e)}
+.blackout-sub{font-size:10px;color:var(--muted)}
+.state-frenzy .blackout-sub{color:#f7aab4}
+@keyframes frenzyPulse{0%,100%{box-shadow:0 0 12px rgba(226,75,97,.25);border-color:#e24b61}50%{box-shadow:0 0 22px rgba(226,75,97,.6);border-color:#ff768a}}
+@media(max-width:720px){.blackout-banner{padding:6px 9px;font-size:10px}.blackout-timer{font-size:11px}}

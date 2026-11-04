@@ -9,7 +9,7 @@ function battle(ids, slots = ids.map((_, i) => i)) {
  const r = G.newRun('none', {}, 17);
  r.roster = ids.map(id => G.instance(r, id));
  r.node = {row: 5, lane: 1, type: 'battle'}; r.depth = 5; r.phase = 'combat';
- const b = {run:r, time:0, units:[], enemies:[], effects:[], metrics:{kills:0, leaks:0, growth:0, triggers:0, devours:0}};
+ const b = {run:r, time:0, units:[], enemies:[], effects:[], metrics:{kills:0, leaks:0, growth:0, triggers:0, devours:0}, plan:{count:0, interval:1, hp:100}, spawned:0};
  b.units = r.roster.map((u,i) => G.runtime(b,u,slots[i]));
  b.units.forEach(u => { G.prepareHooks(b,u); G.record(b,u); });
  return b;
@@ -195,4 +195,33 @@ test('Architecture A rule mark application does not trigger Architecture B Black
   G.addRuleMark(b, e, 1, b.units[0]);
  }
  assert.equal(b.curfewUntil, undefined, 'Blackout should not trigger from Architecture A marks alone');
+});
+
+test('The 13th Step triggers Blackout from 5 taboo corner/step violations', () => {
+ const b = battle(['stair13']);
+ const e = enemy(b, 0, 100000);
+ e.ruleMarks = 5; // Capped marks should not block taboo violation counting
+
+ for (let i = 0; i < 5; i++) {
+  e.p = 3.98;
+  e.slows = [];
+  e.retreatingUntil = 0;
+  G.step(b, 0.1);
+ }
+ assert.ok(b.curfewUntil > b.time, 'Blackout triggered by 13th Step corner crossings');
+ assert.equal(b.blackoutLockoutUntil, b.curfewUntil + 8.0, 'Lockout is active for 8s after Blackout');
+});
+
+test('Red Raincoat Specter triggers Blackout from 5 taboo look-back/retreat violations', () => {
+ const b = battle(['redRaincoat']);
+ const e = enemy(b, 5, 100000);
+ e.ruleMarks = 5; // Capped marks should not block taboo violation counting
+
+ for (let i = 0; i < 5; i++) {
+  e.p = 5;
+  e.retreatingUntil = b.time + 1.0;
+  G.step(b, 0.1);
+ }
+ assert.ok(b.curfewUntil > b.time, 'Blackout triggered by Red Raincoat retreat/look-back violations');
+ assert.equal(b.blackoutLockoutUntil, b.curfewUntil + 8.0, 'Lockout is active for 8s after Blackout');
 });

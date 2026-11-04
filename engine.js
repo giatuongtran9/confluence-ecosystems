@@ -95,7 +95,8 @@ const Game = (() => {
     const point = track(e.p);
     b.effects.push({ type: 'impact', x: point.x, y: point.y, tx: point.x, ty: point.y, text: `−${Math.round(baseDmg)}`, ttl: 1.0 });
    }
-   addRuleMark(b, e, 1, stair);
+   grantUrbanViolation(b, stair, 1);
+   addRuleMark(b, e, 1, null);
    if ((e.ruleMarks || 0) >= 5) {
     const warpTiles = stair.id === 'penroseLabyrinth' ? 4 : 2;
     const before = e.p;
@@ -126,7 +127,8 @@ const Game = (() => {
    damage(b, e, baseDmg * mult, u, 'direct');
    dot(b, e, 'bleed', u.id === 'crimsonHarbinger' ? 30 : 10, 4, u);
    status(b, e, 'slow', 2.0, 0.35, u);
-   addRuleMark(b, e, 1, u);
+   grantUrbanViolation(b, u, 1);
+   addRuleMark(b, e, 1, null);
 
    if (inBlackout && (e.panic || lookedBack)) {
     for (const nearby of living(b).filter(other => Math.abs(other.p - currentProgress) <= 2.0)) {
@@ -749,7 +751,8 @@ const Game = (() => {
    if (u.id === 'allSeeingOverseer') {
     for (const e of living(b)) {
      hit(b, u, e, power);
-     addRuleMark(b, e, 1, u);
+     grantUrbanViolation(b, u, 1);
+   addRuleMark(b, e, 1, null);
      if (e.speed > 0.32 || e.swift || e.enraged) {
       status(b, e, 'freeze', 2.0, 0, u);
      }
@@ -768,7 +771,8 @@ const Game = (() => {
    } else if (u.id === 'backroomsWarden') {
     for (const e of living(b).slice(0, 3)) {
      hit(b, u, e, power);
-     addRuleMark(b, e, 1, u);
+     grantUrbanViolation(b, u, 1);
+   addRuleMark(b, e, 1, null);
     }
     if (b.time >= (u.backroomsAt || 6)) {
      u.backroomsAt = b.time + 6;
@@ -839,7 +843,8 @@ const Game = (() => {
    }
    for (const e of living(b).slice(0, u.id === 'terminusBus' ? 4 : 2)) {
     hit(b, u, e, power);
-    addRuleMark(b, e, 1, u);
+    grantUrbanViolation(b, u, 1);
+   addRuleMark(b, e, 1, null);
    }
   }
   else if (family(u) === 'payphone') {
@@ -1274,7 +1279,8 @@ const Game = (() => {
    u.panopticonAt = b.time + 4;
    const fastRunners = [...living(b)].sort((a, z) => z.speed - a.speed).slice(0, 3);
    for (const e of fastRunners) {
-    addRuleMark(b, e, 1, u);
+    grantUrbanViolation(b, u, 1);
+   addRuleMark(b, e, 1, null);
    }
   }
 
