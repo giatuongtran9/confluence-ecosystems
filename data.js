@@ -178,7 +178,7 @@ const CARDS = [
     "tags": ["alchemy", "refiner"],
     "growthRole": "engine",
     "ecosystem": "Cultivation · Dan Dao",
-    "rules": "First brews at 8s, then one recipe every 8s. Prioritizes an adjacent Lotus Blossom (+35 Qi, +4 permanent ATK before ascension); otherwise uses adjacent renewable Spirit Grass (+18 Qi, +3 permanent ATK before ascension, +15% temporary speed for 8s). Targets the lowest-Qi Practitioner first, then a Cultivation Apex. Apex recipients convert every 30 new Qi into +2 permanent ATK instead of the direct ATK reward. No valid target: no ingredient is consumed. Consumed/refined/breakthrough events also trigger an elixir: +1 team ATK and heal 1 HP, at most once every 8s.",
+    "rules": "First brews at 8s, then one recipe every 8s. Prioritizes an adjacent Lotus Blossom (+35 Qi, +4 permanent ATK before ascension); otherwise uses adjacent renewable Spirit Grass (+18 Qi, +3 permanent ATK before ascension, +15% temporary speed for 8s). Targets the lowest-Qi Practitioner first, then a Cultivation Apex. Apex recipients convert every 30 new Qi into +2 permanent ATK instead of the direct ATK reward. No valid target: no ingredient is consumed. Consumed/refined/breakthrough events also trigger an elixir: +1 team ATK, at most once every 8s.",
     "synergy": "Spirit Lotus Root, Cloud-Mist Spirit Grass, Qi-Refining Practitioner."
   },
   // 4. Qi-Refining Practitioner
@@ -486,7 +486,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "urban-relic", "curfew"],
     "ecosystem": "Quái Đàm · Containment Relic",
-    "rules": "Establishes Emergency Hotline: On battle start, immediately restores 8 player HP and grants all Haunted allies +20% attack speed for 10s. When orthogonally adjacent to a Rule Enforcer, awakens the Director of Curfew!",
+    "rules": "Establishes Emergency Hotline: On battle start, grants all Haunted allies +20% attack speed for 10s. When orthogonally adjacent to a Rule Enforcer, awakens the Director of Curfew!",
     "synergy": "Rule Enforcer (Legendary Investigator) and Blackout triggers."
   },
   // 9. Coroner's Bone Saw (Relic 4 -> Forensic Demiurge)
@@ -560,7 +560,7 @@ const CARDS = [
     "fav": "team",
     "tags": ["control", "urban-lineage", "banish"],
     "ecosystem": "Quái Đàm · Autonomous Legend",
-    "rules": "Attacks pierce 2 runners and add 1 Violation Mark to each surviving target, up to 5. Every 8s, sweeps the leading runner's 4-tile edge and warps runners with 2+ marks backward 3 tiles. Each successful sweep displacement earns +1 violation. Evolves at 15/45 violations; adjacent Urban Legends share 50% of earned violations.",
+    "rules": "Rule: 'The last bus only takes rule-breakers.' Reacts only to marked, panicked, fleeing, or unnaturally fast runners; it does not attack ordinary runners. Its attack pierces 2 violators and adds 1 Violation Mark to each survivor, up to 5. Every 8s, sweeps the leading runner's 4-tile edge and warps runners with 2+ marks backward 3 tiles. Each successful sweep displacement earns +1 violation. Evolves at 15/45 violations; adjacent Urban Legends share 50% of earned violations.",
     "synergy": "Crowded tracks, Warps, and other Urban Legends."
   },
   // 13. The Midnight Caller (Autonomous Legend 3)
@@ -578,7 +578,7 @@ const CARDS = [
     "fav": "team",
     "tags": ["control", "urban-lineage", "sonic"],
     "ecosystem": "Quái Đàm · Autonomous Legend",
-    "rules": "Rule: 'Answer on the 3rd Ring.' Every 3rd attack rings across all 16 tiles, dealing full damage and slowing marked runners by 30% for 2s. Rings immediately when Blackout begins. Self-ascends across battles into Haunted Switchboard (Epic, 15) and The Midnight Operator (Mythic, 45)!",
+    "rules": "Rule: 'Answer on the 3rd Ring.' Reacts only to marked, panicked, or fleeing runners; it does not attack ordinary runners. Every 3rd triggered attack rings across all 16 tiles, dealing full damage and slowing violators by 30% for 2s. Rings immediately when Blackout begins. Self-ascends across battles into Haunted Switchboard (Epic, 15) and The Midnight Operator (Mythic, 45)!",
     "synergy": "16 perimeter tiles, Blackout triggers, and other Urban Legends."
   },
   // 14. Morgue Mirror (Autonomous Legend 4)
@@ -596,7 +596,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["support", "urban-lineage", "mirror"],
     "ecosystem": "Quái Đàm · Autonomous Legend",
-    "rules": "Rule: 'Never Stare into the Reflection.' Reflects 25% of adjacent allies' attack damage onto the leading runner. When Blackout triggers, summons 1 temporary Mirror Reflection token. Self-ascends across battles into Doppelgänger Glass (Epic, 15) and Queen in the Morgue Mirror (Mythic, 45)!",
+    "rules": "Rule: 'Never Stare into the Reflection.' Reacts to marked, panicked, frozen, or retreating runners and those approaching its reflective angle; it ignores ordinary runners. Reflects 25% of adjacent allies' ATK onto the violating runner. When Blackout triggers, summons 1 temporary Mirror Reflection token. Self-ascends across battles into Doppelgänger Glass (Epic, 15) and Queen in the Morgue Mirror (Mythic, 45)!",
     "synergy": "High-ATK neighbors, Blackouts, and other Urban Legends."
   },
   // 15. Window Mannequin (Autonomous Legend 5)
@@ -614,7 +614,7 @@ const CARDS = [
     "fav": "team",
     "tags": ["attacker", "urban-lineage"],
     "ecosystem": "Quái Đàm · Autonomous Legend",
-    "rules": "Rule: 'It Only Moves When Unseen.' Attacks runners. During Blackout (or while any ally is inactive), gains +150% attack speed and +100% critical damage. Self-ascends across battles into Shadow Stalker (Epic, 15) and The Living Taboo (Mythic, 45)!",
+    "rules": "Rule: 'It Only Moves When Unseen.' Reacts when a runner breaks taboo by running fast, panicking, fleeing, or carrying a mark, or when an ally is inactive; it ignores ordinary runners. During Blackout (or while any ally is inactive), gains +150% attack speed and +100% critical damage. Each punishment of a taboo-breaker grants 1 violation. Self-ascends across battles into Shadow Stalker (Epic, 15) and The Living Taboo (Mythic, 45)!",
     "synergy": "Blackouts, Night Investigator, and other Urban Legends."
   },
 
@@ -1465,7 +1465,7 @@ const FORMS = [
     "tags": ["apex", "urban-apex", "curfew-master"],
     "evolvedFrom": "investigator",
     "draftable": false,
-    "rules": "Rule: 'Indefinite Curfew.' Establishes permanent containment protocol: all Haunted allies gain +60% attack speed and restore 1 HP per 5 kills. Attacks deal double damage to violators. Triggers Rule Resonance when adjacent to another Urban Legend or Relic. Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
+    "rules": "Rule: 'Indefinite Curfew.' Establishes permanent containment protocol: all Haunted allies gain +60% attack speed. Attacks deal double damage to violators. Triggers Rule Resonance when adjacent to another Urban Legend or Relic. Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
     "synergy": "Red Hotline and Rule Resonance."
   },
   // 4. Coroner's Bone Saw -> Forensic Demiurge
@@ -1542,7 +1542,7 @@ const FORMS = [
     "tags": ["apex", "urban-apex", "boss-slayer"],
     "evolvedFrom": "kuchisake",
     "draftable": false,
-    "rules": "'Am I Pretty?' Strikes against marked runners critically hit for 3.5× damage and apply 35 DPS Bleed. Instantly executes non-bosses below 30% HP. Every 6th attack shreds 15% current HP from Bosses and Harbingers. Triggers Rule Resonance when adjacent to another Urban Legend.",
+    "rules": "'Am I Pretty?' Reacts to fast, marked, panicked, or retreating runners and ignores ordinary runners. Strikes against marked violators critically hit for 3.5× damage and apply 35 DPS Bleed. Instantly executes non-bosses below 30% HP. Every 6th attack shreds 15% current HP from Bosses and Harbingers. Triggers Rule Resonance when adjacent to another Urban Legend.",
     "synergy": "Bosses, Harbingers, and Rule Resonance."
   },
   // Lineage 2: Midnight Bus 44
@@ -1561,7 +1561,7 @@ const FORMS = [
     "tags": ["urban-form", "banish", "warp"],
     "evolvedFrom": "nightBus",
     "draftable": false,
-    "rules": "Attacks pierce 2 runners and add 1 Violation Mark to surviving targets. Every 8s, sweeps a 6-tile span around the leading runner: runners with 2+ marks are warped back 3 tiles and hit for 1.5× ATK. Successful sweep displacements earn +1 violation each. At 45 violations becomes Terminus Bus 44.",
+    "rules": "Reacts only to marked, panicked, fleeing, or unnaturally fast runners; it does not attack ordinary runners. Its attack pierces 2 violators and adds 1 Violation Mark to surviving targets. Every 8s, sweeps a 6-tile span around the leading runner: runners with 2+ marks are warped back 3 tiles and hit for 1.5× ATK. Successful sweep displacements earn +1 violation each. At 45 violations becomes Terminus Bus 44.",
     "synergy": "Crowded tracks and Terminus Bus 44."
   },
   {
@@ -1579,7 +1579,7 @@ const FORMS = [
     "tags": ["apex", "urban-apex", "abduction"],
     "evolvedFrom": "nightBus",
     "draftable": false,
-    "rules": "Attacks pierce 4 runners and add 1 Violation Mark to surviving targets. Every 8s, sweeps the leading runner's 4-tile edge, warping runners with 2+ marks back 5 tiles. Every 6s, applies 140 DPS Bleed for 3s (modified by buff duration) to the 2 leading runners and warps them back 5 tiles. Triggers Relic Resonance beside a relic.",
+    "rules": "Reacts only to marked, panicked, fleeing, or unnaturally fast runners; it does not attack ordinary runners. Its attack pierces 4 violators and adds 1 Violation Mark to surviving targets. Every 8s, sweeps the leading runner's 4-tile edge, warping runners with 2+ marks back 5 tiles. Every 6s, applies 140 DPS Bleed for 3s (modified by buff duration) to the 2 leading runners and warps them back 5 tiles. Triggers Relic Resonance beside a relic.",
     "synergy": "Track control, Warps, and Rule Resonance."
   },
   // Lineage 3: The Midnight Payphone
@@ -1598,7 +1598,7 @@ const FORMS = [
     "tags": ["urban-form", "sonic", "stun"],
     "evolvedFrom": "payphone",
     "draftable": false,
-    "rules": "16-tile rings deal +50% damage. Whenever Blackout begins, rings immediately, stunning all violators for 1s. Witnessing 45 total violations across battles awakens The Midnight Operator!",
+    "rules": "Reacts only to taboo-breaking runners; it does not attack ordinary runners. Its 16-tile rings deal +50% damage. Whenever Blackout begins, rings immediately, stunning violators for 1s. Witnessing 45 total violations across battles awakens The Midnight Operator!",
     "synergy": "Blackout triggers and The Midnight Operator."
   },
   {
@@ -1616,7 +1616,7 @@ const FORMS = [
     "tags": ["apex", "urban-apex", "infinite-redial"],
     "evolvedFrom": "payphone",
     "draftable": false,
-    "rules": "'Infinite Redial.' Every 2nd attack rings all 16 perimeter tiles for 150% ATK damage, stunning marked runners for 1.2s and extending active Blackout by 1.5s. Triggers Rule Resonance when adjacent to another Urban Legend.",
+    "rules": "'Infinite Redial.' Reacts only to taboo-breaking runners; it does not attack ordinary runners. Every 2nd triggered attack rings all 16 perimeter tiles for 150% ATK damage, stunning marked runners for 1.2s and extending active Blackout by 1.5s. Triggers Rule Resonance when adjacent to another Urban Legend.",
     "synergy": "16 tiles, Blackout extension, and Rule Resonance."
   },
   // Lineage 4: Morgue Mirror
@@ -1635,7 +1635,7 @@ const FORMS = [
     "tags": ["urban-form", "mirror", "reflection"],
     "evolvedFrom": "morgueMirror",
     "draftable": false,
-    "rules": "Copies 50% of the highest adjacent ally's ATK. During Blackout, spawns 2 temporary Mirror Reflections into free slots. Witnessing 45 total violations across battles awakens Queen in the Morgue Mirror!",
+    "rules": "Reacts to taboo-breaking runners and those approaching its reflective angle; it ignores ordinary runners. Copies 50% of the highest adjacent ally's ATK. During Blackout, spawns 2 temporary Mirror Reflections into free slots. Witnessing 45 total violations across battles awakens Queen in the Morgue Mirror!",
     "synergy": "High-ATK neighbors and Queen in the Morgue Mirror."
   },
   {
@@ -1653,7 +1653,7 @@ const FORMS = [
     "tags": ["apex", "urban-apex", "mirror-realm"],
     "evolvedFrom": "morgueMirror",
     "draftable": false,
-    "rules": "'Glass Domain.' Permanently adds 100% of the highest ally raw ATK on the grid to her own. During Blackout, fills all free orthogonal slots with 100%-ATK Mirror Clones for 4s × buffDuration. Triggers Rule Resonance when adjacent to another Urban Legend.",
+    "rules": "'Glass Domain.' Reacts to taboo-breaking runners and those approaching its reflective angle; it ignores ordinary runners. Permanently adds 100% of the highest ally raw ATK on the grid to her own. During Blackout, fills available adjacent orthogonal slots with 100%-ATK Mirror Clones for 4s × buffDuration. Triggers Rule Resonance when adjacent to another Urban Legend.",
     "synergy": "All allies, Mirror Clones, and Rule Resonance."
   },
   // Lineage 5: Window Mannequin
@@ -1672,7 +1672,7 @@ const FORMS = [
     "tags": ["urban-form", "berserk"],
     "evolvedFrom": "mannequin",
     "draftable": false,
-    "rules": "Gains +150% attack speed and +100% critical damage during Blackout. Attacks slow targets by 30%. Witnessing 45 total violations across battles awakens The Living Taboo!",
+    "rules": "Reacts only to taboo-breaking runners; it does not attack ordinary runners. Gains +150% attack speed and +100% critical damage during Blackout. Punishments slow targets by 30%. Witnessing 45 total violations across battles awakens The Living Taboo!",
     "synergy": "Blackout triggers and The Living Taboo."
   },
   {
@@ -1690,7 +1690,7 @@ const FORMS = [
     "tags": ["apex", "urban-apex", "berserk"],
     "evolvedFrom": "mannequin",
     "draftable": false,
-    "rules": "The apex manifestation of taboo. During Blackout, attacks at 3.0× speed with 100% critical chance. Once per battle, if a runner reaches tile 15, instantly ambushes and executes it before it can leak. Triggers Rule Resonance when adjacent to another Urban Legend.",
+    "rules": "The apex manifestation of taboo. Reacts only to taboo-breaking runners; it does not attack ordinary runners. During Blackout, attacks at 3.0× speed with 100% critical chance. Once per battle, if a runner reaches tile 15, instantly ambushes and executes it before it can leak. Triggers Rule Resonance when adjacent to another Urban Legend.",
     "synergy": "Blackouts and Rule Resonance."
   },
   // Lineage 6: Red Raincoat Specter
