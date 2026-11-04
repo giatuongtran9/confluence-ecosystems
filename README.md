@@ -29,3 +29,9 @@ compatibility, Bloodline feeding invariants, Matriarch coverage, and WebP mappin
 
 Cultivation and Bloodline sprites use the `*-sprites-webp` folders. Original PNG
 sprite folders are no longer needed. Existing battlefield backgrounds are retained.
+
+
+
+## Scrapwork Colossus
+
+See [SCRAPWORK-UPDATE.md](SCRAPWORK-UPDATE.md) for the current Post-Apocalypse roster, forging rules, two-slot Titan progression, validation and balance results. Run all regression checks with `node --test tests/*.test.js`.

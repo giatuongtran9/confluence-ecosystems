@@ -387,7 +387,7 @@ const CARDS = [
     "baseAtk": 9,
     "attackInterval": 1.6,
     "max": 0,
-    "asset": "cannon",
+    "asset": "atlasMachineA",
     "icon": "✧",
     "fav": "team",
     "tags": ["control", "producer", "curfew"],
@@ -555,7 +555,7 @@ const CARDS = [
     "baseAtk": 16,
     "attackInterval": 1.4,
     "max": 0,
-    "asset": "cannon",
+    "asset": "atlasMachineA",
     "icon": "✧",
     "fav": "team",
     "tags": ["control", "urban-lineage", "banish"],
@@ -724,39 +724,25 @@ const CARDS = [
     "rules": "Strike the leading runner. Each attack adds 1 ability tick; at 8, unleash Chain Lightning across up to 5 runners for 240 + 3× raw ATK + 1.5× Team Power as spell damage, and grant all other allies with an ability gauge +2 ticks. Gains no permanent ATK from attacks.",
     "synergy": "Mana Conduit, Mana Crystal, and team growth engines."
   },
+  
   {
-    "id": "cannon",
-    "name": "Scrap Autocannon",
-    "vn": "Phế Liệu Cơ Pháo",
-    "genre": "PostApoc",
-    "baseAtk": 11,
-    "attackInterval": 0.45,
-    "max": 20,
-    "sprite": 16,
-    "icon": "☵",
-    "fav": "team",
-    "ecosystem": "Burnout · rapid shred",
-    "rarity": "Normal",
-    "tags": [],
-    "rules": "Rapid fire; shred runner defense by 50% for 2s on hit. Each attack adds 1 ability tick; at 20, overheat and enter Burnout for 6s. While in Burnout, the cannon stops attacking.",
-    "synergy": "Junkyard Smelter, Soul-Wailing Bell, and Cooling Vent."
-  },
-  {
-    "id": "smelter",
-    "name": "Junkyard Smelter",
-    "vn": "Phế Phẩm Dung Lô",
-    "genre": "PostApoc",
-    "baseAtk": 0,
-    "attackInterval": 0,
-    "sprite": 18,
-    "icon": "♨",
-    "fav": "team",
-    "ecosystem": "State cycles · burn support",
-    "rarity": "Rare",
-    "tags": [],
-    "rules": "Whenever any ally enters a shutdown state, shorten their downtime by 1s (minimum 0.5s) and grant them +1 permanent ATK. Every 5 enemies defeated while burning grant all allies with state cycles +1 permanent ATK. Multiple Smelters do not stack.",
-    "synergy": "Scrap Autocannon, Mantis, and Restless Spirit."
-  },
+  "id": "smelter",
+  "name": "Junkyard Smelter",
+  "genre": "PostApoc",
+  "rarity": "Rare",
+  "baseAtk": 10,
+  "attackInterval": 1.8,
+  "max": 0,
+  "icon": "⚙",
+  "fav": "neighbor",
+  "tags": [
+    "mechanical"
+  ],
+  "ecosystem": "Scrapwork · salvage and forging",
+  "rules": "Shortens ally shutdown by 1s (minimum 0.5s). Smelts two adjacent scraps whenever ready, with a 4s forge cooldown. Sword+Sword: Colossal Scrap Blade (highest HP, 50% permanent armor removal, triple damage below 35% HP). Gun+Gun: Twin Flak Battery (six-tile arc, 25% permanent armor removal). Mixed: Vanguard Gunblade (alternating armor-piercing round and four-tile oil sweep). Installs on the nearest Mech with an empty weapon slot. Every smelt awards +3 Alloy to all deployed Mechs; surplus modules recycle into Alloy only.",
+  "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
+  "scrapworkAsset": "smelter"
+},
   {
     "id": "sensor",
     "name": "Telemetry Sensor",
@@ -819,7 +805,7 @@ const CARDS = [
     "rarity": "Normal",
     "tags": ["control"],
     "rules": "Every 8s, freeze the 2 leading runners for 1s (2s if they are burning). Halve the shutdown duration of allies in Burnout or Overheat (minimum 0.5s). Multiple Vents do not stack.",
-    "synergy": "Junkyard Smelter, Mantis Frame, and Scrap Autocannon."
+    "synergy": "Junkyard Smelter, Mantis Frame, and Hydraulic Riveter."
   },
   {
     "id": "totem",
@@ -851,7 +837,7 @@ const CARDS = [
     "rarity": "Epic",
     "tags": ["finisher"],
     "rules": "Prioritize Elites, Harbingers, and Bosses. Deal 2× damage to runners affected by shred, nanites, Burn, or Bleed; deal 4× damage to runners below 35% health (25% for non-elites). Cleave a second runner for 50% damage.",
-    "synergy": "Iron Maiden Totem, Scrap Autocannon, and Focused Nanites."
+    "synergy": "Iron Maiden Totem, Hydraulic Riveter, and Focused Nanites."
   },
   {
     "id": "eye",
@@ -939,40 +925,8 @@ const CARDS = [
     "rules": "Each attack adds 1 ability tick. At 6 ticks, trigger Rune Nova: deal 180 + 3× raw ATK + Team Power to 4 runners and make them Vulnerable (+20% damage taken for 4s).",
     "synergy": "Storm Archmage, Mana Conduit, and Mana Crystal."
   },
-  {
-    "id": "bellows",
-    "name": "Furnace Bellows",
-    "vn": "Đoán Lô Phong Lung",
-    "genre": "PostApoc",
-    "rarity": "Normal",
-    "baseAtk": 14,
-    "attackInterval": 1.6,
-    "max": 0,
-    "asset": "bellows",
-    "tags": [],
-    "fav": "team",
-    "icon": "✧",
-    "ecosystem": "Burn · detonation",
-    "rules": "Strike the 3 leading runners, applying Burn: 5 DPS for 4s, with no stack limit. When an ally enters Burnout, detonate 1 second of remaining Burn damage across all burning runners.",
-    "synergy": "Scrap Autocannon, Junkyard Smelter, and Plasma Battery."
-  },
-  {
-    "id": "behemoth",
-    "name": "Siege Behemoth",
-    "vn": "Công Thành Cự Thú",
-    "genre": "PostApoc",
-    "rarity": "Epic",
-    "baseAtk": 32,
-    "attackInterval": 3.0,
-    "max": 5,
-    "asset": "behemoth",
-    "tags": ["finisher"],
-    "fav": "team",
-    "icon": "✧",
-    "ecosystem": "Burnout · siege quake",
-    "rules": "Strike the leading runner for full damage and cleave nearby runners for 50%. Each attack adds 1 tick. At 5 ticks, trigger Siege Quake: deal 600 + 3× Team Power as true damage to all runners, then enter Burnout for 5s.",
-    "synergy": "Junkyard Smelter, Cooling Vent, and team growth engines."
-  },
+  
+  
   {
     "id": "nanite",
     "name": "Focused Nanites",
@@ -1193,7 +1147,7 @@ const CARDS = [
   "baseAtk": 14,
   "attackInterval": 1.5,
   "max": 0,
-  "asset": "behemoth",
+  "asset": "atlasMachineC",
   "icon": "🐢",
   "fav": "neighbor",
   "tags": [
@@ -1213,7 +1167,7 @@ const CARDS = [
   "baseAtk": 11,
   "attackInterval": 1.1,
   "max": 0,
-  "asset": "bellows",
+  "asset": "atlasMachineB",
   "icon": "🐸",
   "fav": "neighbor",
   "tags": [
@@ -1555,7 +1509,7 @@ const FORMS = [
     "baseAtk": 44,
     "attackInterval": 1.1,
     "max": 0,
-    "asset": "behemoth",
+    "asset": "atlasMachineC",
     "icon": "✧",
     "fav": "team",
     "tags": ["urban-form", "banish", "warp"],
@@ -1573,7 +1527,7 @@ const FORMS = [
     "baseAtk": 155,
     "attackInterval": 0.7,
     "max": 0,
-    "asset": "behemoth",
+    "asset": "atlasMachineC",
     "icon": "✧",
     "fav": "team",
     "tags": ["apex", "urban-apex", "abduction"],
@@ -2015,7 +1969,7 @@ const FORMS = [
     "asset": "monk",
     "growthRole": "evolved-engine",
     "rules": "Attacks against defense-shredded enemies always critically strike. Apply a separate Bleed stack: 6 DPS for 4s. Every six critical hits across battles and every credited kill grant +1 permanent ATK.",
-    "synergy": "Autocannon, Nanites, and Abyssal Reaper."
+    "synergy": "Hydraulic Riveter, Nanites, and Abyssal Reaper."
   },
 {
   "id": "dragonCubT1",
@@ -2727,5 +2681,260 @@ const RELICS = [
   { "id": "mercy", "name": "Mercy Knot", "desc": "Each leak deals 1 less damage (minimum 1)." }
 ];
 
+
+// Scrapwork replaces the old draft pool; old IDs remain readable in existing saves.
+
+CARDS.push(...[
+  {
+    "id": "scrapFrame",
+    "name": "Scavenged Frame",
+    "genre": "PostApoc",
+    "rarity": "Normal",
+    "baseAtk": 10,
+    "attackInterval": 1.4,
+    "max": 0,
+    "icon": "⚙",
+    "fav": "neighbor",
+    "tags": [
+      "mechanical"
+    ],
+    "ecosystem": "Scrapwork · salvage and forging",
+    "rules": "Locks its first two forged modules; both fire each attack at 65% individual power when dual-equipped. Gains +1 Alloy per 3 attacks, +5 per deployed battle clear, and +3 per smelt. At 25/65 Alloy becomes Reinforced/Heavy Walker. At 120 unlocks a two-adjacent-slot Titan, waiting for space if blocked. Every 15 Alloy beyond 120 grants +2 permanent ATK.",
+    "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
+    "scrapworkAsset": "scrapFrame"
+  },
+  {
+    "id": "junkScavenger",
+    "name": "Junk Scavenger",
+    "genre": "PostApoc",
+    "rarity": "Normal",
+    "baseAtk": 12,
+    "attackInterval": 1.3,
+    "max": 0,
+    "icon": "⚙",
+    "fav": "neighbor",
+    "tags": [
+      "mechanical"
+    ],
+    "ecosystem": "Scrapwork · salvage and forging",
+    "rules": "Attacks the leading runner. Each team kill anywhere on the track has a 50% chance to salvage one random Rust Sword or Rust Gun into an empty adjacent slot. Full grid: salvage is lost. No scrap-count cap.",
+    "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
+    "scrapworkAsset": "junkScavenger"
+  },
+  {
+    "id": "magneticCrane",
+    "name": "Magnetic Crane",
+    "genre": "PostApoc",
+    "rarity": "Normal",
+    "baseAtk": 8,
+    "attackInterval": 1.6,
+    "max": 0,
+    "icon": "⚙",
+    "fav": "neighbor",
+    "tags": [
+      "mechanical"
+    ],
+    "ecosystem": "Scrapwork · salvage and forging",
+    "rules": "Every 4s, moves loose scrap from anywhere on the grid into free slots adjacent to a Smelter. Never displaces a card or occupies a Titan reservation.",
+    "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
+    "scrapworkAsset": "magneticCrane"
+  },
+  {
+    "id": "hydraulicRiveter",
+    "name": "Hydraulic Riveter",
+    "genre": "PostApoc",
+    "rarity": "Normal",
+    "baseAtk": 12,
+    "attackInterval": 1.4,
+    "max": 0,
+    "icon": "⚙",
+    "fav": "neighbor",
+    "tags": [
+      "mechanical"
+    ],
+    "ecosystem": "Scrapwork · salvage and forging",
+    "rules": "Hits permanently remove 25% of original runner armor; repeated hits do not stack. Every 6s, welds +3 permanent ATK onto the weakest adjacent original Mech. Can weld from either side of a two-slot Titan.",
+    "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
+    "scrapworkAsset": "hydraulicRiveter"
+  },
+  {
+    "id": "titanReactor",
+    "name": "Titan Reactor Core",
+    "genre": "PostApoc",
+    "rarity": "Epic",
+    "baseAtk": 0,
+    "attackInterval": 0,
+    "max": 0,
+    "icon": "⚙",
+    "fav": "neighbor",
+    "tags": [
+      "mechanical"
+    ],
+    "ecosystem": "Scrapwork · salvage and forging",
+    "rules": "Adjacent mechanical allies deal +20% damage; duplicate reactors do not stack. At Crossing 10+, a neighboring two-slot Titan with two locked modules permanently consumes this Core to become Mythic. Blade+Blade: Berserker. Flak+Flak: Siege. Every other pair: Vanguard.",
+    "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
+    "scrapworkAsset": "titanReactor"
+  }
+]);
+FORMS.push(...[
+  {
+    "id": "reinforcedWalker",
+    "name": "Reinforced Walker",
+    "genre": "PostApoc",
+    "rarity": "Rare",
+    "baseAtk": 24,
+    "attackInterval": 1.4,
+    "max": 0,
+    "icon": "⚙",
+    "fav": "neighbor",
+    "tags": [
+      "mechanical"
+    ],
+    "ecosystem": "Scrapwork · salvage and forging",
+    "rules": "Locks its first two forged modules; both fire each attack at 65% individual power when dual-equipped. Gains +1 Alloy per 3 attacks, +5 per deployed battle clear, and +3 per smelt. At 25/65 Alloy becomes Reinforced/Heavy Walker. At 120 unlocks a two-adjacent-slot Titan, waiting for space if blocked. Every 15 Alloy beyond 120 grants +2 permanent ATK.",
+    "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
+    "scrapworkAsset": "reinforcedWalker",
+    "evolvedFrom": "scrapFrame"
+  },
+  {
+    "id": "heavyWalker",
+    "name": "Heavy Walker",
+    "genre": "PostApoc",
+    "rarity": "Epic",
+    "baseAtk": 50,
+    "attackInterval": 1.6,
+    "max": 0,
+    "icon": "⚙",
+    "fav": "neighbor",
+    "tags": [
+      "mechanical"
+    ],
+    "ecosystem": "Scrapwork · salvage and forging",
+    "rules": "Locks its first two forged modules; both fire each attack at 65% individual power when dual-equipped. Gains +1 Alloy per 3 attacks, +5 per deployed battle clear, and +3 per smelt. At 25/65 Alloy becomes Reinforced/Heavy Walker. At 120 unlocks a two-adjacent-slot Titan, waiting for space if blocked. Every 15 Alloy beyond 120 grants +2 permanent ATK.",
+    "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
+    "scrapworkAsset": "heavyWalker",
+    "evolvedFrom": "scrapFrame"
+  },
+  {
+    "id": "titanFrame",
+    "name": "Titan Core",
+    "genre": "PostApoc",
+    "rarity": "Legendary",
+    "baseAtk": 95,
+    "attackInterval": 1.8,
+    "max": 0,
+    "icon": "⚙",
+    "fav": "neighbor",
+    "tags": [
+      "mechanical"
+    ],
+    "ecosystem": "Scrapwork · salvage and forging",
+    "rules": "Locks its first two forged modules; both fire each attack at 65% individual power when dual-equipped. Gains +1 Alloy per 3 attacks, +5 per deployed battle clear, and +3 per smelt. At 25/65 Alloy becomes Reinforced/Heavy Walker. At 120 unlocks a two-adjacent-slot Titan, waiting for space if blocked. Every 15 Alloy beyond 120 grants +2 permanent ATK.",
+    "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
+    "scrapworkAsset": "titanFrame",
+    "evolvedFrom": "scrapFrame"
+  },
+  {
+    "id": "berserkerColossus",
+    "name": "Berserker Greatsword Colossus",
+    "genre": "PostApoc",
+    "rarity": "Mythic",
+    "baseAtk": 260,
+    "attackInterval": 1.8,
+    "max": 0,
+    "icon": "⚙",
+    "fav": "neighbor",
+    "tags": [
+      "mechanical"
+    ],
+    "ecosystem": "Scrapwork · salvage and forging",
+    "rules": "Two-slot Titan from Blade+Blade. Strikes the highest-current-HP runner, ignoring armor, and permanently removes 50% original armor. Executes ordinary runners below 30% HP (never bosses or Harbingers). Every third attack cleaves 15% current HP from each deployed boss/Harbinger. Continues earning Alloy; each 15 beyond 120 grants +2 permanent ATK.",
+    "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
+    "scrapworkAsset": "berserkerColossus",
+    "evolvedFrom": "scrapFrame"
+  },
+  {
+    "id": "siegeDreadnought",
+    "name": "Siege Fortress Dreadnought",
+    "genre": "PostApoc",
+    "rarity": "Mythic",
+    "baseAtk": 165,
+    "attackInterval": 1.8,
+    "max": 0,
+    "icon": "⚙",
+    "fav": "neighbor",
+    "tags": [
+      "mechanical"
+    ],
+    "ecosystem": "Scrapwork · salvage and forging",
+    "rules": "Two-slot Titan from Flak+Flak. Bombards an eight-tile perimeter arc centered on the leading runner, hitting every runner in it. Breaks shields and permanently removes 50% original armor, without repeated stacking. Continues earning Alloy and permanent growth beyond 120.",
+    "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
+    "scrapworkAsset": "siegeDreadnought",
+    "evolvedFrom": "scrapFrame"
+  },
+  {
+    "id": "vanguardJuggernaut",
+    "name": "Vanguard Gunblade Juggernaut",
+    "genre": "PostApoc",
+    "rarity": "Mythic",
+    "baseAtk": 185,
+    "attackInterval": 1.7,
+    "max": 0,
+    "icon": "⚙",
+    "fav": "neighbor",
+    "tags": [
+      "mechanical"
+    ],
+    "ecosystem": "Scrapwork · salvage and forging",
+    "rules": "Two-slot Titan from any mixed pair or pair containing Gunblade. Each attack fires one armor-ignoring round for full ATK and cleaves a four-tile arc for 45% ATK. Leaves burning oil for 4s: 35 true DPS to runners on those tiles. Same-owner overlapping oil refreshes without stacking. Continues earning Alloy and permanent growth beyond 120.",
+    "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
+    "scrapworkAsset": "vanguardJuggernaut",
+    "evolvedFrom": "scrapFrame"
+  }
+]);
+TOKENS.push(...[
+  {
+    "id": "rustSword",
+    "name": "Rust Sword",
+    "genre": "PostApoc",
+    "rarity": "Normal",
+    "baseAtk": 0,
+    "attackInterval": 0,
+    "max": 0,
+    "icon": "⚙",
+    "fav": "neighbor",
+    "tags": [
+      "mechanical"
+    ],
+    "ecosystem": "Scrapwork · salvage and forging",
+    "rules": "Temporary bladed scrap. Two Swords forge a Blade; Sword+Gun forges a Gunblade. Consumed by an adjacent Smelter; cannot breed.",
+    "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
+    "scrapworkAsset": "rustSword",
+    "token": true,
+    "draftable": false
+  },
+  {
+    "id": "rustGun",
+    "name": "Rust Gun",
+    "genre": "PostApoc",
+    "rarity": "Normal",
+    "baseAtk": 0,
+    "attackInterval": 0,
+    "max": 0,
+    "icon": "⚙",
+    "fav": "neighbor",
+    "tags": [
+      "mechanical"
+    ],
+    "ecosystem": "Scrapwork · salvage and forging",
+    "rules": "Temporary ballistic scrap. Two Guns forge Flak; Gun+Sword forges a Gunblade. Consumed by an adjacent Smelter; cannot breed.",
+    "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
+    "scrapworkAsset": "rustGun",
+    "token": true,
+    "draftable": false
+  }
+]);
+
 const CARD = Object.fromEntries([...CARDS, ...FORMS, ...TOKENS, ...LEGACY_CARDS].map(c => [c.id, c]));
 if (typeof module !== 'undefined') module.exports = { GENRES, LEADERS, CARDS, CARD, NODES, RELICS, RARITIES, FORMS, TOKENS, LEGACY_CARDS };
+

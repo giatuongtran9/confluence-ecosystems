@@ -971,3 +971,9 @@ body.has-dock .shell{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))
 .state-frenzy .blackout-sub{color:#f7aab4}
 @keyframes frenzyPulse{0%,100%{box-shadow:0 0 12px rgba(226,75,97,.25);border-color:#e24b61}50%{box-shadow:0 0 22px rgba(226,75,97,.6);border-color:#ff768a}}
 @media(max-width:720px){.blackout-banner{padding:6px 9px;font-size:10px}.blackout-timer{font-size:11px}}
+
+
+/* A Titan merges existing cells without resizing the nine-slot grid. */
+.board .field-card.scrap-titan{width:var(--unit-width)!important;height:var(--unit-height)!important;border:2px solid #d09c56!important;background:linear-gradient(135deg,#3b3028c9,#141d22c9)!important;border-radius:12px;z-index:3}
+.titan-label{position:absolute;top:5px;left:7px;font-size:9px;color:#ffcd83;letter-spacing:1px}
+.scrap-progress{padding:10px;border:1px solid #9e7955;border-radius:8px;background:#30261d;color:#eacda4;font-size:12px}.scrap-progress p{margin:5px 0}

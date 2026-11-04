@@ -274,3 +274,4 @@ test('Red Raincoat Specter triggers Blackout from 5 taboo look-back/retreat viol
  assert.ok(b.curfewUntil > b.time, 'Blackout triggered by Red Raincoat retreat/look-back violations');
  assert.equal(b.blackoutLockoutUntil, b.curfewUntil + 8.0, 'Lockout is active for 8s after Blackout');
 });
+
