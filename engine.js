@@ -110,7 +110,7 @@ const Game = (() => {
   const raincoats = b.units.filter(u => !u.removed && family(u) === 'redRaincoat');
   if (!raincoats.length) return;
   const inBlackout = b.curfewUntil > b.time;
-  const lookedBack = wasRetreating || currentProgress < previousProgress;
+  const lookedBack = wasRetreating || currentProgress < previousProgress || (e.slows || []).some(s => s.until > b.time && !raincoats.some(u => u.uid === s.sourceUid));
   let crowding = false;
   if (inBlackout) {
    crowding = living(b).some(other => other !== e && Math.abs(other.p - currentProgress) <= 2.0);
@@ -119,8 +119,8 @@ const Game = (() => {
 
   for (const u of raincoats) {
    u.lastRunnerReact = u.lastRunnerReact || {};
-   if (inBlackout && b.time - (u.lastRunnerReact[e.uid] || -99) < 1.5) continue;
-   if (inBlackout) u.lastRunnerReact[e.uid] = b.time;
+   if (b.time - (u.lastRunnerReact[e.uid] || -99) < 1.5) continue;
+   u.lastRunnerReact[e.uid] = b.time;
 
    const baseDmg = u.id === 'crimsonHarbinger' ? 120 : u.id === 'bloodPhantasm' ? 45 : 18;
    const mult = inBlackout ? ((e.panic || lookedBack) ? 3.0 : 2.0) : 1.0;
@@ -313,18 +313,26 @@ const Game = (() => {
    grantGrowth(b, v, 1);
    persist(b, v);
    if (family(v) === 'payphone') {
-    for (const e of living(b)) {
-     hit(b, v, e, atk(b, v) * (v.id === 'midnightOperator' ? 1.5 : 1.0));
-     if ((e.ruleMarks || 0) > 0 || e.panic) {
-      status(b, e, 'stun', v.id === 'midnightOperator' ? 2.0 : 0.8, 0, v);
-      grantUrbanViolation(b, v, 1);
-     }
+    const violators = living(b).filter(e => (e.ruleMarks || 0) > 0 || e.panic || e.panicUntil > b.time || e.retreatingUntil > b.time || e.speed > 0.40);
+    for (const e of violators) {
+     const mult = (v.id === 'midnightOperator' || v.id === 'hauntedSwitchboard') ? 1.5 : 1.0;
+     hit(b, v, e, atk(b, v) * mult);
+     if (v.id === 'midnightOperator') status(b, e, 'stun', 1.2, 0, v);
+     else if (v.id === 'hauntedSwitchboard') status(b, e, 'stun', 1.0, 0, v);
+     else status(b, e, 'slow', 2.0, 0.30, v);
+     grantUrbanViolation(b, v, 1);
     }
     fx(b, 'pulse', v, null, 'CURFEW RING');
    }
    if (family(v) === 'morgueMirror') {
-    const clone = spawnToken(b, v, 'mirrorClone', false, { tokenAtk: rawAtk(v), attackInterval: v.attackInterval });
-    if (clone) interact(b, v, clone, 'reflection', 'Blackout manifested mirror clone');
+    const count = v.id === 'mirrorQueen' ? 4 : v.id === 'doppelMirror' ? 2 : 1;
+    const targets = v.id === 'mirrorQueen' ? [0,1,2,3,4,5,6,7,8].filter(slot => adjacent(v, xy(slot)) && !b.units.some(w => !w.removed && w.slot === slot)).slice(0, count) : Array(count).fill(0);
+    let spawned = 0;
+    for (let i = 0; i < count; i++) {
+     const clone = spawnToken(b, v, 'mirrorClone', v.id === 'mirrorQueen', { tokenAtk: v.id === 'mirrorQueen' ? rawAtk(v) : rawAtk(v), attackInterval: v.attackInterval, expiresAt: b.time + (v.id === 'mirrorQueen' ? 4 * mod(b.run, 'buffDuration') : 4 * mod(b.run, 'buffDuration')) });
+     if (clone) { spawned++; interact(b, v, clone, 'reflection', 'Blackout manifested temporary Mirror Reflection'); }
+    }
+    if (v.id === 'mirrorQueen' && spawned < 4) fx(b, 'pulse', v, null, `MIRROR CLONES ${spawned}/4`);
    }
   }
  }
@@ -378,6 +386,7 @@ const Game = (() => {
   const d = card(u.id), pos = xy(slot);
   let baseAtk = d.baseAtk;
   let attackInterval = d.attackInterval;
+  if (['stair13', 'redRaincoat'].includes(d.evolvedFrom || d.id)) attackInterval = 0;
   if (isUrbanInvestigator(u)) {
    const r = urbanInvestigatorRealmForDread(u.dread || 0);
    const stats = [[8, 1.3], [24, 1.1], [50, 0.85], [90, 0.65]][r];
@@ -446,6 +455,11 @@ const Game = (() => {
   if (b.units.some(u => !u.removed && u.id === 'ruleArchitect')) {
    b.architectActive = true;
   }
+  if (b.units.some(u => !u.removed && u.id === 'redPhone')) {
+   const dur = 10 * mod(b.run, 'buffDuration');
+   for (const u of b.units.filter(v => !v.removed && card(v.id).genre === 'Haunted')) u.hotlineUntil = b.time + dur;
+   fx(b, 'state', null, null, 'RED HOTLINE');
+  }
   flushEvents(b);
  }
 
@@ -461,18 +475,18 @@ const Game = (() => {
   let m = 1 + (b.run.relics.includes('blade') ? .12 : 0) + (b.run.legacyPower || 0);
   if (allies(b, u).some(v => family(v) === 'spirit' && (v.state === 'dormant' || v.spiritBuffUntil > b.time))) m += .2 * mod(b.run, 'buffPower');
   if (isApexImmortal(u) && neighbors(b, u, false).some(v => !v.removed && (isCultivationRelic(v) || isUrbanRelic(v)))) m *= 1.2;
-  if (card(u.id).genre === 'Haunted' && b.curfewUntil > b.time) m *= (u.id === 'ruleArchitect' ? 2.5 : 1.2);
+  if (card(u.id).genre === 'Haunted' && b.curfewUntil > b.time) m *= 1.2;
   return (rawAtk(u) + (u.id === 'railgun' ? highestGrowth(b, u) * 2 : 0)) * m * mod(b.run, 'damage')
  }
 
  function speed(b, u) {
-  let n = 1 + (b.run.relics.includes('clock') ? .1 : 0) + (u.emptySpeed + (u.offeringSpeed || 0) + (u.hasteUntil > b.time ? .15 : 0) + (u.manualUntil > b.time ? .25 : 0) + (u.pillSpeedUntil > b.time ? .15 : 0) + (neighbors(b, u).some(v => v.id === 'netrunner' && v.state === 'active') ? .15 : 0)) * mod(b.run, 'buffPower');
+  let n = 1 + (b.run.relics.includes('clock') ? .1 : 0) + (u.emptySpeed + (u.offeringSpeed || 0) + (u.hasteUntil > b.time ? .15 : 0) + (u.manualUntil > b.time ? .25 : 0) + (u.pillSpeedUntil > b.time ? .15 : 0) + (u.hotlineUntil > b.time ? .20 : 0) + (neighbors(b, u).some(v => v.id === 'netrunner' && v.state === 'active') ? .15 : 0)) * mod(b.run, 'buffPower');
   if (allies(b, u).some(v => v.id === 'mantis' && v.overclock)) n += .15 * mod(b.run, 'buffPower');
   if (support(b, 'matriarch') && BLOODLINE_FODDER.includes(species(u))) n += .4 * mod(b.run, 'buffPower');
   if ((isCultivationRelic(u) || isUrbanRelic(u)) && neighbors(b, u, false).some(v => !v.removed && isApexImmortal(v))) n *= 1.25;
   const inBlackout = b.curfewUntil > b.time;
   const hasDirector = b.units.some(v => !v.removed && v.id === 'curfewDirector');
-  if (card(u.id).genre === 'Haunted' && inBlackout) n *= hasDirector ? 1.8 : 1.4;
+  if (card(u.id).genre === 'Haunted') { if (hasDirector) n *= 1.6; else if (inBlackout) n *= 1.4; }
   if (family(u) === 'mannequin' && (inBlackout || allies(b, u).some(v => v.state !== 'active'))) {
    n *= (u.id === 'livingTaboo' && inBlackout ? 3.0 : 2.5);
   }
@@ -540,7 +554,7 @@ const Game = (() => {
  function status(b, e, type, seconds, power = 0, source = null) {
   if (e.hp <= 0 || e.gone) return;
   if (e.boss || e.champion) { if (type === 'slow') power *= .5; if (type === 'stun' || type === 'freeze') { if (e.enraged) return; seconds *= .5 } }
-  if (type === 'slow') { const previous = e.slows.find(s => s.power === power); if (previous) previous.until = Math.max(previous.until, b.time + seconds); else e.slows.push({ until: b.time + seconds, power }) }
+  if (type === 'slow') { const previous = e.slows.find(s => s.power === power); if (previous) { previous.until = Math.max(previous.until, b.time + seconds); previous.sourceUid = source?.uid ?? previous.sourceUid } else e.slows.push({ until: b.time + seconds, power, sourceUid: source?.uid }) }
   else if (type === 'stun' || type === 'freeze') e.frozenUntil = Math.max(e.frozenUntil, b.time + seconds);
   else if (type === 'burn') { if (source) dot(b, e, 'burn', power, seconds, source); else (e.burns ??= []).push({ until: b.time + seconds, dps: power }); return }
   else if (type === 'vulnerable') { e.vulnerableUntil = b.time + seconds; e.vulnerability = power; return }
@@ -558,6 +572,7 @@ const Game = (() => {
   if (e.hp <= 0) {
    e.hp = 0; if (e.champion) recordTrial(b, e, true); if ((e.maxProgress || e.p) >= 12) b.metrics.closeCalls = (b.metrics.closeCalls || 0) + 1;
    e.gone = true; b.metrics.kills++; b.run.stats.kills++;
+   if (e.rumorInfected) spreadRumor(b, e, true);
 
    // Soul Banner captures souls track-wide on any enemy death
    for (const banner of b.units.filter(v => !v.removed && v.id === 'soulBanner')) {
@@ -581,37 +596,6 @@ const Game = (() => {
     }
    }
 
-   // Director of Curfew restores player health on kills
-   const curfewDir = b.units.find(v => !v.removed && v.id === 'curfewDirector');
-   if (curfewDir) {
-    curfewDir.curfewKills = (curfewDir.curfewKills || 0) + 1;
-    if (curfewDir.curfewKills % 5 === 0 && b.run.health < b.run.maxHealth) {
-     b.run.health = Math.min(b.run.maxHealth, b.run.health + 1);
-     interact(b, curfewDir, null, 'heal', 'Curfew Director: 5 kills → restore 1 HP');
-     fx(b, 'growth', curfewDir, null, '+1 HP');
-    }
-   }
-
-   if (e.rumorInfected) spreadRumor(b, e, true);
-
-   event(b, 'kill', { source, bleedCarry: (e.bleeds || []).filter(d => d.until > b.time).map(d => ({ ...d })), bleeding: (e.bleeds || []).some(d => d.until > b.time), burning: (e.burns || []).some(d => d.until > b.time) });
-   if (source) {
-    record(b, source).kills++;
-    if (source.lineage === 'tiger' && (lineageTierIds[source.id]?.tier || 0) >= 4) for (const runner of living(b)) status(b, runner, 'stun', 1.5, 0, source);
-    if (!source.removed && !token(source)) {
-     if (source.id === 'asura') grantGrowth(b, source, 1);
-     if (source.id === 'demonBlade') {
-      source.bladeKills = (source.bladeKills || 0) + 1;
-      if (source.bladeKills % 10 === 0 && (source.demonAtkBonus || 0) < 30) {
-       source.demonAtkBonus = (source.demonAtkBonus || 0) + 1;
-       growth(b, source, 1);
-       persist(b, source);
-       interact(b, source, source, 'blood-edge', '+1 permanent ATK from 10 kills');
-      }
-     }
-
-    }
-   }
   }
   return actual;
  }
@@ -641,12 +625,24 @@ const Game = (() => {
   let es = living(b);
   if (species(u) === 'hound') { let low = es.filter(e => e.hp / e.maxHp < .3); if (low.length) return low[0] }
   if (family(u) === 'kuchisake') { let fastest = [...es].sort((a, z) => z.speed - a.speed)[0]; if (fastest) return fastest; }
+  if (['nightBus', 'payphone', 'morgueMirror', 'mannequin'].includes(family(u))) {
+   const violators = es.filter(e => (e.ruleMarks || 0) > 0 || e.panic || e.panicUntil > 0 || e.retreatingUntil > 0 || e.speed > 0.40 || e.frozenUntil > 0 || (e.stuns || []).length > 0 || (family(u) === 'morgueMirror' && flank(u.slot, e)));
+   if (violators.length) return violators[0];
+  }
   if (u.id === 'executioner' || u.lineage === 'tiger' && (lineageTierIds[u.id]?.tier || 0) >= 3) { let elite = es.find(e => e.elite || e.boss || e.champion); if (elite) return elite }
   return es[0]
  }
 
  function attack(b, u) {
   const target = chooseTarget(b, u); if (!target) return false;
+  const inBlackout = b.curfewUntil > b.time;
+  const tabooBreak = e => (e.ruleMarks || 0) > 0 || e.panic || e.panicUntil > b.time || e.retreatingUntil > b.time || e.speed > 0.40 || e.frozenUntil > b.time || (e.stuns || []).some(v => v.until > b.time);
+  if (family(u) === 'kuchisake' && !inBlackout && !living(b).some(e => (e.ruleMarks || 0) > 0 || e.panic || e.panicUntil > b.time || e.retreatingUntil > b.time || e.speed > 0.40)) return false;
+  if (family(u) === 'nightBus' && !living(b).some(tabooBreak)) return false;
+  if (family(u) === 'payphone' && !living(b).some(tabooBreak)) return false;
+  if (family(u) === 'morgueMirror' && !inBlackout && !living(b).some(e => tabooBreak(e) || flank(u.slot, e))) return false;
+  if (family(u) === 'mannequin' && !inBlackout && !living(b).some(tabooBreak) && !allies(b, u).some(v => v.state !== 'active')) return false;
+  if (u.id === 'allSeeingOverseer' && !living(b).some(e => e.swift || e.enraged || e.speedBoostUntil > b.time || e.speed > 0.40)) return false;
   u.attackCount++; record(b, u).attacks++; u.flash = .18; let power = atk(b, u);
   for (const v of allies(b, u)) {
    if (family(v) === 'spirit' && (v.state === 'dormant' || v.spiritBuffUntil > b.time)) interact(b, v, u, 'spirit-buff', 'Dormancy → +20% team damage');
@@ -741,6 +737,10 @@ const Game = (() => {
   else if (u.id === 'soulReapingDemon') {
    for (const e of living(b).slice(0, 5)) { hit(b, u, e, power * 0.4); }
   }
+  else if (u.id === 'boneSaw') {
+   hit(b, u, target, power * ((target.elite || target.champion || target.boss) ? 1.5 : 1));
+   dot(b, target, 'bleed', 10, 4, u);
+  }
   else if (u.id === 'bloodFiendMaster') {
    hit(b, u, target, power);
    if (u.attackCount % 4 === 0) {
@@ -749,13 +749,11 @@ const Game = (() => {
   }
     else if (isUrbanInvestigator(u) || ['ruleArchitect', 'allSeeingOverseer', 'curfewDirector', 'forensicDemiurge', 'backroomsWarden'].includes(u.id)) {
    if (u.id === 'allSeeingOverseer') {
-    for (const e of living(b)) {
+    for (const e of living(b).filter(e => e.swift || e.enraged || e.speedBoostUntil > b.time || e.speed > 0.40)) {
      hit(b, u, e, power);
-     grantUrbanViolation(b, u, 1);
-   addRuleMark(b, e, 1, null);
-     if (e.speed > 0.32 || e.swift || e.enraged) {
-      status(b, e, 'freeze', 2.0, 0, u);
-     }
+     status(b, e, 'freeze', 2.0, 0, u);
+     e.swift = false; e.enraged = false; e.speedBoostUntil = 0; e.auras = [];
+     e.speed = Math.min(e.speed, 0.30);
     }
     fx(b, 'beam', u, target, 'PANOPTICON');
    } else if (u.id === 'curfewDirector') {
@@ -785,7 +783,11 @@ const Game = (() => {
    }
    const r = urbanInvestigatorRealmForDread(u.dread || 0);
    if (u.id === 'ruleArchitect') {
-    for (const e of living(b).slice(0, 4)) { trueHit(b, u, e, power); addRuleMark(b, e, 1, u); }
+    for (const e of living(b).slice(0, 4)) {
+     const violator = (e.ruleMarks || 0) > 0;
+     trueHit(b, u, e, power * (violator ? 2.5 : 1));
+     addRuleMark(b, e, 1, u);
+    }
     if (u.attackCount % 4 === 0) {
      for (const e of living(b).filter(e => (e.ruleMarks || 0) > 0)) { trueHit(b, u, e, 240 + teamPower(b) * 2); fx(b, 'curfew', u, e, 'DETONATE'); }
     }
@@ -810,7 +812,7 @@ const Game = (() => {
     u.lastRunnerReact = u.lastRunnerReact || {};
     if (b.time - (u.lastRunnerReact[target.uid] || -99) < 1.5) return false;
     u.lastRunnerReact[target.uid] = b.time;
-   } else if (target.speed <= 0.30 && !target.panic && !(target.retreatingUntil > b.time) && (target.ruleMarks || 0) <= 0) {
+   } else if (!(target.speed > 0.40 || target.panic || target.panicUntil > b.time || target.retreatingUntil > b.time || (target.ruleMarks || 0) > 0)) {
     return false;
    }
    const marks = target.ruleMarks || 0;
@@ -824,13 +826,16 @@ const Game = (() => {
     if (second) hit(b, u, second, power * 0.5);
    }
    if (u.id === 'slitMouthedSovereign') {
-    if (!target.boss && !target.champion && target.hp / target.maxHp < 0.15) {
+    if (!target.boss && target.hp / target.maxHp < 0.30) {
      damage(b, target, target.hp, u, 'direct');
      fx(b, 'shot', u, target, 'EXECUTE');
     }
-    if (u.attackCount % 6 === 0 && target.boss) {
-     damage(b, target, target.hp * 0.10, u, 'ability');
-     fx(b, 'spell', u, target, '−10% CURRENT HP');
+    if (u.attackCount % 6 === 0) {
+     const bossTarget = living(b).find(e => e.boss || e.champion);
+     if (bossTarget) {
+      damage(b, bossTarget, bossTarget.hp * 0.15, u, 'ability');
+      fx(b, 'spell', u, bossTarget, '−15% CURRENT HP');
+     }
     }
    }
   }
@@ -841,27 +846,30 @@ const Game = (() => {
     if (b.time - (u.lastRunnerReact[target.uid] || -99) < 1.5) return false;
     u.lastRunnerReact[target.uid] = b.time;
    }
-   for (const e of living(b).slice(0, u.id === 'terminusBus' ? 4 : 2)) {
+   const violators = living(b).filter(e => (e.ruleMarks || 0) > 0 || e.panic || e.panicUntil > b.time || e.speed > 0.40 || e.retreatingUntil > b.time);
+   if (!violators.length) return false;
+   for (const e of violators.slice(0, u.id === 'terminusBus' ? 4 : 2)) {
     hit(b, u, e, power);
+    if (!e.gone && e.hp > 0) addRuleMark(b, e, 1, null);
     grantUrbanViolation(b, u, 1);
-   addRuleMark(b, e, 1, null);
    }
   }
   else if (family(u) === 'payphone') {
    const inBlackout = b.curfewUntil > b.time;
-   if (inBlackout) {
-    u.lastRunnerReact = u.lastRunnerReact || {};
-    if (b.time - (u.lastRunnerReact[target.uid] || -99) < 1.5) return false;
-    u.lastRunnerReact[target.uid] = b.time;
-   }
+   const violators = living(b).filter(e => (e.ruleMarks || 0) > 0 || e.panic || e.panicUntil > b.time || e.retreatingUntil > b.time);
+   if (!violators.length) return false;
    const ringEvery = u.id === 'midnightOperator' ? 2 : 3;
-   if (inBlackout || u.attackCount % ringEvery === 0) {
-    for (const e of living(b)) {
-     hit(b, u, e, power * (u.id === 'midnightOperator' ? 1.5 : 1.0));
-     if (u.id === 'midnightOperator' ? (e.panicUntil > b.time || e.panic) : (e.ruleMarks || 0) > 0) {
-      status(b, e, 'stun', u.id === 'midnightOperator' ? 2.0 : 0.8, 0, u);
-      grantUrbanViolation(b, u, 1);
-     }
+   const isRing = inBlackout || u.attackCount % ringEvery === 0;
+   if (inBlackout && b.time - (u.lastRingReactAt || -99) < 1.5) return false;
+   if (inBlackout) u.lastRingReactAt = b.time;
+   if (isRing) {
+    const ringMult = (u.id === 'midnightOperator' || u.id === 'hauntedSwitchboard') ? 1.5 : 1.0;
+    for (const e of violators) {
+     hit(b, u, e, power * ringMult);
+     if (u.id === 'midnightOperator') status(b, e, 'stun', 1.2, 0, u);
+     else if (u.id === 'hauntedSwitchboard' && inBlackout) status(b, e, 'stun', 1.0, 0, u);
+     else status(b, e, 'slow', 2.0, 0.30, u);
+     grantUrbanViolation(b, u, 1);
     }
     if (u.id === 'midnightOperator' && inBlackout) {
      b.curfewUntil += 1.5;
@@ -869,6 +877,7 @@ const Game = (() => {
     }
     fx(b, 'pulse', u, null, 'REDIAL');
    } else {
+    if (!(target.ruleMarks > 0 || target.panic || target.panicUntil > b.time || target.retreatingUntil > b.time)) return false;
     hit(b, u, target, power);
    }
   }
@@ -878,6 +887,9 @@ const Game = (() => {
     u.lastRunnerReact = u.lastRunnerReact || {};
     if (b.time - (u.lastRunnerReact[target.uid] || -99) < 1.5) return false;
     u.lastRunnerReact[target.uid] = b.time;
+   } else {
+    const stares = flank(u.slot, target) || (target.ruleMarks || 0) > 0 || target.panic || target.panicUntil > b.time || target.retreatingUntil > b.time || target.frozenUntil > b.time || (target.stuns || []).some(v => v.until > b.time);
+    if (!stares) return false;
    }
    hit(b, u, target, power);
    const adjAllies = neighbors(b, u, false);
@@ -900,20 +912,16 @@ const Game = (() => {
   }
   else if (family(u) === 'mannequin') {
    const inBlackout = b.curfewUntil > b.time;
-   if (inBlackout) {
-    u.lastRunnerReact = u.lastRunnerReact || {};
-    if (b.time - (u.lastRunnerReact[target.uid] || -99) < 1.5) return false;
-    u.lastRunnerReact[target.uid] = b.time;
-   } else if (!allies(b, u).some(v => v.state !== 'active') && (target.ruleMarks || 0) <= 0) {
-    return false;
-   }
+   const tabooBroken = (target.ruleMarks || 0) > 0 || target.panic || target.panicUntil > b.time || target.retreatingUntil > b.time || target.speed > 0.40 || allies(b, u).some(v => v.state !== 'active');
+   if (!inBlackout && !tabooBroken) return false;
+   u.lastRunnerReact = u.lastRunnerReact || {};
+   if (b.time - (u.lastRunnerReact[target.uid] || -99) < 1.5) return false;
+   u.lastRunnerReact[target.uid] = b.time;
    const mult = u.id === 'livingTaboo' ? 3.0 : inBlackout ? 2.5 : 1.0;
    hit(b, u, target, power * mult);
    if (u.id === 'stalker') status(b, target, 'slow', 3, 0.30, u);
-   if (u.id === 'livingTaboo' && target.p >= 14.5) {
-    damage(b, target, target.hp, u, 'direct');
-    fx(b, 'shot', u, target, 'AMBUSH');
-   }
+   const brokeTaboo = (target.ruleMarks || 0) > 0 || target.panic || target.panicUntil > b.time || target.retreatingUntil > b.time || target.speed > 0.40 || inBlackout;
+   if (brokeTaboo) { grantUrbanViolation(b, u, 1); addRuleMark(b, target, 1, null); }
   }
   else if (u.id === 'bell') { let empowered = b.time - u.lastFlip <= 2; if (empowered) interact(b, u.lastFlipSource || u, u, 'bell', 'state change → empowered ring + stun'); for (const e of living(b)) { hit(b, u, e, power + (empowered ? 24 * mod(b.run, 'damage') : 0)); status(b, e, 'slow', 1.5, .25, u); if (empowered) status(b, e, 'stun', .75, 0, u) } }
   else if (u.id === 'railgun') { const has = sensor(b, u); if (has) interact(b, support(b, 'sensor'), u, 'railgun', 'Sensor → five-target volley + knockback'); for (const e of living(b).slice(0, has ? 5 : 3)) { hit(b, u, e, power); if (has) warp(b, e, 1, u) } fx(b, 'beam', u, target, ''); }
@@ -984,7 +992,9 @@ const Game = (() => {
   if (b.done) return; dt = Math.min(.1, dt); b.time += dt;
   if (b.spawned < b.plan.count && b.time >= b.spawnAt) { spawn(b); b.spawnAt += b.plan.encounter === 'packs' ? (b.spawned % 3 === 0 ? b.plan.interval * 2 : .18) : b.plan.interval }
   for (const u of b.units.filter(u => !u.removed)) {
-   if (u.removed) continue; u.flash = Math.max(0, u.flash - dt); extras(b, u, dt); flushEvents(b); if (u.removed) continue;
+   if (u.removed) continue;
+   if (token(u) && u.expiresAt != null && b.time >= u.expiresAt) { u.removed = true; continue; }
+   u.flash = Math.max(0, u.flash - dt); extras(b, u, dt); flushEvents(b); if (u.removed) continue;
    if (u.state !== 'active') { u.stateRemaining -= dt; if (u.stateRemaining <= 0) flip(b, u, 'active'); else continue }
    if (u.id === 'mantis') { if (u.overclock) { u.clockRemaining -= dt; if (u.clockRemaining <= 0) { grantGrowth(b, u, 1); u.cycle = 0; flip(b, u, 'overheat', 3); continue } } else { u.cycle += dt; u.threshold.current = u.cycle; if (u.cycle >= 10) { u.overclock = true; u.clockRemaining = 5 * mod(b.run, 'buffDuration'); for (const v of allies(b, u)) v.onAdjacentStateFlip(u); fx(b, 'state', u, null, 'OVERCLOCK') } } }
    if (u.id === 'herb' && b.time >= u.sacrificeAt && herbOffering(b, u)) continue;
@@ -1002,7 +1012,15 @@ const Game = (() => {
    if (wasRetreating) e.p -= e.speed * dt * move * (e.enraged ? 1.25 : 1) * (b.run.relics.includes('frost') ? .9 : 1) * 2;
    if (!wasRetreating && e.p > previousProgress) triggerStairTraps(b, e, previousProgress, e.p);
    triggerRedRaincoatTraps(b, e, previousProgress, e.p, wasRetreating);
-   e.maxProgress = Math.max(e.maxProgress || 0, e.p); if (e.p >= 16) {
+   e.maxProgress = Math.max(e.maxProgress || 0, e.p);
+   const livingTaboo = b.units.find(v => !v.removed && v.id === 'livingTaboo');
+   if (livingTaboo && e.p >= 15 && !b.livingTabooSaved) {
+    b.livingTabooSaved = true;
+    damage(b, e, e.hp, livingTaboo, 'direct');
+    fx(b, 'shot', livingTaboo, e, 'AMBUSH');
+   }
+   if (e.gone) continue;
+   if (e.p >= 16) {
     if (e.champion) recordTrial(b, e, false);
     if (b.units.some(v => !v.removed && v.id === 'ruleArchitect') && !b.room404Saved) {
      b.room404Saved = true; e.gone = true;
@@ -1053,7 +1071,7 @@ const Game = (() => {
   if (token(u)) return;
   const src = b.run.roster.find(v => v.uid === u.uid);
   if (src) {
-   for (const k of ['id', 'permanentAtkBonus', 'permanentSpeed', 'upgradePath', 'lineage', 'lineageStacks', 'meals', 'qiGrowth', 'returns', 'witnesses', 'qi', 'realm', 'swordQi', 'apexQi', 'apexDread', 'souls', 'bladeKills', 'demonAtkBonus', 'dread', 'violations', 'blackouts']) {
+   for (const k of ['id', 'permanentAtkBonus', 'permanentSpeed', 'upgradePath', 'lineage', 'lineageStacks', 'meals', 'qiGrowth', 'returns', 'witnesses', 'qi', 'realm', 'swordQi', 'apexQi', 'apexDread', 'souls', 'bladeKills', 'demonAtkBonus', 'dread', 'violations', 'blackouts', 'mirrorQueenBonusGranted']) {
     if (u[k] !== undefined) src[k] = u[k];
    }
   }
@@ -1077,7 +1095,7 @@ const Game = (() => {
      if (ev.type === 'consumed' && species(ev.unit) === 'lamb' && u === support(b, 'lantern')) { tick(b, u, 3, ev.unit); interact(b, ev.unit, u, 'soul', 'Mourning Lamb → +3 Echoes'); }
      if (u.id === 'soulwell' && ev.type === 'consumed') { const haunted = card(species(ev.unit))?.genre === 'Haunted'; for (const e of living(b).slice(0, 3)) trueHit(b, u, e, haunted ? 300 + teamPower(b) : 80 + teamPower(b) * .5); interact(b, ev.unit, u, 'soul-payoff', haunted ? 'HAUNTED HARVEST → greater soul missiles' : 'foreign loss → soul missiles'); }
      if (u.id === 'lantern' && (ev.type === 'kill' || ev.type === 'shutdown' && ev.unit !== u)) tick(b, u, 1, ev.source || ev.unit);
-     if (u.id === 'cauldron' && support(b, 'cauldron') === u && ['consumed', 'breakthrough', 'refined'].includes(ev.type) && ev.unit !== u && b.time >= (u.elixirAt || 0)) { u.elixirs = (u.elixirs || 0) + 1; u.elixirAt = b.time + 8; for (const v of b.units.filter(v => !v.removed)) growth(b, v, 1); b.run.health = Math.min(b.run.maxHealth, b.run.health + 1); interact(b, u, ev.consumer || ev.unit, 'elixir', 'Elixir: +1 team ATK, heal 1 HP; 8s cooldown'); }
+     if (u.id === 'cauldron' && support(b, 'cauldron') === u && ['consumed', 'breakthrough', 'refined'].includes(ev.type) && ev.unit !== u && b.time >= (u.elixirAt || 0)) { u.elixirs = (u.elixirs || 0) + 1; u.elixirAt = b.time + 8; for (const v of b.units.filter(v => !v.removed)) growth(b, v, 1); interact(b, u, ev.consumer || ev.unit, 'elixir', 'Elixir: +1 team ATK; 8s cooldown'); }
      if (u.id === 'altar' && support(b, 'altar') === u && (ev.type === 'consumed' || ev.type === 'kill' && ev.bleeding)) for (const v of neighbors(b, u).filter(v => !token(v))) if (grantGrowth(b, v, 1)) interact(b, u, v, 'altar', 'ritual → +1 permanent ATK');
      if (u.id === 'monk' && ev.type === 'consumed' && !token(ev.unit) && ev.unit !== u) { u.witnesses = (u.witnesses || 0) + 1; u.threshold.current = u.witnesses; persist(b, u); if (u.witnesses >= 3) evolve(b, u, 'asura'); }
      if (u.id === 'medium' && !u.pendingEcho && b.time >= (u.echoAt || 0) && ev.unit !== u && !token(ev.unit || {}) && (ev.type === 'consumed' || ev.type === 'shutdown' && ev.state === 'dormant')) { u.echoUsed = true; u.echoAt = b.time + 10; u.pendingEcho = { atk: Math.max(0, rawAtk(ev.unit)), origin: family(ev.unit) }; }
@@ -1110,7 +1128,8 @@ const Game = (() => {
     if (dread >= 25) return { current: dread, max: 70 };
     return { current: dread, max: 25 };
    }
-   case 'kuchisake': case 'nightBus': case 'payphone': case 'morgueMirror': {
+   case 'kuchisake': case 'nightBus': case 'payphone': case 'morgueMirror':
+   case 'mannequin': case 'stair13': case 'redRaincoat': {
     const v = u.violations || 0;
     if (v >= 45) return { current: 45, max: 45, label: 'Mythic Apex Achieved' };
     if (v >= 15) return { current: v, max: 45 };
@@ -1237,10 +1256,9 @@ const Game = (() => {
     const recipient = neighbors(b, u, false).filter(v => !v.removed && !token(v) && card(v.id).genre === 'Haunted').sort((a, z) => rawAtk(a) - rawAtk(z))[0] || u;
     growth(b, recipient, 3);
     const investigator = b.units.filter(v => !v.removed && acceptsDread(v)).sort((a, z) => Number(isUrbanAuthority(a)) - Number(isUrbanAuthority(z)) || (a.dread || 0) - (z.dread || 0))[0];
-    if (investigator) {
-     addDread(b, investigator, 10);
-    }
-    interact(b, u, recipient, 'autopsy', 'Dossier examined: +3 perm ATK, +10 Dread');
+    const dreadGain = 10 + (b.units.some(v => !v.removed && v.id === 'ruleboard') ? 2 : 0);
+    if (investigator) addDread(b, investigator, dreadGain);
+    interact(b, u, recipient, 'autopsy', `Dossier examined: +3 perm ATK, +${dreadGain} Dread`);
     fx(b, 'growth', recipient, null, '+3 ATK');
    }
   }
@@ -1256,22 +1274,30 @@ const Game = (() => {
      ally.manualUntil = Math.max(ally.manualUntil || 0, b.time + dur);
     }
     const investigator = b.units.filter(v => !v.removed && acceptsDread(v)).sort((a, z) => Number(isUrbanAuthority(a)) - Number(isUrbanAuthority(z)) || (a.dread || 0) - (z.dread || 0))[0];
-    if (investigator) {
-     addDread(b, investigator, 8);
-    }
-    interact(b, u, null, 'manual', 'Survival Manual decoded: +25% team speed, +15% crit, +8 Dread');
+    const dreadGain = 8 + (b.units.some(v => !v.removed && v.id === 'ruleboard') ? 2 : 0);
+    if (investigator) addDread(b, investigator, dreadGain);
+    interact(b, u, null, 'manual', `Survival Manual decoded: +25% team speed, +15% crit, +${dreadGain} Dread`);
     fx(b, 'pulse', u, null, 'SURVIVAL MANUAL');
    }
   }
 
-  // Emergency Broadcast drops Dossier every 8s
-  if (u.id === 'radioPA' && b.time >= (u.paAt || 8)) {
-   u.paAt = b.time + 8;
-   spawnToken(b, u, 'dossier', false);
-   for (const e of living(b).filter(e => (e.ruleMarks || 0) > 0)) {
-    status(b, e, 'slow', 3, 0.25, u);
-   }
+  if (u.id === 'radioPA' && b.time >= (u.paSlowAt || 6)) {
+   u.paSlowAt = b.time + 6;
+   for (const e of living(b).filter(e => (e.ruleMarks || 0) > 0)) status(b, e, 'slow', 3, 0.25, u);
    fx(b, 'pulse', u, null, 'CURFEW WARNING');
+  }
+  if (u.id === 'radioPA' && b.time >= (u.paDossierAt || 8)) {
+   u.paDossierAt = b.time + 8;
+   spawnToken(b, u, 'dossier', false);
+  }
+  if (u.id === 'mirrorQueen' && !u.mirrorQueenBonusGranted) {
+   const highest = Math.max(0, ...allies(b, u).filter(v => !token(v)).map(rawAtk));
+   if (highest > 0) {
+    u.permanentAtkBonus = (u.permanentAtkBonus || 0) + highest;
+    u.mirrorQueenBonusGranted = true;
+    persist(b, u);
+    interact(b, u, u, 'mirror-domain', `Permanently assimilated highest ally ATK: +${Math.round(highest)}`);
+   }
   }
 
   // Panopticon Monitor scans all 16 tiles every 4s
