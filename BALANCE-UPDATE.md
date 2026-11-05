@@ -33,3 +33,4 @@ Cultivation's median Legendary crossing moved 3 → 6. Scrapwork's median Titans
 The requested pacing goals improved, but strong supplied Cultivation/Haunted decks still win all these controlled campaigns. This does not establish global balance or solve Bloodline breeding fragility. Existing earned forms/progress are retained, so old advanced saves do not demonstrate the new progression curve; use fresh runs to evaluate pacing.
 
 Run `node --test tests/*.test.js`. Reproduce controlled scenarios with `node scripts/balance-campaigns.cjs`, `node scripts/balance-legends.cjs`, and `node scripts/balance-waves.cjs`. Results are written beside these scripts. The ZIP's audit-results folder contains baseline and final measurements.
+

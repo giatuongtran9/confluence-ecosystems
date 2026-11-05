@@ -1,3 +1,7 @@
+# Cosmic Horror update
+
+Forbidden Texts adds seven draftable Cosmic cards and six earned Mythic branches. See [COSMIC-HORROR-UPDATE.md](COSMIC-HORROR-UPDATE.md) for mechanics, approved rules and validation. Existing ecosystems and latest WebP artwork remain integrated.
+
 # Confluence · The Ninefold Crossing
 
 [**Play the game on GitHub Pages**](https://giatuongtran9.github.io/confluence-ecosystems/)
@@ -61,3 +65,4 @@ Cyberpunk now has twelve draftable cards, locked Arm/OS sockets and nine earned
 Mythics. Chrome comes only from attacks. Heat, finite RAM and adjacent cooling
 shape combat. See `CYBER-MATRIX-UPDATE.md` for the implemented rules, test coverage
 and controlled single- and mixed-Operative campaign results.
+

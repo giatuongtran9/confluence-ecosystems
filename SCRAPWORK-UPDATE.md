@@ -36,3 +36,4 @@ Rook's damage benefit and speed drawback both apply. The proposal's guaranteed u
 This package does not push commits or deploy to GitHub.
 
 Cleanup checks also cover absent legacy definitions/mechanics, save reset behavior, and noncompounding armor damage. The campaign results above were measured before this cleanup; new Scrapwork-only campaign behavior is unchanged.
+

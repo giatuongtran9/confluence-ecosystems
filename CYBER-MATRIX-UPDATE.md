@@ -99,3 +99,4 @@ All boss/Harbinger slow, freeze, stun and knockback resistance remains. Enrage s
 Overall **35/54 wins**, **37/54 awakenings**. Every run reached 120 Chrome, between crossings7 and10. Awakening ranged from10 to15, median11. Module/Reactor adjacency can delay binding even after Chrome is ready.
 
 The Gorilla specialist branches struggle when they are the deck’s only attacker. `node audit/cyber-mixed-simulation.js` tests a second Operative and Mantis support: six Sandevistan and six Berserk mixed-arm campaigns. All12 won with the same random deployment and oldest-adjacent module assignment rules. This supports combining single-target and swarm coverage; it does not establish equal strength across all drafts or prove the game fully balanced. Full traces are included in the two result JSON files.
+

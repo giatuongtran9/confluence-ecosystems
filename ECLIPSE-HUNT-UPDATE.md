@@ -42,3 +42,4 @@ Abyssal Reaper's catalog entry, combat mechanics, synergy text and standalone as
 | All supports from start, seven-card team | 23 | 28 | 10 | 23 | 11 |
 
 *Among runs reaching the milestone. Readiness ranged from crossing6 to14; awakening from10 to14. Natural elite packs can accelerate point gain sharply, but no Mythic appeared before10. Random adjacency and limited working space can prevent carving or delay binding; adding Stake is not an automatic upgrade. The design is playable and its loop is functional, but these favorable acquisition tests do not establish balance across real drafts or mixed-genre decks. A separate tuning pass could address excess elite point income and the Stake's opportunity cost without silently changing the approved rules here.
+

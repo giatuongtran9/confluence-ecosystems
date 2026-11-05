@@ -59,3 +59,4 @@ Mana Conduit, Storm Archmage, Mana Crystal and Rune Weaver are removed from cata
 Overall25/48 wins and21/48 awakenings. Awakening ranged from crossing11 to16, median14. The initial implementation with25/45/60 milestones and lower spell damage produced zero wins and zero awakenings; its results are retained in `audit/arcane-before-tuning.json` as historical evidence, not results for the delivered version.
 
 **The ecosystem works, but the proposed crossing10–13 awakening pace is not consistently achieved.** Random adjacency and two-primary specialization remain substantial constraints. Water/Earth and Fire/Water are weaker in these controls; Fire/Wind is much stronger. This is a functional implementation with initial tuning, not a claim of equal branch strength or completed balance. Further tuning should address essence delivery reliability and pre-Mythic coverage without restoring boss bypasses.
+
