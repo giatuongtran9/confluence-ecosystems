@@ -764,6 +764,7 @@ const CARDS = [
   {
     "id": "vent",
     "name": "Cooling Vent",
+    "cyberAsset": "vent",
     "vn": "Tản Nhiệt Khẩu",
     "genre": "Cyberpunk",
     "baseAtk": 0,

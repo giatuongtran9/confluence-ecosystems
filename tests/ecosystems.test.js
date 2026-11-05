@@ -276,3 +276,29 @@ test('Red Raincoat Specter triggers Blackout from 5 taboo look-back/retreat viol
 });
 
 
+
+test('WebP maps cover Haunted evolutions, Arcane Loom, Cyber Matrix, and Scrapwork', () => {
+  const source = fs.readFileSync(require.resolve('../app'), 'utf8');
+  const definitions = source.slice(source.indexOf('const cultivationRealmSprites='), source.indexOf('function art('));
+  const ctx = {};
+  vm.createContext(ctx);
+  vm.runInContext(definitions + ';globalThis.hauntedSprites = hauntedSprites;', ctx);
+
+  assert.equal(ctx.hauntedSprites.bloodPhantasm, 'assets/haunted-sprites/blood-drenched-phantasm.webp');
+  assert.equal(ctx.hauntedSprites.crimsonHarbinger, 'assets/haunted-sprites/harbinger-of-the-crimson-rain.webp');
+  assert.equal(ctx.hauntedSprites.infiniteStair, 'assets/haunted-sprites/infinite-spiral-staircase.webp');
+  assert.equal(ctx.hauntedSprites.penroseLabyrinth, 'assets/haunted-sprites/penrose-labyrinth.webp');
+
+  // Verify all arcaneAsset, cyberAsset, and scrapworkAsset exist on disk as .webp
+  for (const c of D.CARDS) {
+    if (c.arcaneAsset) {
+      assert.ok(fs.existsSync(require('path').join(__dirname, '..', 'assets', 'arcane-loom', `${c.arcaneAsset}.webp`)), `Missing arcane webp: ${c.arcaneAsset}`);
+    }
+    if (c.cyberAsset) {
+      assert.ok(fs.existsSync(require('path').join(__dirname, '..', 'assets', 'cyber-matrix', `${c.cyberAsset}.webp`)), `Missing cyber webp: ${c.cyberAsset}`);
+    }
+    if (c.scrapworkAsset) {
+      assert.ok(fs.existsSync(require('path').join(__dirname, '..', 'assets', 'scrapwork', `${c.scrapworkAsset}.webp`)), `Missing scrapwork webp: ${c.scrapworkAsset}`);
+    }
+  }
+});

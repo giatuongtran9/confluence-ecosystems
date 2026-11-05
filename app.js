@@ -163,11 +163,13 @@ const hauntedSprites={
   stalker:'assets/haunted-sprites/shadow-stalker.webp',
   livingTaboo:'assets/haunted-sprites/living-taboo.webp',
   redRaincoat:'assets/haunted-sprites/red-raincoat-specter.webp',
-  bloodPhantasm:'assets/haunted-sprites/red-raincoat-specter.webp',
-  crimsonHarbinger:'assets/haunted-sprites/red-raincoat-specter.webp',
+  bloodPhantasm:'assets/haunted-sprites/blood-drenched-phantasm.webp',
+  crimsonHarbinger:'assets/haunted-sprites/harbinger-of-the-crimson-rain.webp',
   stair13:'assets/haunted-sprites/thirteenth-step.webp',
-  infiniteStair:'assets/haunted-sprites/thirteenth-step.webp',
-  penroseLabyrinth:'assets/haunted-sprites/thirteenth-step.webp',
+  infiniteStair:'assets/haunted-sprites/infinite-spiral-staircase.webp',
+  penroseLabyrinth:'assets/haunted-sprites/penrose-labyrinth.webp',
+  dossier:'assets/haunted-sprites/incident-dossier.webp',
+  mirrorClone:'assets/haunted-sprites/mirror-reflection.webp',
   chainLetter:'assets/haunted-sprites/cursed-chain-letter.webp',
   nightBus:'assets/haunted-sprites/midnight-bus-44.webp',
   ghostRoute:'assets/haunted-sprites/ghost-route-express.webp',
@@ -179,7 +181,7 @@ const hauntedSprites={
   doppelMirror:'assets/haunted-sprites/doppelganger-glass.webp',
   mirrorQueen:'assets/haunted-sprites/mirror-queen.webp'
 };
-function art(c){const spriteSrc=(c.cyberAsset?`assets/cyber-matrix/${c.cyberAsset}.svg`:null)||(c.arcaneAsset?`assets/arcane-loom/${c.arcaneAsset}.svg`:null)||(c.huntAsset?`assets/eclipse-hunt/${c.huntAsset}.svg`:null)||(c.scrapworkAsset?`assets/scrapwork/${c.scrapworkAsset}.svg`:null)||cultivationRealmSprites[c.id]||bloodlineSprites[c.id]||hauntedSprites[c.id];if(spriteSrc)return `<img class="sprite cultivation-unit-sprite" aria-hidden="true" alt="" src="${spriteSrc}">`;let id=c.asset||c.evolvedFrom||c.id;if(id==='houndToken')id='hound';if(id==='echo')id='spirit';let i=modelIds.indexOf(id);if(i<0)i=2;return `<span class="sprite realistic-unit ${c.evolvedFrom?'ascended':''}" aria-hidden="true" style="background-position:${i%6*20}% ${Math.floor(i/6)*100/6}%"></span>`;}
+function art(c){const spriteSrc=(c.cyberAsset?`assets/cyber-matrix/${c.cyberAsset}.webp`:null)||(c.arcaneAsset?`assets/arcane-loom/${c.arcaneAsset}.webp`:null)||(c.huntAsset?`assets/eclipse-hunt/${c.huntAsset}.svg`:null)||(c.scrapworkAsset?`assets/scrapwork/${c.scrapworkAsset}.webp`:null)||cultivationRealmSprites[c.id]||bloodlineSprites[c.id]||hauntedSprites[c.id];if(spriteSrc)return `<img class="sprite cultivation-unit-sprite" aria-hidden="true" alt="" src="${spriteSrc}">`;let id=c.asset||c.evolvedFrom||c.id;if(id==='houndToken')id='hound';if(id==='echo')id='spirit';let i=modelIds.indexOf(id);if(i<0)i=2;return `<span class="sprite realistic-unit ${c.evolvedFrom?'ascended':''}" aria-hidden="true" style="background-position:${i%6*20}% ${Math.floor(i/6)*100/6}%"></span>`;}
 
 const BATTLEFIELDS=Object.freeze({
   shen:{theme:'Cultivation',asset:'assets/battlefields/cultivation.jpg?v=20261102-1'},
