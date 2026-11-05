@@ -977,3 +977,6 @@ body.has-dock .shell{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))
 .board .field-card.scrap-titan{width:var(--unit-width)!important;height:var(--unit-height)!important;border:2px solid #d09c56!important;background:linear-gradient(135deg,#3b3028c9,#141d22c9)!important;border-radius:12px;z-index:3}
 .titan-label{position:absolute;top:5px;left:7px;font-size:9px;color:#ffcd83;letter-spacing:1px}
 .scrap-progress{padding:10px;border:1px solid #9e7955;border-radius:8px;background:#30261d;color:#eacda4;font-size:12px}.scrap-progress p{margin:5px 0}
+
+
+.trophy-mount-label{position:absolute;top:4px;left:4px;right:4px;padding:2px;background:#261d22dd;color:#e4c376;font-size:9px;letter-spacing:.08em;text-align:center;pointer-events:none}

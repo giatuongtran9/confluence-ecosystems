@@ -22,12 +22,12 @@ test('grass brewing starts at 8s, shares cadence and temporary speed expires',()
  const b=battle(['practitioner','cauldron','herbGrass','lotusRoot'],[0,4,5,8]);
  const [u,c]=b.units;
  G.extras(b,c,.1);assert.equal(u.qi,0);
- b.time=8;G.extras(b,c,.1);assert.equal(u.qi,18);assert.equal(u.permanentAtkBonus,3);
+ b.time=8;G.extras(b,c,.1);assert.equal(u.qi,6);assert.equal(u.permanentAtkBonus,3);
  assert.equal(u.permanentSpeed,undefined);assert.equal(u.pillSpeedUntil,16);
  const faster=G.speed(b,u);b.time=16;assert.ok(G.speed(b,u)<faster);
  const blossom=G.spawnToken(b,b.units[3],'lotusBlossom');Object.assign(blossom,G.xy(7),{slot:7});
- G.extras(b,c,.1);assert.equal(u.qi,53);assert.equal(c.brewAt,24);assert.ok(blossom.removed);
- G.extras(b,c,.1);assert.equal(u.qi,53);
+ G.extras(b,c,.1);assert.equal(u.qi,18);assert.equal(c.brewAt,24);assert.ok(blossom.removed);
+ G.extras(b,c,.1);assert.equal(u.qi,18);
 });
 test('Cauldron preserves ingredients without a valid recipient',()=>{
  const b=battle(['cauldron','lotusRoot'],[4,8]);const blossom=G.spawnToken(b,b.units[1],'lotusBlossom');
@@ -77,16 +77,16 @@ test('Chain Letter ordinary hits do not award legend progress',()=>{
 test('rumors reward one contact spread per source and infected deaths',()=>{
  const b=battle(['chainLetter','mannequin'],[0,8]);const e=enemy(b,4),next=enemy(b,4.2);
  e.rumorInfected=true;e.rumorOwner=b.units[0].uid;G.spreadRumor(b,e);
- assert.ok(next.rumorInfected);assert.equal(next.hp,99980);assert.equal(b.units[1].violations,1);
- enemy(b,4.1);G.spreadRumor(b,e);assert.equal(b.units[1].violations,1);
- G.damage(b,e,e.hp,b.units[0],'ability');assert.equal(b.units[1].violations,2);
+ assert.ok(next.rumorInfected);assert.equal(next.hp,99980);assert.equal(b.units[1].violations,0.1);
+ enemy(b,4.1);G.spreadRumor(b,e);assert.equal(b.units[1].violations,0.1);
+ G.damage(b,e,e.hp,b.units[0],'ability');assert.equal(b.units[1].violations,0.2);
 });
 test('Urban Legend marks are independent and Midnight Bus ignores another legend mark',()=>{
  const b=battle(['nightBus']),u=b.units[0],e=enemy(b,6);
  assert.equal(G.attack(b,u),false);assert.equal(e.p,6);assert.equal(G.getTabooMark(e,'nightBus'),0);
  e.tabooMarks.kuchisake=1;
  assert.equal(G.attack(b,u),false);assert.equal(e.p,6);assert.equal(G.getTabooMark(e,'nightBus'),0);
- e.speed=.5;assert.equal(G.attack(b,u),true);assert.equal(G.getTabooMark(e,'nightBus'),1);assert.equal(u.violations,1);
+ e.speed=.5;assert.equal(G.attack(b,u),true);assert.equal(G.getTabooMark(e,'nightBus'),1);assert.equal(u.violations,0.35);
  e.speed=.5;assert.equal(G.attack(b,u),true);assert.equal(G.getTabooMark(e,'nightBus'),2);
  b.time=8;G.extras(b,u,.1);assert.equal(e.p,3);
  const v=u.violations;G.extras(b,u,.1);assert.equal(e.p,3);assert.equal(u.violations,v);
@@ -110,7 +110,7 @@ test('Payphone and Mannequin do not attack ordinary runners',()=>{
  for(const id of ['payphone','mannequin']){const b=battle([id]);const e=enemy(b,4);assert.equal(G.attack(b,b.units[0]),false);assert.equal(e.hp,100000);assert.equal(b.units[0].violations,0);}
 });
 test('Mannequin earns a violation only when it punishes a taboo-breaker',()=>{
- const b=battle(['mannequin']);const e=enemy(b,4);e.speed=.5;G.attack(b,b.units[0]);assert.equal(b.units[0].violations,1);assert.equal(G.getTabooMark(e,'mannequin'),1);assert.equal(G.getTabooMark(e,'kuchisake'),0);
+ const b=battle(['mannequin']);const e=enemy(b,4);e.speed=.5;G.attack(b,b.units[0]);assert.equal(b.units[0].violations,0.35);assert.equal(G.getTabooMark(e,'mannequin'),1);assert.equal(G.getTabooMark(e,'kuchisake'),0);
 });
 
 test('Red Hotline and Director grant haste without healing',()=>{
@@ -274,4 +274,5 @@ test('Red Raincoat Specter triggers Blackout from 5 taboo look-back/retreat viol
  assert.ok(b.curfewUntil > b.time, 'Blackout triggered by Red Raincoat retreat/look-back violations');
  assert.equal(b.blackoutLockoutUntil, b.curfewUntil + 8.0, 'Lockout is active for 8s after Blackout');
 });
+
 

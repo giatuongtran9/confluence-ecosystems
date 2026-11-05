@@ -60,3 +60,4 @@ test('new armor removal triggers surviving armor-break synergies without double 
  const other=battle(['scrapFrame']),f=enemy(other);f.defense=.3;
  G.hit(b,u,e,100);G.hit(other,other.units[0],f,100);assert.equal(e.hp,f.hp);
 });
+

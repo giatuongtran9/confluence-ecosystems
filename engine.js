@@ -50,9 +50,360 @@ const Game = (() => {
  function reward(r) { r.draftRerolls = 0; r.phase = 'draft'; r.draftReason = 'reward'; r.offers = offers(r) }
  function addRelic(r, id) { if (r.relics.includes(id)) return; r.relics.push(id); if (id === 'heart') { r.maxHealth += 20; r.health = Math.min(r.maxHealth, r.health + 10) } }
  function base(u) { return card(u.id).baseAtk + (u.permanentAtkBonus || 0) }
+
+ // Ripperdoc Matrix: two locked hardware sockets; thermal/RAM state is battle-only.
+ const CYBER_MATRIX={mantisImplant:{sandyOS:'chronoPhantom',berserkOS:'thermalRipper',cyberdeckOS:'glitchAssassin'},gorillaImplant:{sandyOS:'gravitonColossus',berserkOS:'juggernautSmasher',cyberdeckOS:'empBreaker'},monowireImplant:{sandyOS:'razorPhantom',berserkOS:'plasmaTempest',cyberdeckOS:'networkReaper'}};
+ const CYBER_APEX=Object.values(CYBER_MATRIX).flatMap(Object.values);
+ const isCyber=u=>family(u)==='cyberSolo';
+ const cyberApex=u=>CYBER_APEX.includes(u.id);
+ const augmented=u=>isCyber(u)&&!!(u.arm||u.os);
+ const hasAccess=(b,u)=>neighbors(b,u).some(v=>v.id==='accessPoint');
+ const ramCapacity=(b,u)=>hasAccess(b,u)?12:8;
+ const berserkActive=u=>isCyber(u)&&!cyberApex(u)&&u.os==='berserkOS'&&(u.heat||0)>=80&&u.state==='active';
+ function updateCyber(b,u){
+  if(!isCyber(u)||token(u)||u.removed)return;
+  if(!cyberApex(u)){
+   const id=(u.chrome||0)>=65?'eliteSolo':(u.chrome||0)>=25?'chromedSolo':'cyberSolo';if(u.id!==id)evolve(b,u,id);
+   if((u.chrome||0)>=120&&b.run.depth>=9&&CYBER_MATRIX[u.arm]?.[u.os]){
+    const reactor=neighbors(b,u).find(v=>v.id==='cyberReactor'&&!token(v));
+    if(reactor){const apex=CYBER_MATRIX[u.arm][u.os];consume(b,u,reactor,'Military Reactor Binding',0);evolve(b,u,apex);u.sandyUntil=0;}
+   }
+  }persist(b,u);
+ }
+ function installChrome(b,module){
+  const socket=card(module.id)?.cyberModule;if(!socket||module.removed||token(module))return false;
+  const u=neighbors(b,module).filter(v=>isCyber(v)&&!token(v)&&!v[socket]).sort((a,z)=>a.uid-z.uid)[0];if(!u)return false;
+  u[socket]=module.id;consume(b,u,module,'Chrome Installation',0);persist(b,u);updateCyber(b,u);return true;
+ }
+ function addChromeAttack(b,u){u.chromeAttackCharge=(u.chromeAttackCharge||0)+1;if(u.chromeAttackCharge>=4){u.chrome=(u.chrome||0)+1;u.chromeAttackCharge-=4;}persist(b,u);updateCyber(b,u);}
+ function addRAM(b,u,n){u.ram=Math.min(ramCapacity(b,u),(u.ram||0)+n);}
+ function cyberPoison(b,u,e,dps=24,seconds=4){
+  if(e.gone||e.hp<=0)return;e.venoms??=[];
+  // One Contagion per owner per victim; refresh instead of multiplying from viral kills.
+  e.venoms=e.venoms.filter(d=>d.cyberOwner!==u.uid);venom(b,e,dps,seconds,u);e.venoms.at(-1).cyberOwner=u.uid;
+ }
+ function uploadHack(b,u){
+  if(u.os!=='cyberdeckOS'||u.state!=='active'||b.time<(u.hackUploadAt??0)||(u.ram||0)<3||!living(b).length)return false;
+  u.ram-=3;u.hackUploadAt=b.time+(u.id==='networkReaper'?1.5:3);
+  const target=living(b)[0],contagion=u.id!=='networkReaper'&&(u.hackIndex||0)%2===1;u.hackIndex=(u.hackIndex||0)+1;
+  if(contagion){for(const e of living(b).slice(0,3))cyberPoison(b,u,e,24+rawAtk(u)*.25,4);}
+  else trueHit(b,u,target,220+3*rawAtk(u));
+  fx(b,'spell',u,target,contagion?'CONTAGION · −3 RAM':'SHORT CIRCUIT · −3 RAM');return true;
+ }
+ function cyberDeath(b,e){
+  if(!e.viralOwner||e.viralExploded||!(e.bleeds||[]).some(d=>d.until>b.time))return;
+  const u=b.units.find(v=>!v.removed&&v.uid===e.viralOwner&&v.id==='glitchAssassin');if(!u)return;
+  e.viralExploded=true;for(const v of living(b).filter(v=>wallOf(v)===wallOf(e)))cyberPoison(b,u,v,24,4);
+  b.metrics.viralExplosions=(b.metrics.viralExplosions||0)+1;fx(b,'spell',u,e,'VIRAL WALL');
+ }
+ function cyberZone(b,u,type,p,dps){b.cyberZones??=[];const wall=wallOf({p}),old=b.cyberZones.find(z=>z.owner===u.uid&&z.wall===wall&&z.until>b.time);b.cyberZones=b.cyberZones.filter(z=>z.owner!==u.uid);b.cyberZones.push({owner:u.uid,type,wall,dps,until:b.time+4,shredAt:old?.shredAt??b.time+1});}
+ function clearSprint(e){e.speedBoostUntil=0;if(e.baseSpeed!=null)e.speed=e.baseSpeed;else if(e.swift&&!e.cyberSprintSuppressed&&!e.steamSuppressed){e.speed/=1.6;e.cyberSprintSuppressed=true;}}
+ function cyberAttack(b,u,target,power){
+  const overdrive=berserkActive(u),wall=wallOf(target),truePower=power/mod(b.run,'basicDamage');
+  let targets=[target];
+  if(u.id==='thermalRipper')targets=living(b).slice(0,4);
+  else if(u.id==='razorPhantom')targets=living(b).slice(0,8);
+  else if(u.id==='empBreaker')targets=living(b).filter(e=>inArc(e,arcTiles(target.p,6)));
+  else if(u.arm==='mantisImplant')targets=[target,...living(b).filter(e=>e!==target).slice(0,2)];
+  else if(u.arm==='monowireImplant')targets=living(b).filter(e=>wallOf(e)===wall).slice(0,5);
+  for(const [i,e] of targets.entries()){
+   if(e.gone)continue;
+   const mantis=u.arm==='mantisImplant',gorilla=u.arm==='gorillaImplant',wire=u.arm==='monowireImplant';
+   if(mantis){dot(b,e,'bleed',8,4,u);if(u.id==='glitchAssassin')e.viralOwner=u.uid;}
+   if(gorilla)armorStrip(e,u.id==='juggernautSmasher'?1:.4);
+   if(wire||u.id==='empBreaker')e.shield=0;
+   if(u.id==='empBreaker')clearSprint(e);
+   const scale=mantis&&u.id!=='thermalRipper'&&i>0?.5:1;
+   const n=(u.id==='thermalRipper'?truePower:overdrive?truePower*2:power)*scale;
+   hit(b,u,e,n,true,{ignoreArmor:overdrive||u.id==='thermalRipper',armorFactor:wire?.5:1});
+   if(u.id==='networkReaper')addRAM(b,u,1);
+   if(gorilla&&u.attackCount%4===0)status(b,e,'stun',1,0,u);
+   if(u.id==='chronoPhantom'&&e.hp>0&&!e.boss&&!e.champion&&e.hp/e.maxHp<executeThreshold(b))damage(b,e,e.hp,u,'ability');
+   if(u.id==='juggernautSmasher'&&u.attackCount%3===0&&(e.boss||e.champion)&&e.hp>0)damage(b,e,e.hp*.15,u,'ability',true);
+  }
+  if(overdrive)for(const e of living(b).filter(e=>wallOf(e)===wall)){e.burns=e.burns.filter(d=>d.berserkOwner!==u.uid);dot(b,e,'burn',12,2,u);e.burns.at(-1).berserkOwner=u.uid;}
+  if(u.id==='thermalRipper')cyberZone(b,u,'slag',target.p,50);
+  if(u.id==='plasmaTempest')cyberZone(b,u,'plasma',target.p,40);
+  if(u.id==='gravitonColossus'&&b.time>=(u.gravityAt||0)){
+   u.gravityAt=b.time+4;status(b,target,'freeze',2,0,u);
+   for(const e of living(b).filter(e=>e!==target&&Math.abs(e.p-target.p)<=2)){if(e.p>target.p)warp(b,e,Math.min(2,e.p-target.p),u);else if(!e.boss&&!e.champion)e.p=Math.min(target.p,e.p+2);status(b,e,'freeze',2,0,u);}
+   fx(b,'spell',u,target,'GRAVITY WELL');
+  }
+  if(u.os==='sandyOS'&&!cyberApex(u)){
+   if((u.sandyUntil||0)<=b.time){u.sandyCharge=(u.sandyCharge||0)+1;if(u.sandyCharge>=8){u.sandyCharge=0;u.sandyUntil=b.time+3.5;}}
+  }
+  if(u.os==='cyberdeckOS'&&u.id!=='networkReaper'){
+   u.ramAttacks=(u.ramAttacks||0)+1;const threshold=hasAccess(b,u)?2:3;
+   if(u.ramAttacks>=threshold){u.ramAttacks-=threshold;addRAM(b,u,1);}
+  }
+  u.heat=(u.heat||0)+(u.os==='berserkOS'?14:8);
+  if(u.heat>=100){u.heat=40;u.sandyUntil=0;flip(b,u,'overheat',3);fx(b,'state',u,null,'THERMAL SHUTDOWN');}
+  addChromeAttack(b,u);uploadHack(b,u);
+ }
+ function pumpWall(u){const d=[u.y,2-u.x,2-u.y,u.x];return d.indexOf(Math.min(...d));}
+ function cyberExtras(b,u,dt){
+  if(card(u.id)?.cyberModule){installChrome(b,u);return;}
+  if(isCyber(u)){
+   u.heat=Math.max(0,(u.heat||0)-(4+(neighbors(b,u).some(v=>v.id==='vent')?15:0))*dt);
+   u.ram=Math.min(u.ram||0,ramCapacity(b,u));updateCyber(b,u);uploadHack(b,u);
+  }
+  if(u.id==='cryoPump'&&b.time>=(u.pumpAt??6)){
+   u.pumpAt=b.time+6;for(const v of neighbors(b,u).filter(isCyber))v.heat=Math.max(0,(v.heat||0)-40);
+   for(const e of living(b).filter(e=>wallOf(e)===pumpWall(u)))status(b,e,'freeze',2,0,u);
+   fx(b,'state',u,null,'COOLANT PURGE');
+  }
+  if(u.id==='biomonitor'&&b.time>=(u.monitorAt??1)){
+   u.monitorAt=b.time+1;const ns=neighbors(b,u).filter(isCyber);
+   if(ns.length>1){const mean=ns.reduce((n,v)=>n+(v.heat||0),0)/ns.length;for(const v of ns)v.heat=mean;}
+  }
+ }
+ function tickCyber(b,dt){
+  const sources=b.units.filter(u=>!u.removed&&isCyber(u));
+  const slowPower=sources.some(u=>!cyberApex(u)&&u.sandyUntil>b.time)?.5:sources.some(u=>u.id==='chronoPhantom')?.4:0;
+  if(slowPower)for(const e of living(b)){
+   const power=slowPower*((e.boss||e.champion)?.5:1),s=e.slows.find(s=>s.cyberTime);
+   if(s){s.until=b.time+.2;s.power=power;}else{status(b,e,'slow',.2,slowPower,sources[0]);const added=e.slows.find(s=>s.power===power);if(added)added.cyberTime=true;}
+  }
+  b.cyberZones=(b.cyberZones||[]).filter(z=>z.until>b.time&&sources.some(u=>u.uid===z.owner));
+  for(const z of b.cyberZones){const u=sources.find(u=>u.uid===z.owner),shred=z.type==='plasma'&&b.time>=z.shredAt;
+   for(const e of living(b).filter(e=>wallOf(e)===z.wall)){trueHit(b,u,e,z.dps*dt);if(shred)armorStrip(e,Math.min(1,(e.permanentShred||0)+.1));}
+   if(shred)z.shredAt=b.time+1;
+  }
+ }
+
+ // Arcane Loom: pair counters persist; battlefield statuses, mana and terrain do not.
+ const ARCANE_PAIRS={'earth+fire':'magmaLord','fire+wind':'tempestArchon','fire+water':'steamSovereign','earth+water':'quagmireColossus','water+wind':'blizzardArchon','earth+wind':'sandstormTitan'};
+ const arcanePair=(a,z)=>[a,z].sort().join('+');
+ const isApprentice=u=>family(u)==='elementalApprentice';
+ const isArchon=u=>Object.values(ARCANE_PAIRS).includes(u.id);
+ const isElemental=u=>!!card(u.id).element||isApprentice(u);
+ const arcaneGauge=u=>isElemental(u)&&!isArchon(u);
+ function bestPair(u){return Object.keys(ARCANE_PAIRS).sort((a,z)=>(u.synthesis?.[z]||0)-(u.synthesis?.[a]||0))[0];}
+ function updateApprentice(b,u){
+  if(!isApprentice(u)||isArchon(u)||u.removed||token(u))return;
+  const pair=bestPair(u),p=u.synthesis?.[pair]||0,id=p>=20?'elementalMaster':p>=10?'elementalAdept':'elementalApprentice';
+  if(id!==u.id)evolve(b,u,id);
+  if(p>=30&&b.run.depth>=9){const loom=neighbors(b,u).find(v=>v.id==='astralLoom'&&!token(v));if(loom){u.boundPair=pair;consume(b,u,loom,'Astral Binding',0);evolve(b,u,ARCANE_PAIRS[pair]);}}
+  persist(b,u);
+ }
+ function receiveEssence(b,u,element){
+  if(!isApprentice(u)||isArchon(u)||token(u)||u.removed)return;
+  u.essences??=[];const i=u.essences.findIndex(e=>e!==element);
+  if(i<0)u.essences.push(element);
+  else {const other=u.essences.splice(i,1)[0],pair=arcanePair(other,element);u.synthesis??={};u.synthesis[pair]=(u.synthesis[pair]||0)+1;interact(b,u,u,'synthesis',pair+' · +1 synthesis');updateApprentice(b,u);}
+  persist(b,u);
+ }
+ function storeOverflow(b,u,amount){
+  if(amount<=0||b.batteryDischarging)return false;
+  const battery=b.units.find(v=>!v.removed&&v.id==='manaBattery'&&(v.manaStored||0)<32);if(!battery)return false;
+  const stored=Math.min(amount,32-(battery.manaStored||0));battery.manaStored=(battery.manaStored||0)+stored;u.threshold.current-=stored;return true;
+ }
+ function elementalLinks(b,u){
+  const element=card(u.id).element;
+  if(element)for(const v of neighbors(b,u))receiveEssence(b,v,element);
+  // Choose only one ready Prism for this spell; lock before generating charge.
+  const prism=neighbors(b,u).find(v=>v.id==='elementalPrism'&&b.time>=(v.prismAt||0));
+  if(prism){prism.prismAt=b.time+1;for(const v of neighbors(b,prism).filter(v=>abilityGauge(v)))tick(b,v,2,prism);interact(b,u,prism,'refraction','PRISM · +2 adjacent gauge');}
+ }
+ function arcaneReaction(b,u,e,element){
+  if(e.gone||e.hp<=0)return;
+  e.elements??={};const other=Object.keys(e.elements).find(k=>k!==element&&e.elements[k]>b.time);
+  // Each application is consumed by at most one reaction; reaction effects never reapply elements.
+  if(!other){e.elements[element]=b.time+4;return;}
+  delete e.elements[other];delete e.elements[element];const pair=arcanePair(other,element);
+  if(pair==='fire+water')trueHit(b,u,e,(e.maxHp-e.hp)*.15);
+  if(pair==='earth+fire')armorStrip(e,1);
+  if(pair==='fire+wind'){
+   const burns=(e.burns||[]).filter(d=>d.until>b.time&&!d.spreadCopy);
+   const distance=v=>Math.min(Math.abs(v.p-e.p),16-Math.abs(v.p-e.p));
+   for(const v of living(b).filter(v=>v!==e).sort((a,z)=>distance(a)-distance(z)).slice(0,2))v.burns.push(...burns.map(d=>({...d,spreadCopy:true})));
+  }
+  if(pair==='earth+water'){for(const slow of e.slows)if(slow.until>b.time)slow.until=b.time+Math.min(6,(slow.until-b.time)*2);status(b,e,'freeze',1.5,0,u);}
+  if(pair==='water+wind')status(b,e,'freeze',2,0,u);
+  if(pair==='earth+wind')dot(b,e,'bleed',30,4,u);
+  b.metrics.elementalReactions=(b.metrics.elementalReactions||0)+1;
+  fx(b,'spell',u,e,pair.toUpperCase());
+ }
+ function elementalSpell(b,u){
+  const target=living(b)[0];if(!target)return;
+  const element=card(u.id).element,p=rawAtk(u);
+  if(!element){const points=u.synthesis?.[bestPair(u)]||0;for(const e of living(b).slice(0,4))hit(b,u,e,120+6*p+8*points,false);}
+  else{
+   const targets=element==='water'?living(b).slice(0,4):[target];
+   for(const e of targets){
+    const n=element==='fire'?200+8*p:element==='water'?100+6*p:element==='earth'?250+10*p:100+5*p;
+    hit(b,u,e,n,false);if(e.gone)continue;
+    if(element==='fire')dot(b,e,'burn',8,4,u);
+    if(element==='water')status(b,e,'slow',3,.35,u);
+    if(element==='earth'){armorStrip(e,.4);status(b,e,'stun',1,0,u);}
+    if(element==='wind')warp(b,e,2,u);
+    arcaneReaction(b,u,e,element);
+   }
+   if(element==='wind')for(const v of neighbors(b,u).filter(isElemental))v.arcaneHasteUntil=b.time+3;
+  }
+  elementalLinks(b,u);
+ }
+ function arcaneZone(b,u,type,p,duration,dps){
+  b.arcaneZones??=[];b.arcaneZones=b.arcaneZones.filter(z=>z.owner!==u.uid);
+  b.arcaneZones.push({owner:u.uid,type,wall:wallOf({p}),until:b.time+duration,dps});
+ }
+ function archonAttack(b,u,target,power){
+  if(u.id==='magmaLord'){
+   for(const e of living(b).filter(e=>Math.abs(e.p-target.p)<=1)){armorStrip(e,1);hit(b,u,e,power*(priority(e)?3:1));}
+   arcaneZone(b,u,'magma',target.p,5,60);
+  }else if(u.id==='steamSovereign'){
+   hit(b,u,target,power);target.elements??={};target.elements.water=b.time+4;
+   trueHit(b,u,target,(target.maxHp-target.hp)*.2);
+   if(u.attackCount%5===0&&(target.boss||target.champion))damage(b,target,target.hp*.12,u,'ability');
+  }else if(u.id==='sandstormTitan'&&u.attackCount%3===0){for(const e of living(b).slice(0,5))hit(b,u,e,power);}
+  else{
+   hit(b,u,target,power);
+   if(u.id==='quagmireColossus'&&!b.arcaneZones?.some(z=>z.owner===u.uid))arcaneZone(b,u,'swamp',target.p,Infinity,45);
+   if(u.id==='tempestArchon'&&u.attackCount%4===0){b.cyclones??=[];b.cyclones=b.cyclones.filter(c=>c.owner!==u.uid);b.cyclones.push({owner:u.uid,p:target.p,until:b.time+4,caught:[]});}
+  }
+ }
+ function arcaneExtras(b,u){
+  updateApprentice(b,u);
+  if(u.id==='manaBattery'&&b.time>=(u.batteryAt??6)){
+   u.batteryAt=b.time+6;
+   const v=b.units.filter(v=>!v.removed&&arcaneGauge(v)&&v.threshold.current<v.threshold.max).sort((a,z)=>a.threshold.current/a.threshold.max-z.threshold.current/z.threshold.max||a.uid-z.uid)[0];
+   if(v&&(u.manaStored||0)>0){const amount=Math.min(u.manaStored,v.threshold.max-v.threshold.current);u.manaStored-=amount;b.batteryDischarging=true;try{tick(b,v,amount/mod(b.run,'gauge'),u);}finally{b.batteryDischarging=false;}interact(b,u,v,'mana-surge','STORED MANA DISCHARGED');}
+  }
+  if(u.id==='blizzardArchon'&&b.time>=(u.blizzardAt??5)){
+   u.blizzardAt=b.time+5;
+   for(const e of living(b)){if((e.boss||e.champion)&&e.enraged)continue;status(b,e,'freeze',2.5,0,u);e.iceShatters??=[];e.iceShatters.push({owner:u.uid,at:b.time+((e.boss||e.champion)?1.25:2.5)});}
+  }
+  if(u.id==='sandstormTitan'&&b.time>=(u.sandAt??1)){
+   u.sandAt=b.time+1;
+   for(const e of living(b)){armorStrip(e,Math.min(1,(e.permanentShred||0)+.1));if(e.defense<=1e-9){e.bleeds=e.bleeds.filter(d=>d.sandOwner!==u.uid);dot(b,e,'bleed',40,4,u);e.bleeds.at(-1).sandOwner=u.uid;}}
+  }
+ }
+ function tickArcane(b,dt){
+  const steam=b.units.some(u=>!u.removed&&u.id==='steamSovereign');
+  for(const e of living(b)){
+   if(steam){e.speedBoostUntil=0;if(e.baseSpeed!=null)e.speed=e.baseSpeed;else if(e.swift&&!e.steamSuppressed){e.speed/=1.6;e.steamSuppressed=true;}}
+   for(const ice of e.iceShatters||[])if(!ice.done&&b.time>=ice.at){ice.done=true;const u=b.units.find(u=>!u.removed&&u.uid===ice.owner);if(u)warp(b,e,3,u);}
+   e.iceShatters=(e.iceShatters||[]).filter(i=>!i.done);
+  }
+  b.arcaneZones=(b.arcaneZones||[]).filter(z=>z.until>b.time&&b.units.some(u=>!u.removed&&u.uid===z.owner));
+  for(const z of b.arcaneZones){const u=b.units.find(u=>u.uid===z.owner);for(const e of living(b).filter(e=>wallOf(e)===z.wall)){trueHit(b,u,e,z.dps*dt);if(z.type==='swamp'){let slow=e.slows.find(s=>s.swampOwner===u.uid);if(slow)slow.until=b.time+.2;else{status(b,e,'slow',.2,.6,u);slow=e.slows.find(s=>s.sourceUid===u.uid);if(slow)slow.swampOwner=u.uid;}}}}
+  b.cyclones=(b.cyclones||[]).filter(c=>c.until>b.time&&b.units.some(u=>!u.removed&&u.uid===c.owner));
+  for(const c of b.cyclones){const u=b.units.find(u=>u.uid===c.owner);c.p=(c.p+2*dt)%16;
+   for(const e of living(b)){const dist=Math.min(Math.abs(e.p-c.p),16-Math.abs(e.p-c.p));if(dist<1&&!e.boss&&!e.champion&&!c.caught.includes(e.uid)&&c.caught.length<6)c.caught.push(e.uid);
+    if(c.caught.includes(e.uid)){// Carry never wraps a runner past the exit or moves a boss.
+     e.p=Math.min(15.95,e.p+2*dt);trueHit(b,u,e,35*dt);
+    }else if(dist<1)trueHit(b,u,e,35*dt);
+   }
+  }
+ }
+ function arcaneKill(b){for(const u of b.units.filter(u=>!u.removed&&u.id==='tempestArchon')){u.tempestKills=(u.tempestKills||0)+1;if(u.tempestKills%10===0){u.permanentSpeed=(u.permanentSpeed||0)+.05;persist(b,u);}}}
+
+ // Eclipse Hunt: trophies occupy real cells; only forged relics survive battles.
+ const HUNT_APEX=['dragonSlayer','witcherGrandmaster','bloodDrunkHunter'];
+ const HUNT_RELICS={beast:'beastRelic',fiend:'fiendRelic',witch:'witchRelic'};
+ const HUNT_BIND={beastRelic:'bloodDrunkHunter',fiendRelic:'dragonSlayer',witchRelic:'witcherGrandmaster'};
+ const isSlayer=u=>family(u)==='mercenary';
+ const isHunter=u=>isSlayer(u)||['witchHunter','executioner'].includes(u.id);
+ const priority=e=>!!(e.elite||e.boss||e.champion||e.alphaQuarry);
+ const trophyFamily=u=>card(u.id)?.trophyFamily||u.mountedHead||null;
+ const huntAura=(b,u,f)=>neighbors(b,u).some(v=>trophyFamily(v)===f);
+ const relicAura=(b,u,id)=>neighbors(b,u).some(v=>v.id===id);
+ const executeThreshold=b=>b.run.huntEye?.35:.30;
+ const wallOf=e=>Math.floor(((e.p%16)+16)%16/4);
+ function huntArmor(b,e){
+  if(!priority(e))return;
+  e.originalDefense??=e.defense||0;e.huntArmor=Math.min(.3,b.run.huntArmor||0);
+  e.defense=e.originalDefense*(1-(e.permanentShred||0))*(1-e.huntArmor);
+ }
+ function brandQuarry(b){
+  if(b.alphaMarked||b.spawned<3||!b.units.some(u=>!u.removed&&u.id==='witchHunter'))return;
+  const e=living(b).filter(e=>!priority(e)).sort((a,z)=>z.hp-a.hp||a.uid-z.uid)[0];
+  if(!e)return;e.alphaQuarry=true;b.alphaMarked=true;huntArmor(b,e);
+  fx(b,'state',null,e,'ALPHA QUARRY');
+ }
+ function updateSlayer(b,u){
+  if(!isSlayer(u)||token(u)||u.removed||HUNT_APEX.includes(u.id))return;
+  const p=u.trophyPoints||0,id=p>=100?'brandedBerserker':p>=60?'blackIronSlayer':p>=25?'oathboundHunter':'mercenary';
+  if(u.id!==id)evolve(b,u,id);
+  if(p>=100&&b.run.depth>=9){
+   const relic=neighbors(b,u).find(v=>HUNT_BIND[v.id]&&!token(v));
+   if(relic){const apex=HUNT_BIND[relic.id];consume(b,u,relic,'Trophy Relic Binding',0);evolve(b,u,apex);}
+  }
+  persist(b,u);
+ }
+ function trophyPoints(b,n){
+  for(const u of b.units.filter(v=>!v.removed&&!token(v)&&isSlayer(v))){u.trophyPoints=(u.trophyPoints||0)+n;updateSlayer(b,u);}
+ }
+ function harvestTrophy(b,e){
+  for(const u of b.units.filter(v=>!v.removed&&v.id==='dragonSlayer'&&v.huntWall===wallOf(e)))u.huntFrenzy=Math.min(.5,(u.huntFrenzy||0)+.05);
+  if(!priority(e))return;
+  const hunters=b.units.filter(u=>!u.removed&&!token(u)&&isHunter(u));
+  if(!hunters.length)return;
+  trophyPoints(b,3);
+  const id=['beastSkull','fiendHorn','witchEye'][Math.floor(rand(b.run)*3)];
+  let drop=null;for(const u of hunters){drop=spawnToken(b,u,id,true,{origin:id,tokenAtk:0,attackInterval:0});if(drop)break;}
+  const k=drop?'trophiesHarvested':'trophiesLost';b.metrics[k]=(b.metrics[k]||0)+1;
+  if(drop)fx(b,'state',drop,null,'GREATER TROPHY');
+ }
+ function forgeHuntRelic(b,u){
+  for(const f of ['beast','fiend','witch']){
+   const id=HUNT_RELICS[f];if((u.carvings?.[f]||0)<2||b.run.roster.some(v=>v.id===id))continue;
+   const slot=[0,1,2,3,4,5,6,7,8].find(s=>!slotOccupied(b,s));if(slot==null)return;
+   const src=instance(b.run,id);b.run.roster.push(src);const v=runtime(b,src,slot);prepareHooks(b,v);b.units.push(v);record(b,v);
+   u.carvings[f]-=2;persist(b,u);b.metrics.huntForges=(b.metrics.huntForges||0)+1;
+   interact(b,u,v,'forge','TROPHY RELIC FORGED');
+  }
+ }
+ function carveTrophy(b,u){
+  if(b.time<(u.carveAt??6))return false;
+  const v=neighbors(b,u).find(v=>trophyFamily(v));if(!v)return false;
+  const f=trophyFamily(v);u.carveAt=b.time+6;
+  if(v.mountedHead){v.mountedHead=null;interact(b,u,v,'carve','MOUNTED HEAD CARVED');}
+  else consume(b,u,v,'Trophy Carving',0);
+  u.carvings??={};u.carvings[f]=(u.carvings[f]||0)+1;
+  for(const h of neighbors(b,u).filter(v=>isHunter(v)&&!token(v)))growth(b,h,3);
+  if(f==='beast'){
+   const low=b.units.filter(v=>!v.removed&&!token(v)&&v!==u).sort((a,z)=>rawAtk(a)-rawAtk(z)||a.uid-z.uid)[0];if(low)growth(b,low,3);
+  }else if(f==='fiend'){
+   b.run.huntArmor=Math.min(.3,Math.round(((b.run.huntArmor||0)+.1)*10)/10);for(const e of living(b))huntArmor(b,e);
+  }else b.run.huntEye=true;
+  trophyPoints(b,10);persist(b,u);b.metrics.trophiesCarved=(b.metrics.trophiesCarved||0)+1;
+  forgeHuntRelic(b,u);return true;
+ }
+ function huntExtras(b,u){
+  if(u.id==='trophyStake'&&!u.mountedHead){const v=neighbors(b,u).find(v=>card(v.id)?.trophyFamily);if(v){u.mountedHead=trophyFamily(v);consume(b,u,v,'Mount Trophy',0);}}
+  if(u.id==='taxidermist'){carveTrophy(b,u);forgeHuntRelic(b,u);}
+  updateSlayer(b,u);
+ }
+ function visceral(b,e){
+  if(e.gone||e.hp<=0||e.boss||e.champion||e.visceralDone||e.hp/e.maxHp>=executeThreshold(b))return;
+  const mark=(e.bleeds||[]).find(d=>d.hemorrhage&&d.until>b.time);if(!mark)return;
+  const u=b.units.find(u=>u.uid===mark.owner);if(!u)return;
+  e.visceralDone=true;const wall=wallOf(e);damage(b,e,e.hp,u,'ability');
+  for(const other of living(b).filter(v=>wallOf(v)===wall))trueHit(b,u,other,400);
+  fx(b,'spell',u,e,'VISCERAL DECAPITATION');
+ }
+ function slayerAttack(b,u,target,power){
+  if(u.id==='dragonSlayer'){
+   u.huntWall=wallOf(target);
+   for(const e of living(b).filter(e=>wallOf(e)===u.huntWall)){
+    e.shield=0;e.speedBoostUntil=0;if(e.baseSpeed!=null)e.speed=e.baseSpeed;
+    hit(b,u,e,power,true,{ignoreArmor:true});
+    if(u.attackCount%3===0&&(e.boss||e.champion)&&e.hp>0)damage(b,e,e.hp*.15,u,'ability');
+   }
+  }else if(u.id==='witcherGrandmaster'){
+   if(Math.floor((u.attackCount-1)/3)%2===0)hit(b,u,target,power,true,{criticalMultiplier:priority(target)?3:2});
+   else for(const e of living(b).filter(e=>wallOf(e)===wallOf(target))){armorStrip(e,.5);hit(b,u,e,power);warp(b,e,3,u);}
+  }else{
+   hit(b,u,target,power);
+   dot(b,target,'bleed',u.id==='bloodDrunkHunter'?40:3,4,u);
+   if(u.id==='bloodDrunkHunter'&&target.hp>0){target.bleeds[target.bleeds.length-1].hemorrhage=true;visceral(b,target);}
+  }
+ }
+
  // Scrapwork: footprint reservations are part of the owner, never extra allies.
  const MECH_APEX = ['berserkerColossus', 'siegeDreadnought', 'vanguardJuggernaut'];
- const isMechanical = u => isMech(u) || ['smelter','junkScavenger','magneticCrane','hydraulicRiveter','mantis','plasma','vent','nanite','railgun','sensor','core'].includes(u.id);
+ const isMechanical = u => isMech(u) || isCyber(u) || ['smelter','junkScavenger','magneticCrane','hydraulicRiveter','vent','cryoPump','biomonitor','accessPoint','nanite','railgun','sensor','core'].includes(u.id);
  const isMech = u => family(u) === 'scrapFrame';
  const isScrap = u => ['rustSword', 'rustGun'].includes(u.id);
  const occupiedSlots = u => u.extraSlot == null ? [u.slot] : [u.slot, u.extraSlot];
@@ -117,14 +468,16 @@ const Game = (() => {
   }
  }
  function forge(b,u) {
-  if(b.time<(u.forgeAt||0))return;
   const mechs=b.units.filter(v=>!v.removed&&!token(v)&&isMech(v));
   if(!mechs.length)return;
-  const scraps=neighbors(b,u).filter(v=>isScrap(v)&&token(v)).sort((a,z)=>a.slot-z.slot).slice(0,2);
-  if(scraps.length<2)return;
+  u.scrapIntake ||= [];
+  const scraps=neighbors(b,u).filter(v=>isScrap(v)&&token(v)).sort((a,z)=>a.slot-z.slot).slice(0,2-u.scrapIntake.length);
+  for(const scrap of scraps){u.scrapIntake.push(scrap.id);consume(b,u,scrap,'Forge Intake',0);}
+  if(scraps.length)persist(b,u);
+  if(u.scrapIntake.length<2 || b.time<(u.forgeAt||0))return;
   u.forgeAt=b.time+4;
-  const module=scraps.every(v=>v.id==='rustSword')?'blade':scraps.every(v=>v.id==='rustGun')?'flak':'gunblade';
-  scraps.forEach(v=>consume(b,u,v,'Smelting',0));
+  const module=u.scrapIntake.every(id=>id==='rustSword')?'blade':u.scrapIntake.every(id=>id==='rustGun')?'flak':'gunblade';
+  u.scrapIntake=[];persist(b,u);
   const distance=v=>Math.min(...occupiedSlots(v).map(s=>Math.abs(xy(s).x-u.x)+Math.abs(xy(s).y-u.y)));
   const recipient=mechs.filter(v=>(v.modules||[]).length<2).sort((a,z)=>distance(a)-distance(z)||a.uid-z.uid)[0];
   if(recipient){recipient.modules=[...(recipient.modules||[]),module];persist(b,recipient);interact(b,u,recipient,'module',`${module.toUpperCase()} installed · ${recipient.modules.length}/2 locked`);}
@@ -156,7 +509,7 @@ const Game = (() => {
  function armorStrip(e,amount) {
   if(e.hp<=0||e.gone)return;
   e.originalDefense??=e.defense||0;e.permanentShred=Math.max(e.permanentShred||0,amount);
-  e.defense=e.originalDefense*(1-e.permanentShred);
+  e.defense=e.originalDefense*(1-e.permanentShred)*(1-(e.huntArmor||0));
  }
  const arcTiles=(p,width)=>Array.from({length:width},(_,i)=>(Math.floor(p)-Math.floor((width-1)/2)+i+16)%16);
  const inArc=(e,tiles)=>tiles.includes(((Math.floor(e.p)%16)+16)%16);
@@ -179,7 +532,7 @@ const Game = (() => {
   if(u.id==='berserkerColossus'){
    const e=strongest();if(!e)return;
    armorStrip(e,.5);damage(b,e,power,u,'direct');
-   if(e.hp>0&&!e.boss&&!e.champion&&e.hp/e.maxHp<.3)damage(b,e,e.hp,u,'ability');
+   if(e.hp>0&&!e.boss&&!e.champion&&e.hp/e.maxHp<executeThreshold(b))damage(b,e,e.hp,u,'ability');
    if(u.attackCount%3===0)for(const boss of living(b).filter(e=>e.boss||e.champion))damage(b,boss,boss.hp*.15,u,'ability');
    fx(b,'beam',u,e,'SEISMIC');return;
   }
@@ -235,14 +588,14 @@ const Game = (() => {
    const baseDmg = stair.id === 'penroseLabyrinth' ? 180 : stair.id === 'infiniteStair' ? 75 : 35;
    if (inBlackout && blackoutStep4) {
     const isPanicked = e.panic || e.panicUntil > b.time;
-    if (isPanicked && e.hp / e.maxHp < 0.25) {
+    if (!e.boss && !e.champion && isPanicked && e.hp / e.maxHp < 0.25) {
      damage(b, e, e.hp, stair, 'direct');
      fx(b, 'curfew', stair, e, 'TERMINAL DESCENT');
     } else {
      const voidDmg = baseDmg * (isPanicked ? 2.5 : 1.5);
      damage(b, e, voidDmg, stair, 'ability');
      status(b, e, 'stun', 2.0, 0, stair);
-     e.p = Math.floor(e.p);
+     if (!e.boss && !e.champion) e.p = Math.floor(e.p);
      fx(b, 'warp', stair, e, 'PENROSE TRAPDOOR');
     }
    } else {
@@ -251,7 +604,7 @@ const Game = (() => {
     const point = track(e.p);
     b.effects.push({ type: 'impact', x: point.x, y: point.y, tx: point.x, ty: point.y, text: `−${Math.round(baseDmg)}`, ttl: 1.0 });
    }
-   grantUrbanViolation(b, stair, 1);
+   grantUrbanViolation(b, stair, 1, e);
    addTabooMark(b, e, 'stair13', 1, stair);
    if (getTabooMark(e, 'stair13') >= 2) {
     const warpTiles = stair.id === 'penroseLabyrinth' ? 4 : 2;
@@ -283,7 +636,7 @@ const Game = (() => {
    damage(b, e, baseDmg * mult, u, 'direct');
    dot(b, e, 'bleed', u.id === 'crimsonHarbinger' ? 30 : 10, 4, u);
    status(b, e, 'slow', 2.0, 0.35, u);
-   grantUrbanViolation(b, u, 1);
+   grantUrbanViolation(b, u, 1, e);
    addTabooMark(b, e, 'redRaincoat', 1, u);
 
    if (inBlackout && (e.panic || lookedBack)) {
@@ -317,7 +670,7 @@ const Game = (() => {
   const interactions = Object.values(b.metrics.interactions || {}).map(({ last, ...v }) => v).sort((a, z) => z.count - a.count);
   const consumed = b.metrics.consumed || [];
   const encounter = encounterFor(b.run.node);
-  const dormant = cards.filter(c => ['jade', 'conduit', 'mage', 'eye'].includes(c.id) && !c.consumed && c.triggers === 0);
+  const dormant = cards.filter(c => ['jade','eye','elementalApprentice','pyroMage','hydroMage','geoMage','aeroMage'].includes(c.id) && !c.consumed && c.triggers === 0);
   let notes = [];
   if (b.metrics.leaks) notes.push(`${b.metrics.leaks} runners escaped.`); else notes.push('No runners escaped. Formation held.');
   if (dormant.length) notes.push(`${dormant.map(c => card(c.id).name + ' #' + c.uid).join(', ')} did not fill a trigger gauge.`);
@@ -452,12 +805,19 @@ const Game = (() => {
   }
  }
 
- function grantUrbanViolation(b, u, amount = 1) {
+ function grantUrbanViolation(b, u, amount = 1, runner = null) {
   if (!u || !isUrbanLegend(u)) return;
-  u.violations = (u.violations || 0) + amount;
+  let canReward=true;
+  if(runner && amount>0){
+   u.violationRewardAt ||= {};
+   canReward=b.time >= (u.violationRewardAt[runner.uid] ?? -Infinity);
+   if(canReward)u.violationRewardAt[runner.uid]=b.time+8;
+  }
+  const progress=canReward?amount*0.35:0;
+  u.violations = Math.round(((u.violations || 0) + progress)*10000)/10000;
   updateUrbanLegendLineage(b, u);
   for (const neighbor of neighbors(b, u, false).filter(v => isUrbanLegend(v))) {
-   neighbor.violations = (neighbor.violations || 0) + amount * 0.5;
+   neighbor.violations = Math.round(((neighbor.violations || 0) + progress * 0.15)*10000)/10000;
    updateUrbanLegendLineage(b, neighbor);
   }
   if (b.time >= (b.blackoutLockoutUntil || 0) && b.time >= (b.curfewUntil || 0)) {
@@ -505,7 +865,7 @@ const Game = (() => {
      if (v.id === 'midnightOperator') status(b, e, 'stun', 1.2, 0, v);
      else if (v.id === 'hauntedSwitchboard') status(b, e, 'stun', 1.0, 0, v);
      else status(b, e, 'slow', 2.0, 0.30, v);
-     grantUrbanViolation(b, v, 1);
+     grantUrbanViolation(b, v, 1, e);
     }
     fx(b, 'pulse', v, null, 'CURFEW RING');
    }
@@ -537,7 +897,7 @@ const Game = (() => {
   }
 
   if (source && isUrbanLegend(source)) {
-   grantUrbanViolation(b, source, n);
+   grantUrbanViolation(b, source, n, e);
   }
   // Security Monitor drops Incident Dossier on violations
   for (const cam of b.units.filter(v => !v.removed && v.id === 'securityCam')) {
@@ -585,7 +945,7 @@ const Game = (() => {
    else { baseAtk = 75; attackInterval = 0.75; }
   }
   return {
-   ...u, ...pos, modules: [...(u.modules || [])], extraSlot: undefined, apexQi: u.apexQi ?? u.swordQi ?? 0, apexDread: u.apexDread || 0, slot, name: d.name, genre: d.genre, lineage: u.lineage || d.lineage, lineageTier: u.lineageTier || d.lineageTier, baseAtk, attackInterval,
+   ...u, ...pos, arm:u.arm||d.cyberArm||null, os:u.os||d.cyberOS||null, heat:20, ram:0, ramAttacks:0, sandyCharge:0, sandyUntil:0, synthesis:{...(u.synthesis||{})}, essences:[...(u.essences||[])], manaStored:0, tempestKills:0, carvings: {...(u.carvings||{})}, mountedHead:null, huntFrenzy:0, huntWall:null, carveAt:6, modules: [...(u.modules || [])], scrapIntake: [...(u.scrapIntake || [])], extraSlot: undefined, apexQi: u.apexQi ?? u.swordQi ?? 0, apexDread: u.apexDread || 0, slot, name: d.name, genre: d.genre, lineage: u.lineage || d.lineage, lineageTier: u.lineageTier || d.lineageTier, baseAtk, attackInterval,
    currentCooldown: .15 + rand(b.run) * .25,
    threshold: { current: u.threshold || 0, max: d.max || 0, onTrigger: null },
    state: 'active', stateRemaining: 0, removed: false, phantom, mimic: 0, scale: phantom ? .5 : 1,
@@ -601,7 +961,7 @@ const Game = (() => {
 
  function prepareHooks(b, u) {
   u.threshold.onTrigger = () => trigger(b, u);
-  u.onAdjacentAttack = v => { if (!token(u) && ['jade', 'conduit'].includes(family(u))) tick(b, u, 1, v) };
+  u.onAdjacentAttack = v => { if (!token(u) && ['jade'].includes(family(u))) tick(b, u, 1, v) };
   u.onAdjacentStateFlip = v => {
    u.lastFlip = b.time; u.lastFlipSource = v;
   };
@@ -667,12 +1027,11 @@ const Game = (() => {
   if (isMechanical(u) && neighbors(b,u).some(v=>v.id==='titanReactor')) m *= 1.2;
   if (isApexImmortal(u) && neighbors(b, u, false).some(v => !v.removed && (isCultivationRelic(v) || isUrbanRelic(v)))) m *= 1.2;
   if (card(u.id).genre === 'Haunted' && b.curfewUntil > b.time) m *= 1.2;
-  return (rawAtk(u) + (u.id === 'railgun' ? highestGrowth(b, u) * 2 : 0)) * m * mod(b.run, 'damage')
+  return (rawAtk(u) + (u.id === 'railgun' ? highestGrowth(b, u) * 2 : 0)) * m * mod(b.run, 'damage') * mod(b.run,'basicDamage')
  }
 
  function speed(b, u) {
-  let n = 1 + (b.run.relics.includes('clock') ? .1 : 0) + (u.emptySpeed + (u.offeringSpeed || 0) + (u.hasteUntil > b.time ? .15 : 0) + (u.manualUntil > b.time ? .25 : 0) + (u.pillSpeedUntil > b.time ? .15 : 0) + (u.hotlineUntil > b.time ? .20 : 0) + (neighbors(b, u).some(v => v.id === 'netrunner' && v.state === 'active') ? .15 : 0)) * mod(b.run, 'buffPower');
-  if (allies(b, u).some(v => v.id === 'mantis' && v.overclock)) n += .15 * mod(b.run, 'buffPower');
+  let n = 1 + (b.run.relics.includes('clock') ? .1 : 0) + (u.emptySpeed + (u.offeringSpeed || 0) + (u.hasteUntil > b.time ? .15 : 0) + (u.manualUntil > b.time ? .25 : 0) + (u.pillSpeedUntil > b.time ? .15 : 0) + (u.hotlineUntil > b.time ? .20 : 0)) * mod(b.run, 'buffPower');
   if (support(b, 'matriarch') && BLOODLINE_FODDER.includes(species(u))) n += .4 * mod(b.run, 'buffPower');
   if ((isCultivationRelic(u) || isUrbanRelic(u)) && neighbors(b, u, false).some(v => !v.removed && isApexImmortal(v))) n *= 1.25;
   const inBlackout = b.curfewUntil > b.time;
@@ -681,17 +1040,20 @@ const Game = (() => {
   if (family(u) === 'mannequin' && (inBlackout || allies(b, u).some(v => v.state !== 'active'))) {
    n *= (u.id === 'livingTaboo' && inBlackout ? 3.0 : 2.5);
   }
-  return n * (1 + (u.permanentSpeed || 0)) * (u.overclock ? 1 + 2 * mod(b.run, 'buffPower') : 1) * mod(b.run, 'speed')
+  n += u.arcaneHasteUntil>b.time?.2:0;
+  n += (huntAura(b,u,'beast')?.2:0)+(relicAura(b,u,'beastRelic')?.25:0)+(u.huntFrenzy||0);
+  return n * (isCyber(u)&&!cyberApex(u)&&u.sandyUntil>b.time?2.5:1) * (1 + (u.permanentSpeed || 0)) * (u.overclock ? 1 + 2 * mod(b.run, 'buffPower') : 1) * mod(b.run, 'speed')
  }
 
  function sensor(b, u) { return support(b, 'sensor') && u.id !== 'sensor' ? 1 : 0 }
  function crit(b, u) {
+  if(u.id==='razorPhantom')return 1;
   const lt = lineageTierIds[u.id]?.tier || 0, lineageCrit = u.lineage === 'tiger' && lt >= 1 ? .15 : u.lineage === 'monkey' && lt >= 1 ? .10 : 0;
   if (u.id === 'livingTaboo' && b.curfewUntil > b.time) return 1.0;
   if (family(u) === 'mannequin' && allies(b, u).some(v => v.state !== 'active')) return 1.0;
   if (u.critGift) return 1.0;
   const manualCrit = (u.manualUntil && u.manualUntil > b.time) ? 0.15 : 0;
-  return Math.max(0, Math.min(1, .1 + mod(b.run, 'crit', 0) + (b.run.relics.includes('lens') ? .1 : 0) + sensor(b, u) * .1 + (support(b, 'core') && u.id !== 'core' ? .15 : 0) + lineageCrit + manualCrit));
+  return Math.max(0, Math.min(1, .1 + mod(b.run, 'crit', 0) + (b.run.relics.includes('lens') ? .1 : 0) + sensor(b, u) * .1 + (support(b, 'core') && u.id !== 'core' ? .15 : 0) + (augmented(u)&&neighbors(b,u).some(v=>v.id==='biomonitor')?.15:0) + lineageCrit + manualCrit + (huntAura(b,u,'witch')?.25:0)+(relicAura(b,u,'witchRelic')?.2:0)));
  }
  function downtime(b, u, duration, state) { if (support(b, 'smelter')) duration -= 1; if (state === 'dormant' && support(b, 'medium')) duration -= 2; if (['burnout', 'overheat'].includes(state) && support(b, 'vent')) duration *= .5; return Math.max(.5, duration) }
 
@@ -714,12 +1076,13 @@ const Game = (() => {
 
  function tick(b, u, n, source = null) {
   if (u.removed || token(u) || !u.threshold.max || ['lotus', 'monk'].includes(u.id)) return;
-  const f = family(u); if (f === 'mantis') return;
+
   u.threshold.current += n * (abilityGauge(u) ? mod(b.run, 'gauge') : 1);
   let guard = 0;
   while (u.threshold.current >= u.threshold.max && u.threshold.max && guard++ < 2) {
    if (u.nextTrigger > b.time || u.state !== 'active') break;
    u.threshold.current -= u.threshold.max; u.triggerSource = source; trigger(b, u);
+   if(arcaneGauge(u)&&u.threshold.current>0)storeOverflow(b,u,u.threshold.current);
   }
  }
 
@@ -727,15 +1090,12 @@ const Game = (() => {
   if (abilityGauge(u)) event(b, 'gauge', { unit: u });
   b.metrics.triggers++; record(b, u).triggers++; u.flash = .65;
   for (const v of allies(b, u)) { v.onAdjacentTrigger(u); }
+  if(arcaneGauge(u)){elementalSpell(b,u);return;}
   switch (family(u)) {
    case 'spirit': flip(b, u, 'dormant', 5); break;
    case 'jade': grantGrowth(b, u, 3); u.qiGrowth = (u.qiGrowth || 0) + 3; persist(b, u); event(b, 'breakthrough', { unit: u }); if (u.id === 'jade' && u.qiGrowth >= 18) evolve(b, u, 'immortal'); interact(b, u.triggerSource || u, u, 'breakthrough', 'breakthrough, +3 permanent ATK');  break;
-   case 'conduit': for (const v of allies(b, u)) { v.hasteUntil = b.time + 4 * mod(b.run, 'buffDuration'); interact(b, u, v, 'haste', '+15% team attack speed for 4s'); } fx(b, 'pulse', u, null, 'HASTE'); break;
-   case 'mage': interact(b, u.triggerSource || u, u, 'chain', 'Chain Lightning released'); for (const e of living(b).slice(0, 5)) hit(b, u, e, 240 + rawAtk(u) * 3 + teamPower(b) * 1.5, false); for (const v of allies(b, u).filter(v => ['jade', 'conduit'].includes(family(v)) && !token(v))) { tick(b, v, 2, u); interact(b, u, v, 'spell-charge', 'spell → +2 progress'); } fx(b, 'pulse', u, null, 'CHAIN');  break;
    case 'eye': u.nextTrigger = b.time + 4; for (const e of living(b).slice(0, 2)) status(b, e, 'vulnerable', 4, .15, u); interact(b, u.triggerSource || u, u, 'warp', 'control gauge filled · Warp'); for (const e of living(b).slice(0, 2)) { trueHit(b, u, e, 150 + teamPower(b) * .75); warp(b, e, 4, u); fx(b, 'warp', u, e, (e.boss || e.champion) ? (e.enraged ? 'RESIST' : 'WARP −2') : 'WARP −4') } break;
    case 'lantern': u.nextTrigger = b.time + 2; for (const e of living(b)) hit(b, u, e, 45, false); interact(b, u, u, 'echo-burst', '10 Echoes → shockwave'); break;
-   case 'weaver': u.nova = true; for (const e of living(b).slice(0, 4)) { hit(b, u, e, 180 + rawAtk(u) * 3 + teamPower(b), false); status(b, e, 'vulnerable', 4, .2, u); } u.nova = false; interact(b, u, u, 'nova', 'Rune Nova → four targets + Vulnerable'); break;
-   case 'plasma': for (const e of living(b).slice(0, 3)) { hit(b, u, e, 100, false); dot(b, e, 'burn', 8, 4, u); } flip(b, u, 'overheat', 3); break;
    case 'core': u.nextTrigger = b.time + 6; for (const e of living(b)) { trueHit(b, u, e, 240 + teamPower(b) * 2); warp(b, e, 2.5, u); } interact(b, u, u, 'singularity', '8 critical hits → collapse'); break;
   }
  }
@@ -752,9 +1112,9 @@ const Game = (() => {
   b.statusEvents++; for (const u of b.units.filter(u => !u.removed && u.id === 'eye')) tick(b, u, 1, source)
  }
 
- function damage(b, e, n, source = null, channel = 'direct') {
+ function damage(b, e, n, source = null, channel = 'direct', exact = false) {
   if (e.hp <= 0 || e.gone) return 0;
-  if (e.ruleMarks) n *= (1 + e.ruleMarks * 0.08);
+  if (e.ruleMarks && !exact) n *= (1 + e.ruleMarks * 0.08);
   const actual = Math.min(e.hp, Math.max(0, n));
   if (source) { const row = record(b, source); row.damage += actual; row[channel] += actual; }
   e.hp -= actual;
@@ -762,6 +1122,7 @@ const Game = (() => {
    e.hp = 0; if (e.champion) recordTrial(b, e, true); if ((e.maxProgress || e.p) >= 12) b.metrics.closeCalls = (b.metrics.closeCalls || 0) + 1;
    e.gone = true; b.metrics.kills++; b.run.stats.kills++;
    salvage(b);
+   harvestTrophy(b,e);arcaneKill(b);cyberDeath(b,e);
    if (e.rumorInfected) spreadRumor(b, e, true);
 
    // Soul Banner captures souls track-wide on any enemy death
@@ -787,22 +1148,28 @@ const Game = (() => {
    }
 
   }
+  if(e.hp>0)visceral(b,e);
   return actual;
  }
 
- function hit(b, u, e, n, normal = true) {
+ function hit(b, u, e, n, normal = true, options = {}) {
   if (e.hp <= 0 || e.gone) return;
+  if(huntAura(b,u,'witch')&&e.hp/e.maxHp<.35)n*=2;
   let torment = normal && !!support(b, 'totem');
-  let critical = u.id === 'asura' && ((e.permanentShred || 0) > 0 || e.nanoUntil > b.time) || rand(b.run) < crit(b, u);
+  let critical = options.criticalMultiplier != null || u.id === 'asura' && ((e.permanentShred || 0) > 0 || e.nanoUntil > b.time) || rand(b.run) < crit(b, u);
   if (critical) {
    const tigerBleedCrit = u.lineage === 'tiger' && (lineageTierIds[u.id]?.tier || 0) >= 2 && (e.bleeds || []).some(d => d.until > b.time);
    const mannequinCritBonus = family(u) === 'mannequin' && (b.curfewUntil > b.time || allies(b, u).some(v => v.state !== 'active')) ? 1 : 0;
-   n *= (tigerBleedCrit ? 3 : 2) + sensor(b, u) * .3 + mod(b.run, 'critDamage', 0) + mannequinCritBonus;
+   n *= options.criticalMultiplier ?? ((tigerBleedCrit ? 3 : 2) + sensor(b, u) * .3 + mod(b.run, 'critDamage', 0) + mannequinCritBonus);
   }
   if (critical && u.id === 'nanite') { e.nanoUntil = b.time + 3; u.naniteCrits = (u.naniteCrits || 0) + 1; if (u.naniteCrits % 6 === 0) grantGrowth(b, u, 1); }
   if (critical && u.id === 'asura') { u.critCount = (u.critCount || 0) + 1; if (u.critCount % 6 === 0) grantGrowth(b, u, 1); }
-  let defense = (u.id === 'railgun' ? 0 : e.defense) * (e.nanoUntil > b.time ? .75 : 1);
-  damage(b, e, n * (normal ? 1 : mod(b.run, 'damage')) * mod(b.run, (e.elite || e.boss || e.champion) ? 'eliteDamage' : 'normalDamage') * (1 - defense * (torment ? .75 : 1)) * (e.vulnerableUntil > b.time ? 1 + e.vulnerability : 1), u, normal ? 'direct' : 'ability');
+  let defense = (options.ignoreArmor || u.id === 'railgun' ? 0 : e.defense) * (e.nanoUntil > b.time ? .75 : 1);
+  defense *= options.armorFactor??1;
+  defense *= (huntAura(b,u,'fiend')?.6:1)*(relicAura(b,u,'fiendRelic')?.7:1);
+  damage(b, e, n * (normal ? 1 : mod(b.run, 'damage')) * mod(b.run, priority(e) ? 'eliteDamage' : 'normalDamage') * (1 - defense * (torment ? .75 : 1)) * (e.vulnerableUntil > b.time ? 1 + e.vulnerability : 1), u, normal ? 'direct' : 'ability');
+  if(normal&&huntAura(b,u,'beast'))dot(b,e,'bleed',6,4,u);
+  if(normal&&!options.secondary&&huntAura(b,u,'fiend')&&u.hornCleaveAttack!==u.attackCount){u.hornCleaveAttack=u.attackCount;const second=living(b).find(v=>v!==e);if(second)hit(b,u,second,atk(b,u)*.5,true,{secondary:true});}
   if (species(u) === 'flameToad') dot(b,e,'burn',3,3,u);
   if (species(u) === 'scuttler') status(b,e,'slow',2,.15,u);
   if (torment && e.hp > 0) { dot(b, e, 'bleed', 2, 4, u); const totem = support(b, 'totem'); interact(b, totem, u, 'torment', '25% armor penetration + 2 DPS Bleed for 4s'); }
@@ -813,6 +1180,7 @@ const Game = (() => {
 
  function chooseTarget(b, u) {
   let es = living(b);
+  if(isCyber(u)&&u.arm==='gorillaImplant')return [...es].sort((a,z)=>z.hp-a.hp||a.uid-z.uid)[0];
   if (species(u) === 'hound') { let low = es.filter(e => e.hp / e.maxHp < .3); if (low.length) return low[0] }
   if (isUrbanLegend(u)) {
    const valid = es.filter(e => isLegendTarget(b, u, e));
@@ -820,7 +1188,7 @@ const Game = (() => {
    if (family(u) === 'kuchisake') return [...valid].sort((a, z) => z.speed - a.speed)[0];
    return valid[0];
   }
-  if (u.id === 'executioner' || u.lineage === 'tiger' && (lineageTierIds[u.id]?.tier || 0) >= 3) { let elite = es.find(e => e.elite || e.boss || e.champion); if (elite) return elite }
+  if (u.id === 'executioner' || u.lineage === 'tiger' && (lineageTierIds[u.id]?.tier || 0) >= 3) { let elite = es.find(e=>e.alphaQuarry)||es.find(priority); if (elite) return elite }
   return es[0]
  }
 
@@ -832,11 +1200,14 @@ const Game = (() => {
   u.attackCount++; record(b, u).attacks++; u.flash = .18; let power = atk(b, u);
   for (const v of allies(b, u)) {
    if (family(v) === 'spirit' && (v.state === 'dormant' || v.spiritBuffUntil > b.time)) interact(b, v, u, 'spirit-buff', 'Dormancy → +20% team damage');
-   if (v.id === 'mantis' && v.overclock) interact(b, v, u, 'overclock-buff', 'Overclock → +15% team attack speed');
   }
   if (u.id === 'wraith' && (target.elite || target.boss || target.champion)) power *= 1.5;
 
-  if (isMech(u)) { mechAttack(b,u,target,power); }
+  if(isCyber(u)){cyberAttack(b,u,target,power);}
+  else if(isArchon(u)){archonAttack(b,u,target,power);}
+  else if(isSlayer(u)){slayerAttack(b,u,target,power);}
+  else if(u.id==='witchHunter'){hit(b,u,target,power*(target.shield>0?2:1));}
+  else if (isMech(u)) { mechAttack(b,u,target,power); }
   else if(u.id==='hydraulicRiveter'){armorStrip(target,.25);hit(b,u,target,power);}
   else if (family(u) === 'cub') {
    const path=u.lineage || 'dragon', tier=lineageTierIds[u.id]?.tier || 0;
@@ -865,7 +1236,8 @@ const Game = (() => {
    }
    else hit(b,u,target,power);
   } else if (isPractitioner(u)) {
-   u.qi = (u.qi || 0) + 1;
+   u.qiAttackCharge=(u.qiAttackCharge||0)+1;
+   if(u.qiAttackCharge>=3){u.qiAttackCharge-=3;u.qi=(u.qi||0)+1;}
    updatePractitionerRealm(b, u);
    persist(b, u);
    const r = u.realm || 0;
@@ -919,7 +1291,7 @@ const Game = (() => {
   else if (u.id === 'talismanSovereign') {
    hit(b, u, target, power);
    status(b, target, 'vulnerable', 3, 0.70, u);
-   if (target.hp / target.maxHp < 0.15) { damage(b, target, target.hp, u, 'direct'); }
+   if (!target.boss && !target.champion && target.hp / target.maxHp < 0.15) { damage(b, target, target.hp, u, 'direct'); }
   }
   else if (u.id === 'soulReapingDemon') {
    for (const e of living(b).slice(0, 5)) { hit(b, u, e, power * 0.4); }
@@ -956,7 +1328,7 @@ const Game = (() => {
    } else if (u.id === 'backroomsWarden') {
     for (const e of living(b).slice(0, 3)) {
      hit(b, u, e, power);
-     grantUrbanViolation(b, u, 1);
+     grantUrbanViolation(b, u, 1, e);
      addRuleMark(b, e, 1, null);
     }
     if (b.time >= (u.backroomsAt || 6)) {
@@ -1008,12 +1380,13 @@ const Game = (() => {
    const dps = u.id === 'slitMouthedSovereign' ? 35 : u.id === 'scissorBanshee' ? 15 : 5;
    dot(b, target, 'bleed', dps, 4, u);
    markNaturalBreach(b, u, target);
+   grantUrbanViolation(b, u, 1, target);
    if (u.id === 'scissorBanshee') {
     const second = living(b).find(e => e !== target && isLegendTarget(b, u, e));
     if (second) hit(b, u, second, power * 0.5);
    }
    if (u.id === 'slitMouthedSovereign') {
-    if (!target.boss && target.hp / target.maxHp < 0.30) {
+    if (!target.boss && !target.champion && target.hp / target.maxHp < executeThreshold(b)) {
      damage(b, target, target.hp, u, 'direct');
      fx(b, 'shot', u, target, 'EXECUTE');
     }
@@ -1038,7 +1411,7 @@ const Game = (() => {
    for (const e of violators.slice(0, u.id === 'terminusBus' ? 4 : 2)) {
     hit(b, u, e, power);
     if (!e.gone && e.hp > 0) markNaturalBreach(b, u, e);
-    grantUrbanViolation(b, u, 1);
+    grantUrbanViolation(b, u, 1, e);
    }
   }
   else if (family(u) === 'payphone') {
@@ -1057,7 +1430,7 @@ const Game = (() => {
      else if (u.id === 'hauntedSwitchboard' && inBlackout) status(b, e, 'stun', 1.0, 0, u);
      else status(b, e, 'slow', 2.0, 0.30, u);
      markNaturalBreach(b, u, e);
-     grantUrbanViolation(b, u, 1);
+     grantUrbanViolation(b, u, 1, e);
     }
     if (u.id === 'midnightOperator' && inBlackout) {
      b.curfewUntil += 1.5;
@@ -1092,7 +1465,7 @@ const Game = (() => {
     }
    }
    markNaturalBreach(b, u, target);
-   grantUrbanViolation(b, u, 1);
+   grantUrbanViolation(b, u, 1, target);
   }
   else if (u.id === 'chainLetter') {
    target.rumorInfected = true;
@@ -1110,17 +1483,17 @@ const Game = (() => {
    hit(b, u, target, power * mult);
    if (u.id === 'stalker') status(b, target, 'slow', 3, 0.30, u);
    markNaturalBreach(b, u, target);
-   grantUrbanViolation(b, u, 1);
+   grantUrbanViolation(b, u, 1, target);
   }
   else if (u.id === 'bell') { let empowered = b.time - u.lastFlip <= 2; if (empowered) interact(b, u.lastFlipSource || u, u, 'bell', 'state change → empowered ring + stun'); for (const e of living(b)) { hit(b, u, e, power + (empowered ? 24 * mod(b.run, 'damage') : 0)); status(b, e, 'slow', 1.5, .25, u); if (empowered) status(b, e, 'stun', .75, 0, u) } }
   else if (u.id === 'railgun') { const has = sensor(b, u); if (has) interact(b, support(b, 'sensor'), u, 'railgun', 'Sensor → five-target volley + knockback'); for (const e of living(b).slice(0, has ? 5 : 3)) { hit(b, u, e, power); if (has) warp(b, e, 1, u) } fx(b, 'beam', u, target, ''); }
-  else if (['immortal', 'reaper'].includes(u.id)) { for (const [targetIndex, e] of living(b).slice(0, u.id === 'immortal' ? 3 : 2).entries()) { let n = power * (u.id === 'immortal' && targetIndex > 0 ? .55 : 1); u.detonating = u.id === 'reaper' && e.bleeds.filter(d => d.until > b.time).length >= 4; if (u.detonating) { const burst = e.bleeds.reduce((sum, d) => sum + d.dps * Math.max(0, d.until - b.time), 0); e.bleeds = []; n *= 3; damage(b, e, burst * 1.5 * (e.vulnerableUntil > b.time ? 1 + e.vulnerability : 1), u, 'ability'); } hit(b, u, e, n); u.detonating = false; if (u.id === 'reaper') dot(b, e, 'bleed', 5, 4, u); } }
-  else if (u.id === 'executioner') { let n = power; if (target.hp / target.maxHp < .35) n *= 4; else if ((target.permanentShred || 0) > 0 || target.nanoUntil > b.time || [...(target.bleeds || []), ...(target.burns || [])].some(d => d.until > b.time)) n *= 2; hit(b, u, target, n); const second = living(b).find(e => e !== target); if (second) hit(b, u, second, power * .5); }
+  else if(u.id==='immortal'){for(const [i,e] of living(b).slice(0,3).entries())hit(b,u,e,power*(i?.55:1));}
+  else if(u.id==='executioner'){hit(b,u,target,power*(target.hp/target.maxHp<.35?4:1));}
   else if (u.id === 'matriarch') { for (const e of living(b).slice(0, 3)) { hit(b, u, e, power); dot(b, e, 'bleed', 6, 4, u); } }
   else {
    if (species(u) === 'hound' && target.hp / target.maxHp < .3) power *= 2;
    if (u.id === 'executioner') { if (target.hp / target.maxHp < .25) power *= 4; else if ((target.permanentShred || 0) > 0 || target.nanoUntil > b.time || [...(target.bleeds || []), ...(target.burns || [])].some(d => d.until > b.time)) power *= 2; }
-   if (u.id === 'leech' && [...(target.bleeds || []), ...(target.burns || [])].some(d => d.until > b.time)) power *= 2.5;
+   if(u.id==='leech'&&((target.bleeds||[]).some(d=>d.until>b.time)||neighbors(b,u).some(trophyFamily)))power*=2.5;
    if (species(u) === 'larva' && u.attackCount % 5 === 0) power *= 2;
    hit(b, u, target, power);
    if (u.id === 'matriarch') dot(b, target, 'bleed', 6, 4, u);
@@ -1131,9 +1504,8 @@ const Game = (() => {
 
   for (const v of b.units.filter(v => !v.removed && v !== u)) { v.onAdjacentAttack(u) }
   if (!token(u) && u.upgradePath === 'storm' && u.attackCount % 6 === 0) { for (const e of living(b).slice(0, 3)) trueHit(b, u, e, rawAtk(u)); interact(b, u, u, 'branch', 'Storm path → three-target burst'); }
-  if (['mage', 'eye'].includes(u.id)) tick(b, u, 1);
+  if(arcaneGauge(u)||u.id==='eye')tick(b,u,1);
   if (family(u) === 'spirit') tick(b, u, 1);
-  if (['plasma', 'weaver'].includes(u.id)) tick(b, u, 1);
   flushEvents(b); return true;
  }
 
@@ -1144,7 +1516,7 @@ const Game = (() => {
   if (!onDeath && !target) return;
   if (!onDeath) source.rumorContactSpread = true;
   for (const legend of b.units.filter(v => !v.removed && !token(v) && isUrbanLegend(v))) {
-   legend.violations = (legend.violations || 0) + 1;
+   legend.violations = Math.round(((legend.violations || 0) + 0.10)*10000)/10000;
    updateUrbanLegendLineage(b, legend);
    persist(b, legend);
   }
@@ -1174,6 +1546,7 @@ const Game = (() => {
   const architect = b.units.find(v => !v.removed && v.id === 'ruleArchitect');
   if (architect) addRuleMark(b, newEnemy, 2, architect);
   b.spawned++;
+  huntArmor(b,newEnemy);brandQuarry(b);
  }
 
  function step(b, dt) {
@@ -1184,13 +1557,14 @@ const Game = (() => {
    if (token(u) && u.expiresAt != null && b.time >= u.expiresAt) { u.removed = true; continue; }
    u.flash = Math.max(0, u.flash - dt); extras(b, u, dt); flushEvents(b); if (u.removed) continue;
    if (u.state !== 'active') { u.stateRemaining -= dt; if (u.stateRemaining <= 0) flip(b, u, 'active'); else continue }
-   if (u.id === 'mantis') { if (u.overclock) { u.clockRemaining -= dt; if (u.clockRemaining <= 0) { grantGrowth(b, u, 1); u.cycle = 0; flip(b, u, 'overheat', 3); continue } } else { u.cycle += dt; u.threshold.current = u.cycle; if (u.cycle >= 10) { u.overclock = true; u.clockRemaining = 5 * mod(b.run, 'buffDuration'); for (const v of allies(b, u)) v.onAdjacentStateFlip(u); fx(b, 'state', u, null, 'OVERCLOCK') } } }
    if (u.id === 'herb' && b.time >= u.sacrificeAt && herbOffering(b, u)) continue;
    if (u.id === 'herb' && b.time >= u.herbAt) { u.herbAt = b.time + 12; teamCharge(b, u, 3); }
    if (u.id === 'vent' && support(b, 'vent') === u && b.time >= u.ventAt) { u.ventAt = b.time + 8; for (const e of living(b).slice(0, 2)) status(b, e, 'freeze', (e.burns || []).some(d => d.until > b.time) ? 2 : 1, 0, u); fx(b, 'pulse', u, null, 'FREEZE') }
    if (u.attackInterval > 0) { u.currentCooldown -= dt; let guard = 0; while (u.currentCooldown <= 0 && u.state === 'active' && guard++ < 5) { if (!attack(b, u)) { u.currentCooldown = .05; break } u.currentCooldown += u.attackInterval / speed(b, u) } }
   }
   tickOil(b,dt);
+  tickArcane(b,dt);
+  tickCyber(b,dt);
   for (const e of living(b)) {
    if ((e.boss || e.champion) && !e.enraged && b.time - e.bornAt >= 45) { e.enraged = true; e.frozenUntil = 0;  }
    e.bleeds = e.bleeds.filter(z => z.until > b.time); e.burns = (e.burns || []).filter(z => z.until > b.time); e.venoms = (e.venoms || []).filter(z => z.until > b.time); for (const dot of [...e.bleeds, ...e.burns, ...e.venoms]) damage(b, e, dot.dps * dt * (e.vulnerableUntil > b.time ? 1 + e.vulnerability : 1), b.units.find(u => u.uid === dot.owner) || null, 'dot'); if (e.gone) continue;
@@ -1203,7 +1577,7 @@ const Game = (() => {
    triggerRedRaincoatTraps(b, e, previousProgress, e.p, wasRetreating);
    e.maxProgress = Math.max(e.maxProgress || 0, e.p);
    const livingTaboo = b.units.find(v => !v.removed && v.id === 'livingTaboo');
-   if (livingTaboo && e.p >= 15 && !b.livingTabooSaved) {
+   if (!e.boss && !e.champion && livingTaboo && e.p >= 15 && !b.livingTabooSaved) {
     b.livingTabooSaved = true;
     damage(b, e, e.hp, livingTaboo, 'direct');
     fx(b, 'shot', livingTaboo, e, 'AMBUSH');
@@ -1211,14 +1585,14 @@ const Game = (() => {
    if (e.gone) continue;
    if (e.p >= 16) {
     if (e.champion) recordTrial(b, e, false);
-    if (b.units.some(v => !v.removed && v.id === 'ruleArchitect') && !b.room404Saved) {
+    if (!e.boss && !e.champion && b.units.some(v => !v.removed && v.id === 'ruleArchitect') && !b.room404Saved) {
      b.room404Saved = true; e.gone = true;
      interact(b, null, e, 'room404', 'Room 404 trapped the runner · leak prevented');
      fx(b, 'warp', null, e, 'PHÒNG 404');
      continue;
     }
     const guardian=b.units.find(v=>!v.removed&&v.lineage==='xuanwu'&&(lineageTierIds[v.id]?.tier||0)>=4&&(v.savedLeaks||0)<2);
-    if (guardian) { guardian.savedLeaks=(guardian.savedLeaks||0)+1; e.gone=true; interact(b,guardian,e,'save',`Xuanwu prevents leak ${guardian.savedLeaks}/2`); continue; }
+    if (!e.boss && !e.champion && guardian) { guardian.savedLeaks=(guardian.savedLeaks||0)+1; e.gone=true; interact(b,guardian,e,'save',`Xuanwu prevents leak ${guardian.savedLeaks}/2`); continue; }
     e.gone = true;
     const leakLoss=e.boss ? b.run.maxHealth : Math.max(1, e.leak + mod(b.run, 'leak', 0) - (b.run.relics.includes('mercy') ? 1 : 0));
     b.run.health = Math.max(0, b.run.health - leakLoss); b.metrics.leaks++; b.run.stats.leaks++;
@@ -1256,12 +1630,12 @@ const Game = (() => {
  const cultivationRealmIds = ['practitioner', 'cultivationFoundation', 'cultivationGoldenCore', 'cultivationNascentSoul'];
  const isPractitioner = u => family(u) === 'practitioner' && !APEX_FORMS.includes(u.id);
  const token = u => !!(u.phantom || u.token || card(u.id)?.token);
- const abilityGauge = u => ['jade', 'conduit', 'mage', 'eye', 'lantern', 'weaver', 'core'].includes(family(u));
+ const abilityGauge = u => arcaneGauge(u)||['jade', 'eye', 'lantern', 'core'].includes(family(u));
  function persist(b, u) {
   if (token(u)) return;
   const src = b.run.roster.find(v => v.uid === u.uid);
   if (src) {
-   for (const k of ['id', 'alloy', 'alloyAttacks', 'modules', 'titanUnlocked', 'permanentAtkBonus', 'permanentSpeed', 'upgradePath', 'lineage', 'lineageStacks', 'meals', 'qiGrowth', 'returns', 'witnesses', 'qi', 'realm', 'swordQi', 'apexQi', 'apexDread', 'souls', 'bladeKills', 'demonAtkBonus', 'dread', 'violations', 'blackouts', 'mirrorQueenBonusGranted']) {
+   for (const k of ['id', 'arm', 'os', 'chrome', 'chromeAttackCharge', 'synthesis', 'essences', 'boundPair', 'trophyPoints', 'carvings', 'scrapIntake', 'qiAttackCharge', 'alloy', 'alloyAttacks', 'modules', 'titanUnlocked', 'permanentAtkBonus', 'permanentSpeed', 'upgradePath', 'lineage', 'lineageStacks', 'meals', 'qiGrowth', 'returns', 'witnesses', 'qi', 'realm', 'swordQi', 'apexQi', 'apexDread', 'souls', 'bladeKills', 'demonAtkBonus', 'dread', 'violations', 'blackouts', 'mirrorQueenBonusGranted']) {
     if (u[k] !== undefined) src[k] = u[k];
    }
   }
@@ -1276,10 +1650,8 @@ const Game = (() => {
     const ev = b.events.shift();
     if (ev.type === 'consumed' && species(ev.unit) === 'lamb') { for (const e of living(b).slice(0, 3)) trueHit(b, ev.unit, e, 80 + rawAtk(ev.unit) * 2); interact(b, ev.unit, ev.consumer, 'soulflare', 'Lamb sacrifice → three-target Soulflare'); }
     for (const u of [...b.units].filter(v => !v.removed && !token(v))) {
-     if (['mage', 'weaver'].includes(u.id) && ev.type === 'gauge' && ev.unit !== u && !['mage', 'weaver'].includes(family(ev.unit)) && b.time >= (u.resonanceAt || 0)) { u.resonanceAt = b.time + 1; tick(b, u, 2, ev.unit); interact(b, ev.unit, u, 'resonance', 'RESONANCE → +2 spell charge'); }
      if (u.id === 'herald' && ev.type === 'displaced' && ev.source?.id !== 'herald') { u.madnessPower = (u.madnessPower || 0) + ev.tiles * 30; interact(b, ev.source, u, 'madness-feed', 'displacement → stored Madness damage'); }
      if (u.id === 'herald' && ev.type === 'consumed') { u.madnessPower = (u.madnessPower || 0) + 100; interact(b, ev.consumer, u, 'madness-feed', 'consumption → +100 next Madness damage'); }
-     if (u.id === 'reaper' && support(b, 'reaper') === u && ev.type === 'kill' && ev.bleedCarry?.length) { const e = living(b)[0]; if (e) { e.bleeds.push(...ev.bleedCarry.filter(d => d.until > b.time).map(d => ({ ...d }))); interact(b, u, u, 'bleed-inheritance', 'BLEED INHERITANCE → surviving runner; expiry preserved'); } }
      if (u.id === 'broodkeeper' && support(b, 'broodkeeper') === u && ev.type === 'consumed' && BLOODLINE_FODDER.includes(species(ev.unit)) && rand(b.run) < .35) { const preySpecies = species(ev.unit), offspring = breedCopy[preySpecies] || preyToken[preySpecies]; const v = spawnToken(b, u, offspring, false, { origin: preySpecies, tokenAtk: rawAtk(ev.unit), attackInterval: ev.unit.attackInterval }); if (v) interact(b, u, v, 'recycle', `35% global recall → ${card(preySpecies).name} token; original stays deleted`); }
      if (ev.type === 'consumed' && species(ev.unit) === 'lamb' && u === support(b, 'lantern')) { tick(b, u, 3, ev.unit); interact(b, ev.unit, u, 'soul', 'Mourning Lamb → +3 Echoes'); }
      if (u.id === 'soulwell' && ev.type === 'consumed') { const haunted = card(species(ev.unit))?.genre === 'Haunted'; for (const e of living(b).slice(0, 3)) trueHit(b, u, e, haunted ? 300 + teamPower(b) : 80 + teamPower(b) * .5); interact(b, ev.unit, u, 'soul-payoff', haunted ? 'HAUNTED HARVEST → greater soul missiles' : 'foreign loss → soul missiles'); }
@@ -1307,7 +1679,7 @@ const Game = (() => {
   fx(b, 'growth', u, null, 'EVOLVED');
  }
 
- function evolutionProgress(u) { switch (family(u)) { case 'scrapFrame': return {current:u.alloy||0,max:(u.alloy||0)<25?25:(u.alloy||0)<65?65:120}; case 'jade': return { current: u.qiGrowth || 0, max: 18 }; case 'cub': return { current: u.lineageStacks || 0, max: 6 }; case 'spirit': return { current: u.returns || 0, max: 5 }; case 'monk': return { current: u.witnesses || 0, max: 3 };
+ function evolutionProgress(u) { switch (family(u)) { case 'cyberSolo':return {current:u.chrome||0,max:(u.chrome||0)<25?25:(u.chrome||0)<65?65:120}; case 'elementalApprentice':{const p=u.synthesis?.[bestPair(u)]||0;return {current:p,max:p<10?10:p<20?20:30};} case 'mercenary':return {current:u.trophyPoints||0,max:(u.trophyPoints||0)<25?25:(u.trophyPoints||0)<60?60:100}; case 'scrapFrame': return {current:u.alloy||0,max:(u.alloy||0)<25?25:(u.alloy||0)<65?65:120}; case 'jade': return { current: u.qiGrowth || 0, max: 18 }; case 'cub': return { current: u.lineageStacks || 0, max: 6 }; case 'spirit': return { current: u.returns || 0, max: 5 }; case 'monk': return { current: u.witnesses || 0, max: 3 };
    case 'investigator': {
     const dread = u.dread || 0;
     if (dread >= 140) return { current: 140, max: 140, label: 'Ready for Rule Binding' };
@@ -1407,13 +1779,16 @@ const Game = (() => {
  function refine(b, u) { const v = allies(b, u).filter(v => v.attackInterval > 0 && !token(v)).sort((a, z) => a.permanentAtkBonus - z.permanentAtkBonus || a.uid - z.uid)[0]; if (!v) return false; u.refinements = (u.refinements || 0) + 1; growth(b, v, 6); teamCharge(b, u, 3); interact(b, u, v, 'refinement', 'refine → +6 permanent ATK; root survives'); u.threshold.current = 0; u.refineAt = b.time + 18; return true; }
  function warp(b, e, tiles, source = null) { if (e.gone || e.hp <= 0) return; const before = e.p; e.p = Math.max(0, e.p - ((e.boss || e.champion) ? e.enraged ? 0 : tiles * .5 : tiles)); e.retreatingUntil = Math.max(e.retreatingUntil || 0, b.time + 2.5); e.panicUntil = Math.max(e.panicUntil || 0, b.time + 2.5); e.panic = true; if (source && before > e.p) event(b, 'displaced', { source, tiles: before - e.p }); }
  function pulseMadness(b, u) { const stored = u.madnessPower || 0; u.madnessPower = 0; for (const e of living(b)) { const late = e.p >= 12; trueHit(b, u, e, 200 + teamPower(b) * .75 + stored); if (late) warp(b, e, 5); } u.lastMadness = b.time; u.madnessAt = b.time + 8; interact(b, u, u, 'madness', `MADNESS → +${Math.round(stored)} stored damage released`); fx(b, 'pulse', u, null, 'MADNESS'); }
- function dot(b, e, type, dps, seconds, u) { if (e.hp <= 0 || e.gone) return; const key = type === 'burn' ? 'burns' : 'bleeds'; e[key] ??= []; e[key] = e[key].filter(x => x.until > b.time); if (type === 'bleed' && card(species(u))?.genre === 'Bloodline' && support(b, 'matriarch')) seconds += b.units.filter(v => !v.removed && BLOODLINE_FODDER.includes(species(v))).length * .5; e[key].push({ until: b.time + seconds, dps: dps * mod(b.run, 'damage') * mod(b.run, (e.elite || e.boss || e.champion) ? 'eliteDamage' : 'normalDamage'), owner: u.uid }); }
+ function dot(b, e, type, dps, seconds, u) { if (e.hp <= 0 || e.gone) return; const key = type === 'burn' ? 'burns' : 'bleeds'; e[key] ??= []; e[key] = e[key].filter(x => x.until > b.time); if (type === 'bleed' && card(species(u))?.genre === 'Bloodline' && support(b, 'matriarch')) seconds += b.units.filter(v => !v.removed && BLOODLINE_FODDER.includes(species(v))).length * .5; e[key].push({ until: b.time + seconds, dps: dps * mod(b.run, 'damage') * mod(b.run, priority(e) ? 'eliteDamage' : 'normalDamage'), owner: u.uid }); }
  function venom(b, e, dps, seconds, u) { if (e.hp <= 0 || e.gone) return; e.venoms ??= []; e.venoms = e.venoms.filter(x => x.until > b.time); e.venoms.push({ until: b.time + seconds, dps: dps * mod(b.run, 'damage'), owner: u.uid }); }
- function trueHit(b, u, e, n) { damage(b, e, n * mod(b.run, 'damage') * mod(b.run, (e.elite || e.boss || e.champion) ? 'eliteDamage' : 'normalDamage') * (e.vulnerableUntil > b.time ? 1 + e.vulnerability : 1), u, 'ability'); fx(b, 'spell', u, e, 'TRUE'); }
+ function trueHit(b, u, e, n) { damage(b, e, n * mod(b.run, 'damage') * mod(b.run, priority(e) ? 'eliteDamage' : 'normalDamage') * (e.vulnerableUntil > b.time ? 1 + e.vulnerability : 1), u, 'ability'); fx(b, 'spell', u, e, 'TRUE'); }
 
  function extras(b, u, dt) {
   breed(b, u); if (token(u)) return;
   scrapworkExtras(b,u);
+  huntExtras(b,u);
+  arcaneExtras(b,u);
+  cyberExtras(b,u,dt);
   bindUrbanRelic(b, u);
   if (family(u) === 'nightBus' && b.time >= u.busSweepAt && living(b).length) {
    u.busSweepAt = b.time + 8;
@@ -1422,7 +1797,7 @@ const Game = (() => {
    for (const e of targets) {
     const before = e.p;
     warp(b, e, u.id === 'terminusBus' ? 5 : 3, u);
-    if (e.p < before) grantUrbanViolation(b, u, 1);
+    if (e.p < before) grantUrbanViolation(b, u, 1, e);
     if (u.id === 'ghostRoute') hit(b, u, e, atk(b, u) * 1.5);
    }
    interact(b, u, u, 'bus-sweep', 'Timed sweep: marked runners sent backward');
@@ -1493,7 +1868,7 @@ const Game = (() => {
    u.panopticonAt = b.time + 4;
    const fastRunners = [...living(b)].sort((a, z) => z.speed - a.speed).slice(0, 3);
    for (const e of fastRunners) {
-    grantUrbanViolation(b, u, 1);
+    grantUrbanViolation(b, u, 1, e);
      addRuleMark(b, e, 1, null);
    }
   }
@@ -1515,8 +1890,6 @@ const Game = (() => {
   if (u.lineage === 'phoenix' && (lineageTierIds[u.id]?.tier || 0) >= 3 && living(b).length && b.time >= (u.phoenixPulseAt || 8)) { u.phoenixPulseAt=b.time+8; for(const e of living(b)){const total=(e.burns||[]).filter(d=>d.until>b.time).reduce((n,d)=>n+d.dps*Math.max(0,d.until-b.time),0); if(total){damage(b,e,total,u,'ability');e.burns=e.burns.filter(d=>d.until<=b.time);}} interact(b,u,u,'flare','Phoenix detonation → active Burns consumed'); }
   if (family(u) === 'cub' && (lineageTierIds[u.id]?.tier || 0) === 3) { const relic=cubRelics[u.lineage]; const v=neighbors(b,u,false).find(x=>!x.removed&&x.id===relic); if(v){ consume(b,u,v,'Ancestral Ascension',0); evolve(b,u,cubForms[u.lineage][3]); } }
   if (u.id === 'lotus') { u.threshold.current = Math.min(18, u.threshold.current + dt); if (u.threshold.current >= 18) refine(b, u); }
-  if (u.id === 'crystal' && b.time >= (u.crystalAt || 4)) { teamCharge(b, u, 2); u.crystalAt = b.time + 4; }
-  if (u.id === 'netrunner' && b.time >= (u.hackAt || 5)) { const e = living(b).sort((a, z) => z.speed - a.speed)[0]; if (e) { status(b, e, 'slow', 3, .5, u); interact(b, u, u, 'hack', 'fastest runner slowed 50%'); } u.hackAt = b.time + 5; }
   if (u.id === 'medium' && living(b).length && b.time >= (u.soulAt || 6)) { u.soulAt = b.time + 6; const strongest = Math.max(rawAtk(u), ...allies(b, u).filter(v => !token(v)).map(rawAtk)); for (const e of living(b).slice(0, 2)) hit(b, u, e, 60 + strongest, false); interact(b, u, u, 'soul-volley', 'SOUL VOLLEY → strongest original ATK'); }
   if (u.id === 'core' && living(b).length && b.time >= (u.gravityAt || 2)) { u.gravityAt = b.time + 2; tick(b, u, 1, u); }
   if (u.id === 'medium' && u.pendingEcho) { const v = spawnToken(b, u, 'echo', false, { tokenAtk: u.pendingEcho.atk, origin: u.pendingEcho.origin, attackInterval: card(u.pendingEcho.origin).attackInterval }); if (v) u.pendingEcho = null; }
@@ -1533,8 +1906,8 @@ const Game = (() => {
   if (u.id === 'herbGrass' && b.time >= u.mistAt) {
    u.mistAt = b.time + 4;
    for (const v of b.units.filter(v => !v.removed && acceptsQi(v))) {
-    addQi(b, v, 2);
-    interact(b, u, v, 'mist', '+2 Qi spiritual dew');
+    addQi(b, v, isCultivationApex(v)?2:1);
+    interact(b, u, v, 'mist', `+${isCultivationApex(v)?2:1} Qi spiritual dew`);
    }
   }
   if (acceptsQi(u)) {
@@ -1542,8 +1915,8 @@ const Game = (() => {
    if (blossom) {
     const apex = isCultivationApex(u);
     consume(b, u, blossom, 'Blossom Absorption', apex ? 0 : 2);
-    addQi(b, u, 15);
-    interact(b, blossom, u, 'qi', apex ? '+15 Qi toward permanent growth' : '+15 Qi, +2 permanent ATK');
+    addQi(b, u, apex?15:5);
+    interact(b, blossom, u, 'qi', apex ? '+15 Qi toward permanent growth' : '+5 Qi, +2 permanent ATK');
    }
   }
   if (u.id === 'cauldron' && b.time >= u.brewAt) {
@@ -1557,9 +1930,9 @@ const Game = (() => {
      if (blossom) consume(b, u, blossom, 'Brewing', 0);
      // Apex recipients gain ATK through new Qi only, not both reward paths.
      if (!apex) growth(b, target, blossom ? 4 : 3);
-     addQi(b, target, blossom ? 35 : 18);
+     addQi(b, target, apex?(blossom?35:18):(blossom?12:6));
      if (!blossom) target.pillSpeedUntil = Math.max(target.pillSpeedUntil || 0, b.time + 8 * mod(b.run, 'buffDuration'));
-     interact(b, u, target, 'pill', blossom ? '+35 Qi: Breakthrough Dan' : '+18 Qi, temporary +15% speed: Qi Gathering Pill');
+     interact(b, u, target, 'pill', blossom ? `+${apex?35:12} Qi: Breakthrough Dan` : `+${apex?18:6} Qi, temporary +15% speed: Qi Gathering Pill`);
     }
    }
   }
@@ -1621,7 +1994,8 @@ const Game = (() => {
   if (abilityGauge(u) && u.threshold.current >= u.threshold.max) tick(b, u, 0);
  }
 
- return { isMech, isMechanical, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, inArc, oilPool, tickOil, mechAttack, addQi, addDread, acceptsQi, acceptsDread, isCultivationApex, isUrbanAuthority, bindUrbanRelic, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, practitionerRealmForQi, isPractitioner, isCultivationRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, breaksLegendNaturalRule, markNaturalBreach, URBAN_LEGEND_MARK_NAMES };
+ return { CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, augmented, hasAccess, ramCapacity, berserkActive, updateCyber, installChrome, addChromeAttack, addRAM, cyberPoison, uploadHack, cyberDeath, cyberZone, clearSprint, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, arcanePair, isApprentice, isArchon, isElemental, arcaneGauge, bestPair, updateApprentice, receiveEssence, storeOverflow, elementalLinks, arcaneReaction, elementalSpell, arcaneZone, archonAttack, arcaneExtras, tickArcane, arcaneKill, HUNT_APEX, isSlayer, isHunter, priority, trophyFamily, huntAura, executeThreshold, wallOf, huntArmor, brandQuarry, updateSlayer, trophyPoints, harvestTrophy, forgeHuntRelic, carveTrophy, huntExtras, visceral, slayerAttack, isMech, isMechanical, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, inArc, oilPool, tickOil, mechAttack, addQi, addDread, acceptsQi, acceptsDread, isCultivationApex, isUrbanAuthority, bindUrbanRelic, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, practitionerRealmForQi, isPractitioner, isCultivationRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, breaksLegendNaturalRule, markNaturalBreach, URBAN_LEGEND_MARK_NAMES };
 })();
 if (typeof module !== 'undefined') module.exports = Game;
+
 

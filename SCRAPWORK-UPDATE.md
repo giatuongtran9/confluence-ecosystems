@@ -1,3 +1,5 @@
+> Historical design record. For current balance and forging rules, see BALANCE-UPDATE.md.
+
 # Scrapwork Colossus update — 4 November 2026
 
 Based on GitHub commit `0627c3ee77b2e6c1d2d84a2655e8552a3a33c9a4`, “Fix expired taboo status checks for reactive legends”. The latest Haunted changes and the earlier Cultivation, Matriarch, removed-card, and WebP fixes are retained.

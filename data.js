@@ -54,7 +54,7 @@ const LEADERS = [
     "benefit": "Ability gauges charge 25% faster.",
     "drawback": "All basic attacks deal 15% less damage.",
     "passive": "Ability gauges charge 25% faster. Drawback: All basic attacks deal 15% less damage.",
-    "mods": { "gauge": 1.25, "damage": 0.85 }
+    "mods": { "gauge": 1.25, "basicDamage": 0.85 }
   },
   {
     "id": "rook",
@@ -85,9 +85,9 @@ const LEADERS = [
     "title": "Cyberpunk",
     "sprite": 24,
     "benefit": "All cards attack 25% faster.",
-    "drawback": "All attacks deal 15% less damage.",
-    "passive": "All cards attack 25% faster. Drawback: All attacks deal 15% less damage.",
-    "mods": { "speed": 1.25, "damage": 0.85 }
+    "drawback": "Basic hits deal 15% less damage.",
+    "passive": "All cards attack 25% faster. Drawback: Basic hits deal 15% less damage.",
+    "mods": { "speed": 1.25, "basicDamage": 0.85 }
   },
   {
     "id": "morrow",
@@ -95,9 +95,9 @@ const LEADERS = [
     "genre": "Grimdark",
     "title": "Dark fantasy",
     "sprite": 28,
-    "benefit": "Deal 30% more damage to Elites and Bosses.",
+    "benefit": "Deal 30% more damage to Alpha Quarry, Elites, Harbingers and Bosses.",
     "drawback": "Deal 10% less damage to normal runners.",
-    "passive": "Deal 30% more damage to Elites and Bosses. Drawback: Deal 10% less damage to normal runners.",
+    "passive": "Deal 30% more damage to Alpha Quarry, Elites, Harbingers and Bosses. Drawback: Deal 10% less damage to normal runners.",
     "mods": { "eliteDamage": 1.3, "normalDamage": 0.9 }
   },
   {
@@ -125,81 +125,95 @@ const RARITIES = [
 const CARDS = [
   // 1. Spirit Lotus Root
   {
-    "id": "lotusRoot",
-    "name": "Spirit Lotus Root",
-    "vn": "Linh Liên Mẫu Căn",
-    "genre": "Cultivation",
-    "rarity": "Normal",
-    "baseAtk": 0,
-    "attackInterval": 0,
-    "max": 0,
-    "asset": "lotus",
-    "sprite": 2,
-    "icon": "✿",
-    "fav": "neighbor",
-    "tags": ["plant", "producer", "fodder"],
-    "ecosystem": "Cultivation · Dan Dao",
-    "rules": "Every 8s, blooms 1 Spirit Lotus Blossom token onto a free interior slot. Eaten or brewed blossoms leave this root intact to bloom again. Cannot be consumed by Cauldrons.",
-    "synergy": "Qi-Refining Practitioner devours blossoms directly; Nine-Turn Alchemy Cauldron refines blossoms into Breakthrough Dan."
-  },
+  "id": "lotusRoot",
+  "name": "Spirit Lotus Root",
+  "vn": "Linh Liên Mẫu Căn",
+  "genre": "Cultivation",
+  "rarity": "Normal",
+  "baseAtk": 0,
+  "attackInterval": 0,
+  "max": 0,
+  "asset": "lotus",
+  "sprite": 2,
+  "icon": "✿",
+  "fav": "neighbor",
+  "tags": [
+    "plant",
+    "producer",
+    "fodder"
+  ],
+  "ecosystem": "Cultivation · Dan Dao",
+  "rules": "Every 8s, blooms 1 Spirit Lotus Blossom token onto a free interior slot. Eaten or brewed blossoms leave this root intact to bloom again. Cannot be consumed by Cauldrons. Ascended recipients instead absorb +15 Qi per Blossom.",
+  "synergy": "Qi-Refining Practitioner devours blossoms directly; Nine-Turn Alchemy Cauldron refines blossoms into Breakthrough Dan."
+},
   // 2. Cloud-Mist Spirit Grass
   {
-    "id": "herbGrass",
-    "name": "Cloud-Mist Spirit Grass",
-    "vn": "Vân Vụ Thảo",
-    "genre": "Cultivation",
-    "rarity": "Normal",
-    "baseAtk": 0,
-    "attackInterval": 0,
-    "max": 0,
-    "asset": "herb",
-    "sprite": 2,
-    "icon": "✿",
-    "fav": "team",
-    "tags": ["plant", "qi", "fodder"],
-    "ecosystem": "Cultivation · Dan Dao",
-    "rules": "Every 4s, grants +2 Qi to all deployed Practitioners and Cultivation Apex forms. Adjacent Cauldrons can brew renewable grass into +18 Qi, +3 permanent ATK before ascension, and +15% temporary speed for 8s (modified by buff duration; refreshes without stacking).",
-    "synergy": "Qi-Refining Practitioner and Nine-Turn Alchemy Cauldron."
-  },
+  "id": "herbGrass",
+  "name": "Cloud-Mist Spirit Grass",
+  "vn": "Vân Vụ Thảo",
+  "genre": "Cultivation",
+  "rarity": "Normal",
+  "baseAtk": 0,
+  "attackInterval": 0,
+  "max": 0,
+  "asset": "herb",
+  "sprite": 2,
+  "icon": "✿",
+  "fav": "team",
+  "tags": [
+    "plant",
+    "qi",
+    "fodder"
+  ],
+  "ecosystem": "Cultivation · Dan Dao",
+  "rules": "Every 4s, grants +1 Qi to all deployed cultivators (+2 Qi to ascended Immortals). An adjacent Cauldron can brew this renewable grass into Qi Gathering Pills without consuming the grass.",
+  "synergy": "Qi-Refining Practitioner and Nine-Turn Alchemy Cauldron."
+},
   // 3. Nine-Turn Alchemy Cauldron
   {
-    "id": "cauldron",
-    "name": "Nine-Turn Alchemy Cauldron",
-    "vn": "Cửu Chuyển Luyện Đan Lô",
-    "genre": "Cultivation",
-    "rarity": "Rare",
-    "baseAtk": 8,
-    "attackInterval": 2.0,
-    "max": 0,
-    "asset": "cauldron",
-    "sprite": 0,
-    "icon": "✧",
-    "fav": "neighbor",
-    "tags": ["alchemy", "refiner"],
-    "growthRole": "engine",
-    "ecosystem": "Cultivation · Dan Dao",
-    "rules": "First brews at 8s, then one recipe every 8s. Prioritizes an adjacent Lotus Blossom (+35 Qi, +4 permanent ATK before ascension); otherwise uses adjacent renewable Spirit Grass (+18 Qi, +3 permanent ATK before ascension, +15% temporary speed for 8s). Targets the lowest-Qi Practitioner first, then a Cultivation Apex. Apex recipients convert every 30 new Qi into +2 permanent ATK instead of the direct ATK reward. No valid target: no ingredient is consumed. Consumed/refined/breakthrough events also trigger an elixir: +1 team ATK, at most once every 8s.",
-    "synergy": "Spirit Lotus Root, Cloud-Mist Spirit Grass, Qi-Refining Practitioner."
-  },
+  "id": "cauldron",
+  "name": "Nine-Turn Alchemy Cauldron",
+  "vn": "Cửu Chuyển Luyện Đan Lô",
+  "genre": "Cultivation",
+  "rarity": "Rare",
+  "baseAtk": 8,
+  "attackInterval": 2.0,
+  "max": 0,
+  "asset": "cauldron",
+  "sprite": 0,
+  "icon": "✧",
+  "fav": "neighbor",
+  "tags": [
+    "alchemy",
+    "refiner"
+  ],
+  "growthRole": "engine",
+  "ecosystem": "Cultivation · Dan Dao",
+  "rules": "First brew at 8s, then one recipe every 8s when ingredients and a recipient exist. An adjacent Blossom is consumed for +12 Qi and +4 permanent ATK; otherwise adjacent renewable Spirit Grass yields +6 Qi, +3 permanent ATK, and +15% speed for 8s. Pills prefer an unascended cultivator. Ascended recipients instead gain 35/18 Qi from the two recipes, with permanent ATK earned only through their 30-Qi cycle. The team elixir grants +1 permanent ATK after an eligible consumption/refinement, at most once per 8s.",
+  "synergy": "Spirit Lotus Root, Cloud-Mist Spirit Grass, Qi-Refining Practitioner."
+},
   // 4. Qi-Refining Practitioner
   {
-    "id": "practitioner",
-    "name": "Qi-Refining Practitioner",
-    "vn": "Luyện Khí Tu Sĩ",
-    "genre": "Cultivation",
-    "rarity": "Normal",
-    "baseAtk": 6,
-    "attackInterval": 1.5,
-    "max": 0,
-    "asset": "jade",
-    "sprite": 0,
-    "icon": "劍",
-    "fav": "neighbor",
-    "tags": ["attacker", "scaling"],
-    "ecosystem": "Cultivation · Ascension",
-    "rules": "Gains +1 Qi on hit. Devours adjacent Lotus Blossoms for +15 Qi and +2 permanent ATK. Advances permanently into earned card forms: Foundation Establishment (Rare) at 30 Qi (ATK 18, 1.2s, 2-tile pierce); Golden Core (Epic) at 85 Qi (ATK 40, 1.0s, 50% splash); Nascent Soul (Legendary) at 175 Qi (ATK 75, 0.75s, 3 highest-HP targets). If adjacent to an eligible Relic at Nascent Soul, permanently consumes it to evolve into an Apex Immortal!",
-    "synergy": "Lotus Blossoms, Spirit Grass, Cauldron Pills, and Relics."
-  },
+  "id": "practitioner",
+  "name": "Qi-Refining Practitioner",
+  "vn": "Luyện Khí Tu Sĩ",
+  "genre": "Cultivation",
+  "rarity": "Normal",
+  "baseAtk": 6,
+  "attackInterval": 1.5,
+  "max": 0,
+  "asset": "jade",
+  "sprite": 0,
+  "icon": "劍",
+  "fav": "neighbor",
+  "tags": [
+    "attacker",
+    "scaling"
+  ],
+  "ecosystem": "Cultivation · Ascension",
+  "rules": "Gains +1 Qi every three attacks; partial progress survives battles. Devours adjacent Lotus Blossoms for +5 Qi and +2 permanent ATK. Advances permanently into earned card forms: Foundation Establishment (Rare) at 30 Qi (ATK 18, 1.2s, 2-tile pierce); Golden Core (Epic) at 85 Qi (ATK 40, 1.0s, 50% splash); Nascent Soul (Legendary) at 175 Qi (ATK 75, 0.75s, 3 highest-HP targets). If adjacent to an eligible Relic at Nascent Soul, permanently consumes it to evolve into an Apex Immortal!",
+  "synergy": "Lotus Blossoms, Spirit Grass, Cauldron Pills, and Relics."
+},
   // 5. Ancient Flying Sword
   {
     "id": "flyingSword",
@@ -425,7 +439,7 @@ const CARDS = [
     "baseAtk": 11,
     "attackInterval": 1.4,
     "max": 0,
-    "asset": "netrunner",
+    "asset": "atlasCyberNetrunner",
     "icon": "✧",
     "fav": "neighbor",
     "tags": ["refiner", "buffer"],
@@ -560,7 +574,7 @@ const CARDS = [
     "fav": "team",
     "tags": ["control", "urban-lineage", "banish"],
     "ecosystem": "Quái Đàm · Autonomous Legend",
-    "rules": "Rule: 'The last bus only takes rule-breakers.' Reacts only to marked, panicked, fleeing, or unnaturally fast runners; it does not attack ordinary runners. Its attack pierces 2 violators and adds 1 Violation Mark to each survivor, up to 5. Every 8s, sweeps the leading runner's 4-tile edge and warps runners with 2+ marks backward 3 tiles. Each successful sweep displacement earns +1 violation. Evolves at 15/45 violations; adjacent Urban Legends share 50% of earned violations.",
+    "rules": "Rule: 'The last bus only takes rule-breakers.' Reacts only to marked, panicked, fleeing, or unnaturally fast runners; it does not attack ordinary runners. Its attack pierces 2 violators and adds 1 Violation Mark to each survivor, up to 5. Every 8s, sweeps the leading runner's 4-tile edge and warps runners with 2+ marks backward 3 tiles. Successful sweep displacements can earn evolution progress under the reward cooldown. Evolves at 15/45 violations; adjacent Urban Legends share 15% of earned evolution progress.",
     "synergy": "Crowded tracks, Warps, and other Urban Legends."
   },
   // 13. The Midnight Caller (Autonomous Legend 3)
@@ -614,29 +628,32 @@ const CARDS = [
     "fav": "team",
     "tags": ["attacker", "urban-lineage"],
     "ecosystem": "Quái Đàm · Autonomous Legend",
-    "rules": "Rule: 'It Only Moves When Unseen.' Reacts when a runner breaks taboo by running fast, panicking, fleeing, or carrying a mark, or when an ally is inactive; it ignores ordinary runners. During Blackout (or while any ally is inactive), gains +150% attack speed and +100% critical damage. Each punishment of a taboo-breaker grants 1 violation. Self-ascends across battles into Shadow Stalker (Epic, 15) and The Living Taboo (Mythic, 45)!",
+    "rules": "Rule: 'It Only Moves When Unseen.' Reacts when a runner breaks taboo by running fast, panicking, fleeing, or carrying a mark, or when an ally is inactive; it ignores ordinary runners. During Blackout (or while any ally is inactive), gains +150% attack speed and +100% critical damage. Qualifying punishments earn progress under the reward cooldown. Self-ascends across battles into Shadow Stalker (Epic, 15) and The Living Taboo (Mythic, 45)!",
     "synergy": "Blackouts, Night Investigator, and other Urban Legends."
   },
 
   // --- FOLKLORE CONTAGION & UTILITY ---
   // 16. Cursed Chain Letter
   {
-    "id": "chainLetter",
-    "name": "Cursed Chain Letter",
-    "vn": "Thư Nặc Danh",
-    "genre": "Haunted",
-    "rarity": "Normal",
-    "baseAtk": 9,
-    "attackInterval": 1.2,
-    "max": 0,
-    "asset": "medium",
-    "icon": "✧",
-    "fav": "team",
-    "tags": ["attacker", "contagion"],
-    "ecosystem": "Quái Đàm · Folklore Contagion",
-    "rules": "Attacks infect runners with Folklore Rumors. Each infected runner can spread once by contact to an uninfected runner within 0.45 track tiles. On death it can infect another within 1.5 tiles. A contact spread or infected death grants all deployed original Urban Legends +1 evolution progress; newly infected recipients take 20 true damage. Ordinary attacks grant no evolution progress.",
-    "synergy": "All 5 Autonomous Urban Legends."
-  },
+  "id": "chainLetter",
+  "name": "Cursed Chain Letter",
+  "vn": "Thư Nặc Danh",
+  "genre": "Haunted",
+  "rarity": "Normal",
+  "baseAtk": 9,
+  "attackInterval": 1.2,
+  "max": 0,
+  "asset": "medium",
+  "icon": "✧",
+  "fav": "team",
+  "tags": [
+    "attacker",
+    "contagion"
+  ],
+  "ecosystem": "Quái Đàm · Folklore Contagion",
+  "rules": "Attacks infect runners with Folklore Rumors. Each infected runner can spread once by contact to an uninfected runner within 0.45 track tiles. On death it can infect another within 1.5 tiles. A contact spread or infected death grants all deployed original Urban Legends +1 evolution progress; newly infected recipients take 20 true damage. Ordinary attacks grant no evolution progress. Each real contact spread and infected death grants 0.1 evolution progress to deployed Urban Legends; ordinary attacks grant none.",
+  "synergy": "All 5 Autonomous Urban Legends."
+},
   // 17. Red Raincoat Specter
   {
     "id": "redRaincoat",
@@ -690,40 +707,8 @@ const CARDS = [
     "rules": "Prioritize runners below 30% health and deal double damage to them. Same-species Hound neighbors breed temporary Crimson Hound copies at the shared 10% per-second chance into an empty orthogonal slot. Eligible prey for the Primordial Blood Cub; consumed Hounds can also trigger the Broodkeeper.",
     "synergy": "Primordial Blood Cub, Crimson Broodkeeper, and other Crimson Hounds."
   },
-  {
-    "id": "conduit",
-    "name": "Mana Conduit",
-    "vn": "Ma Lực Xu Nữu",
-    "genre": "Arcane",
-    "baseAtk": 9,
-    "attackInterval": 1.8,
-    "max": 16,
-    "sprite": 12,
-    "icon": "✦",
-    "fav": "team",
-    "ecosystem": "Ability charge · haste",
-    "rarity": "Normal",
-    "tags": [],
-    "rules": "Strike the leading runner. Whenever any ally attacks, gain 1 ability tick. At 16, grant all other deployed allies +15% attack speed for 4s.",
-    "synergy": "Rapid attackers and Storm Archmage."
-  },
-  {
-    "id": "mage",
-    "name": "Storm Archmage",
-    "vn": "Phong Bạo Đại Pháp Sư",
-    "genre": "Arcane",
-    "baseAtk": 22,
-    "attackInterval": 2.6,
-    "max": 8,
-    "sprite": 14,
-    "icon": "⚡",
-    "fav": "team",
-    "ecosystem": "Ability charge · chain lightning",
-    "rarity": "Legendary",
-    "tags": ["finisher"],
-    "rules": "Strike the leading runner. Each attack adds 1 ability tick; at 8, unleash Chain Lightning across up to 5 runners for 240 + 3× raw ATK + 1.5× Team Power as spell damage, and grant all other allies with an ability gauge +2 ticks. Gains no permanent ATK from attacks.",
-    "synergy": "Mana Conduit, Mana Crystal, and team growth engines."
-  },
+  
+  
   
   {
   "id": "smelter",
@@ -739,7 +724,7 @@ const CARDS = [
     "mechanical"
   ],
   "ecosystem": "Scrapwork · salvage and forging",
-  "rules": "Shortens ally shutdown by 1s (minimum 0.5s). Smelts two adjacent scraps whenever ready, with a 4s forge cooldown. Sword+Sword: Colossal Scrap Blade (highest HP, 50% permanent armor removal, triple damage below 35% HP). Gun+Gun: Twin Flak Battery (six-tile arc, 25% permanent armor removal). Mixed: Vanguard Gunblade (alternating armor-piercing round and four-tile oil sweep). Installs on the nearest Mech with an empty weapon slot. Every smelt awards +3 Alloy to all deployed Mechs; surplus modules recycle into Alloy only.",
+  "rules": "Shortens ally shutdown by 1s (minimum 0.5s). Accepts adjacent scrap one piece at a time into a two-piece intake. Stored pieces persist between battles. With a deployed Mech, two stored pieces forge a module whenever the 4s forge cooldown is ready. A single adjacent working slot is enough; a full board still blocks new scrap. Sword+Sword: Colossal Scrap Blade (highest HP, 50% permanent armor removal, triple damage below 35% HP). Gun+Gun: Twin Flak Battery (six-tile arc, 25% permanent armor removal). Mixed: Vanguard Gunblade (alternating armor-piercing round and four-tile oil sweep). Installs on the nearest Mech with an empty weapon slot. Every smelt awards +3 Alloy to all deployed Mechs; surplus modules recycle into Alloy only.",
   "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
   "scrapworkAsset": "smelter"
 },
@@ -775,22 +760,7 @@ const CARDS = [
     "rules": "Pierce 3 runners in a line for full damage, ignoring armor. Gain bonus attack damage equal to 200% of the single highest permanent ATK bonus among other allies. If Telemetry Sensor is deployed, hit 5 runners and knock each back 1 tile.",
     "synergy": "Telemetry Sensor, high-growth carry cards."
   },
-  {
-    "id": "mantis",
-    "name": "Mantis Frame",
-    "vn": "Đường Lang Cơ Giáp",
-    "genre": "Cyberpunk",
-    "baseAtk": 16,
-    "attackInterval": 0.9,
-    "sprite": 24,
-    "icon": "⌿",
-    "fav": "team",
-    "ecosystem": "Overclock · tempo cycles",
-    "rarity": "Rare",
-    "tags": [],
-    "rules": "Strike the leading runner. Every 10s, enter Overclock for 5s: attack speed is tripled and other allies gain +15% attack speed. When Overclock ends, gain +1 permanent ATK and enter Overheat for 3s.",
-    "synergy": "Cooling Vent, Junkyard Smelter, and Soul-Wailing Bell."
-  },
+  
   {
     "id": "vent",
     "name": "Cooling Vent",
@@ -805,7 +775,7 @@ const CARDS = [
     "rarity": "Normal",
     "tags": ["control"],
     "rules": "Every 8s, freeze the 2 leading runners for 1s (2s if they are burning). Halve the shutdown duration of allies in Burnout or Overheat (minimum 0.5s). Multiple Vents do not stack.",
-    "synergy": "Junkyard Smelter, Mantis Frame, and Hydraulic Riveter."
+    "synergy": "Junkyard Smelter, Cyber-Operative, and Hydraulic Riveter."
   },
   {
     "id": "totem",
@@ -821,7 +791,7 @@ const CARDS = [
     "rarity": "Normal",
     "tags": [],
     "rules": "All ally attacks gain 25% armor penetration and inflict Bleed: 2 DPS for 4s, with no stack limit. Bleed stacks are independent and expire separately. Multiple Totems do not stack.",
-    "synergy": "Crimson Hound, Executioner, and Abyssal Reaper."
+    "synergy": "Crimson Hound, Executioner, and Blood-Drunk Abyssal Hunter."
   },
   {
     "id": "executioner",
@@ -890,41 +860,8 @@ const CARDS = [
     "rules": "Whenever an ally is consumed or an enemy dies while bleeding, grant all orthogonally adjacent original allies +1 permanent ATK.",
     "synergy": "Primordial Blood Cub and all five Bloodline fodders."
   },
-  {
-    "id": "crystal",
-    "name": "Mana Crystal",
-    "vn": "Ma Tinh",
-    "genre": "Arcane",
-    "rarity": "Normal",
-    "baseAtk": 8,
-    "attackInterval": 2.2,
-    "max": 0,
-    "asset": "crystal",
-    "tags": [],
-    "fav": "team",
-    "icon": "✧",
-    "growthRole": "battery",
-    "ecosystem": "Ability charge · batteries",
-    "rules": "Strike the leading runner. Every 4s, channel mana to grant all allies with an ability gauge +2 ticks.",
-    "synergy": "Storm Archmage, Mana Conduit, and Rune Weaver."
-  },
-  {
-    "id": "weaver",
-    "name": "Rune Weaver",
-    "vn": "Phù Văn Chức Giả",
-    "genre": "Arcane",
-    "rarity": "Rare",
-    "baseAtk": 15,
-    "attackInterval": 1.7,
-    "max": 6,
-    "asset": "weaver",
-    "tags": [],
-    "fav": "team",
-    "icon": "✧",
-    "ecosystem": "Ability charge · spell resonance",
-    "rules": "Each attack adds 1 ability tick. At 6 ticks, trigger Rune Nova: deal 180 + 3× raw ATK + Team Power to 4 runners and make them Vulnerable (+20% damage taken for 4s).",
-    "synergy": "Storm Archmage, Mana Conduit, and Mana Crystal."
-  },
+  
+  
   
   
   {
@@ -962,40 +899,8 @@ const CARDS = [
     "rules": "Grant all other allies +15 percentage points of critical hit chance. Gain 1 tick whenever an ally lands a critical hit. At 8 ticks, trigger Gravitational Collapse: deal 240 + 2× Team Power as true damage and Warp all runners backward 2.5 tiles.",
     "synergy": "Telemetry Sensor, Focused Nanites, and high-crit allies."
   },
-  {
-    "id": "netrunner",
-    "name": "Grid Netrunner",
-    "vn": "Võng Lạc Khách",
-    "genre": "Cyberpunk",
-    "rarity": "Normal",
-    "baseAtk": 12,
-    "attackInterval": 1.4,
-    "max": 0,
-    "asset": "netrunner",
-    "tags": ["control"],
-    "fav": "neighbor",
-    "icon": "✧",
-    "ecosystem": "Control · haste routing",
-    "rules": "Every 5s, hack the fastest runner on the track, slowing them by 50% for 3s. Grant orthogonally adjacent allies +15% attack speed while active.",
-    "synergy": "Mantis Frame, Cooling Vent, and speed-scaling allies."
-  },
-  {
-    "id": "plasma",
-    "name": "Plasma Battery",
-    "vn": "Điện Tương Pháo Đài",
-    "genre": "Cyberpunk",
-    "rarity": "Rare",
-    "baseAtk": 20,
-    "attackInterval": 1.8,
-    "max": 6,
-    "asset": "plasma",
-    "tags": [],
-    "fav": "team",
-    "icon": "✧",
-    "ecosystem": "Overheat · burn volleys",
-    "rules": "Strike the 3 leading runners and apply Burn: 8 DPS for 4s. Each attack adds 1 tick; at 6 ticks, unleash an intense plasma burst and enter Overheat for 3s.",
-    "synergy": "Cooling Vent, Junkyard Smelter, and Furnace Bellows."
-  },
+  
+  
   {
     "id": "leech",
     "name": "Grave Leech",
@@ -1013,23 +918,7 @@ const CARDS = [
     "rules": "Strike the leading runner. Deal 2.5× damage to runners suffering from Bleed or Burn.",
     "synergy": "Iron Maiden Totem, Furnace Bellows, and Blood Altar."
   },
-  {
-    "id": "reaper",
-    "name": "Abyssal Reaper",
-    "vn": "Thâm Uyên Thu Hoạch Giả",
-    "genre": "Grimdark",
-    "rarity": "Legendary",
-    "baseAtk": 30,
-    "attackInterval": 2.4,
-    "max": 0,
-    "asset": "reaper",
-    "tags": ["finisher"],
-    "fav": "team",
-    "icon": "✧",
-    "ecosystem": "Bleed · soul detonation",
-    "rules": "Strike the 2 leading runners and apply Bleed: 5 DPS for 4s. If a target has 4 or more Bleed stacks, detonate all remaining Bleed damage for 1.5× bonus ability damage.",
-    "synergy": "Iron Maiden Totem, Crimson Hound, and Asura Monk."
-  },
+  
   {
     "id": "larva",
     "name": "Mind Larva",
@@ -1367,23 +1256,27 @@ const FORMS = [
   // --- ARCHITECTURE A: 5 MYTHIC ANOMALY AUTHORITIES ---
   // 1. Noticeboard -> The Architect of Taboos
   {
-    "id": "ruleArchitect",
-    "name": "The Architect of Taboos",
-    "vn": "Kẻ Viết Quy Tắc — Phòng 404",
-    "genre": "Haunted",
-    "rarity": "Mythic",
-    "baseAtk": 180,
-    "attackInterval": 0.55,
-    "max": 0,
-    "asset": "totem",
-    "icon": "✧",
-    "fav": "team",
-    "tags": ["apex", "urban-apex", "taboo-master"],
-    "evolvedFrom": "investigator",
-    "draftable": false,
-    "rules": "Rule 0: Existence Is a Violation. All runners spawn with 2 Violation Marks (+16% damage). Attacks deal 2.5× true damage to violators. Once per battle, traps a leaking runner in Room 404, preventing the leak. Triggers Rule Resonance when adjacent to another Urban Legend or Relic (+20% damage, +25% speed). Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
-    "synergy": "Cursed Noticeboard and Rule Resonance."
-  },
+  "id": "ruleArchitect",
+  "name": "The Architect of Taboos",
+  "vn": "Kẻ Viết Quy Tắc — Phòng 404",
+  "genre": "Haunted",
+  "rarity": "Mythic",
+  "baseAtk": 180,
+  "attackInterval": 0.55,
+  "max": 0,
+  "asset": "totem",
+  "icon": "✧",
+  "fav": "team",
+  "tags": [
+    "apex",
+    "urban-apex",
+    "taboo-master"
+  ],
+  "evolvedFrom": "investigator",
+  "draftable": false,
+  "rules": "Rule 0: Existence Is a Violation. All runners spawn with 2 Violation Marks (+16% damage). Attacks deal 2.5× true damage to violators. Once per battle, traps a leaking runner in Room 404, preventing the leak. Triggers Rule Resonance when adjacent to another Urban Legend or Relic (+20% damage, +25% speed). Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK. Room 404 prevents an ordinary runner leak only; bosses and Harbingers must be defeated through damage.",
+  "synergy": "Cursed Noticeboard and Rule Resonance."
+},
   // 2. Panopticon Monitor -> The All-Seeing Overseer
   {
     "id": "allSeeingOverseer",
@@ -1478,46 +1371,54 @@ const FORMS = [
     "tags": ["urban-form", "cleave", "bleed"],
     "evolvedFrom": "kuchisake",
     "draftable": false,
-    "rules": "Cleaves 2 runners. Attacks against bleeding or marked runners deal triple critical damage. Witnessing 45 total violations across battles awakens the Slit-Mouthed Sovereign!",
+    "rules": "Cleaves 2 runners. Attacks against bleeding or marked runners deal triple critical damage. Earning 45 evolution progress across battles awakens the Slit-Mouthed Sovereign!",
     "synergy": "Bleed, Violations, and Slit-Mouthed Sovereign."
   },
   {
-    "id": "slitMouthedSovereign",
-    "name": "Slit-Mouthed Sovereign",
-    "vn": "Khẩu Liệt Chi Chủ",
-    "genre": "Haunted",
-    "rarity": "Mythic",
-    "baseAtk": 210,
-    "attackInterval": 0.5,
-    "max": 0,
-    "asset": "reaper",
-    "icon": "✧",
-    "fav": "team",
-    "tags": ["apex", "urban-apex", "boss-slayer"],
-    "evolvedFrom": "kuchisake",
-    "draftable": false,
-    "rules": "'Am I Pretty?' Reacts to fast, marked, panicked, or retreating runners and ignores ordinary runners. Strikes against marked violators critically hit for 3.5× damage and apply 35 DPS Bleed. Instantly executes non-bosses below 30% HP. Every 6th attack shreds 15% current HP from Bosses and Harbingers. Triggers Rule Resonance when adjacent to another Urban Legend.",
-    "synergy": "Bosses, Harbingers, and Rule Resonance."
-  },
+  "id": "slitMouthedSovereign",
+  "name": "Slit-Mouthed Sovereign",
+  "vn": "Khẩu Liệt Chi Chủ",
+  "genre": "Haunted",
+  "rarity": "Mythic",
+  "baseAtk": 210,
+  "attackInterval": 0.5,
+  "max": 0,
+  "asset": "atlasScythe",
+  "icon": "✧",
+  "fav": "team",
+  "tags": [
+    "apex",
+    "urban-apex",
+    "boss-slayer"
+  ],
+  "evolvedFrom": "kuchisake",
+  "draftable": false,
+  "rules": "'Am I Pretty?' Reacts to fast, marked, panicked, or retreating runners and ignores ordinary runners. Strikes against marked violators critically hit for 3.5× damage and apply 35 DPS Bleed. Instantly executes ordinary runners below 30% HP. Every 6th attack shreds 15% current HP from Bosses and Harbingers. Triggers Rule Resonance when adjacent to another Urban Legend. Harbingers are also immune to execution.",
+  "synergy": "Bosses, Harbingers, and Rule Resonance."
+},
   // Lineage 2: Midnight Bus 44
   {
-    "id": "ghostRoute",
-    "name": "Ghost Route Express",
-    "vn": "Tuyến Xe U Hồn",
-    "genre": "Haunted",
-    "rarity": "Epic",
-    "baseAtk": 44,
-    "attackInterval": 1.1,
-    "max": 0,
-    "asset": "atlasMachineC",
-    "icon": "✧",
-    "fav": "team",
-    "tags": ["urban-form", "banish", "warp"],
-    "evolvedFrom": "nightBus",
-    "draftable": false,
-    "rules": "Reacts only to marked, panicked, fleeing, or unnaturally fast runners; it does not attack ordinary runners. Its attack pierces 2 violators and adds 1 Violation Mark to surviving targets. Every 8s, sweeps a 6-tile span around the leading runner: runners with 2+ marks are warped back 3 tiles and hit for 1.5× ATK. Successful sweep displacements earn +1 violation each. At 45 violations becomes Terminus Bus 44.",
-    "synergy": "Crowded tracks and Terminus Bus 44."
-  },
+  "id": "ghostRoute",
+  "name": "Ghost Route Express",
+  "vn": "Tuyến Xe U Hồn",
+  "genre": "Haunted",
+  "rarity": "Epic",
+  "baseAtk": 44,
+  "attackInterval": 1.1,
+  "max": 0,
+  "asset": "atlasMachineC",
+  "icon": "✧",
+  "fav": "team",
+  "tags": [
+    "urban-form",
+    "banish",
+    "warp"
+  ],
+  "evolvedFrom": "nightBus",
+  "draftable": false,
+  "rules": "Reacts only to marked, panicked, fleeing, or unnaturally fast runners; it does not attack ordinary runners. Its attack pierces 2 violators and adds 1 Violation Mark to surviving targets. Every 8s, sweeps a 6-tile span around the leading runner: runners with 2+ marks are warped back 3 tiles and hit for 1.5× ATK. Successful sweep displacements can earn evolution progress under the shared reward cooldown. At 45 violations becomes Terminus Bus 44.",
+  "synergy": "Crowded tracks and Terminus Bus 44."
+},
   {
     "id": "terminusBus",
     "name": "Terminus Bus 44",
@@ -1552,7 +1453,7 @@ const FORMS = [
     "tags": ["urban-form", "sonic", "stun"],
     "evolvedFrom": "payphone",
     "draftable": false,
-    "rules": "Reacts only to taboo-breaking runners; it does not attack ordinary runners. Its 16-tile rings deal +50% damage. Whenever Blackout begins, rings immediately, stunning violators for 1s. Witnessing 45 total violations across battles awakens The Midnight Operator!",
+    "rules": "Reacts only to taboo-breaking runners; it does not attack ordinary runners. Its 16-tile rings deal +50% damage. Whenever Blackout begins, rings immediately, stunning violators for 1s. Earning 45 evolution progress across battles awakens The Midnight Operator!",
     "synergy": "Blackout triggers and The Midnight Operator."
   },
   {
@@ -1589,7 +1490,7 @@ const FORMS = [
     "tags": ["urban-form", "mirror", "reflection"],
     "evolvedFrom": "morgueMirror",
     "draftable": false,
-    "rules": "Reacts to taboo-breaking runners and those approaching its reflective angle; it ignores ordinary runners. Copies 50% of the highest adjacent ally's ATK. During Blackout, spawns 2 temporary Mirror Reflections into free slots. Witnessing 45 total violations across battles awakens Queen in the Morgue Mirror!",
+    "rules": "Reacts to taboo-breaking runners and those approaching its reflective angle; it ignores ordinary runners. Copies 50% of the highest adjacent ally's ATK. During Blackout, spawns 2 temporary Mirror Reflections into free slots. Earning 45 evolution progress across battles awakens Queen in the Morgue Mirror!",
     "synergy": "High-ATK neighbors and Queen in the Morgue Mirror."
   },
   {
@@ -1626,27 +1527,31 @@ const FORMS = [
     "tags": ["urban-form", "berserk"],
     "evolvedFrom": "mannequin",
     "draftable": false,
-    "rules": "Reacts only to taboo-breaking runners; it does not attack ordinary runners. Gains +150% attack speed and +100% critical damage during Blackout. Punishments slow targets by 30%. Witnessing 45 total violations across battles awakens The Living Taboo!",
+    "rules": "Reacts only to taboo-breaking runners; it does not attack ordinary runners. Gains +150% attack speed and +100% critical damage during Blackout. Punishments slow targets by 30%. Earning 45 evolution progress across battles awakens The Living Taboo!",
     "synergy": "Blackout triggers and The Living Taboo."
   },
   {
-    "id": "livingTaboo",
-    "name": "The Living Taboo",
-    "vn": "Cấm Kỵ Sống",
-    "genre": "Haunted",
-    "rarity": "Mythic",
-    "baseAtk": 185,
-    "attackInterval": 0.45,
-    "max": 0,
-    "asset": "monk",
-    "icon": "✧",
-    "fav": "team",
-    "tags": ["apex", "urban-apex", "berserk"],
-    "evolvedFrom": "mannequin",
-    "draftable": false,
-    "rules": "The apex manifestation of taboo. Reacts only to taboo-breaking runners; it does not attack ordinary runners. During Blackout, attacks at 3.0× speed with 100% critical chance. Once per battle, if a runner reaches tile 15, instantly ambushes and executes it before it can leak. Triggers Rule Resonance when adjacent to another Urban Legend.",
-    "synergy": "Blackouts and Rule Resonance."
-  },
+  "id": "livingTaboo",
+  "name": "The Living Taboo",
+  "vn": "Cấm Kỵ Sống",
+  "genre": "Haunted",
+  "rarity": "Mythic",
+  "baseAtk": 185,
+  "attackInterval": 0.45,
+  "max": 0,
+  "asset": "monk",
+  "icon": "✧",
+  "fav": "team",
+  "tags": [
+    "apex",
+    "urban-apex",
+    "berserk"
+  ],
+  "evolvedFrom": "mannequin",
+  "draftable": false,
+  "rules": "The apex manifestation of taboo. Reacts only to taboo-breaking runners; it does not attack ordinary runners. During Blackout, attacks at 3.0× speed with 100% critical chance. Once per battle, if an ordinary runner reaches tile 15, instantly ambushes and executes it before it can leak. Triggers Rule Resonance when adjacent to another Urban Legend. Bosses and Harbingers cannot be executed.",
+  "synergy": "Blackouts and Rule Resonance."
+},
   // Lineage 6: Red Raincoat Specter
   {
     "id": "bloodPhantasm",
@@ -1663,7 +1568,7 @@ const FORMS = [
     "tags": ["urban-form", "bleed", "retribution"],
     "evolvedFrom": "redRaincoat",
     "draftable": false,
-    "rules": "Rule: 'Do Not Look Back.' Reactive trap · does not attack normally. Slashes runners who turn back or retreat for 45 true damage, heavy bleed, and spreading blood pools. In Blackout, triggers against turning or crowding runners, dealing double shadow damage. Witnessing 45 total violations across battles awakens Harbinger of the Crimson Rain!",
+    "rules": "Rule: 'Do Not Look Back.' Reactive trap · does not attack normally. Slashes runners who turn back or retreat for 45 true damage, heavy bleed, and spreading blood pools. In Blackout, triggers against turning or crowding runners, dealing double shadow damage. Earning 45 evolution progress across battles awakens Harbinger of the Crimson Rain!",
     "synergy": "Bleed, Retribution, and Harbinger of the Crimson Rain."
   },
   {
@@ -1700,80 +1605,96 @@ const FORMS = [
     "tags": ["urban-form", "trap", "vertigo"],
     "evolvedFrom": "stair13",
     "draftable": false,
-    "rules": "Rule: 'Never Count the Steps.' Reactive trap · does not attack normally. Corner and step traps deal 75 magic damage and inflict Stumble & Vertigo. During Blackout, triggers every 4th step, banishing victims for 2.0s into the void. Witnessing 45 total violations across battles awakens The Penrose Labyrinth!",
+    "rules": "Rule: 'Never Count the Steps.' Reactive trap · does not attack normally. Corner and step traps deal 75 magic damage and inflict Stumble & Vertigo. During Blackout, triggers every 4th step, banishing victims for 2.0s into the void. Earning 45 evolution progress across battles awakens The Penrose Labyrinth!",
     "synergy": "Traps, Vertigo, and The Penrose Labyrinth."
   },
   {
-    "id": "penroseLabyrinth",
-    "name": "The Penrose Labyrinth",
-    "vn": "Mê Cung Penrose",
-    "genre": "Haunted",
-    "rarity": "Mythic",
-    "baseAtk": 180,
-    "attackInterval": 0.6,
-    "max": 0,
-    "asset": "totem",
-    "icon": "✧",
-    "fav": "neighbor",
-    "tags": ["apex", "urban-apex", "endless-drop"],
-    "evolvedFrom": "stair13",
-    "draftable": false,
-    "rules": "'The Endless Drop.' Corner and step traps inflict severe Vertigo and warp violators back 4 tiles. During Blackout, every 4th step triggers Penrose Trapdoor: victims vanish for 2.0s taking continuous crushing void damage; panicked or fleeing victims suffer Terminal Descent execution. Triggers Rule Resonance when adjacent to another Urban Legend.",
-    "synergy": "Warps, Panicked runners, and Rule Resonance."
-  },
+  "id": "penroseLabyrinth",
+  "name": "The Penrose Labyrinth",
+  "vn": "Mê Cung Penrose",
+  "genre": "Haunted",
+  "rarity": "Mythic",
+  "baseAtk": 180,
+  "attackInterval": 0.6,
+  "max": 0,
+  "asset": "totem",
+  "icon": "✧",
+  "fav": "neighbor",
+  "tags": [
+    "apex",
+    "urban-apex",
+    "endless-drop"
+  ],
+  "evolvedFrom": "stair13",
+  "draftable": false,
+  "rules": "'The Endless Drop.' Corner and step traps inflict severe Vertigo and warp violators back 4 tiles. During Blackout, every 4th step triggers Penrose Trapdoor: victims vanish for 2.0s taking continuous crushing void damage; panicked or fleeing victims suffer Terminal Descent execution. Triggers Rule Resonance when adjacent to another Urban Legend. Executions and direct trapdoor position resets exclude bosses and Harbingers.",
+  "synergy": "Warps, Panicked runners, and Rule Resonance."
+},
 
   // Earned realm forms for the Qi-Refining Practitioner lineage
   {
-    "id": "cultivationFoundation",
-    "name": "Foundation Practitioner",
-    "vn": "Trúc Cơ Tu Giả",
-    "genre": "Cultivation",
-    "baseAtk": 18,
-    "attackInterval": 1.2,
-    "rarity": "Rare",
-    "asset": "jade",
-    "icon": "築",
-    "fav": "neighbor",
-    "tags": ["cultivation-realm", "attacker", "scaling"],
-    "evolvedFrom": "practitioner",
-    "draftable": false,
-    "rules": "Foundation realm · 30 Qi. Attacks pierce the two leading runners. Devours adjacent Lotus Blossoms for +15 Qi and +2 permanent ATK. Advances to Golden Core at 85 Qi.",
-    "synergy": "Spirit Lotus Blossoms, Spirit Grass, and Cauldron Pills."
-  },
+  "id": "cultivationFoundation",
+  "name": "Foundation Practitioner",
+  "vn": "Trúc Cơ Tu Giả",
+  "genre": "Cultivation",
+  "baseAtk": 18,
+  "attackInterval": 1.2,
+  "rarity": "Rare",
+  "asset": "jade",
+  "icon": "築",
+  "fav": "neighbor",
+  "tags": [
+    "cultivation-realm",
+    "attacker",
+    "scaling"
+  ],
+  "evolvedFrom": "practitioner",
+  "draftable": false,
+  "rules": "Foundation realm · 30 Qi. Attacks pierce the two leading runners. Devours adjacent Lotus Blossoms for +5 Qi and +2 permanent ATK. Advances to Golden Core at 85 Qi. Gains +1 Qi every three attacks.",
+  "synergy": "Spirit Lotus Blossoms, Spirit Grass, and Cauldron Pills."
+},
   {
-    "id": "cultivationGoldenCore",
-    "name": "Golden Core Daoist",
-    "vn": "Kim Đan Chân Nhân",
-    "genre": "Cultivation",
-    "baseAtk": 40,
-    "attackInterval": 1.0,
-    "rarity": "Epic",
-    "asset": "jade",
-    "icon": "丹",
-    "fav": "neighbor",
-    "tags": ["cultivation-realm", "attacker", "scaling"],
-    "evolvedFrom": "practitioner",
-    "draftable": false,
-    "rules": "Golden Core realm · 85 Qi. Attacks the target and deals 50% splash damage to nearby runners. Devours adjacent Lotus Blossoms for +15 Qi and +2 permanent ATK. Advances to Nascent Soul at 175 Qi.",
-    "synergy": "Spirit Lotus Blossoms, Spirit Grass, Cauldron Pills, and Cultivation Relics."
-  },
+  "id": "cultivationGoldenCore",
+  "name": "Golden Core Daoist",
+  "vn": "Kim Đan Chân Nhân",
+  "genre": "Cultivation",
+  "baseAtk": 40,
+  "attackInterval": 1.0,
+  "rarity": "Epic",
+  "asset": "jade",
+  "icon": "丹",
+  "fav": "neighbor",
+  "tags": [
+    "cultivation-realm",
+    "attacker",
+    "scaling"
+  ],
+  "evolvedFrom": "practitioner",
+  "draftable": false,
+  "rules": "Golden Core realm · 85 Qi. Attacks the target and deals 50% splash damage to nearby runners. Devours adjacent Lotus Blossoms for +5 Qi and +2 permanent ATK. Advances to Nascent Soul at 175 Qi. Gains +1 Qi every three attacks.",
+  "synergy": "Spirit Lotus Blossoms, Spirit Grass, Cauldron Pills, and Cultivation Relics."
+},
   {
-    "id": "cultivationNascentSoul",
-    "name": "Nascent Soul Sovereign",
-    "vn": "Nguyên Anh Lão Tổ",
-    "genre": "Cultivation",
-    "baseAtk": 75,
-    "attackInterval": 0.75,
-    "rarity": "Legendary",
-    "asset": "jade",
-    "icon": "魂",
-    "fav": "neighbor",
-    "tags": ["cultivation-realm", "attacker", "scaling"],
-    "evolvedFrom": "practitioner",
-    "draftable": false,
-    "rules": "Nascent Soul realm · 175 Qi. Attacks the three highest-HP runners. Devours adjacent Lotus Blossoms for +15 Qi and +2 permanent ATK. At this realm, an adjacent eligible Cultivation Relic is consumed to awaken an Apex Immortal.",
-    "synergy": "Cultivation Relics and the full Practitioner lineage."
-  },
+  "id": "cultivationNascentSoul",
+  "name": "Nascent Soul Sovereign",
+  "vn": "Nguyên Anh Lão Tổ",
+  "genre": "Cultivation",
+  "baseAtk": 75,
+  "attackInterval": 0.75,
+  "rarity": "Legendary",
+  "asset": "jade",
+  "icon": "魂",
+  "fav": "neighbor",
+  "tags": [
+    "cultivation-realm",
+    "attacker",
+    "scaling"
+  ],
+  "evolvedFrom": "practitioner",
+  "draftable": false,
+  "rules": "Nascent Soul realm · 175 Qi. Attacks the three highest-HP runners. Devours adjacent Lotus Blossoms for +5 Qi and +2 permanent ATK. At this realm, an adjacent eligible Cultivation Relic is consumed to awaken an Apex Immortal. Gains +1 Qi every three attacks.",
+  "synergy": "Cultivation Relics and the full Practitioner lineage."
+},
   // 1. Sword Immortal
   {
     "id": "swordImmortal",
@@ -1833,23 +1754,27 @@ const FORMS = [
   },
   // 4. Talisman Sovereign
   {
-    "id": "talismanSovereign",
-    "name": "Talisman Sovereign",
-    "vn": "Thư Tiên",
-    "genre": "Cultivation",
-    "baseAtk": 120,
-    "attackInterval": 0.7,
-    "rarity": "Mythic",
-    "asset": "totem",
-    "sprite": 0,
-    "icon": "✎",
-    "fav": "team",
-    "tags": ["apex", "execute", "amp"],
-    "evolvedFrom": "practitioner",
-    "draftable": false,
-    "rules": "Inscribes decrees on active track sections. Enemies take +70% damage from all allies. Any target below 15% HP is instantly executed. Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
-    "synergy": "Dragon-Tail Ink Brush, Relic Resonance."
-  },
+  "id": "talismanSovereign",
+  "name": "Talisman Sovereign",
+  "vn": "Thư Tiên",
+  "genre": "Cultivation",
+  "baseAtk": 120,
+  "attackInterval": 0.7,
+  "rarity": "Mythic",
+  "asset": "totem",
+  "sprite": 0,
+  "icon": "✎",
+  "fav": "team",
+  "tags": [
+    "apex",
+    "execute",
+    "amp"
+  ],
+  "evolvedFrom": "practitioner",
+  "draftable": false,
+  "rules": "Inscribes decrees on active track sections. Enemies take +70% damage from all allies. An ordinary runner below 15% HP is instantly executed. Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused. Bosses and Harbingers cannot be executed.",
+  "synergy": "Dragon-Tail Ink Brush, Relic Resonance."
+},
   // 5. Landscape Sage
   {
     "id": "landscapeSage",
@@ -1969,7 +1894,7 @@ const FORMS = [
     "asset": "monk",
     "growthRole": "evolved-engine",
     "rules": "Attacks against defense-shredded enemies always critically strike. Apply a separate Bleed stack: 6 DPS for 4s. Every six critical hits across battles and every credited kill grant +1 permanent ATK.",
-    "synergy": "Hydraulic Riveter, Nanites, and Abyssal Reaper."
+    "synergy": "Hydraulic Riveter, Nanites, and Blood-Drunk Abyssal Hunter."
   },
 {
   "id": "dragonCubT1",
@@ -2244,7 +2169,7 @@ const FORMS = [
   "draftable": false,
   "lineage": "xuanwu",
   "lineageTier": 4,
-  "rules": "Inherits all lower Xuanwu abilities. Alternates added Venom and 2-tile knockback on attacks; prevents up to 2 leaks per battle.",
+  "rules": "Inherits all lower Xuanwu abilities. Alternates added Venom and 2-tile knockback on attacks; prevents up to 2 leaks per battle. Leak prevention excludes bosses and Harbingers.",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
@@ -2488,7 +2413,7 @@ const TOKENS = [
     "fav": "neighbor",
     "species": "lotusRoot",
     "ecosystem": "Cultivation · Dan Dao",
-    "rules": "An adjacent Practitioner absorbs this token for +15 Qi and +2 permanent ATK. Cultivation Apex forms absorb it for +15 Qi toward their 30-Qi growth cycle. A Cauldron can instead brew it into +35 Qi and +4 permanent ATK before ascension. Consuming the token preserves its parent root.",
+    "rules": "An adjacent Practitioner absorbs this token for +5 Qi and +2 permanent ATK. Cultivation Apex forms absorb it for +15 Qi toward their 30-Qi growth cycle. A Cauldron can instead brew it into +12 Qi and +4 permanent ATK before ascension. Consuming the token preserves its parent root.",
     "synergy": "Qi-Refining Practitioner, Nine-Turn Alchemy Cauldron."
   },
   {
@@ -2935,6 +2860,772 @@ TOKENS.push(...[
   }
 ]);
 
+// Shared progression rules are appended to every current Urban Legend form.
+for (const c of [...CARDS,...FORMS].filter(c=>['kuchisake','nightBus','payphone','morgueMirror','mannequin','stair13','redRaincoat'].includes(c.evolvedFrom||c.id))) {
+ c.rules += ' Evolution rewards: +0.35 progress per qualifying reaction, at most once per runner per 8s for this legend. Adjacent legends share 15% of earned progress. Combat reactions and Blackout charge continue during the reward cooldown. Epic at 15 progress; Mythic at 45; no crossing lock.';
+}
+
+CARDS.push({"id": "mercenary", "name": "Cursed Mercenary", "genre": "Grimdark", "rarity": "Normal", "baseAtk": 10, "attackInterval": 1.4, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Attacks the leading runner, inflicting 3 DPS Bleed for 4s. Gains 3 Trophy Points per slain quarry/elite/boss and 10 per carving while deployed. Evolves at 25/60/100 points. At Crossing 10+, 100 points and an adjacent forged relic awaken a Mythic, consuming the relic.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "mercenary"},{"id": "witchHunter", "name": "Witch Hunter", "genre": "Grimdark", "rarity": "Rare", "baseAtk": 18, "attackInterval": 1.2, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Once per team per battle, after three runners spawn, brands the healthiest living ordinary runner Alpha Quarry. It qualifies for Morrow’s bonus and a trophy. Deals double damage to shielded runners.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "witchHunter"},{"id": "trophyStake", "name": "Trophy Stake", "genre": "Grimdark", "rarity": "Normal", "baseAtk": 0, "attackInterval": 0, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["support"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Mounts one adjacent loose trophy, freeing its slot and projecting its aura to orthogonal neighbors. Adjacent Taxidermists can carve the mounted head. Mounted heads expire after battle.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "trophyStake"},{"id": "taxidermist", "name": "Beast Taxidermist", "genre": "Grimdark", "rarity": "Rare", "baseAtk": 10, "attackInterval": 1.5, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Every 6s carves an adjacent loose or mounted head: +3 permanent ATK to adjacent hunters; +10 Trophy Points to deployed core slayers. Skull: +3 permanent ATK to lowest-ATK ally. Horn: -10% base armor to priority enemies, run-wide, capped 30%. Eye: ordinary-runner execution thresholds of 30% become 35%. Two same-family carvings forge a permanent undraftable relic into an empty slot. One unbound copy per family; excess counters persist.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "taxidermist"});
+FORMS.push({"id": "oathboundHunter", "name": "Oathbound Hunter", "genre": "Grimdark", "rarity": "Epic", "baseAtk": 24, "attackInterval": 1.3, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Inflicts 3 DPS Bleed for 4s. Gains 3 Trophy Points per slain quarry/elite/boss and 10 per carving while deployed. Evolves at 25/60/100 points. At Crossing 10+, 100 points and an adjacent forged relic awaken a Mythic, consuming the relic.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "oathboundHunter", "evolvedFrom": "mercenary", "draftable": false},{"id": "blackIronSlayer", "name": "Black-Iron Slayer", "genre": "Grimdark", "rarity": "Epic", "baseAtk": 55, "attackInterval": 1.2, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Inflicts 3 DPS Bleed for 4s. Gains 3 Trophy Points per slain quarry/elite/boss and 10 per carving while deployed. Evolves at 25/60/100 points. At Crossing 10+, 100 points and an adjacent forged relic awaken a Mythic, consuming the relic.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "blackIronSlayer", "evolvedFrom": "mercenary", "draftable": false},{"id": "brandedBerserker", "name": "Branded Berserker", "genre": "Grimdark", "rarity": "Epic", "baseAtk": 95, "attackInterval": 1.1, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Inflicts 3 DPS Bleed for 4s. Gains 3 Trophy Points per slain quarry/elite/boss and 10 per carving while deployed. Evolves at 25/60/100 points. At Crossing 10+, 100 points and an adjacent forged relic awaken a Mythic, consuming the relic.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "brandedBerserker", "evolvedFrom": "mercenary", "draftable": false},{"id": "dragonSlayer", "name": "Dragon Slayer Berserker", "genre": "Grimdark", "rarity": "Mythic", "baseAtk": 250, "attackInterval": 1.6, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Sweeps the target’s entire 4-tile wall, ignoring armor, breaking shields and cancelling sprint boosts. Every third swing strips 15% current HP from bosses and Harbingers. Kills on its attacked wall grant +5% battle attack speed, capped +50%.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "dragonSlayer", "evolvedFrom": "mercenary", "draftable": false},{"id": "witcherGrandmaster", "name": "Grandmaster Witcher", "genre": "Grimdark", "rarity": "Mythic", "baseAtk": 210, "attackInterval": 1.1, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Alternates three Silver attacks and three Sign attacks. Silver guarantees criticals: 3× TOTAL damage against priority enemies, 2× against ordinary runners. Signs blast the target’s 4-tile wall, knock runners back 3 tiles (boss resistance applies), and strip 50% armor.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "witcherGrandmaster", "evolvedFrom": "mercenary", "draftable": false},{"id": "bloodDrunkHunter", "name": "Blood-Drunk Abyssal Hunter", "genre": "Grimdark", "rarity": "Mythic", "baseAtk": 195, "attackInterval": 0.75, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Inflicts stacking Arterial Hemorrhage: 40 true DPS for 4s. A hemorrhaging ordinary runner below 30% HP (35% after Eye carving) is executed once, exploding for 400 true damage across its 4-tile wall. Bosses and Harbingers cannot be executed.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "bloodDrunkHunter", "evolvedFrom": "mercenary", "draftable": false},{"id": "beastRelic", "name": "Feral Beast Heart", "genre": "Grimdark", "rarity": "Epic", "baseAtk": 0, "attackInterval": 0, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["support"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Forged only from two beast carvings. Permanent roster card; orthogonal allies gain +25% attack speed. At Crossing 10+, binds to an adjacent 100-point Branded Berserker. Consumed on binding.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "beastRelic", "draftable": false, "huntRelic": true},{"id": "fiendRelic", "name": "Demon-Forged Brand", "genre": "Grimdark", "rarity": "Epic", "baseAtk": 0, "attackInterval": 0, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["support"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Forged only from two fiend carvings. Permanent roster card; orthogonal allies gain 30% armor penetration. At Crossing 10+, binds to an adjacent 100-point Branded Berserker. Consumed on binding.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "fiendRelic", "draftable": false, "huntRelic": true},{"id": "witchRelic", "name": "Clairvoyant Iris", "genre": "Grimdark", "rarity": "Epic", "baseAtk": 0, "attackInterval": 0, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["support"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Forged only from two witch carvings. Permanent roster card; orthogonal allies gain +20% critical chance. At Crossing 10+, binds to an adjacent 100-point Branded Berserker. Consumed on binding.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "witchRelic", "draftable": false, "huntRelic": true});
+TOKENS.push({"id": "beastSkull", "name": "Feral Beast Skull", "genre": "Grimdark", "rarity": "Normal", "baseAtk": 0, "attackInterval": 0, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["support"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "One-battle trophy. Orthogonal allies gain +20% attack speed and attacks inflict 6 DPS stacking Bleed for 4s. Duplicate family auras do not stack. May be mounted or carved.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "beastSkull", "token": true, "draftable": false, "trophyFamily": "beast"},{"id": "fiendHorn", "name": "Armored Demon Horn", "genre": "Grimdark", "rarity": "Normal", "baseAtk": 0, "attackInterval": 0, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["support"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "One-battle trophy. Orthogonal allies gain 40% armor penetration and one 50% second-target cleave per attack. Duplicate family auras do not stack. May be mounted or carved.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "fiendHorn", "token": true, "draftable": false, "trophyFamily": "fiend"},{"id": "witchEye", "name": "Specter Witch Eye", "genre": "Grimdark", "rarity": "Normal", "baseAtk": 0, "attackInterval": 0, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["support"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "One-battle trophy. Orthogonal allies gain +25% critical chance and double attack damage against runners below 35% HP. Duplicate family auras do not stack. May be mounted or carved.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "witchEye", "token": true, "draftable": false, "trophyFamily": "witch"});
+Object.assign(CARDS.find(c=>c.id==='executioner'),{rules:'Prioritizes Alpha Quarry, Elites, Harbingers and Bosses. Deals 4× damage to targets below 35% HP.',huntAsset:'executioner',tags:['hunter']});
+Object.assign(CARDS.find(c=>c.id==='leech'),{name:'Grave Leech',rules:'Deals 2.5× damage against bleeding runners or while adjacent to a loose or mounted trophy.',huntAsset:'leech'});
+Object.assign(CARDS.find(c=>c.id==='totem'),{huntAsset:'totem'});
+
+// Arcane Loom: primary mages and earned synthesis forms.
+CARDS.push({
+  "id": "elementalApprentice",
+  "name": "Elemental Apprentice",
+  "genre": "Arcane",
+  "rarity": "Normal",
+  "baseAtk": 8,
+  "attackInterval": 1.4,
+  "max": 8,
+  "icon": "✦",
+  "fav": "neighbor",
+  "tags": [
+    "elemental"
+  ],
+  "ecosystem": "Arcane Loom · elemental synthesis",
+  "rules": "Each attack charges 1 tick. At 8, casts an four-target essence volley for 120 + 6× raw ATK + 8× highest pair points. Adjacent primary spells supply one essence; two different stored essences are consumed for +1 point in that pair. Highest pair advances at 10/20/30. At Crossing 10+, bind an adjacent Astral Loom at 30 points to become that pair’s Mythic.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "arcaneAsset": "elementalApprentice"
+},
+{
+  "id": "pyroMage",
+  "name": "Pyromancer",
+  "genre": "Arcane",
+  "rarity": "Normal",
+  "baseAtk": 12,
+  "attackInterval": 1.3,
+  "max": 6,
+  "icon": "✦",
+  "fav": "neighbor",
+  "tags": [
+    "elemental"
+  ],
+  "ecosystem": "Arcane Loom · elemental synthesis",
+  "rules": "Each attack charges 1 tick. At 6: Ignite Blast deals 200 + 8× raw ATK to the leader and applies stacking Burn, 8 true DPS for 4s. Supplies Fire Essence to adjacent Apprentices.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "arcaneAsset": "pyroMage",
+  "element": "fire"
+},
+{
+  "id": "hydroMage",
+  "name": "Hydromancer",
+  "genre": "Arcane",
+  "rarity": "Normal",
+  "baseAtk": 10,
+  "attackInterval": 1.6,
+  "max": 8,
+  "icon": "✦",
+  "fav": "neighbor",
+  "tags": [
+    "elemental"
+  ],
+  "ecosystem": "Arcane Loom · elemental synthesis",
+  "rules": "Each attack charges 1 tick. At 8: Tidal Wave deals 100 + 6× raw ATK to four leading runners, slows 35% for 3s and drenches for 4s. Supplies Water Essence.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "arcaneAsset": "hydroMage",
+  "element": "water"
+},
+{
+  "id": "geoMage",
+  "name": "Geomancer",
+  "genre": "Arcane",
+  "rarity": "Normal",
+  "baseAtk": 14,
+  "attackInterval": 1.8,
+  "max": 10,
+  "icon": "✦",
+  "fav": "neighbor",
+  "tags": [
+    "elemental"
+  ],
+  "ecosystem": "Arcane Loom · elemental synthesis",
+  "rules": "Each attack charges 1 tick. At 10: Seismic Spike deals 250 + 10× raw ATK, strips 40% armor and stuns for 1s. Leaves an Earth mark for 4s. Supplies Earth Essence.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "arcaneAsset": "geoMage",
+  "element": "earth"
+},
+{
+  "id": "aeroMage",
+  "name": "Aeromancer",
+  "genre": "Arcane",
+  "rarity": "Normal",
+  "baseAtk": 9,
+  "attackInterval": 1,
+  "max": 5,
+  "icon": "✦",
+  "fav": "neighbor",
+  "tags": [
+    "elemental"
+  ],
+  "ecosystem": "Arcane Loom · elemental synthesis",
+  "rules": "Each attack charges 1 tick. At 5: Gale Blast deals 100 + 5× raw ATK, knocks back 2 tiles and grants adjacent elemental mages +20% haste for 3s. Leaves a Wind mark for 4s. Supplies Wind Essence.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "arcaneAsset": "aeroMage",
+  "element": "wind"
+},
+{
+  "id": "elementalPrism",
+  "name": "Elemental Prism",
+  "genre": "Arcane",
+  "rarity": "Rare",
+  "baseAtk": 0,
+  "attackInterval": 0,
+  "max": 0,
+  "icon": "✦",
+  "fav": "neighbor",
+  "tags": [
+    "support"
+  ],
+  "ecosystem": "Arcane Loom · elemental synthesis",
+  "rules": "Works from any slot. An adjacent elemental spell refracts +2 gauge ticks to orthogonal allies with ability gauges. Once per second per Prism; duplicate Prisms cannot amplify the same spell.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "arcaneAsset": "elementalPrism"
+},
+{
+  "id": "manaBattery",
+  "name": "Mana Battery",
+  "genre": "Arcane",
+  "rarity": "Rare",
+  "baseAtk": 8,
+  "attackInterval": 1.8,
+  "max": 0,
+  "icon": "✦",
+  "fav": "neighbor",
+  "tags": [
+    "elemental"
+  ],
+  "ecosystem": "Arcane Loom · elemental synthesis",
+  "rules": "Collects excess charge after elemental spell triggers, up to 32 mana. Every 6s spends stored mana on the deployed elemental mage with the lowest gauge fraction, up to a full gauge. Discharged mana cannot generate new overflow. Stored mana lasts this battle only.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "arcaneAsset": "manaBattery"
+},
+{
+  "id": "astralLoom",
+  "name": "Astral Loom",
+  "genre": "Arcane",
+  "rarity": "Epic",
+  "baseAtk": 0,
+  "attackInterval": 0,
+  "max": 0,
+  "icon": "✦",
+  "fav": "neighbor",
+  "tags": [
+    "support"
+  ],
+  "ecosystem": "Arcane Loom · elemental synthesis",
+  "rules": "At Crossing 10+, an adjacent Apprentice with at least 30 points in one pair permanently binds this relic to become the corresponding Mythic. Consumed on binding. Highest pair wins; ties follow the displayed pair order.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "arcaneAsset": "astralLoom"
+});
+FORMS.push({
+  "id": "elementalAdept",
+  "name": "Elemental Adept",
+  "genre": "Arcane",
+  "rarity": "Rare",
+  "baseAtk": 24,
+  "attackInterval": 1.2,
+  "max": 8,
+  "icon": "✦",
+  "fav": "neighbor",
+  "tags": [
+    "elemental"
+  ],
+  "ecosystem": "Arcane Loom · elemental synthesis",
+  "rules": "Earned at 10 points in one pair. Essence bolt and synthesis continue; bind Astral Loom at 30 points and Crossing 10+.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "arcaneAsset": "elementalAdept",
+  "evolvedFrom": "elementalApprentice",
+  "draftable": false
+},
+{
+  "id": "elementalMaster",
+  "name": "Elemental Mage",
+  "genre": "Arcane",
+  "rarity": "Epic",
+  "baseAtk": 55,
+  "attackInterval": 1,
+  "max": 8,
+  "icon": "✦",
+  "fav": "neighbor",
+  "tags": [
+    "elemental"
+  ],
+  "ecosystem": "Arcane Loom · elemental synthesis",
+  "rules": "Earned at 20 points in one pair. Essence bolt and synthesis continue; bind Astral Loom at 30 points and Crossing 10+.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "arcaneAsset": "elementalMaster",
+  "evolvedFrom": "elementalApprentice",
+  "draftable": false
+},
+{
+  "id": "magmaLord",
+  "name": "Magma Lord",
+  "genre": "Arcane",
+  "rarity": "Mythic",
+  "baseAtk": 190,
+  "attackInterval": 1.6,
+  "max": 0,
+  "icon": "✦",
+  "fav": "neighbor",
+  "tags": [
+    "elemental"
+  ],
+  "ecosystem": "Arcane Loom · elemental synthesis",
+  "rules": "Each attack blasts the leading cluster within 1 track tile, melts all armor and deals triple damage to priority enemies. Creates one 4-tile molten fissure for 5s, 60 true DPS. Recasting replaces its previous fissure.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "arcaneAsset": "magmaLord",
+  "evolvedFrom": "elementalApprentice",
+  "draftable": false
+},
+{
+  "id": "tempestArchon",
+  "name": "Firestorm Tempest",
+  "genre": "Arcane",
+  "rarity": "Mythic",
+  "baseAtk": 165,
+  "attackInterval": 0.7,
+  "max": 0,
+  "icon": "✦",
+  "fav": "neighbor",
+  "tags": [
+    "elemental"
+  ],
+  "ecosystem": "Arcane Loom · elemental synthesis",
+  "rules": "Every fourth attack creates one clockwise cyclone for 4s, carrying up to six ordinary runners at 2 tiles/s and burning for 35 true DPS. Bosses take damage but cannot be carried. Each 10 team kills in a battle grant +5% permanent attack speed.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "arcaneAsset": "tempestArchon",
+  "evolvedFrom": "elementalApprentice",
+  "draftable": false
+},
+{
+  "id": "steamSovereign",
+  "name": "Scalding Vapor Sovereign",
+  "genre": "Arcane",
+  "rarity": "Mythic",
+  "baseAtk": 175,
+  "attackInterval": 1.2,
+  "max": 0,
+  "icon": "✦",
+  "fav": "neighbor",
+  "tags": [
+    "elemental"
+  ],
+  "ecosystem": "Arcane Loom · elemental synthesis",
+  "rules": "Each attack drenches its target then deals a 20% missing-HP scald. Disables temporary sprint boosts track-wide while deployed. Every fifth attack additionally strips 12% current HP from bosses/Harbingers hit.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "arcaneAsset": "steamSovereign",
+  "evolvedFrom": "elementalApprentice",
+  "draftable": false
+},
+{
+  "id": "quagmireColossus",
+  "name": "Quagmire Colossus",
+  "genre": "Arcane",
+  "rarity": "Mythic",
+  "baseAtk": 180,
+  "attackInterval": 1.5,
+  "max": 0,
+  "icon": "✦",
+  "fav": "neighbor",
+  "tags": [
+    "elemental"
+  ],
+  "ecosystem": "Arcane Loom · elemental synthesis",
+  "rules": "First attack creates one permanent 4-tile swamp for this battle. Occupants take 45 true DPS and 60% slow. Boss slow resistance and enrage remain active.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "arcaneAsset": "quagmireColossus",
+  "evolvedFrom": "elementalApprentice",
+  "draftable": false
+},
+{
+  "id": "blizzardArchon",
+  "name": "Glacial Typhoon",
+  "genre": "Arcane",
+  "rarity": "Mythic",
+  "baseAtk": 160,
+  "attackInterval": 1.3,
+  "max": 0,
+  "icon": "✦",
+  "fav": "neighbor",
+  "tags": [
+    "elemental"
+  ],
+  "ecosystem": "Arcane Loom · elemental synthesis",
+  "rules": "Every 5s freezes the track for 2.5s; when its freeze expires, pushes affected survivors back 3 tiles. Boss duration/knockback resistance and enrage immunity apply.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "arcaneAsset": "blizzardArchon",
+  "evolvedFrom": "elementalApprentice",
+  "draftable": false
+},
+{
+  "id": "sandstormTitan",
+  "name": "Sandstorm Titan",
+  "genre": "Arcane",
+  "rarity": "Mythic",
+  "baseAtk": 185,
+  "attackInterval": 1.1,
+  "max": 0,
+  "icon": "✦",
+  "fav": "neighbor",
+  "tags": [
+    "elemental"
+  ],
+  "ecosystem": "Arcane Loom · elemental synthesis",
+  "rules": "Every second removes 10% base armor from all runners. At zero armor applies one refreshing 40 true DPS Bleed for 4s. Every third attack pierces five leading runners.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "arcaneAsset": "sandstormTitan",
+  "evolvedFrom": "elementalApprentice",
+  "draftable": false
+});
+
+CARDS.push({
+  "id": "cyberSolo",
+  "name": "Cyber-Operative",
+  "genre": "Cyberpunk",
+  "rarity": "Normal",
+  "baseAtk": 12,
+  "attackInterval": 1.1,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Two permanent sockets: one Arm, one OS. Every4 attacks earns1 Chrome across battles; cleaves count once. Evolves at25 and65; at120 Chrome and Crossing10+, binds an adjacent Military Cyber-Reactor if both sockets are filled. Base heat20°C; attacks generate8°C (14°C with Berserk), passive cooling4°C/s. At100°C shuts down for3s and purges to40°C.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "cyberSolo"
+},
+{
+  "id": "mantisImplant",
+  "name": "Thermal Mantis Blades",
+  "genre": "Cyberpunk",
+  "rarity": "Rare",
+  "baseAtk": 0,
+  "attackInterval": 0,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Automatically consumed into an adjacent Operative’s empty Arm socket; oldest eligible instance first. Locked for the run. Leading hit plus two50% cleaves. All hits inflict stacking Plasma Bleed:8 true DPS for4s.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "mantisImplant",
+  "cyberModule": "arm"
+},
+{
+  "id": "gorillaImplant",
+  "name": "Hydraulic Gorilla Arms",
+  "genre": "Cyberpunk",
+  "rarity": "Rare",
+  "baseAtk": 0,
+  "attackInterval": 0,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Automatically consumed into an adjacent Operative’s empty Arm socket; oldest eligible instance first. Locked for the run. Targets the highest current HP runner. Strips40% armor; every fourth attack stuns1s.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "gorillaImplant",
+  "cyberModule": "arm"
+},
+{
+  "id": "monowireImplant",
+  "name": "Monomolecular Wire",
+  "genre": "Cyberpunk",
+  "rarity": "Rare",
+  "baseAtk": 0,
+  "attackInterval": 0,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Automatically consumed into an adjacent Operative’s empty Arm socket; oldest eligible instance first. Locked for the run. Hits up to five runners on the leading target’s aligned4-tile wall; destroys shields and ignores50% defense.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "monowireImplant",
+  "cyberModule": "arm"
+},
+{
+  "id": "sandyOS",
+  "name": "Sandevistan OS",
+  "genre": "Cyberpunk",
+  "rarity": "Rare",
+  "baseAtk": 0,
+  "attackInterval": 0,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Automatically consumed into an adjacent Operative’s empty OS socket; oldest eligible instance first. Locked for the run. Every8 attacks opens a3.5s window:2.5× owner speed and50% track-wide slow. Boss slow resistance applies. Cannot retrigger during an active window.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "sandyOS",
+  "cyberModule": "os"
+},
+{
+  "id": "berserkOS",
+  "name": "Berserk OS",
+  "genre": "Cyberpunk",
+  "rarity": "Rare",
+  "baseAtk": 0,
+  "attackInterval": 0,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Automatically consumed into an adjacent Operative’s empty OS socket; oldest eligible instance first. Locked for the run. At80°C and above, attacks become double true damage and radiate12 true Burn DPS for2s on the target wall. Cooling below80°C ends Overdrive.100°C still shuts down.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "berserkOS",
+  "cyberModule": "os"
+},
+{
+  "id": "cyberdeckOS",
+  "name": "Combat Cyberdeck",
+  "genre": "Cyberpunk",
+  "rarity": "Rare",
+  "baseAtk": 0,
+  "attackInterval": 0,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Automatically consumed into an adjacent Operative’s empty OS socket; oldest eligible instance first. Locked for the run. Earn1 RAM every3 attacks (every2 with adjacent Access Point). Capacity8 (+4 with Access Point). Every3s, spend3 RAM on alternating Short Circuit and Contagion.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "cyberdeckOS",
+  "cyberModule": "os"
+},
+{
+  "id": "cryoPump",
+  "name": "Cryo-Nitrogen Pump",
+  "genre": "Cyberpunk",
+  "rarity": "Rare",
+  "baseAtk": 0,
+  "attackInterval": 0,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Every6s removes40°C from orthogonally adjacent Operatives and freezes its facing4-tile wall for2s. Interior center pumps face north; edge/corner pumps face the nearest outer wall (ties N/E/S/W). Boss resistance applies.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "cryoPump"
+},
+{
+  "id": "biomonitor",
+  "name": "Biomonitor Regulator",
+  "genre": "Cyberpunk",
+  "rarity": "Normal",
+  "baseAtk": 0,
+  "attackInterval": 0,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Every second equalizes heat between adjacent Operatives, preserving their total temperature. Grants adjacent augmented Operatives +15 percentage points of critical chance. Duplicate critical auras do not stack.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "biomonitor"
+},
+{
+  "id": "accessPoint",
+  "name": "Subnet Access Point",
+  "genre": "Cyberpunk",
+  "rarity": "Normal",
+  "baseAtk": 0,
+  "attackInterval": 0,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Adjacent Cyberdeck users have12 RAM capacity instead of8 and earn1 RAM per2 attacks instead of3. Duplicate hubs do not stack.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "accessPoint"
+},
+{
+  "id": "cyberReactor",
+  "name": "Military Cyber-Reactor",
+  "genre": "Cyberpunk",
+  "rarity": "Epic",
+  "baseAtk": 0,
+  "attackInterval": 0,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Draftable from Crossing5. At Crossing10+, consumed by an adjacent120-Chrome Operative with both sockets installed, awakening the matching Mythic. One grid slot per Operative, including Mythics.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "cyberReactor"
+});
+FORMS.push({
+  "id": "chromedSolo",
+  "name": "Chromed Operative",
+  "genre": "Cyberpunk",
+  "rarity": "Rare",
+  "baseAtk": 32,
+  "attackInterval": 0.95,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Earned at25 Chrome. Retains installed modules. Four attacks earn1 Chrome. Heat and socket rules remain.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "chromedSolo",
+  "evolvedFrom": "cyberSolo",
+  "draftable": false
+},
+{
+  "id": "eliteSolo",
+  "name": "Elite Cyber-Operative",
+  "genre": "Cyberpunk",
+  "rarity": "Epic",
+  "baseAtk": 70,
+  "attackInterval": 0.8,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Earned at65 Chrome. At120 Chrome and Crossing10+, bind an adjacent Military Cyber-Reactor with both sockets filled.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "eliteSolo",
+  "evolvedFrom": "cyberSolo",
+  "draftable": false
+},
+{
+  "id": "chronoPhantom",
+  "name": "Chrono-Scythe Phantom",
+  "genre": "Cyberpunk",
+  "rarity": "Mythic",
+  "baseAtk": 195,
+  "attackInterval": 0.25,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Permanent40% track slow replaces Sandevistan windows. Mantis slashes execute ordinary runners below30% HP (35% with carved Witch Eye). Bosses/Harbingers cannot execute.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "chronoPhantom",
+  "evolvedFrom": "cyberSolo",
+  "draftable": false,
+  "cyberArm": "mantisImplant",
+  "cyberOS": "sandyOS"
+},
+{
+  "id": "thermalRipper",
+  "name": "Thermal Ripper Demon",
+  "genre": "Cyberpunk",
+  "rarity": "Mythic",
+  "baseAtk": 220,
+  "attackInterval": 0.45,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Four full-damage true-fire cleaves replace ordinary Mantis cleaves and Berserk doubling. Retains Plasma Bleed. Creates one4-tile slag trail for4s at50 true DPS; recasts refresh/replace, never stack.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "thermalRipper",
+  "evolvedFrom": "cyberSolo",
+  "draftable": false,
+  "cyberArm": "mantisImplant",
+  "cyberOS": "berserkOS"
+},
+{
+  "id": "glitchAssassin",
+  "name": "Glitch Infiltrator",
+  "genre": "Cyberpunk",
+  "rarity": "Mythic",
+  "baseAtk": 180,
+  "attackInterval": 0.4,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Mantis hits inject viral nanites. When an infected bleeding runner dies, infects its wall with Contagion at24 true DPS for4s. Viral death explosions occur once per victim and cannot propagate further death explosions. Retains RAM and regular paid hacks.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "glitchAssassin",
+  "evolvedFrom": "cyberSolo",
+  "draftable": false,
+  "cyberArm": "mantisImplant",
+  "cyberOS": "cyberdeckOS"
+},
+{
+  "id": "gravitonColossus",
+  "name": "Kinetic Graviton Colossus",
+  "genre": "Cyberpunk",
+  "rarity": "Mythic",
+  "baseAtk": 210,
+  "attackInterval": 0.6,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Every4s creates a gravity impact: freezes the target2s and pulls nearby runners within2 track tiles backward up to2 tiles. Replaces Sandevistan windows. Boss resistance/enrage remain.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "gravitonColossus",
+  "evolvedFrom": "cyberSolo",
+  "draftable": false,
+  "cyberArm": "gorillaImplant",
+  "cyberOS": "sandyOS"
+},
+{
+  "id": "juggernautSmasher",
+  "name": "Apex Juggernaut Smasher",
+  "genre": "Cyberpunk",
+  "rarity": "Mythic",
+  "baseAtk": 240,
+  "attackInterval": 0.7,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Punches remove all target armor. Every third punch removes15% current boss/Harbinger HP. Signature replaces Berserk doubling; retains Gorilla targeting and fourth-hit stun.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "juggernautSmasher",
+  "evolvedFrom": "cyberSolo",
+  "draftable": false,
+  "cyberArm": "gorillaImplant",
+  "cyberOS": "berserkOS"
+},
+{
+  "id": "empBreaker",
+  "name": "EMP Shockwave Breaker",
+  "genre": "Cyberpunk",
+  "rarity": "Mythic",
+  "baseAtk": 190,
+  "attackInterval": 0.65,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Punches strike a6-tile perimeter arc, erase shields and cancel temporary sprint boosts. Never resets boss enrage or its timer. Retains Gorilla priority, fourth-hit stun, RAM and paid hacks.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "empBreaker",
+  "evolvedFrom": "cyberSolo",
+  "draftable": false,
+  "cyberArm": "gorillaImplant",
+  "cyberOS": "cyberdeckOS"
+},
+{
+  "id": "razorPhantom",
+  "name": "Razor Phantom",
+  "genre": "Cyberpunk",
+  "rarity": "Mythic",
+  "baseAtk": 175,
+  "attackInterval": 0.35,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Whips up to eight leading runners track-wide with guaranteed criticals (normal critical multipliers apply). Retains shield stripping and50% defense ignore. Replaces Sandevistan windows.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "razorPhantom",
+  "evolvedFrom": "cyberSolo",
+  "draftable": false,
+  "cyberArm": "monowireImplant",
+  "cyberOS": "sandyOS"
+},
+{
+  "id": "plasmaTempest",
+  "name": "Plasma Whiplash Tempest",
+  "genre": "Cyberpunk",
+  "rarity": "Mythic",
+  "baseAtk": 205,
+  "attackInterval": 0.5,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Wire attacks create one4-tile blue-plasma zone for4s:40 true DPS and10% base armor stripped per second. Retains wire pattern; signature replaces Berserk doubling.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "plasmaTempest",
+  "evolvedFrom": "cyberSolo",
+  "draftable": false,
+  "cyberArm": "monowireImplant",
+  "cyberOS": "berserkOS"
+},
+{
+  "id": "networkReaper",
+  "name": "Network Reaper",
+  "genre": "Cyberpunk",
+  "rarity": "Mythic",
+  "baseAtk": 165,
+  "attackInterval": 0.45,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Wire hits generate1 RAM per runner hit instead of attack-count generation. Every1.5s spends3 RAM on Short Circuit. Retains RAM capacity and wire pattern; uploads are never free.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "cyberAsset": "networkReaper",
+  "evolvedFrom": "cyberSolo",
+  "draftable": false,
+  "cyberArm": "monowireImplant",
+  "cyberOS": "cyberdeckOS"
+});
+Object.assign(CARDS.find(c=>c.id==='vent'),{cyberAsset:'vent',rules:'Cool adjacent Operatives by15°C/s; duplicate Vents do not stack. Every8s freezes the two leading runners for1s, or2s if burning. Retains team-wide halved Overheat/Burnout shutdown duration. Cooling below80°C interrupts Berserk.'});
 const CARD = Object.fromEntries([...CARDS, ...FORMS, ...TOKENS, ...LEGACY_CARDS].map(c => [c.id, c]));
 if (typeof module !== 'undefined') module.exports = { GENRES, LEADERS, CARDS, CARD, NODES, RELICS, RARITIES, FORMS, TOKENS, LEGACY_CARDS };
+
 
