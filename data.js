@@ -3650,7 +3650,7 @@ for(const [id,atk,interval,max,rules] of [
  ['eye',0,0,12,'Fresh crowd control or status applications charge one tick (1s per-runner/type cooldown; no reaction recursion). At12 ticks, vulnerable15%,150 +0.75× Team Power damage and warp4 on two leading runners, plus8 Astral Syllables.4s cast cooldown.'],
  ['herald',25,2.5,0,'Every12s consumes an adjacent token, Shoggoth Mass or Mind Larva for100 stored Madness. Every8s releases stored Madness as true damage to all runners and warps late runners back5. Tokens are prioritized; consumed originals are permanently lost.']])Object.assign(CARDS.find(c=>c.id===id),{baseAtk:atk,attackInterval:interval,max,rules,ecosystem:'Forbidden Texts · three scripts, six awakenings'});
 
-for(const c of [...CARDS,...FORMS,...TOKENS].filter(c=>c.genre==='Lovecraft'&&!['larva','mass','eye','herald'].includes(c.id)))c.cosmicAsset=c.id;
+for(const c of [...CARDS,...FORMS,...TOKENS].filter(c=>c.genre==='Lovecraft'))c.cosmicAsset=c.id;
 const CARD = Object.fromEntries([...CARDS, ...FORMS, ...TOKENS, ...LEGACY_CARDS].map(c => [c.id, c]));
 if (typeof module !== 'undefined') module.exports = { GENRES, LEADERS, CARDS, CARD, NODES, RELICS, RARITIES, FORMS, TOKENS, LEGACY_CARDS };
 
