@@ -24,3 +24,16 @@ test('one forge working slot can complete two-piece recipe across deployments',(
 });
 test('intake capacity and forge cooldown prevent duplicate smelts',()=>{const b=battle(['smelter','scrapFrame'],[4,8]),s=b.units[0];s.scrapIntake=['rustSword','rustGun'];s.forgeAt=4;const t=G.spawnToken(b,s,'rustGun',true);G.forge(b,s);assert.equal(t.removed,false);assert.equal(s.scrapIntake.length,2);b.time=4;G.forge(b,s);assert.equal(b.metrics.smelts,1);G.forge(b,s);assert.equal(b.metrics.smelts,1);assert.deepEqual(s.scrapIntake,['rustGun']);});
 test('stored intake is preserved when no Mech is deployed',()=>{const b=battle(['smelter']),s=b.units[0];s.scrapIntake=['rustSword'];const t=G.spawnToken(b,s,'rustGun',true);G.forge(b,s);assert.equal(t.removed,false);assert.deepEqual(s.scrapIntake,['rustSword']);});
+
+test('Cultivation gains uncapped permanent ATK for each Qi gained above 175',()=>{
+ const b=battle(['practitioner']),u=b.units[0];u.qi=174;b.run.roster[0].qi=174;
+ G.addQi(b,u,4);
+ assert.equal(u.qi,178);assert.equal(u.permanentAtkBonus,.45);
+ assert.equal(b.run.roster[0].permanentAtkBonus,.45);assert.equal(u.id,'cultivationNascentSoul');
+});
+test('Cultivation Qi ATK continues after Apex alongside the existing 30-Qi growth',()=>{
+ const b=battle(['swordImmortal']),u=b.units[0];u.qi=180;u.apexQi=0;b.run.roster[0].qi=180;
+ G.addQi(b,u,4);assert.equal(u.permanentAtkBonus,.6);
+ G.addQi(b,u,26);assert.equal(u.qi,210);assert.equal(u.permanentAtkBonus,6.5);
+ assert.equal(b.run.roster[0].permanentAtkBonus,6.5);assert.equal(u.apexQi,0);
+});

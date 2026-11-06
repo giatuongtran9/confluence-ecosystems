@@ -211,7 +211,7 @@ const CARDS = [
     "scaling"
   ],
   "ecosystem": "Cultivation · Ascension",
-  "rules": "Gains +1 Qi every three attacks; partial progress survives battles. Devours adjacent Lotus Blossoms for +5 Qi and +2 permanent ATK. Advances permanently into earned card forms: Foundation Establishment (Rare) at 30 Qi (ATK 18, 1.2s, 2-tile pierce); Golden Core (Epic) at 85 Qi (ATK 40, 1.0s, 50% splash); Nascent Soul (Legendary) at 175 Qi (ATK 75, 0.75s, 3 highest-HP targets). If adjacent to an eligible Relic at Nascent Soul, permanently consumes it to evolve into an Apex Immortal!",
+  "rules": "Gains +1 Qi every three attacks; partial progress survives battles. From 175 Qi onward, each newly gained Qi grants +0.15 permanent ATK, uncapped. Devours adjacent Lotus Blossoms for +5 Qi and +2 permanent ATK. Advances permanently into earned card forms: Foundation Establishment (Rare) at 30 Qi (ATK 18, 1.2s, 2-tile pierce); Golden Core (Epic) at 85 Qi (ATK 40, 1.0s, 50% splash); Nascent Soul (Legendary) at 175 Qi (ATK 75, 0.75s, 3 highest-HP targets). If adjacent to an eligible Relic at Nascent Soul, permanently consumes it to evolve into an Apex Immortal!",
   "synergy": "Lotus Blossoms, Spirit Grass, Cauldron Pills, and Relics."
 },
   // 5. Ancient Flying Sword
@@ -1651,7 +1651,7 @@ const FORMS = [
   ],
   "evolvedFrom": "practitioner",
   "draftable": false,
-  "rules": "Foundation realm · 30 Qi. Attacks pierce the two leading runners. Devours adjacent Lotus Blossoms for +5 Qi and +2 permanent ATK. Advances to Golden Core at 85 Qi. Gains +1 Qi every three attacks.",
+  "rules": "Foundation realm · 30 Qi. Attacks pierce the two leading runners. Devours adjacent Lotus Blossoms for +5 Qi and +2 permanent ATK. Advances to Golden Core at 85 Qi. Gains +1 Qi every three attacks; each newly gained Qi beyond 175 grants +0.15 uncapped permanent ATK.",
   "synergy": "Spirit Lotus Blossoms, Spirit Grass, and Cauldron Pills."
 },
   {
@@ -1672,7 +1672,7 @@ const FORMS = [
   ],
   "evolvedFrom": "practitioner",
   "draftable": false,
-  "rules": "Golden Core realm · 85 Qi. Attacks the target and deals 50% splash damage to nearby runners. Devours adjacent Lotus Blossoms for +5 Qi and +2 permanent ATK. Advances to Nascent Soul at 175 Qi. Gains +1 Qi every three attacks.",
+  "rules": "Golden Core realm · 85 Qi. Attacks the target and deals 50% splash damage to nearby runners. Devours adjacent Lotus Blossoms for +5 Qi and +2 permanent ATK. Advances to Nascent Soul at 175 Qi. Gains +1 Qi every three attacks; each newly gained Qi beyond 175 grants +0.15 uncapped permanent ATK.",
   "synergy": "Spirit Lotus Blossoms, Spirit Grass, Cauldron Pills, and Cultivation Relics."
 },
   {
@@ -1693,7 +1693,7 @@ const FORMS = [
   ],
   "evolvedFrom": "practitioner",
   "draftable": false,
-  "rules": "Nascent Soul realm · 175 Qi. Attacks the three highest-HP runners. Devours adjacent Lotus Blossoms for +5 Qi and +2 permanent ATK. At this realm, an adjacent eligible Cultivation Relic is consumed to awaken an Apex Immortal. Gains +1 Qi every three attacks.",
+  "rules": "Nascent Soul realm · 175 Qi. Attacks the three highest-HP runners. Devours adjacent Lotus Blossoms for +5 Qi and +2 permanent ATK. Every newly gained Qi from here onward grants +0.15 uncapped permanent ATK. At this realm, an adjacent eligible Cultivation Relic is consumed to awaken an Apex Immortal. Gains +1 Qi every three attacks.",
   "synergy": "Cultivation Relics and the full Practitioner lineage."
 },
   // 1. Sword Immortal
@@ -1712,7 +1712,7 @@ const FORMS = [
     "tags": ["apex", "pierce", "boss-slayer"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Every 4th attack releases a Ten-Thousand Sword Torrent piercing all 16 perimeter tiles, dealing unbuffed ATK damage and stripping 30% current HP from the highest-HP target. Triggers Relic Resonance when adjacent to another Relic (+20% damage, +25% relic speed). Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
+    "rules": "Every 4th attack releases a Ten-Thousand Sword Torrent piercing all 16 perimeter tiles, dealing unbuffed ATK damage and stripping 30% current HP from the highest-HP target. Triggers Relic Resonance when adjacent to another Relic (+20% damage, +25% relic speed). Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after ascension. In addition, every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
     "synergy": "Ancient Flying Sword, Relic Resonance."
   },
   // 2. Melodic Saint
@@ -1731,7 +1731,7 @@ const FORMS = [
     "tags": ["apex", "control", "detonate"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Strikes hit all 16 tiles simultaneously, applying Dissonance (45% slow). At 5 stacks, Dissonance explodes for 260 magic damage and stuns for 1.5s. Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
+    "rules": "Strikes hit all 16 tiles simultaneously, applying Dissonance (45% slow). At 5 stacks, Dissonance explodes for 260 magic damage and stuns for 1.5s. Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after ascension. In addition, every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
     "synergy": "Celestial Guqin, Relic Resonance."
   },
   // 3. Formation Master
@@ -1750,7 +1750,7 @@ const FORMS = [
     "tags": ["apex", "trap", "stasis"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Places alternating Black and White Go stones on the track. Black pushes enemies backward 3 tiles; White traps enemies in a 2s stasis prison. Sequence triggers 400 true damage. Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
+    "rules": "Places alternating Black and White Go stones on the track. Black pushes enemies backward 3 tiles; White traps enemies in a 2s stasis prison. Sequence triggers 400 true damage. Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after ascension. In addition, every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
     "synergy": "Star-River Weiqi Board, Relic Resonance."
   },
   // 4. Talisman Sovereign
@@ -1773,7 +1773,7 @@ const FORMS = [
   ],
   "evolvedFrom": "practitioner",
   "draftable": false,
-  "rules": "Inscribes decrees on active track sections. Enemies take +70% damage from all allies. An ordinary runner below 15% HP is instantly executed. Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused. Bosses and Harbingers cannot be executed.",
+  "rules": "Inscribes decrees on active track sections. Enemies take +70% damage from all allies. An ordinary runner below 15% HP is instantly executed. Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after ascension. In addition, every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused. Bosses and Harbingers cannot be executed.",
   "synergy": "Dragon-Tail Ink Brush, Relic Resonance."
 },
   // 5. Landscape Sage
@@ -1792,7 +1792,7 @@ const FORMS = [
     "tags": ["apex", "banish"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Every 8s, banishes the highest-threat enemy into the scroll for 5s. Target takes 90 crushing damage/sec while completely removed from the track. Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
+    "rules": "Every 8s, banishes the highest-threat enemy into the scroll for 5s. Target takes 90 crushing damage/sec while completely removed from the track. Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after ascension. In addition, every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
     "synergy": "Mountain-River Scroll, Relic Resonance."
   },
   // 6. Soul-Reaping Heavenly Demon
@@ -1811,7 +1811,7 @@ const FORMS = [
     "tags": ["apex", "demonic", "chain"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Attacks fire a continuous volley of 5 homing skulls. Every perimeter kill triggers an unholy soul detonation dealing 160 shadow damage in a 3-tile radius (no HP healing). Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
+    "rules": "Attacks fire a continuous volley of 5 homing skulls. Every perimeter kill triggers an unholy soul detonation dealing 160 shadow damage in a 3-tile radius (no HP healing). Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after ascension. In addition, every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
     "synergy": "Ten-Thousand Soul Banner, Relic Resonance."
   },
   // 7. Blood-Fiend Sword Master
@@ -1830,7 +1830,7 @@ const FORMS = [
     "tags": ["apex", "demonic", "cleave"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Attacks at blinding speed. Every 4th attack sweeps across an entire 4-tile perimeter edge for 280% damage, leaving a pool of boiling blood dealing 50 bleed damage/sec (no HP healing). Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
+    "rules": "Attacks at blinding speed. Every 4th attack sweeps across an entire 4-tile perimeter edge for 280% damage, leaving a pool of boiling blood dealing 50 bleed damage/sec (no HP healing). Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after ascension. In addition, every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
     "synergy": "Blood-Drinking Demon Blade, Relic Resonance."
   },
   // 4 Other Earned Forms

@@ -721,7 +721,10 @@ const Game = (() => {
  const acceptsQi = u => !token(u) && (isPractitioner(u) || isCultivationApex(u));
  const acceptsDread = u => !token(u) && (isUrbanInvestigator(u) || isUrbanAuthority(u));
  function addQi(b, u, amount) {
-  u.qi = (u.qi || 0) + amount;
+  const previousQi = u.qi || 0;
+  u.qi = previousQi + amount;
+  const bonusQi = Math.max(0, u.qi - Math.max(175, previousQi));
+  if (bonusQi > 0) growth(b, u, bonusQi * 0.15);
   if (isCultivationApex(u)) {
    u.apexQi = (u.apexQi || 0) + amount;
    while (u.apexQi >= 30) { u.apexQi -= 30; growth(b, u, 2); }
@@ -1374,9 +1377,8 @@ const Game = (() => {
    else hit(b,u,target,power);
   } else if (isPractitioner(u)) {
    u.qiAttackCharge=(u.qiAttackCharge||0)+1;
-   if(u.qiAttackCharge>=3){u.qiAttackCharge-=3;u.qi=(u.qi||0)+1;}
-   updatePractitionerRealm(b, u);
-   persist(b, u);
+   if(u.qiAttackCharge>=3){u.qiAttackCharge-=3;addQi(b,u,1);}
+   else persist(b,u);
    const r = u.realm || 0;
    if (r === 0) { hit(b, u, target, power); }
    else if (r === 1) { for (const e of living(b).slice(0, 2)) hit(b, u, e, power); }
