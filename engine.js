@@ -673,6 +673,7 @@ const Game = (() => {
   const dormant = cards.filter(c => ['jade','eye','elementalApprentice','pyroMage','hydroMage','geoMage','aeroMage'].includes(c.id) && !c.consumed && c.triggers === 0);
   let notes = [];
   if (b.metrics.leaks) notes.push(`${b.metrics.leaks} runners escaped.`); else notes.push('No runners escaped. Formation held.');
+  if (b.metrics.heavenlyTribulation) notes.push(b.metrics.heavenlyTribulation.status === 'passed' ? 'Heavenly Tribulation passed; the matching relic was consumed and a Mythic Immortal awakened.' : b.metrics.heavenlyTribulation.status === 'failed' ? `Heavenly Tribulation failed: ${b.metrics.heavenlyTribulation.reason}. The Nascent Soul and matching relic were removed from the roster.` : 'Heavenly Tribulation is active: defeat the boss without any runner escaping.');
   if (dormant.length) notes.push(`${dormant.map(c => card(c.id).name + ' #' + c.uid).join(', ')} did not fill a trigger gauge.`);
   const originals = consumed.filter(c => !c.token).length, tokens = consumed.filter(c => c.token).length;
   if (originals) notes.push(`${originals} original cards permanently lost.`);
@@ -703,6 +704,76 @@ const Game = (() => {
  ];
  const CULT_RELICS = ['flyingSword', 'guqin', 'weiqiBoard', 'inkBrush', 'mountainScroll', 'soulBanner', 'demonBlade'];
  const isCultivationRelic = u => CULT_RELICS.includes(u.id);
+ const cultivationRelicApex = { flyingSword: 'swordImmortal', guqin: 'melodicSaint', weiqiBoard: 'formationMaster', inkBrush: 'talismanSovereign', mountainScroll: 'landscapeSage', demonBlade: 'bloodFiendMaster' };
+ function trialRelicFor(b, u) {
+  return neighbors(b, u, false).filter(v => !v.removed && (cultivationRelicApex[v.id] || (v.id === 'soulBanner' && (v.souls || 0) >= 100))).sort((a, z) => a.slot - z.slot)[0] || null;
+ }
+ function startHeavenlyTrial(b) {
+  if (!b || b.run.node?.type !== 'boss') return null;
+  if (b.heavenlyTrial) return b.heavenlyTrial;
+  const candidates = b.units.filter(u => !u.removed && !token(u) && isPractitioner(u) && u.id === 'cultivationNascentSoul' && (u.qi || 0) >= 175)
+   .map(u => ({ unit: u, relic: trialRelicFor(b, u) })).filter(v => v.relic)
+   .sort((a, z) => (z.unit.qi || 0) - (a.unit.qi || 0) || a.unit.slot - z.unit.slot || a.unit.uid - z.unit.uid);
+  const selected = candidates[0];
+  if (!selected) return null;
+  const apexId = selected.relic.id === 'soulBanner' ? 'soulReapingDemon' : cultivationRelicApex[selected.relic.id];
+  const trial = b.heavenlyTrial = { status: 'active', unitUid: selected.unit.uid, relicUid: selected.relic.uid, relicId: selected.relic.id, apexId, startedAt: b.time, nextStrikeAt: b.time + 4, strikes: 0 };
+  b.metrics.heavenlyTribulation = { status: 'active', practitionerId: selected.unit.id, practitionerUid: selected.unit.uid, relicId: selected.relic.id, relicUid: selected.relic.uid, apexId, qi: selected.unit.qi || 0, startedAt: b.time, strikes: 0 };
+  interact(b, selected.unit, selected.relic, 'tribulation', 'Heavenly Tribulation begins · no leaks; defeat the boss');
+  fx(b, 'pulse', selected.unit, null, 'HEAVENLY TRIBULATION');
+  return trial;
+ }
+ function failHeavenlyTrial(b, reason = 'runner escaped') {
+  const trial = b?.heavenlyTrial;
+  if (!trial || trial.status !== 'active') return false;
+  const practitioner = b.units.find(u => u.uid === trial.unitUid);
+  const relic = b.units.find(u => u.uid === trial.relicUid);
+  trial.status = 'failed'; trial.reason = reason; trial.failedAt = b.time;
+  if (practitioner) practitioner.removed = true;
+  if (relic) relic.removed = true;
+  const lost = new Set([trial.unitUid, trial.relicUid]);
+  b.run.roster = b.run.roster.filter(u => !lost.has(u.uid));
+  b.metrics.heavenlyTribulation = { ...b.metrics.heavenlyTribulation, status: 'failed', reason, failedAt: b.time, strikes: trial.strikes };
+  interact(b, practitioner || null, relic || null, 'tribulation-failed', `TRIBULATION FAILED · ${reason}; Nascent Soul and relic lost`);
+  fx(b, 'impact', practitioner || null, null, 'TRIBULATION FAILED');
+  return true;
+ }
+ function passHeavenlyTrial(b) {
+  const trial = b?.heavenlyTrial;
+  if (!trial || trial.status !== 'active' || !b.enemies.some(e => e.boss && e.hp <= 0)) return false;
+  const practitioner = b.units.find(u => u.uid === trial.unitUid && !u.removed);
+  const relic = b.units.find(u => u.uid === trial.relicUid && !u.removed);
+  if (!practitioner || !relic) return failHeavenlyTrial(b, 'Nascent Soul or matching relic was removed');
+  consume(b, practitioner, relic, 'Heavenly Tribulation', 0);
+  evolve(b, practitioner, trial.apexId);
+  practitioner.realm = 4;
+  persist(b, practitioner);
+  trial.status = 'passed'; trial.passedAt = b.time;
+  b.metrics.heavenlyTribulation = { ...b.metrics.heavenlyTribulation, status: 'passed', passedAt: b.time, strikes: trial.strikes };
+  interact(b, practitioner, practitioner, 'tribulation-passed', `HEAVENLY TRIBULATION PASSED · ${card(trial.apexId).name} awakened`);
+  fx(b, 'growth', practitioner, null, 'TRIBULATION PASSED');
+  return true;
+ }
+ function tickHeavenlyTrial(b) {
+  const trial = b?.heavenlyTrial;
+  if (!trial || trial.status !== 'active') return;
+  const practitioner = b.units.find(u => u.uid === trial.unitUid && !u.removed);
+  const relic = b.units.find(u => u.uid === trial.relicUid && !u.removed);
+  if (!practitioner) { failHeavenlyTrial(b, 'Nascent Soul was removed'); return; }
+  if (!relic) { failHeavenlyTrial(b, 'matching relic was removed'); return; }
+  while (trial.status === 'active' && b.time >= trial.nextStrikeAt) {
+   practitioner.trialStunnedUntil = b.time + .5;
+   trial.strikes++;
+   b.metrics.heavenlyTribulation.strikes = trial.strikes;
+   fx(b, 'impact', practitioner, null, 'LIGHTNING · STUN 0.5s');
+   for (const e of living(b)) {
+    damage(b, e, 25, practitioner, 'ability', true);
+    if (!e.gone) fx(b, 'beam', practitioner, e, '−25 TRIBULATION');
+    if (trial.status !== 'active') break;
+   }
+   trial.nextStrikeAt += 4;
+  }
+ }
 
  const urbanRelicMap = {
   ruleboard: 'ruleArchitect',
@@ -1118,8 +1189,9 @@ const Game = (() => {
   b.units.forEach(u => record(b, u));
   r.phase = 'combat'; r.lastDraw = picked.map(u => u.uid);
   b.units.filter(isMech).forEach(u=>updateMech(b,u));
-  startAbilities(b);
   b.plan = wavePlan(r);
+  startHeavenlyTrial(b);
+  startAbilities(b);
   
   return b;
  }
@@ -1257,6 +1329,7 @@ const Game = (() => {
   if (e.hp <= 0) {
    e.hp = 0; if (e.champion) recordTrial(b, e, true); if ((e.maxProgress || e.p) >= 12) b.metrics.closeCalls = (b.metrics.closeCalls || 0) + 1;
    e.gone = true; b.metrics.kills++; b.run.stats.kills++;
+   if (e.boss && b.heavenlyTrial?.status === 'active') passHeavenlyTrial(b);
    salvage(b);
    harvestTrophy(b,e);arcaneKill(b);cyberDeath(b,e);cosmicDeath(b,e,source);
    if (e.rumorInfected) spreadRumor(b, e, true);
@@ -1690,12 +1763,14 @@ const Game = (() => {
 
  function step(b, dt) {
   if (b.done) return; dt = Math.min(.1, dt); b.time += dt;
+  tickHeavenlyTrial(b);
   if (b.spawned < b.plan.count && b.time >= b.spawnAt) { spawn(b); b.spawnAt += b.plan.encounter === 'packs' ? (b.spawned % 3 === 0 ? b.plan.interval * 2 : .18) : b.plan.interval }
   for (const u of b.units.filter(u => !u.removed)) {
    if (u.removed) continue;
    if (token(u) && u.expiresAt != null && b.time >= u.expiresAt) { u.removed = true; continue; }
    u.flash = Math.max(0, u.flash - dt); extras(b, u, dt); flushEvents(b); if (u.removed) continue;
    if (u.state !== 'active') { u.stateRemaining -= dt; if (u.stateRemaining <= 0) flip(b, u, 'active'); else continue }
+   if ((u.trialStunnedUntil || 0) > b.time) continue;
    if (u.id === 'herb' && b.time >= u.sacrificeAt && herbOffering(b, u)) continue;
    if (u.id === 'herb' && b.time >= u.herbAt) { u.herbAt = b.time + 12; teamCharge(b, u, 3); }
    if (u.id === 'vent' && support(b, 'vent') === u && b.time >= u.ventAt) { u.ventAt = b.time + 8; for (const e of living(b).slice(0, 2)) status(b, e, 'freeze', (e.burns || []).some(d => d.until > b.time) ? 2 : 1, 0, u); fx(b, 'pulse', u, null, 'FREEZE') }
@@ -1734,6 +1809,7 @@ const Game = (() => {
     }
     const guardian=b.units.find(v=>!v.removed&&v.lineage==='xuanwu'&&(lineageTierIds[v.id]?.tier||0)>=4&&(v.savedLeaks||0)<2);
     if (!e.boss && !e.champion && guardian) { guardian.savedLeaks=(guardian.savedLeaks||0)+1; e.gone=true; interact(b,guardian,e,'save',`Xuanwu prevents leak ${guardian.savedLeaks}/2`); continue; }
+    if (b.heavenlyTrial?.status === 'active') failHeavenlyTrial(b, e.boss ? 'boss escaped' : 'a runner escaped');
     e.gone = true;
     const leakLoss=e.boss ? b.run.maxHealth : Math.max(1, e.leak + mod(b.run, 'leak', 0) - (b.run.relics.includes('mercy') ? 1 : 0));
     b.run.health = Math.max(0, b.run.health - leakLoss); b.metrics.leaks++; b.run.stats.leaks++;
@@ -1758,7 +1834,7 @@ const Game = (() => {
    persist(b, u); src.threshold = abilityGauge(u) ? u.threshold.current : 0; src.naniteCrits = u.naniteCrits || 0; src.critCount = u.critCount || 0
   }
   r.recap = { ...b.metrics, time: b.time, ...report(b) };
-  r.battleHistory ??= []; r.battleHistory.push({ stage: r.depth + 1, leaks: b.metrics.leaks, closeCalls: b.metrics.closeCalls || 0, trial: b.metrics.trial || null });
+  r.battleHistory ??= []; r.battleHistory.push({ stage: r.depth + 1, leaks: b.metrics.leaks, closeCalls: b.metrics.closeCalls || 0, trial: b.metrics.trial || null, heavenlyTribulation: b.metrics.heavenlyTribulation || null });
   r.battleHistory = r.battleHistory.slice(-16);
   if (won) {
    r.cleared++; if (r.node.type === 'elite') { let options = D.RELICS.filter(v => !r.relics.includes(v.id)); if (options.length) { let item = options[Math.floor(rand(r) * options.length)]; addRelic(r, item.id); r.recap.relic = item.name } }
@@ -2097,31 +2173,7 @@ const Game = (() => {
    }
   }
 
-  // 7. Relic Evolution: Nascent Soul Practitioner consumes adjacent Relic
-  if (isPractitioner(u) && (u.qi || 0) >= 175 && (u.realm || 0) === 3) {
-   const relicMap = {
-    flyingSword: 'swordImmortal',
-    guqin: 'melodicSaint',
-    weiqiBoard: 'formationMaster',
-    inkBrush: 'talismanSovereign',
-    mountainScroll: 'landscapeSage',
-    demonBlade: 'bloodFiendMaster'
-   };
-   const adjRelic = neighbors(b, u, false).find(v => {
-    if (v.removed) return false;
-    if (relicMap[v.id]) return true;
-    if (v.id === 'soulBanner' && (v.souls || 0) >= 100) return true;
-    return false;
-   });
-   if (adjRelic) {
-    const evolveTo = adjRelic.id === 'soulBanner' ? 'soulReapingDemon' : relicMap[adjRelic.id];
-    consume(b, u, adjRelic, 'Relic Fusion', 0);
-    evolve(b, u, evolveTo);
-    u.realm = 4;
-    persist(b, u);
-    
-   }
-  }
+  // Boss-only Heavenly Tribulation gates all Cultivation Mythic evolutions.
 
   // 8. Relic Resonance: Apex Immortal adjacent to Relic (Does NOT consume, triggers Resonance)
   if (isApexImmortal(u)) {
@@ -2136,7 +2188,7 @@ const Game = (() => {
   if (abilityGauge(u) && u.threshold.current >= u.threshold.max) tick(b, u, 0);
  }
 
- return { COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, updateIdol, dropPage, addSyllables, forgeGrimoire, decipherPage, cosmicPanic, cosmicStatus, cosmicReward, cosmicDeath, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, augmented, hasAccess, ramCapacity, berserkActive, updateCyber, installChrome, addChromeAttack, addRAM, cyberPoison, uploadHack, cyberDeath, cyberZone, clearSprint, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, arcanePair, isApprentice, isArchon, isElemental, arcaneGauge, bestPair, updateApprentice, receiveEssence, storeOverflow, elementalLinks, arcaneReaction, elementalSpell, arcaneZone, archonAttack, arcaneExtras, tickArcane, arcaneKill, HUNT_APEX, isSlayer, isHunter, priority, trophyFamily, huntAura, executeThreshold, wallOf, huntArmor, brandQuarry, updateSlayer, trophyPoints, harvestTrophy, forgeHuntRelic, carveTrophy, huntExtras, visceral, slayerAttack, isMech, isMechanical, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, inArc, oilPool, tickOil, mechAttack, addQi, addDread, acceptsQi, acceptsDread, isCultivationApex, isUrbanAuthority, bindUrbanRelic, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, practitionerRealmForQi, isPractitioner, isCultivationRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, breaksLegendNaturalRule, markNaturalBreach, URBAN_LEGEND_MARK_NAMES };
+ return { COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, updateIdol, dropPage, addSyllables, forgeGrimoire, decipherPage, cosmicPanic, cosmicStatus, cosmicReward, cosmicDeath, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, augmented, hasAccess, ramCapacity, berserkActive, updateCyber, installChrome, addChromeAttack, addRAM, cyberPoison, uploadHack, cyberDeath, cyberZone, clearSprint, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, arcanePair, isApprentice, isArchon, isElemental, arcaneGauge, bestPair, updateApprentice, receiveEssence, storeOverflow, elementalLinks, arcaneReaction, elementalSpell, arcaneZone, archonAttack, arcaneExtras, tickArcane, arcaneKill, HUNT_APEX, isSlayer, isHunter, priority, trophyFamily, huntAura, executeThreshold, wallOf, huntArmor, brandQuarry, updateSlayer, trophyPoints, harvestTrophy, forgeHuntRelic, carveTrophy, huntExtras, visceral, slayerAttack, isMech, isMechanical, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, inArc, oilPool, tickOil, mechAttack, addQi, addDread, acceptsQi, acceptsDread, isCultivationApex, isUrbanAuthority, bindUrbanRelic, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, practitionerRealmForQi, isPractitioner, isCultivationRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, breaksLegendNaturalRule, markNaturalBreach, URBAN_LEGEND_MARK_NAMES };
 })();
 if (typeof module !== 'undefined') module.exports = Game;
 
