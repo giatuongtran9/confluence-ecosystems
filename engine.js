@@ -675,6 +675,7 @@ const Game = (() => {
   if (b.metrics.leaks) notes.push(`${b.metrics.leaks} runners escaped.`); else notes.push('No runners escaped. Formation held.');
   if (b.metrics.heavenlyTribulation) notes.push(b.metrics.heavenlyTribulation.status === 'passed' ? 'Heavenly Tribulation passed; the matching relic was consumed and a Mythic Immortal awakened.' : b.metrics.heavenlyTribulation.status === 'failed' ? `Heavenly Tribulation failed: ${b.metrics.heavenlyTribulation.reason}. The Nascent Soul and matching relic were removed from the roster.` : 'Heavenly Tribulation is active: defeat the boss without any runner escaping.');
   if (b.metrics.urbanContainmentTrial) notes.push(b.metrics.urbanContainmentTrial.status === 'passed' ? `Subject Zero contained with ${b.metrics.urbanContainmentTrial.finalMarks}/5 marks; the Relic was consumed and ${card(b.metrics.urbanContainmentTrial.apexId).name} awakened.` : b.metrics.urbanContainmentTrial.status === 'failed' ? `Subject Zero trial failed: ${b.metrics.urbanContainmentTrial.reason}. The Rule Enforcer and Relic were removed from the roster.` : `Subject Zero trial active: apply 5 Violation Marks and defeat it before it escapes.`);
+  if (b.metrics.urbanLegendTrial) notes.push(b.metrics.urbanLegendTrial.status === 'passed' ? `Folklore Merger trial passed with zero runner leaks; ${card(b.metrics.urbanLegendTrial.apexId).name} awakened with +${b.metrics.urbanLegendTrial.inheritedAtk} inherited ATK.` : b.metrics.urbanLegendTrial.status === 'failed' ? `Folklore Merger trial failed: ${b.metrics.urbanLegendTrial.reason}. The devourer was removed; its same-lineage prey was already consumed.` : `Folklore Merger trial active: clear the Elite/Boss node with zero leaks to earn Mythic.`);
   if (dormant.length) notes.push(`${dormant.map(c => card(c.id).name + ' #' + c.uid).join(', ')} did not fill a trigger gauge.`);
   const originals = consumed.filter(c => !c.token).length, tokens = consumed.filter(c => c.token).length;
   if (originals) notes.push(`${originals} original cards permanently lost.`);
@@ -853,6 +854,64 @@ const Game = (() => {
   spawnSubjectZero(b, trial);
   return trial;
  }
+ function urbanLegendTrialCandidate(b) {
+  if (!b || !['elite', 'boss'].includes(b.run?.node?.type)) return null;
+  const devourers = b.units.filter(u => !u.removed && !token(u) && isUrbanLegend(u)
+    && !APEX_FORMS.includes(u.id) && (u.violations || 0) >= 80)
+    .sort((a,z)=>(z.violations||0)-(a.violations||0)||a.slot-z.slot||a.uid-z.uid);
+  for (const devourer of devourers) {
+   const prey = neighbors(b, devourer, false).filter(v => !v.removed && !token(v)
+    && isUrbanLegend(v) && family(v) === family(devourer) && (v.violations || 0) >= 45)
+    .sort((a,z)=>(z.violations||0)-(a.violations||0)||rawAtk(z)-rawAtk(a)||a.uid-z.uid)[0];
+   if (prey) return { devourer, prey, apexId: urbanLegendTiers[family(devourer)]?.[2] };
+  }
+  return null;
+ }
+ function startUrbanLegendTrial(b) {
+  if (!b || b.urbanLegendTrial) return b?.urbanLegendTrial || null;
+  const candidate = urbanLegendTrialCandidate(b);
+  if (!candidate?.apexId) return null;
+  const inherited = Math.round(atk(b, candidate.prey) * .20 * 100) / 100;
+  const t = b.urbanLegendTrial = { status: 'active', devourerUid: candidate.devourer.uid,
+   preyUid: candidate.prey.uid, lineage: family(candidate.devourer), apexId: candidate.apexId,
+   inheritedAtk: inherited, startedAt: b.time, nodeType: b.run.node.type };
+  b.metrics.urbanLegendTrial = { status: 'active', devourerUid: t.devourerUid, preyUid: t.preyUid,
+   lineage: t.lineage, apexId: t.apexId, inheritedAtk: inherited, startedAt: b.time, nodeType: t.nodeType };
+  consume(b, candidate.devourer, candidate.prey, 'Folklore Merger Trial', 0);
+  candidate.devourer.permanentAtkBonus = (candidate.devourer.permanentAtkBonus || 0) + inherited;
+  persist(b, candidate.devourer);
+  interact(b, candidate.prey, candidate.devourer, 'folklore-trial-start',
+   `FOLKLORE TRIAL · same-lineage prey consumed; +${inherited} inherited ATK · clear with zero leaks`);
+  fx(b, 'growth', candidate.devourer, null, 'FOLKLORE TRIAL · ZERO LEAKS');
+  return t;
+ }
+ function failUrbanLegendTrial(b, reason = 'A runner leaked') {
+  const t = b?.urbanLegendTrial;
+  if (!t || t.status !== 'active') return false;
+  const devourer = b.units.find(u => u.uid === t.devourerUid);
+  if (devourer) devourer.removed = true;
+  b.run.roster = b.run.roster.filter(u => u.uid !== t.devourerUid);
+  t.status = 'failed'; t.reason = reason; t.failedAt = b.time;
+  b.metrics.urbanLegendTrial = { ...b.metrics.urbanLegendTrial, status: 'failed', reason, failedAt: b.time };
+  interact(b, devourer || null, null, 'folklore-trial-failed',
+   `FOLKLORE TRIAL FAILED · ${reason}; devourer removed; prey was already consumed`);
+  fx(b, 'impact', devourer || null, null, 'FOLKLORE TRIAL FAILED');
+  return true;
+ }
+ function passUrbanLegendTrial(b) {
+  const t = b?.urbanLegendTrial;
+  if (!t || t.status !== 'active' || !b.won || (b.metrics.leaks || 0) !== 0) return false;
+  const devourer = b.units.find(u => u.uid === t.devourerUid && !u.removed);
+  if (!devourer) return failUrbanLegendTrial(b, 'The devourer did not survive the node');
+  evolve(b, devourer, t.apexId);
+  devourer.realm = 4; persist(b, devourer);
+  t.status = 'passed'; t.passedAt = b.time;
+  b.metrics.urbanLegendTrial = { ...b.metrics.urbanLegendTrial, status: 'passed', passedAt: b.time };
+  interact(b, devourer, devourer, 'folklore-trial-passed',
+   `FOLKLORE TRIAL PASSED · ${card(t.apexId).name} awakened · +${t.inheritedAtk} inherited ATK`);
+  fx(b, 'growth', devourer, null, 'MYTHIC · ZERO-LEAK TRIAL PASSED');
+  return true;
+ }
  function failUrbanContainmentTrial(b, reason = 'Subject Zero escaped') {
   const t = b?.urbanContainmentTrial;
   if (!t || t.status !== 'active') return false;
@@ -981,35 +1040,13 @@ const Game = (() => {
   if (!urbanLegendFamilies.includes(fam) || APEX_FORMS.includes(u.id)) return;
   const forms = urbanLegendTiers[fam];
   if (!forms) return;
-  // 15 earns the Epic form; 80 is only readiness. Mythic requires an actual Blackout merger.
+  // 15 earns the Epic form; 80 unlocks only the zero-leak Elite/Boss Folklore trial.
   const targetId = (u.violations || 0) >= 15 ? forms[1] : forms[0];
   if (u.id !== targetId) { evolve(b, u, targetId); persist(b, u); }
  }
  function resolveUrbanLegendMerger(b) {
-  if (!b || b.curfewUntil <= b.time) return [];
-  const candidates = b.units.filter(u => !u.removed && !token(u) && isUrbanLegend(u) && (u.violations || 0) >= 80)
-   .sort((a,z)=>(z.violations||0)-(a.violations||0)||a.uid-z.uid);
-  const merged=[];
-  for (const devourer of candidates) {
-   if (devourer.removed || APEX_FORMS.includes(devourer.id)) continue;
-   const forms=urbanLegendTiers[family(devourer)]; if(!forms) continue;
-   const victim=neighbors(b,devourer,false).filter(v=>!v.removed&&!token(v)&&isUrbanLegend(v)&&family(v)!==family(devourer)&&(v.violations||0)>=45)
-    .sort((a,z)=>(z.violations||0)-(a.violations||0)||rawAtk(z)-rawAtk(a)||a.uid-z.uid)[0];
-   if(!victim) continue;
-   const inherited=Math.round(atk(b,victim)*0.20*100)/100;
-   const victimViolations=victim.violations||0;
-   consume(b,devourer,victim,'Folklore Merger',0);
-   devourer.permanentAtkBonus=(devourer.permanentAtkBonus||0)+inherited;
-   const rosterUnit=b.run.roster.find(v=>v.uid===devourer.uid);if(rosterUnit)rosterUnit.permanentAtkBonus=devourer.permanentAtkBonus;
-   evolve(b,devourer,forms[2]);
-   devourer.realm=4;
-   persist(b,devourer);
-   const entry={devourerUid:devourer.uid,apexId:devourer.id,consumedUid:victim.uid,consumedId:victim.id,consumedViolations:victimViolations,inheritedAtk:inherited,time:b.time};
-   (b.metrics.folkloreMergers??=[]).push(entry); merged.push(entry);
-   interact(b,victim,devourer,'folklore-merger',`FOLKLORE MERGER · permanently devoured ${card(victim.id).name}; +${inherited} permanent ATK`);
-   fx(b,'growth',devourer,null,`MYTHIC · +${inherited} ATK`);
-  }
-  return merged;
+  // Mythic evolution is now earned only through the Elite/Boss zero-leak trial.
+  return startUrbanLegendTrial(b);
  }
 
  function triggerBlackout(b) {
@@ -1020,7 +1057,6 @@ const Game = (() => {
   const dur = 6.0 * mod(b.run, 'buffDuration');
   b.curfewUntil = b.time + dur;
   b.blackoutLockoutUntil = b.curfewUntil + 8.0;
-  resolveUrbanLegendMerger(b);
   for (const e of living(b)) { e.panicUntil = Math.max(e.panicUntil || 0, b.time + 2.5); e.panic = true; }
   fx(b, 'curfew', null, null, 'TẮT ĐÈN · BLACKOUT FRENZY');
   for (const v of legends) {
@@ -1288,6 +1324,7 @@ const Game = (() => {
   b.plan = wavePlan(r);
   startHeavenlyTrial(b);
   startUrbanContainmentTrial(b);
+  startUrbanLegendTrial(b);
   startAbilities(b);
   
   return b;
@@ -1911,6 +1948,7 @@ const Game = (() => {
     e.gone = true;
     const leakLoss=e.boss ? b.run.maxHealth : Math.max(1, e.leak + mod(b.run, 'leak', 0) - (b.run.relics.includes('mercy') ? 1 : 0));
     b.run.health = Math.max(0, b.run.health - leakLoss); b.metrics.leaks++; b.run.stats.leaks++;
+    if (b.urbanLegendTrial?.status === 'active') failUrbanLegendTrial(b, 'A runner leaked');
     b.metrics.leakTypes ??= {}; const leakType = e.boss ? 'boss' : e.champion ? 'harbinger' : e.elite ? 'elite' : e.armored ? 'armored' : e.swift ? 'fast' : 'normal'; b.metrics.leakTypes[leakType] = (b.metrics.leakTypes[leakType] || 0) + 1; fx(b, 'leak', null, e, `−${leakLoss}`);
     if (b.run.health <= 0) { const phoenix=b.units.find(v=>!v.removed&&v.lineage==='phoenix'&&(lineageTierIds[v.id]?.tier||0)>=4); if(phoenix&&!b.run.phoenixRevived){b.run.phoenixRevived=true;b.run.health=1;interact(b,phoenix,e,'revive','Phoenix revival → restore 1 HP');}else{finish(b,false);break} }
    }
@@ -1925,6 +1963,10 @@ const Game = (() => {
   if (b.done) return;
   if(won)for(const u of b.units.filter(v=>!v.removed&&!token(v)&&isMech(v)))addAlloy(b,u,5);
   b.done = true; b.won = won; let r = b.run;
+  if (b.urbanLegendTrial?.status === 'active') {
+   if (won && (b.metrics.leaks || 0) === 0) passUrbanLegendTrial(b);
+   else failUrbanLegendTrial(b, (b.metrics.leaks || 0) > 0 ? 'A runner leaked' : 'Elite/Boss node was not cleared');
+  }
   const coinsEarned = r.node?.type === 'boss' ? 500 : r.node?.type === 'elite' ? 200 : 100;
   r.coins = (r.coins || 0) + coinsEarned; b.metrics.coinsEarned = coinsEarned;
   for (const u of b.units.filter(u => !u.phantom)) {
@@ -1932,7 +1974,7 @@ const Game = (() => {
    persist(b, u); src.threshold = abilityGauge(u) ? u.threshold.current : 0; src.naniteCrits = u.naniteCrits || 0; src.critCount = u.critCount || 0
   }
   r.recap = { ...b.metrics, time: b.time, ...report(b) };
-  r.battleHistory ??= []; r.battleHistory.push({ stage: r.depth + 1, leaks: b.metrics.leaks, closeCalls: b.metrics.closeCalls || 0, trial: b.metrics.trial || null, heavenlyTribulation: b.metrics.heavenlyTribulation || null });
+  r.battleHistory ??= []; r.battleHistory.push({ stage: r.depth + 1, leaks: b.metrics.leaks, closeCalls: b.metrics.closeCalls || 0, trial: b.metrics.trial || null, heavenlyTribulation: b.metrics.heavenlyTribulation || null, urbanLegendTrial: b.metrics.urbanLegendTrial || null });
   r.battleHistory = r.battleHistory.slice(-16);
   if (won) {
    r.cleared++; if (r.node.type === 'elite') { let options = D.RELICS.filter(v => !r.relics.includes(v.id)); if (options.length) { let item = options[Math.floor(rand(r) * options.length)]; addRelic(r, item.id); r.recap.relic = item.name } }
@@ -2004,10 +2046,10 @@ const Game = (() => {
    case 'kuchisake': case 'nightBus': case 'payphone': case 'morgueMirror':
    case 'mannequin': case 'stair13': case 'redRaincoat': {
     const v = u.violations || 0;
-    if (APEX_FORMS.includes(u.id)) return { current: 80, max: 80, label: 'Mythic Folklore Merger complete' };
-    if (v >= 80) return { current: 80, max: 80, label: 'Ready: Blackout + adjacent Legend (45+)' };
-    if (v >= 15) return { current: v, max: 80, label: 'Epic · Mythic merger at 80' };
-    return { current: v, max: 15, label: 'Epic at 15 · Mythic merger at 80' };
+    if (APEX_FORMS.includes(u.id)) return { current: 80, max: 80, label: 'Mythic zero-leak trial complete' };
+    if (v >= 80) return { current: 80, max: 80, label: 'Ready: Elite/Boss + adjacent same-lineage Legend (45+)' };
+    if (v >= 15) return { current: v, max: 80, label: 'Epic · Mythic trial at 80' };
+    return { current: v, max: 15, label: 'Epic at 15 · Mythic trial at 80' };
    } default: return null } }
  const species = u => token(u) ? (u.origin || card(u.id).species) : family(u);
  function preyEligible(predator, prey) { if (prey.removed || predator === prey) return false; const diets = { cub: ['serpentFodder','hound','scuttler','flameToad','peachFodder'], herald: ['mass', 'larva'], alchemist: ['lotus', 'herb'], harvester: ['lamb'] }; return card(predator.id).genre === card(species(prey))?.genre && (diets[family(predator)] || []).includes(species(prey)); }
@@ -2302,7 +2344,7 @@ const Game = (() => {
   if (abilityGauge(u) && u.threshold.current >= u.threshold.max) tick(b, u, 0);
  }
 
- return { COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, updateIdol, dropPage, addSyllables, forgeGrimoire, decipherPage, cosmicPanic, cosmicStatus, cosmicReward, cosmicDeath, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, augmented, hasAccess, ramCapacity, berserkActive, updateCyber, installChrome, addChromeAttack, addRAM, cyberPoison, uploadHack, cyberDeath, cyberZone, clearSprint, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, arcanePair, isApprentice, isArchon, isElemental, arcaneGauge, bestPair, updateApprentice, receiveEssence, storeOverflow, elementalLinks, arcaneReaction, elementalSpell, arcaneZone, archonAttack, arcaneExtras, tickArcane, arcaneKill, HUNT_APEX, isSlayer, isHunter, priority, trophyFamily, huntAura, executeThreshold, wallOf, huntArmor, brandQuarry, updateSlayer, trophyPoints, harvestTrophy, forgeHuntRelic, carveTrophy, huntExtras, visceral, slayerAttack, isMech, isMechanical, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, inArc, oilPool, tickOil, mechAttack, addQi, addDread, acceptsQi, acceptsDread, isCultivationApex, isUrbanAuthority, bindUrbanRelic, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startUrbanContainmentTrial, failUrbanContainmentTrial, passUrbanContainmentTrial, tickUrbanContainmentTrial, resolveUrbanLegendMerger, updateUrbanLegendLineage, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, practitionerRealmForQi, isPractitioner, isCultivationRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, breaksLegendNaturalRule, markNaturalBreach, URBAN_LEGEND_MARK_NAMES };
+ return { COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, updateIdol, dropPage, addSyllables, forgeGrimoire, decipherPage, cosmicPanic, cosmicStatus, cosmicReward, cosmicDeath, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, augmented, hasAccess, ramCapacity, berserkActive, updateCyber, installChrome, addChromeAttack, addRAM, cyberPoison, uploadHack, cyberDeath, cyberZone, clearSprint, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, arcanePair, isApprentice, isArchon, isElemental, arcaneGauge, bestPair, updateApprentice, receiveEssence, storeOverflow, elementalLinks, arcaneReaction, elementalSpell, arcaneZone, archonAttack, arcaneExtras, tickArcane, arcaneKill, HUNT_APEX, isSlayer, isHunter, priority, trophyFamily, huntAura, executeThreshold, wallOf, huntArmor, brandQuarry, updateSlayer, trophyPoints, harvestTrophy, forgeHuntRelic, carveTrophy, huntExtras, visceral, slayerAttack, isMech, isMechanical, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, inArc, oilPool, tickOil, mechAttack, addQi, addDread, acceptsQi, acceptsDread, isCultivationApex, isUrbanAuthority, bindUrbanRelic, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startUrbanContainmentTrial, failUrbanContainmentTrial, passUrbanContainmentTrial, tickUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, resolveUrbanLegendMerger, updateUrbanLegendLineage, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, practitionerRealmForQi, isPractitioner, isCultivationRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, breaksLegendNaturalRule, markNaturalBreach, URBAN_LEGEND_MARK_NAMES };
 })();
 if (typeof module !== 'undefined') module.exports = Game;
 

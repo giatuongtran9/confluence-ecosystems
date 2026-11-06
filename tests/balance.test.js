@@ -60,25 +60,40 @@ function urbanTrialBattle(relic='ruleboard',nodeType='elite',dread=140){
  enforcer.dread=dread;b.run.roster.find(u=>u.uid===enforcer.uid).dread=dread;
  G.startUrbanContainmentTrial(b);return {b,enforcer,focus};
 }
-test('Urban Legends stay Epic at and above 45 until Blackout merger conditions are met',()=>{
+test('Urban Legends stay Epic at 80 until the zero-leak Elite/Boss trial passes',()=>{
  for(const id of Object.keys(legendApex)){const b=battle([id]),u=b.units[0];u.violations=79.9;G.grantUrbanViolation(b,u,0);assert.notEqual(u.id,legendApex[id]);u.violations=80;G.grantUrbanViolation(b,u,0);assert.notEqual(u.id,legendApex[id]);}
 });
-test('80-Violation legend consumes adjacent 45+ legend only during Curfew Blackout and inherits 20% current ATK',()=>{
- for(const [devourer,apex] of Object.entries(legendApex)){
-  const victim=Object.keys(legendApex).find(id=>id!==devourer),b=battle([devourer,victim],[4,1]),a=b.units[0],v=b.units[1];a.violations=80;v.violations=45;
-  const before=G.atk(b,v);b.curfewUntil=0;assert.equal(G.resolveUrbanLegendMerger(b).length,0);assert.equal(v.removed,false);
-  b.time=5;b.curfewUntil=11;const expected=Math.round(G.atk(b,v)*.2*100)/100;const merged=G.resolveUrbanLegendMerger(b);assert.equal(merged.length,1);assert.equal(a.id,apex);assert.equal(v.removed,true);assert.ok(Math.abs(a.permanentAtkBonus-expected)<.02);assert.ok(b.run.roster.some(x=>x.uid===a.uid&&x.id===apex));assert.ok(!b.run.roster.some(x=>x.uid===v.uid));
+const legendSameLineagePairs={
+ kuchisake:['kuchisake','scissorBanshee'], nightBus:['nightBus','ghostRoute'], payphone:['payphone','hauntedSwitchboard'],
+ morgueMirror:['morgueMirror','doppelMirror'], mannequin:['mannequin','stalker'], stair13:['stair13','infiniteStair'], redRaincoat:['redRaincoat','bloodPhantasm']
+};
+test('80-Violation Legend starts Elite/Boss trial by consuming adjacent same-lineage 45+ prey and inherits 20% ATK',()=>{
+ for(const [lineage,[baseId,epicId]] of Object.entries(legendSameLineagePairs)){
+  const b=battle([baseId,epicId],[4,1]);b.run.node.type='elite';const a=b.units[0],v=b.units[1];a.violations=80;v.violations=45;
+  const expected=Math.round(G.atk(b,v)*.2*100)/100;const t=G.startUrbanLegendTrial(b);
+  assert.equal(t.status,'active',lineage);assert.equal(v.removed,true,lineage);assert.equal(b.run.roster.some(x=>x.uid===v.uid),false,lineage);
+  assert.equal(a.permanentAtkBonus,expected,lineage);assert.notEqual(a.id,legendApex[lineage],lineage);
+  assert.equal(t.lineage,lineage);assert.equal(b.metrics.urbanLegendTrial.inheritedAtk,expected);
  }
 });
-test('Urban Legend merger needs both 80 on devourer and 45 on adjacent different lineage',()=>{
- const b=battle(['kuchisake','nightBus'],[4,1]),a=b.units[0],v=b.units[1];a.violations=79.99;v.violations=44.99;b.curfewUntil=20;assert.equal(G.resolveUrbanLegendMerger(b).length,0);a.violations=80;assert.equal(G.resolveUrbanLegendMerger(b).length,0);v.violations=45;assert.equal(G.resolveUrbanLegendMerger(b).length,1);
+test('same-lineage Mythic trial requires 80/45, adjacency, and Elite/Boss node',()=>{
+ const b=battle(['stair13','infiniteStair'],[4,1]),a=b.units[0],v=b.units[1];a.violations=79.99;v.violations=45;b.run.node.type='elite';assert.equal(G.startUrbanLegendTrial(b),null);a.violations=80;v.slot=8;Object.assign(v,G.xy(8));assert.equal(G.startUrbanLegendTrial(b),null);v.slot=1;Object.assign(v,G.xy(1));b.run.node.type='battle';assert.equal(G.startUrbanLegendTrial(b),null);b.run.node.type='boss';assert.equal(G.startUrbanLegendTrial(b)?.status,'active');
 });
-test('a real Curfew Blackout triggers one Folklore Merger and grants permanent inheritance',()=>{
- const b=battle(['kuchisake','nightBus'],[4,1]),a=b.units[0],v=b.units[1];a.violations=80;v.violations=45;b.urbanViolationsForBlackout=4;b.blackoutLockoutUntil=0;b.curfewUntil=0;
- G.grantUrbanViolation(b,a,1,null);
- assert.ok(b.curfewUntil>b.time);assert.equal(a.id,'slitMouthedSovereign');assert.ok(v.removed);assert.equal(b.metrics.folkloreMergers.length,1);
- const merger=b.metrics.folkloreMergers[0];assert.ok(a.permanentAtkBonus>=merger.inheritedAtk);assert.equal(b.run.roster.find(x=>x.uid===a.uid).permanentAtkBonus,a.permanentAtkBonus);
- G.grantUrbanViolation(b,a,1,null);assert.equal(b.metrics.folkloreMergers.length,1);
+test('zero-leak trial success evolves each same-lineage Legend to its own Mythic',()=>{
+ for(const [lineage,[baseId,epicId]] of Object.entries(legendSameLineagePairs)){
+  const b=battle([baseId,epicId],[4,1]),a=b.units[0],v=b.units[1];a.violations=80;v.violations=45;G.startUrbanLegendTrial(b);b.won=true;b.metrics.leaks=0;
+  assert.equal(G.passUrbanLegendTrial(b),true,lineage);assert.equal(a.id,legendApex[lineage],lineage);assert.equal(b.urbanLegendTrial.status,'passed');assert.equal(a.permanentAtkBonus,b.urbanLegendTrial.inheritedAtk);
+ }
+});
+test('failed Folklore trial removes the devourer and prey remains permanently consumed',()=>{
+ const b=battle(['stair13','infiniteStair'],[4,1]),a=b.units[0],v=b.units[1];a.violations=80;v.violations=45;G.startUrbanLegendTrial(b);assert.equal(v.removed,true);assert.equal(b.run.roster.some(x=>x.uid===v.uid),false);assert.equal(G.failUrbanLegendTrial(b,'A runner leaked'),true);assert.equal(a.removed,true);assert.equal(b.run.roster.some(x=>x.uid===a.uid),false);assert.equal(b.urbanLegendTrial.status,'failed');assert.match(b.urbanLegendTrial.reason,/leaked/);
+});
+test('finishing Elite/Boss with zero leaks passes trial and failure consumes the devourer',()=>{
+ let b=battle(['stair13','infiniteStair'],[4,1]),a=b.units[0],v=b.units[1];a.violations=80;v.violations=45;b.run.node.type='elite';G.startUrbanLegendTrial(b);G.finish(b,true);assert.equal(a.id,legendApex.stair13);assert.equal(b.urbanLegendTrial.status,'passed');
+ b=battle(['stair13','infiniteStair'],[4,1]);a=b.units[0];v=b.units[1];a.violations=80;v.violations=45;b.run.node.type='boss';G.startUrbanLegendTrial(b);G.finish(b,false);assert.equal(b.urbanLegendTrial.status,'failed');assert.equal(a.removed,true);assert.equal(b.run.roster.some(x=>x.uid===a.uid),false);assert.equal(v.removed,true);
+});
+test('Blackout alone cannot evolve an 80-Violation Legend without starting its Elite/Boss trial',()=>{
+ const b=battle(['stair13','infiniteStair'],[4,1]),a=b.units[0],v=b.units[1];a.violations=80;v.violations=45;b.run.node.type='battle';b.urbanViolationsForBlackout=4;G.grantUrbanViolation(b,a,1,null);assert.notEqual(a.id,legendApex.stair13);assert.equal(v.removed,false);assert.equal(b.urbanLegendTrial,undefined);
 });
 test('nearby Legends no longer receive shared violation progress',()=>{const b=battle(['kuchisake','nightBus'],[4,1]),a=b.units[0],v=b.units[1];G.grantUrbanViolation(b,a,1,null);assert.ok(a.violations>0);assert.equal(v.violations||0,0);});
 test('Red Hotline marks Subject Zero and Director locks marked target without Blackout',()=>{const {b}=urbanTrialBattle('redPhone');const phone=b.units.find(u=>u.id==='redPhone'),zero=b.enemies.find(e=>e.subjectZero);b.time=4;G.extras(b,phone,0);assert.equal(zero.ruleMarks,1);assert.equal(b.curfewUntil||0,0);const director={...phone,uid:999,id:'curfewDirector',slot:2};G.prepareHooks(b,director);b.units.push(director);zero.ruleMarks=5;b.time=6;G.extras(b,director,0);assert.ok(zero.frozenUntil>=9);assert.equal(b.curfewUntil||0,0);});
@@ -103,6 +118,6 @@ test('Subject Zero under-marked kill and escape fail and permanently remove Enfo
  let {b,enforcer,focus}=urbanTrialBattle();let zero=b.enemies.find(e=>e.subjectZero);zero.ruleMarks=4;G.damage(b,zero,zero.hp,enforcer);assert.equal(b.urbanContainmentTrial.status,'failed');assert.ok(enforcer.removed&&focus.removed);assert.equal(b.run.roster.length,0);
  ({b,enforcer,focus}=urbanTrialBattle());zero=b.enemies.find(e=>e.subjectZero);zero.p=15.99;zero.speed=1;G.step(b,.1);assert.equal(b.urbanContainmentTrial.status,'failed');assert.ok(enforcer.removed&&focus.removed);assert.equal(b.run.roster.length,0);
 });
-test('trial mark and progress display advertises the 80-point Blackout merger gate',()=>{
- const b=battle(['kuchisake']),u=b.units[0];u.violations=80;const progress=G.evolutionProgress(u);assert.equal(progress.current,80);assert.equal(progress.max,80);assert.match(progress.label,/Blackout/);
+test('trial progress display advertises the 80-point Elite/Boss zero-leak gate',()=>{
+ const b=battle(['kuchisake']),u=b.units[0];u.violations=80;const progress=G.evolutionProgress(u);assert.equal(progress.current,80);assert.equal(progress.max,80);assert.match(progress.label,/Elite\/Boss/);
 });
