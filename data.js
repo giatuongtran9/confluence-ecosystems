@@ -464,7 +464,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "urban-relic", "rules"],
     "ecosystem": "Quái Đàm · Containment Relic",
-    "rules": "Enhances containment efficiency: Incident Dossiers grant +2 bonus Dread when examined or decoded. When orthogonally adjacent to a Rule Enforcer, awakens The Architect of Taboos!",
+    "rules": "Enhances containment efficiency: Incident Dossiers grant +2 bonus Dread when examined or decoded. When orthogonally adjacent to a 140-Dread Rule Enforcer on an Elite or Boss node, starts the Subject Zero trial; success consumes this Relic to awaken The Architect of Taboos.",
     "synergy": "Rule Enforcer (Legendary Investigator) and all Urban Legends."
   },
   // 7. Panopticon Monitor (Relic 2 -> The All-Seeing Overseer)
@@ -482,7 +482,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "urban-relic", "vision"],
     "ecosystem": "Quái Đàm · Containment Relic",
-    "rules": "Scans all 16 tiles. Every 4s, inflicts 1 Violation Mark on the 3 fastest runners. When orthogonally adjacent to a Rule Enforcer, awakens The All-Seeing Overseer!",
+    "rules": "Scans all 16 tiles. Every 4s, inflicts 1 Violation Mark on the 3 fastest runners. When orthogonally adjacent to a 140-Dread Rule Enforcer on an Elite or Boss node, starts Subject Zero containment; success at 5 marks consumes this Relic to awaken The All-Seeing Overseer.",
     "synergy": "Rule Enforcer (Legendary Investigator) and fast runners."
   },
   // 8. Red Hotline (Relic 3 -> Director of Curfew)
@@ -500,7 +500,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "urban-relic", "curfew"],
     "ecosystem": "Quái Đàm · Containment Relic",
-    "rules": "Establishes Emergency Hotline: On battle start, grants all Haunted allies +20% attack speed for 10s. When orthogonally adjacent to a Rule Enforcer, awakens the Director of Curfew!",
+    "rules": "On battle start, grants Haunted allies +20% attack speed for 10s. Every 4s, adds 1 Violation Mark to Subject Zero first, otherwise the leading runner. When orthogonally adjacent to a 140-Dread Rule Enforcer on an Elite or Boss node, starts Subject Zero containment; success at 5 marks consumes this Relic to awaken the Director of Curfew.",
     "synergy": "Rule Enforcer (Legendary Investigator) and Blackout triggers."
   },
   // 9. Coroner's Bone Saw (Relic 4 -> Forensic Demiurge)
@@ -518,7 +518,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "urban-relic", "bleed"],
     "ecosystem": "Quái Đàm · Containment Relic",
-    "rules": "Inflicts stacking Bleed on hit (10 DPS for 4s). Deals 50% more damage to Elites and Harbingers. When orthogonally adjacent to a Rule Enforcer, awakens the Forensic Demiurge!",
+    "rules": "Inflicts stacking Bleed on hit (10 DPS for 4s). Deals 50% more damage to Elites and Harbingers. When orthogonally adjacent to a 140-Dread Rule Enforcer on an Elite or Boss node, starts Subject Zero containment; success at 5 marks consumes this Relic to awaken the Forensic Demiurge.",
     "synergy": "Rule Enforcer (Legendary Investigator) and Bleed synergies."
   },
   // 10. Liminal Keycard (Relic 5 -> Warden of the Backrooms)
@@ -536,7 +536,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "urban-relic", "warp"],
     "ecosystem": "Quái Đàm · Containment Relic",
-    "rules": "Every 7s, warps the 2 leading marked runners backward 3 tiles. When orthogonally adjacent to a Rule Enforcer, awakens the Warden of the Backrooms!",
+    "rules": "Every 7s, warps the 2 leading marked runners backward 3 tiles. When orthogonally adjacent to a 140-Dread Rule Enforcer on an Elite or Boss node, starts Subject Zero containment; success at 5 marks consumes this Relic to awaken the Warden of the Backrooms.",
     "synergy": "Rule Enforcer (Legendary Investigator) and Spatial Control."
   },
 
@@ -556,7 +556,7 @@ const CARDS = [
     "fav": "team",
     "tags": ["attacker", "urban-lineage", "boss-slayer"],
     "ecosystem": "Quái Đàm · Autonomous Legend",
-    "rules": "Rule: 'Do Not Say Ugly / Do Not Flee.' Prioritizes the fastest runner; if target speed > 0.30, inflicts 1 Violation Mark. Attacks against marked targets apply Bleed (5 DPS for 4s). Self-ascends across battles into Blood-Scissors Banshee (Epic, 15) and Slit-Mouthed Sovereign (Mythic, 45)!",
+    "rules": "Rule: 'Do Not Say Ugly / Do Not Flee.' Prioritizes the fastest runner; if target speed > 0.30, inflicts 1 Violation Mark. Attacks against marked targets apply Bleed (5 DPS for 4s). Epic at 15 Violations. At 80 Violations, becomes Mythic only during a Curfew Blackout by permanently consuming an adjacent different Urban Legend with 45+ Violations; inherits 20% of that Legend's current ATK.",
     "synergy": "Fast runners, Bleed, and other Urban Legends."
   },
   // 12. Midnight Bus 44 (Autonomous Legend 2)
@@ -574,7 +574,7 @@ const CARDS = [
     "fav": "team",
     "tags": ["control", "urban-lineage", "banish"],
     "ecosystem": "Quái Đàm · Autonomous Legend",
-    "rules": "Rule: 'The last bus only takes rule-breakers.' Reacts only to marked, panicked, fleeing, or unnaturally fast runners; it does not attack ordinary runners. Its attack pierces 2 violators and adds 1 Violation Mark to each survivor, up to 5. Every 8s, sweeps the leading runner's 4-tile edge and warps runners with 2+ marks backward 3 tiles. Successful sweep displacements can earn evolution progress under the reward cooldown. Evolves at 15/45 violations; adjacent Urban Legends share 15% of earned evolution progress.",
+    "rules": "Rule: 'The last bus only takes rule-breakers.' Reacts only to marked, panicked, fleeing, or unnaturally fast runners; it does not attack ordinary runners. Its attack pierces 2 violators and adds 1 Violation Mark to each survivor, up to 5. Every 8s, sweeps the leading runner's 4-tile edge and warps runners with 2+ marks backward 3 tiles. Epic at 15 Violations. At 80, a Curfew Blackout can permanently merge an adjacent different Urban Legend with 45+ Violations; inherit 20% of its current ATK.",
     "synergy": "Crowded tracks, Warps, and other Urban Legends."
   },
   // 13. The Midnight Caller (Autonomous Legend 3)
@@ -592,7 +592,7 @@ const CARDS = [
     "fav": "team",
     "tags": ["control", "urban-lineage", "sonic"],
     "ecosystem": "Quái Đàm · Autonomous Legend",
-    "rules": "Rule: 'Answer on the 3rd Ring.' Reacts only to marked, panicked, or fleeing runners; it does not attack ordinary runners. Every 3rd triggered attack rings across all 16 tiles, dealing full damage and slowing violators by 30% for 2s. Rings immediately when Blackout begins. Self-ascends across battles into Haunted Switchboard (Epic, 15) and The Midnight Operator (Mythic, 45)!",
+    "rules": "Rule: 'Answer on the 3rd Ring.' Reacts only to marked, panicked, or fleeing runners; it does not attack ordinary runners. Every 3rd triggered attack rings across all 16 tiles, dealing full damage and slowing violators by 30% for 2s. Rings immediately when Blackout begins. Epic at 15 Violations. Mythic requires 80 Violations and a Curfew Blackout to permanently consume an adjacent different Urban Legend with 45+ Violations; inherits 20% of its current ATK.",
     "synergy": "16 perimeter tiles, Blackout triggers, and other Urban Legends."
   },
   // 14. Morgue Mirror (Autonomous Legend 4)
@@ -610,7 +610,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["support", "urban-lineage", "mirror"],
     "ecosystem": "Quái Đàm · Autonomous Legend",
-    "rules": "Rule: 'Never Stare into the Reflection.' Reacts to marked, panicked, frozen, or retreating runners and those approaching its reflective angle; it ignores ordinary runners. Reflects 25% of adjacent allies' ATK onto the violating runner. When Blackout triggers, summons 1 temporary Mirror Reflection token. Self-ascends across battles into Doppelgänger Glass (Epic, 15) and Queen in the Morgue Mirror (Mythic, 45)!",
+    "rules": "Rule: 'Never Stare into the Reflection.' Reacts to marked, panicked, frozen, or retreating runners and those approaching its reflective angle; it ignores ordinary runners. Reflects 25% of adjacent allies' ATK onto the violating runner. When Blackout triggers, summons 1 temporary Mirror Reflection token. Epic at 15 Violations. At 80, a Curfew Blackout merges it with an adjacent different Urban Legend with 45+ Violations, permanently consuming that Legend; inherits 20% of its current ATK.",
     "synergy": "High-ATK neighbors, Blackouts, and other Urban Legends."
   },
   // 15. Window Mannequin (Autonomous Legend 5)
@@ -628,7 +628,7 @@ const CARDS = [
     "fav": "team",
     "tags": ["attacker", "urban-lineage"],
     "ecosystem": "Quái Đàm · Autonomous Legend",
-    "rules": "Rule: 'It Only Moves When Unseen.' Reacts when a runner breaks taboo by running fast, panicking, fleeing, or carrying a mark, or when an ally is inactive; it ignores ordinary runners. During Blackout (or while any ally is inactive), gains +150% attack speed and +100% critical damage. Qualifying punishments earn progress under the reward cooldown. Self-ascends across battles into Shadow Stalker (Epic, 15) and The Living Taboo (Mythic, 45)!",
+    "rules": "Rule: 'It Only Moves When Unseen.' Reacts when a runner breaks taboo by running fast, panicking, fleeing, or carrying a mark, or when an ally is inactive; it ignores ordinary runners. During Blackout (or while any ally is inactive), gains +150% attack speed and +100% critical damage. Epic at 15 Violations. Mythic requires 80 Violations and a Curfew Blackout to permanently consume an adjacent different Urban Legend with 45+ Violations; inherits 20% of its current ATK.",
     "synergy": "Blackouts, Night Investigator, and other Urban Legends."
   },
 
@@ -669,7 +669,7 @@ const CARDS = [
     "fav": "team",
     "tags": ["attacker", "urban-lineage", "retribution"],
     "ecosystem": "Quái Đàm · Do Not Look Back",
-    "rules": "Rule: 'Do Not Look Back.' Reactive trap · does not attack normally. Slashes runners who turn back, retreat, or get warped/slowed, dealing 18 true damage, applying bleed, and leaving a blood pool. In Blackout, triggers against turning or crowding runners, dealing double shadow damage. Self-ascends across battles into Blood-Drenched Phantasm (Epic, 15) and Harbinger of the Crimson Rain (Mythic, 45)!",
+    "rules": "Rule: 'Do Not Look Back.' Reactive trap · does not attack normally. Slashes runners who turn back, retreat, or get warped/slowed, dealing 18 true damage, applying bleed, and leaving a blood pool. In Blackout, triggers against turning or crowding runners, dealing double shadow damage. Epic at 15 Violations. At 80, during a Curfew Blackout, permanently consumes an adjacent different Urban Legend with 45+ Violations to awaken its Mythic form and inherits 20% of that Legend's current ATK.",
     "synergy": "Control cards, Midnight Bus 44, The Midnight Caller, and Void Eye."
   },
   // 18. The 13th Step
@@ -687,7 +687,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["trap", "urban-lineage", "vertigo"],
     "ecosystem": "Quái Đàm · Infinite Staircase",
-    "rules": "Rule: 'Never Count the Steps.' Reactive trap · does not attack normally. Lays curse marks on corners and triggers every 13th step, dealing 35 damage, causing stumble, and warping repeat violators. During Blackout, triggers every 4th step, banishing victims into the Penrose Trapdoor. Self-ascends across battles into Infinite Spiral Staircase (Epic, 15) and The Penrose Labyrinth (Mythic, 45)!",
+    "rules": "Rule: 'Never Count the Steps.' Reactive trap · does not attack normally. Lays curse marks on corners and triggers every 13th step, dealing 35 damage, causing stumble, and warping repeat violators. During Blackout, triggers every 4th step, banishing victims into the Penrose Trapdoor. Epic at 15 Violations. Mythic requires 80 Violations and a Curfew Blackout to permanently consume an adjacent different Urban Legend with 45+ Violations; inherits 20% of its current ATK.",
     "synergy": "Night Investigator, Slit-Mouthed Woman, and corner track tiles."
   },
 
@@ -1250,7 +1250,7 @@ const FORMS = [
     "tags": ["investigator", "urban-realm", "true-damage"],
     "evolvedFrom": "investigator",
     "draftable": false,
-    "rules": "Enforcer rank · 140 Dread. Attacks the 3 highest-HP runners for full true damage. Marks inflicted never expire. At this rank, an adjacent Cursed Containment Relic is permanently bound to awaken 1 of 5 Mythic Anomaly Authorities!",
+    "rules": "Enforcer rank · 140 Dread. Attacks the 3 highest-HP runners for full true damage and adds permanent Violation Marks. An adjacent Cursed Containment Relic is a trial focus, not an automatic Mythic. On an Elite or Boss node, Subject Zero appears at wave start. Apply 5 Violation Marks and defeat it before it escapes to consume the Relic and awaken its mapped Mythic Authority. If Subject Zero escapes or is defeated below 5 marks, the Rule Enforcer and Relic are permanently removed from the run roster.",
     "synergy": "The 5 Cursed Containment Relics and all Urban Legends."
   },
 
@@ -1313,7 +1313,7 @@ const FORMS = [
     "tags": ["apex", "urban-apex", "curfew-master"],
     "evolvedFrom": "investigator",
     "draftable": false,
-    "rules": "Rule: 'Indefinite Curfew.' Establishes permanent containment protocol: all Haunted allies gain +60% attack speed. Attacks deal double damage to violators. Triggers Rule Resonance when adjacent to another Urban Legend or Relic. Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
+    "rules": "Rule: 'Indefinite Curfew.' Establishes permanent containment protocol: all Haunted allies gain +60% attack speed. Attacks deal double damage to violators. Every 6s, locks down the marked runner with the most Violation Marks for 1s at 1–2 marks, 2s at 3–4, or 3s at 5; prioritizes Subject Zero. Works without Blackout. Triggers Rule Resonance when adjacent to another Urban Legend or Relic. Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
     "synergy": "Red Hotline and Rule Resonance."
   },
   // 4. Coroner's Bone Saw -> Forensic Demiurge
@@ -1372,7 +1372,7 @@ const FORMS = [
     "tags": ["urban-form", "cleave", "bleed"],
     "evolvedFrom": "kuchisake",
     "draftable": false,
-    "rules": "Cleaves 2 runners. Attacks against bleeding or marked runners deal triple critical damage. Earning 45 evolution progress across battles awakens the Slit-Mouthed Sovereign!",
+    "rules": "Cleaves 2 runners. Attacks against bleeding or marked runners deal triple critical damage. Remains Epic at 45 Violations. At 80 Violations, a Curfew Blackout can merge it with an adjacent different Urban Legend at 45+ Violations; that Legend is permanently consumed, this lineage becomes Mythic, and it inherits 20% of the consumed Legend's current ATK.",
     "synergy": "Bleed, Violations, and Slit-Mouthed Sovereign."
   },
   {
@@ -1417,7 +1417,7 @@ const FORMS = [
   ],
   "evolvedFrom": "nightBus",
   "draftable": false,
-  "rules": "Reacts only to marked, panicked, fleeing, or unnaturally fast runners; it does not attack ordinary runners. Its attack pierces 2 violators and adds 1 Violation Mark to surviving targets. Every 8s, sweeps a 6-tile span around the leading runner: runners with 2+ marks are warped back 3 tiles and hit for 1.5× ATK. Successful sweep displacements can earn evolution progress under the shared reward cooldown. At 45 violations becomes Terminus Bus 44.",
+  "rules": "Pierces 3 violators and pulls marked runners toward the leading runner. Remains Epic at 45 Violations. At 80, during Curfew Blackout, permanently consumes an adjacent different Urban Legend with 45+ Violations to become Terminus Bus 44; inherits 20% of its current ATK.",
   "synergy": "Crowded tracks and Terminus Bus 44."
 },
   {
@@ -1454,7 +1454,7 @@ const FORMS = [
     "tags": ["urban-form", "sonic", "stun"],
     "evolvedFrom": "payphone",
     "draftable": false,
-    "rules": "Reacts only to taboo-breaking runners; it does not attack ordinary runners. Its 16-tile rings deal +50% damage. Whenever Blackout begins, rings immediately, stunning violators for 1s. Earning 45 evolution progress across battles awakens The Midnight Operator!",
+    "rules": "Every third attack rings across all tiles, deals 1.5× damage, and stuns violators. Remains Epic at 45 Violations. At 80, a Curfew Blackout merger with an adjacent different Urban Legend at 45+ permanently consumes that Legend, awakens The Midnight Operator, and grants 20% of its current ATK.",
     "synergy": "Blackout triggers and The Midnight Operator."
   },
   {
@@ -1491,7 +1491,7 @@ const FORMS = [
     "tags": ["urban-form", "mirror", "reflection"],
     "evolvedFrom": "morgueMirror",
     "draftable": false,
-    "rules": "Reacts to taboo-breaking runners and those approaching its reflective angle; it ignores ordinary runners. Copies 50% of the highest adjacent ally's ATK. During Blackout, spawns 2 temporary Mirror Reflections into free slots. Earning 45 evolution progress across battles awakens Queen in the Morgue Mirror!",
+    "rules": "Reflects 50% of adjacent allies' ATK and summons two temporary reflections during Blackout. Remains Epic at 45 Violations. At 80, during Curfew Blackout, permanently consumes an adjacent different Urban Legend with 45+ Violations, awakens Queen in the Morgue Mirror, and inherits 20% of its current ATK.",
     "synergy": "High-ATK neighbors and Queen in the Morgue Mirror."
   },
   {
@@ -1528,7 +1528,7 @@ const FORMS = [
     "tags": ["urban-form", "berserk"],
     "evolvedFrom": "mannequin",
     "draftable": false,
-    "rules": "Reacts only to taboo-breaking runners; it does not attack ordinary runners. Gains +150% attack speed and +100% critical damage during Blackout. Punishments slow targets by 30%. Earning 45 evolution progress across battles awakens The Living Taboo!",
+    "rules": "Punishes taboo-breakers with increased attack speed and critical damage during Blackout or when an ally is inactive. Remains Epic at 45 Violations. At 80, a Curfew Blackout merger permanently consumes an adjacent different Urban Legend at 45+ Violations, awakens The Living Taboo, and inherits 20% of its current ATK.",
     "synergy": "Blackout triggers and The Living Taboo."
   },
   {
@@ -1569,7 +1569,7 @@ const FORMS = [
     "tags": ["urban-form", "bleed", "retribution"],
     "evolvedFrom": "redRaincoat",
     "draftable": false,
-    "rules": "Rule: 'Do Not Look Back.' Reactive trap · does not attack normally. Slashes runners who turn back or retreat for 45 true damage, heavy bleed, and spreading blood pools. In Blackout, triggers against turning or crowding runners, dealing double shadow damage. Earning 45 evolution progress across battles awakens Harbinger of the Crimson Rain!",
+    "rules": "Reactive blood-pool trap: slashes runners who retreat, turn back, warp, or are slowed. Remains Epic at 45 Violations. At 80, during Curfew Blackout, permanently consumes an adjacent different Urban Legend with 45+ Violations to awaken Harbinger of the Crimson Rain and inherit 20% of its current ATK.",
     "synergy": "Bleed, Retribution, and Harbinger of the Crimson Rain."
   },
   {
@@ -1606,7 +1606,7 @@ const FORMS = [
     "tags": ["urban-form", "trap", "vertigo"],
     "evolvedFrom": "stair13",
     "draftable": false,
-    "rules": "Rule: 'Never Count the Steps.' Reactive trap · does not attack normally. Corner and step traps deal 75 magic damage and inflict Stumble & Vertigo. During Blackout, triggers every 4th step, banishing victims for 2.0s into the void. Earning 45 evolution progress across battles awakens The Penrose Labyrinth!",
+    "rules": "Every 4 steps during Blackout, banishes repeat violators into its trapdoor. Remains Epic at 45 Violations. At 80, during Curfew Blackout, permanently consumes an adjacent different Urban Legend with 45+ Violations to awaken The Penrose Labyrinth and inherit 20% of its current ATK.",
     "synergy": "Traps, Vertigo, and The Penrose Labyrinth."
   },
   {

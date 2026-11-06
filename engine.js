@@ -674,6 +674,7 @@ const Game = (() => {
   let notes = [];
   if (b.metrics.leaks) notes.push(`${b.metrics.leaks} runners escaped.`); else notes.push('No runners escaped. Formation held.');
   if (b.metrics.heavenlyTribulation) notes.push(b.metrics.heavenlyTribulation.status === 'passed' ? 'Heavenly Tribulation passed; the matching relic was consumed and a Mythic Immortal awakened.' : b.metrics.heavenlyTribulation.status === 'failed' ? `Heavenly Tribulation failed: ${b.metrics.heavenlyTribulation.reason}. The Nascent Soul and matching relic were removed from the roster.` : 'Heavenly Tribulation is active: defeat the boss without any runner escaping.');
+  if (b.metrics.urbanContainmentTrial) notes.push(b.metrics.urbanContainmentTrial.status === 'passed' ? `Subject Zero contained with ${b.metrics.urbanContainmentTrial.finalMarks}/5 marks; the Relic was consumed and ${card(b.metrics.urbanContainmentTrial.apexId).name} awakened.` : b.metrics.urbanContainmentTrial.status === 'failed' ? `Subject Zero trial failed: ${b.metrics.urbanContainmentTrial.reason}. The Rule Enforcer and Relic were removed from the roster.` : `Subject Zero trial active: apply 5 Violation Marks and defeat it before it escapes.`);
   if (dormant.length) notes.push(`${dormant.map(c => card(c.id).name + ' #' + c.uid).join(', ')} did not fill a trigger gauge.`);
   const originals = consumed.filter(c => !c.token).length, tokens = consumed.filter(c => c.token).length;
   if (originals) notes.push(`${originals} original cards permanently lost.`);
@@ -811,13 +812,89 @@ const Game = (() => {
   persist(b, u);
  }
  function bindUrbanRelic(b, u) {
-  if (u.removed || token(u) || u.id !== 'ruleEnforcer') return;
-  const relic = neighbors(b, u).find(v => urbanRelicMap[v.id]);
-  if (!relic) return;
-  const apexId = urbanRelicMap[relic.id];
-  consume(b, u, relic, 'Containment Binding', 0);
-  evolve(b, u, apexId);
-  interact(b, relic, u, 'awaken', `${card(apexId).name} awakens!`);
+  // Architecture A's Relic is a trial focus, never an automatic Mythic binding.
+  if (!b || u?.removed || token(u) || u?.id !== 'ruleEnforcer') return null;
+  return startUrbanContainmentTrial(b);
+ }
+ function urbanTrialCandidate(b) {
+  if (!b || !['elite', 'boss'].includes(b.run?.node?.type)) return null;
+  const enforcers = b.units.filter(u => !u.removed && !token(u) && u.id === 'ruleEnforcer' && (u.dread || 0) >= 140)
+    .sort((a,z)=>a.slot-z.slot||a.uid-z.uid);
+  for (const enforcer of enforcers) {
+   const relic = neighbors(b, enforcer, false).filter(v => !v.removed && urbanRelicMap[v.id])
+    .sort((a,z)=>a.slot-z.slot||a.uid-z.uid)[0];
+   if (relic) return { enforcer, relic, apexId: urbanRelicMap[relic.id] };
+  }
+  return null;
+ }
+ function spawnSubjectZero(b, trial) {
+  const bossNode = b.run.node.type === 'boss';
+  const hp = bossNode ? Math.round((b.plan?.bossHp || 11000) * 0.65) : Math.max(4500, Math.round((b.plan?.hp || 500) * 4));
+  const e = { uid: ++b.enemyUid, id: 'subjectZero', name: 'Subject Zero', subjectZero: true, p: 0,
+   hp, maxHp: hp, speed: bossNode ? 0.24 : 0.26, leak: 0, defense: 0.25,
+   boss: false, champion: false, elite: true, maxProgress: 0, bornAt: b.time, enraged: false, gone: false,
+   panic: false, panicUntil: 0, retreatingUntil: 0, slows: [], frozenUntil: 0, shredUntil: 0,
+   bleeds: [], burns: [], venoms: [], vulnerableUntil: 0, vulnerability: 0, auras: [], ruleMarks: 0,
+   tabooMarks: { kuchisake: 0, nightBus: 0, payphone: 0, morgueMirror: 0, mannequin: 0, stair13: 0, redRaincoat: 0 } };
+  b.enemies.push(e); trial.subjectZeroUid = e.uid;
+  interact(b, trial.enforcer, e, 'subject-zero', `SUBJECT ZERO · contain with 5 Violation Marks (${hp.toLocaleString()} HP)`);
+  fx(b, 'curfew', trial.enforcer, e, 'SUBJECT ZERO · 0/5 MARKS');
+  return e;
+ }
+ function startUrbanContainmentTrial(b) {
+  if (!b || b.urbanContainmentTrial) return b?.urbanContainmentTrial || null;
+  const candidate = urbanTrialCandidate(b); if (!candidate) return null;
+  const trial = b.urbanContainmentTrial = { status: 'active', enforcerUid: candidate.enforcer.uid,
+   relicUid: candidate.relic.uid, relicId: candidate.relic.id, apexId: candidate.apexId,
+   startedAt: b.time, marksRequired: 5, subjectZeroUid: null };
+  b.metrics.urbanContainmentTrial = { status: 'active', enforcerId: candidate.enforcer.id,
+   enforcerUid: candidate.enforcer.uid, relicId: candidate.relic.id, relicUid: candidate.relic.uid,
+   apexId: candidate.apexId, nodeType: b.run.node.type, startedAt: b.time, marksRequired: 5 };
+  spawnSubjectZero(b, trial);
+  return trial;
+ }
+ function failUrbanContainmentTrial(b, reason = 'Subject Zero escaped') {
+  const t = b?.urbanContainmentTrial;
+  if (!t || t.status !== 'active') return false;
+  const enforcer = b.units.find(u => u.uid === t.enforcerUid);
+  const relic = b.units.find(u => u.uid === t.relicUid);
+  const zero = b.enemies.find(e => e.uid === t.subjectZeroUid);
+  if (zero && zero.hp > 0 && reason !== 'Subject Zero escaped') zero.gone = true;
+  t.status = 'failed'; t.reason = reason; t.failedAt = b.time;
+  if (enforcer) enforcer.removed = true;
+  if (relic) relic.removed = true;
+  const lost = new Set([t.enforcerUid, t.relicUid]);
+  b.run.roster = b.run.roster.filter(u => !lost.has(u.uid));
+  b.metrics.urbanContainmentTrial = { ...b.metrics.urbanContainmentTrial, status: 'failed', reason, failedAt: b.time };
+  interact(b, enforcer || null, relic || null, 'subject-zero-failed', `CONTAINMENT FAILED · ${reason}; Rule Enforcer and Relic lost`);
+  fx(b, 'impact', enforcer || null, null, 'CONTAINMENT FAILED');
+  return true;
+ }
+ function passUrbanContainmentTrial(b, e) {
+  const t = b?.urbanContainmentTrial;
+  if (!t || t.status !== 'active' || !e?.subjectZero || (e.ruleMarks || 0) < t.marksRequired) return false;
+  const enforcer = b.units.find(u => u.uid === t.enforcerUid && !u.removed);
+  const relic = b.units.find(u => u.uid === t.relicUid && !u.removed);
+  if (!enforcer || !relic) return failUrbanContainmentTrial(b, 'Rule Enforcer or Relic was removed');
+  consume(b, enforcer, relic, 'Subject Zero Containment', 0);
+  evolve(b, enforcer, t.apexId);
+  enforcer.realm = 4; persist(b, enforcer);
+  t.status = 'passed'; t.passedAt = b.time; t.finalMarks = e.ruleMarks || 0;
+  b.metrics.urbanContainmentTrial = { ...b.metrics.urbanContainmentTrial, status: 'passed', passedAt: b.time, finalMarks: t.finalMarks };
+  interact(b, enforcer, e, 'subject-zero-contained', `SUBJECT ZERO CONTAINED · ${card(t.apexId).name} awakened`);
+  fx(b, 'growth', enforcer, null, 'SUBJECT ZERO CONTAINED');
+  return true;
+ }
+ function tickUrbanContainmentTrial(b) {
+  const t = b?.urbanContainmentTrial;
+  if (!t || t.status !== 'active') return;
+  if (!b.units.some(u => u.uid === t.enforcerUid && !u.removed) || !b.units.some(u => u.uid === t.relicUid && !u.removed)) {
+   failUrbanContainmentTrial(b, 'Rule Enforcer or Relic was removed'); return;
+  }
+  const zero = b.enemies.find(e => e.uid === t.subjectZeroUid);
+  if (zero && zero.p >= 16 && zero.hp > 0 && !zero.gone) {
+   zero.gone = true; failUrbanContainmentTrial(b, 'Subject Zero escaped');
+  }
  }
  const isUrbanInvestigator = u => family(u) === 'investigator' && !APEX_FORMS.includes(u.id);
  const urbanLegendFamilies = ['kuchisake', 'nightBus', 'payphone', 'morgueMirror', 'mannequin', 'stair13', 'redRaincoat'];
@@ -890,10 +967,6 @@ const Game = (() => {
   const progress=canReward?amount*0.35:0;
   u.violations = Math.round(((u.violations || 0) + progress)*10000)/10000;
   updateUrbanLegendLineage(b, u);
-  for (const neighbor of neighbors(b, u, false).filter(v => isUrbanLegend(v))) {
-   neighbor.violations = Math.round(((neighbor.violations || 0) + progress * 0.15)*10000)/10000;
-   updateUrbanLegendLineage(b, neighbor);
-  }
   if (b.time >= (b.blackoutLockoutUntil || 0) && b.time >= (b.curfewUntil || 0)) {
    b.urbanViolationsForBlackout = (b.urbanViolationsForBlackout || 0) + amount;
    if (b.urbanViolationsForBlackout >= 5) {
@@ -905,16 +978,38 @@ const Game = (() => {
 
  function updateUrbanLegendLineage(b, u) {
   const fam = family(u);
-  if (!urbanLegendFamilies.includes(fam)) return;
-  const v = u.violations || 0;
+  if (!urbanLegendFamilies.includes(fam) || APEX_FORMS.includes(u.id)) return;
   const forms = urbanLegendTiers[fam];
   if (!forms) return;
-  const targetTier = v >= 45 ? 2 : v >= 15 ? 1 : 0;
-  const targetId = forms[targetTier];
-  if (u.id !== targetId && !APEX_FORMS.includes(u.id)) {
-   evolve(b, u, targetId);
-   persist(b, u);
+  // 15 earns the Epic form; 80 is only readiness. Mythic requires an actual Blackout merger.
+  const targetId = (u.violations || 0) >= 15 ? forms[1] : forms[0];
+  if (u.id !== targetId) { evolve(b, u, targetId); persist(b, u); }
+ }
+ function resolveUrbanLegendMerger(b) {
+  if (!b || b.curfewUntil <= b.time) return [];
+  const candidates = b.units.filter(u => !u.removed && !token(u) && isUrbanLegend(u) && (u.violations || 0) >= 80)
+   .sort((a,z)=>(z.violations||0)-(a.violations||0)||a.uid-z.uid);
+  const merged=[];
+  for (const devourer of candidates) {
+   if (devourer.removed || APEX_FORMS.includes(devourer.id)) continue;
+   const forms=urbanLegendTiers[family(devourer)]; if(!forms) continue;
+   const victim=neighbors(b,devourer,false).filter(v=>!v.removed&&!token(v)&&isUrbanLegend(v)&&family(v)!==family(devourer)&&(v.violations||0)>=45)
+    .sort((a,z)=>(z.violations||0)-(a.violations||0)||rawAtk(z)-rawAtk(a)||a.uid-z.uid)[0];
+   if(!victim) continue;
+   const inherited=Math.round(atk(b,victim)*0.20*100)/100;
+   const victimViolations=victim.violations||0;
+   consume(b,devourer,victim,'Folklore Merger',0);
+   devourer.permanentAtkBonus=(devourer.permanentAtkBonus||0)+inherited;
+   const rosterUnit=b.run.roster.find(v=>v.uid===devourer.uid);if(rosterUnit)rosterUnit.permanentAtkBonus=devourer.permanentAtkBonus;
+   evolve(b,devourer,forms[2]);
+   devourer.realm=4;
+   persist(b,devourer);
+   const entry={devourerUid:devourer.uid,apexId:devourer.id,consumedUid:victim.uid,consumedId:victim.id,consumedViolations:victimViolations,inheritedAtk:inherited,time:b.time};
+   (b.metrics.folkloreMergers??=[]).push(entry); merged.push(entry);
+   interact(b,victim,devourer,'folklore-merger',`FOLKLORE MERGER · permanently devoured ${card(victim.id).name}; +${inherited} permanent ATK`);
+   fx(b,'growth',devourer,null,`MYTHIC · +${inherited} ATK`);
   }
+  return merged;
  }
 
  function triggerBlackout(b) {
@@ -925,6 +1020,7 @@ const Game = (() => {
   const dur = 6.0 * mod(b.run, 'buffDuration');
   b.curfewUntil = b.time + dur;
   b.blackoutLockoutUntil = b.curfewUntil + 8.0;
+  resolveUrbanLegendMerger(b);
   for (const e of living(b)) { e.panicUntil = Math.max(e.panicUntil || 0, b.time + 2.5); e.panic = true; }
   fx(b, 'curfew', null, null, 'TẮT ĐÈN · BLACKOUT FRENZY');
   for (const v of legends) {
@@ -980,7 +1076,7 @@ const Game = (() => {
    }
   }
 
-  fx(b, 'violation', source || e, e, 'PHẠM QUY');
+  fx(b, 'violation', source || e, e, e.subjectZero ? `SUBJECT ZERO · ${e.ruleMarks}/5 MARKS` : 'PHẠM QUY');
  }
 
  function practitionerRealmForQi(qi = 0) { return qi >= 175 ? 3 : qi >= 85 ? 2 : qi >= 30 ? 1 : 0 }
@@ -1191,6 +1287,7 @@ const Game = (() => {
   b.units.filter(isMech).forEach(u=>updateMech(b,u));
   b.plan = wavePlan(r);
   startHeavenlyTrial(b);
+  startUrbanContainmentTrial(b);
   startAbilities(b);
   
   return b;
@@ -1329,6 +1426,10 @@ const Game = (() => {
   if (e.hp <= 0) {
    e.hp = 0; if (e.champion) recordTrial(b, e, true); if ((e.maxProgress || e.p) >= 12) b.metrics.closeCalls = (b.metrics.closeCalls || 0) + 1;
    e.gone = true; b.metrics.kills++; b.run.stats.kills++;
+   if (e.subjectZero && b.urbanContainmentTrial?.status === 'active') {
+    if ((e.ruleMarks || 0) >= b.urbanContainmentTrial.marksRequired) passUrbanContainmentTrial(b, e);
+    else failUrbanContainmentTrial(b, `Subject Zero defeated with only ${e.ruleMarks || 0}/5 Violation Marks`);
+   }
    if (e.boss && b.heavenlyTrial?.status === 'active') passHeavenlyTrial(b);
    salvage(b);
    harvestTrophy(b,e);arcaneKill(b);cyberDeath(b,e);cosmicDeath(b,e,source);
@@ -1727,11 +1828,6 @@ const Game = (() => {
   const target = living(b).find(e => e !== source && !e.rumorInfected && Math.min(Math.abs(e.p - source.p), 16 - Math.abs(e.p - source.p)) <= (onDeath ? 1.5 : .45));
   if (!onDeath && !target) return;
   if (!onDeath) source.rumorContactSpread = true;
-  for (const legend of b.units.filter(v => !v.removed && !token(v) && isUrbanLegend(v))) {
-   legend.violations = Math.round(((legend.violations || 0) + 0.10)*10000)/10000;
-   updateUrbanLegendLineage(b, legend);
-   persist(b, legend);
-  }
   if (target) {
    target.rumorInfected = true;
    target.rumorOwner = source.rumorOwner;
@@ -1764,6 +1860,7 @@ const Game = (() => {
  function step(b, dt) {
   if (b.done) return; dt = Math.min(.1, dt); b.time += dt;
   tickHeavenlyTrial(b);
+  tickUrbanContainmentTrial(b);
   if (b.spawned < b.plan.count && b.time >= b.spawnAt) { spawn(b); b.spawnAt += b.plan.encounter === 'packs' ? (b.spawned % 3 === 0 ? b.plan.interval * 2 : .18) : b.plan.interval }
   for (const u of b.units.filter(u => !u.removed)) {
    if (u.removed) continue;
@@ -1800,6 +1897,7 @@ const Game = (() => {
    }
    if (e.gone) continue;
    if (e.p >= 16) {
+    if (e.subjectZero) { e.gone = true; failUrbanContainmentTrial(b, 'Subject Zero escaped'); fx(b, 'warp', null, e, 'SUBJECT ZERO ESCAPED'); continue; }
     if (e.champion) recordTrial(b, e, false);
     if (!e.boss && !e.champion && b.units.some(v => !v.removed && v.id === 'ruleArchitect') && !b.room404Saved) {
      b.room404Saved = true; e.gone = true;
@@ -1906,9 +2004,10 @@ const Game = (() => {
    case 'kuchisake': case 'nightBus': case 'payphone': case 'morgueMirror':
    case 'mannequin': case 'stair13': case 'redRaincoat': {
     const v = u.violations || 0;
-    if (v >= 45) return { current: 45, max: 45, label: 'Mythic Apex Achieved' };
-    if (v >= 15) return { current: v, max: 45 };
-    return { current: v, max: 15 };
+    if (APEX_FORMS.includes(u.id)) return { current: 80, max: 80, label: 'Mythic Folklore Merger complete' };
+    if (v >= 80) return { current: 80, max: 80, label: 'Ready: Blackout + adjacent Legend (45+)' };
+    if (v >= 15) return { current: v, max: 80, label: 'Epic · Mythic merger at 80' };
+    return { current: v, max: 15, label: 'Epic at 15 · Mythic merger at 80' };
    } default: return null } }
  const species = u => token(u) ? (u.origin || card(u.id).species) : family(u);
  function preyEligible(predator, prey) { if (prey.removed || predator === prey) return false; const diets = { cub: ['serpentFodder','hound','scuttler','flameToad','peachFodder'], herald: ['mass', 'larva'], alchemist: ['lotus', 'herb'], harvester: ['lamb'] }; return card(predator.id).genre === card(species(prey))?.genre && (diets[family(predator)] || []).includes(species(prey)); }
@@ -2091,6 +2190,21 @@ const Game = (() => {
    }
   }
 
+  // Red Hotline prioritizes Subject Zero, otherwise the leading runner.
+  if (u.id === 'redPhone' && b.time >= (u.hotlineMarkAt || 4)) {
+   u.hotlineMarkAt = b.time + 4;
+   const zero = b.enemies.find(e => e.subjectZero && !e.gone && e.hp > 0 && (e.ruleMarks || 0) < 5);
+   const target = zero || living(b)[0];
+   if (target) { addRuleMark(b, target, 1, u); interact(b, u, target, 'hotline-mark', zero ? `Subject Zero · ${target.ruleMarks}/5 marks` : 'Emergency Hotline marks leading runner'); }
+  }
+  // Director of Curfew uses mark-scaled lockdown; it does not need Blackout.
+  if (u.id === 'curfewDirector' && b.time >= (u.lockdownAt || 6)) {
+   u.lockdownAt = b.time + 6;
+   const marked = living(b).filter(e => (e.ruleMarks || 0) > 0);
+   const target = marked.find(e => e.subjectZero) || marked.sort((a,z)=>(z.ruleMarks||0)-(a.ruleMarks||0)||z.p-a.p||a.uid-z.uid)[0];
+   if (target) { const marks=target.ruleMarks||0,duration=marks>=5?3:marks>=3?2:1; status(b,target,'freeze',duration,0,u); interact(b,u,target,'lockdown',`LOCKDOWN ${duration}s · ${marks}/5 marks`); fx(b,'curfew',u,target,`LOCKDOWN ${duration}s`); }
+  }
+
   // Liminal Keycard warps leading marked runners every 7s
   if (u.id === 'elevatorKey' && b.time >= (u.keyAt || 7)) {
    u.keyAt = b.time + 7;
@@ -2188,7 +2302,7 @@ const Game = (() => {
   if (abilityGauge(u) && u.threshold.current >= u.threshold.max) tick(b, u, 0);
  }
 
- return { COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, updateIdol, dropPage, addSyllables, forgeGrimoire, decipherPage, cosmicPanic, cosmicStatus, cosmicReward, cosmicDeath, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, augmented, hasAccess, ramCapacity, berserkActive, updateCyber, installChrome, addChromeAttack, addRAM, cyberPoison, uploadHack, cyberDeath, cyberZone, clearSprint, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, arcanePair, isApprentice, isArchon, isElemental, arcaneGauge, bestPair, updateApprentice, receiveEssence, storeOverflow, elementalLinks, arcaneReaction, elementalSpell, arcaneZone, archonAttack, arcaneExtras, tickArcane, arcaneKill, HUNT_APEX, isSlayer, isHunter, priority, trophyFamily, huntAura, executeThreshold, wallOf, huntArmor, brandQuarry, updateSlayer, trophyPoints, harvestTrophy, forgeHuntRelic, carveTrophy, huntExtras, visceral, slayerAttack, isMech, isMechanical, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, inArc, oilPool, tickOil, mechAttack, addQi, addDread, acceptsQi, acceptsDread, isCultivationApex, isUrbanAuthority, bindUrbanRelic, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, practitionerRealmForQi, isPractitioner, isCultivationRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, breaksLegendNaturalRule, markNaturalBreach, URBAN_LEGEND_MARK_NAMES };
+ return { COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, updateIdol, dropPage, addSyllables, forgeGrimoire, decipherPage, cosmicPanic, cosmicStatus, cosmicReward, cosmicDeath, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, augmented, hasAccess, ramCapacity, berserkActive, updateCyber, installChrome, addChromeAttack, addRAM, cyberPoison, uploadHack, cyberDeath, cyberZone, clearSprint, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, arcanePair, isApprentice, isArchon, isElemental, arcaneGauge, bestPair, updateApprentice, receiveEssence, storeOverflow, elementalLinks, arcaneReaction, elementalSpell, arcaneZone, archonAttack, arcaneExtras, tickArcane, arcaneKill, HUNT_APEX, isSlayer, isHunter, priority, trophyFamily, huntAura, executeThreshold, wallOf, huntArmor, brandQuarry, updateSlayer, trophyPoints, harvestTrophy, forgeHuntRelic, carveTrophy, huntExtras, visceral, slayerAttack, isMech, isMechanical, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, inArc, oilPool, tickOil, mechAttack, addQi, addDread, acceptsQi, acceptsDread, isCultivationApex, isUrbanAuthority, bindUrbanRelic, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startUrbanContainmentTrial, failUrbanContainmentTrial, passUrbanContainmentTrial, tickUrbanContainmentTrial, resolveUrbanLegendMerger, updateUrbanLegendLineage, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, practitionerRealmForQi, isPractitioner, isCultivationRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, breaksLegendNaturalRule, markNaturalBreach, URBAN_LEGEND_MARK_NAMES };
 })();
 if (typeof module !== 'undefined') module.exports = Game;
 

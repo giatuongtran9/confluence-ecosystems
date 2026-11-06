@@ -12,7 +12,7 @@ for(const id of ['ruleArchitect','livingTaboo','xuanwuCubApex'])for(const kind o
 });
 for(const kind of ['boss','champion','ordinary'])test('Penrose execution: '+kind,()=>{const b=battle(['penroseLabyrinth']),u=b.units[0],e=enemy(b,kind,3.99);u.violations=45;e.hp=2000;e.panicUntil=10;b.curfewUntil=10;b.blackoutLockoutUntil=18;G.step(b,.1);if(kind==='ordinary')assert.equal(e.hp,0);else assert.ok(e.hp>0);});
 for(const id of ['talismanSovereign','slitMouthedSovereign'])for(const kind of ['boss','champion','ordinary'])test(id+' execution: '+kind,()=>{const b=battle([id]),e=enemy(b,kind,4);e.maxHp=100000;e.hp=12000;e.speed=.5;G.attack(b,b.units[0]);if(kind==='ordinary')assert.equal(e.hp,0);else assert.ok(e.hp>0);});
-test('Kuchisake earns progression, cooldown throttles rewards but not damage or marks',()=>{const b=battle(['kuchisake','mannequin'],[0,1]),[u,v]=b.units,e=enemy(b,'ordinary',4);e.hp=e.maxHp=1e6;e.speed=.5;G.attack(b,u);assert.equal(u.violations,.35);assert.equal(v.violations,.0525);const hp=e.hp;G.attack(b,u);assert.ok(e.hp<hp);assert.equal(G.getTabooMark(e,'kuchisake'),2);assert.equal(u.violations,.35);b.time=8;G.attack(b,u);assert.equal(u.violations,.7);assert.equal(v.violations,.105);});
+test('Kuchisake earns progression, cooldown throttles rewards but not damage or marks',()=>{const b=battle(['kuchisake','mannequin'],[0,1]),[u,v]=b.units,e=enemy(b,'ordinary',4);e.hp=e.maxHp=1e6;e.speed=.5;G.attack(b,u);assert.equal(u.violations,.35);assert.equal(v.violations||0,0);const hp=e.hp;G.attack(b,u);assert.ok(e.hp<hp);assert.equal(G.getTabooMark(e,'kuchisake'),2);assert.equal(u.violations,.35);b.time=8;G.attack(b,u);assert.equal(u.violations,.7);assert.equal(v.violations||0,0);});
 test('different runners earn independent reaction rewards',()=>{const b=battle(['nightBus']),u=b.units[0];for(let i=0;i<2;i++){const e=enemy(b,'ordinary',4+i);e.speed=.5;}G.attack(b,u);assert.equal(u.violations,.7);});
 test('three cultivation attacks earn one Qi and remainder persists',()=>{const b=battle(['practitioner']),u=b.units[0];enemy(b,'ordinary',4);G.attack(b,u);G.attack(b,u);assert.equal(u.qi,0);const restored=G.runtime(b,b.run.roster[0],0);assert.equal(restored.qiAttackCharge,2);G.attack(b,restored);assert.equal(restored.qi,1);assert.equal(restored.qiAttackCharge,0);});
 test('one forge working slot can complete two-piece recipe across deployments',()=>{
@@ -49,3 +49,60 @@ test('only the highest-Qi eligible Nascent Soul enters the trial',()=>{const b=t
 test('Nascent Soul and relic cannot evolve outside a boss trial',()=>{const b=tribulationBattle();b.run.node.type='battle';G.extras(b,b.units[0],0);assert.equal(b.units[0].id,'cultivationNascentSoul');assert.equal(b.units[1].removed,false);});
 test('a trial cannot pass until a boss is defeated',()=>{const b=tribulationBattle();G.startHeavenlyTrial(b);assert.equal(G.passHeavenlyTrial(b),false);assert.equal(b.heavenlyTrial.status,'active');});
 test('removing relic during the active trial also fails and removes practitioner',()=>{const b=tribulationBattle();G.startHeavenlyTrial(b);b.units[1].removed=true;b.time=.1;G.tickHeavenlyTrial(b);assert.equal(b.heavenlyTrial.status,'failed');assert.equal(b.units[0].removed,true);assert.equal(b.run.roster.length,0);});
+
+
+// Haunted Mythic gates and Subject Zero containment trial.
+const urbanApexByRelic={ruleboard:'ruleArchitect',panopticon:'allSeeingOverseer',redPhone:'curfewDirector',boneSaw:'forensicDemiurge',elevatorKey:'backroomsWarden'};
+const legendApex={kuchisake:'slitMouthedSovereign',nightBus:'terminusBus',payphone:'midnightOperator',morgueMirror:'mirrorQueen',mannequin:'livingTaboo',stair13:'penroseLabyrinth',redRaincoat:'crimsonHarbinger'};
+function urbanTrialBattle(relic='ruleboard',nodeType='elite',dread=140){
+ const b=battle(['ruleEnforcer',relic],[4,1]);b.run.node.type=nodeType;
+ const enforcer=b.units.find(u=>G.family(u)==='investigator'),focus=b.units.find(u=>u.id===relic);
+ enforcer.dread=dread;b.run.roster.find(u=>u.uid===enforcer.uid).dread=dread;
+ G.startUrbanContainmentTrial(b);return {b,enforcer,focus};
+}
+test('Urban Legends stay Epic at and above 45 until Blackout merger conditions are met',()=>{
+ for(const id of Object.keys(legendApex)){const b=battle([id]),u=b.units[0];u.violations=79.9;G.grantUrbanViolation(b,u,0);assert.notEqual(u.id,legendApex[id]);u.violations=80;G.grantUrbanViolation(b,u,0);assert.notEqual(u.id,legendApex[id]);}
+});
+test('80-Violation legend consumes adjacent 45+ legend only during Curfew Blackout and inherits 20% current ATK',()=>{
+ for(const [devourer,apex] of Object.entries(legendApex)){
+  const victim=Object.keys(legendApex).find(id=>id!==devourer),b=battle([devourer,victim],[4,1]),a=b.units[0],v=b.units[1];a.violations=80;v.violations=45;
+  const before=G.atk(b,v);b.curfewUntil=0;assert.equal(G.resolveUrbanLegendMerger(b).length,0);assert.equal(v.removed,false);
+  b.time=5;b.curfewUntil=11;const expected=Math.round(G.atk(b,v)*.2*100)/100;const merged=G.resolveUrbanLegendMerger(b);assert.equal(merged.length,1);assert.equal(a.id,apex);assert.equal(v.removed,true);assert.ok(Math.abs(a.permanentAtkBonus-expected)<.02);assert.ok(b.run.roster.some(x=>x.uid===a.uid&&x.id===apex));assert.ok(!b.run.roster.some(x=>x.uid===v.uid));
+ }
+});
+test('Urban Legend merger needs both 80 on devourer and 45 on adjacent different lineage',()=>{
+ const b=battle(['kuchisake','nightBus'],[4,1]),a=b.units[0],v=b.units[1];a.violations=79.99;v.violations=44.99;b.curfewUntil=20;assert.equal(G.resolveUrbanLegendMerger(b).length,0);a.violations=80;assert.equal(G.resolveUrbanLegendMerger(b).length,0);v.violations=45;assert.equal(G.resolveUrbanLegendMerger(b).length,1);
+});
+test('a real Curfew Blackout triggers one Folklore Merger and grants permanent inheritance',()=>{
+ const b=battle(['kuchisake','nightBus'],[4,1]),a=b.units[0],v=b.units[1];a.violations=80;v.violations=45;b.urbanViolationsForBlackout=4;b.blackoutLockoutUntil=0;b.curfewUntil=0;
+ G.grantUrbanViolation(b,a,1,null);
+ assert.ok(b.curfewUntil>b.time);assert.equal(a.id,'slitMouthedSovereign');assert.ok(v.removed);assert.equal(b.metrics.folkloreMergers.length,1);
+ const merger=b.metrics.folkloreMergers[0];assert.ok(a.permanentAtkBonus>=merger.inheritedAtk);assert.equal(b.run.roster.find(x=>x.uid===a.uid).permanentAtkBonus,a.permanentAtkBonus);
+ G.grantUrbanViolation(b,a,1,null);assert.equal(b.metrics.folkloreMergers.length,1);
+});
+test('nearby Legends no longer receive shared violation progress',()=>{const b=battle(['kuchisake','nightBus'],[4,1]),a=b.units[0],v=b.units[1];G.grantUrbanViolation(b,a,1,null);assert.ok(a.violations>0);assert.equal(v.violations||0,0);});
+test('Red Hotline marks Subject Zero and Director locks marked target without Blackout',()=>{const {b}=urbanTrialBattle('redPhone');const phone=b.units.find(u=>u.id==='redPhone'),zero=b.enemies.find(e=>e.subjectZero);b.time=4;G.extras(b,phone,0);assert.equal(zero.ruleMarks,1);assert.equal(b.curfewUntil||0,0);const director={...phone,uid:999,id:'curfewDirector',slot:2};G.prepareHooks(b,director);b.units.push(director);zero.ruleMarks=5;b.time=6;G.extras(b,director,0);assert.ok(zero.frozenUntil>=9);assert.equal(b.curfewUntil||0,0);});
+test('all five Architecture A relics launch Subject Zero only on Elite/Boss at 140 Dread',()=>{
+ for(const [relic,apex] of Object.entries(urbanApexByRelic)){
+  let {b}=urbanTrialBattle(relic,'elite');assert.equal(b.urbanContainmentTrial?.status,'active');assert.equal(b.urbanContainmentTrial.apexId,apex);assert.ok(b.enemies.some(e=>e.subjectZero));
+  ({b}=urbanTrialBattle(relic,'boss'));assert.equal(b.urbanContainmentTrial?.status,'active');
+  ({b}=urbanTrialBattle(relic,'battle'));assert.equal(b.urbanContainmentTrial,undefined);assert.ok(!b.enemies.some(e=>e.subjectZero));
+ }
+});
+test('Subject Zero trial requires 140 Dread and orthogonal adjacency',()=>{
+ let {b}=urbanTrialBattle('ruleboard','elite',139);assert.equal(b.urbanContainmentTrial,undefined);
+ let x=urbanTrialBattle('ruleboard','elite',140);x.b.urbanContainmentTrial=undefined;x.b.metrics.urbanContainmentTrial=undefined;x.b.enemies=x.b.enemies.filter(e=>!e.subjectZero);x.focus.slot=8;Object.assign(x.focus,G.xy(8));assert.equal(G.startUrbanContainmentTrial(x.b),null);
+});
+test('Subject Zero is contained only after five marks and its kill consumes Relic into matching Mythic',()=>{
+ for(const [relic,apex] of Object.entries(urbanApexByRelic)){
+  const {b,enforcer,focus}=urbanTrialBattle(relic,'elite');const zero=b.enemies.find(e=>e.subjectZero);zero.ruleMarks=5;
+  assert.equal(G.damage(b,zero,zero.hp,enforcer),zero.maxHp);assert.equal(b.urbanContainmentTrial.status,'passed');assert.equal(enforcer.id,apex);assert.ok(focus.removed);assert.ok(b.run.roster.some(u=>u.uid===enforcer.uid&&u.id===apex));assert.ok(!b.run.roster.some(u=>u.uid===focus.uid));
+ }
+});
+test('Subject Zero under-marked kill and escape fail and permanently remove Enforcer and Relic',()=>{
+ let {b,enforcer,focus}=urbanTrialBattle();let zero=b.enemies.find(e=>e.subjectZero);zero.ruleMarks=4;G.damage(b,zero,zero.hp,enforcer);assert.equal(b.urbanContainmentTrial.status,'failed');assert.ok(enforcer.removed&&focus.removed);assert.equal(b.run.roster.length,0);
+ ({b,enforcer,focus}=urbanTrialBattle());zero=b.enemies.find(e=>e.subjectZero);zero.p=15.99;zero.speed=1;G.step(b,.1);assert.equal(b.urbanContainmentTrial.status,'failed');assert.ok(enforcer.removed&&focus.removed);assert.equal(b.run.roster.length,0);
+});
+test('trial mark and progress display advertises the 80-point Blackout merger gate',()=>{
+ const b=battle(['kuchisake']),u=b.units[0];u.violations=80;const progress=G.evolutionProgress(u);assert.equal(progress.current,80);assert.equal(progress.max,80);assert.match(progress.label,/Blackout/);
+});
