@@ -183,7 +183,7 @@ const Game = (() => {
   if(!isApprentice(u)||isArchon(u)||u.removed||token(u))return;
   const pair=bestPair(u),p=u.synthesis?.[pair]||0,id=p>=20?'elementalMaster':p>=10?'elementalAdept':'elementalApprentice';
   if(id!==u.id)evolve(b,u,id);
-  if(p>=30&&b.run.depth>=9)startArcaneTrial(b);
+  if(p>=30)startArcaneTrial(b);
   persist(b,u);
  }
  function receiveEssence(b,u,element){
@@ -436,13 +436,52 @@ const Game = (() => {
   if (!MECH_APEX.includes(u.id)) {
    const id = u.extraSlot != null ? 'titanFrame' : (u.alloy||0)>=65 ? 'heavyWalker' : (u.alloy||0)>=25 ? 'reinforcedWalker' : 'scrapFrame';
    if(u.id !== id)evolve(b,u,id);
-   if(u.extraSlot != null && b.run.depth >= 9 && mechPath(u)) {
-    const reactor = neighbors(b,u).find(v=>v.id==='titanReactor'&&!token(v));
-    if(reactor){consume(b,u,reactor,'Reactor Binding',0);evolve(b,u,mechPath(u));}
-   }
+   if(u.extraSlot != null && mechPath(u)) startScrapworkTrial(b);
   }
   persist(b,u);
  }
+  function scrapworkTrialCandidate(b){
+   if(!b||!['elite','boss'].includes(b.run?.node?.type)||(b.metrics?.leaks||0)>0)return null;
+   for(const unit of b.units.filter(u=>!u.removed&&!token(u)&&isMech(u)&&u.id==='titanFrame'&&u.alloy>=120&&u.extraSlot!=null&&mechPath(u))
+    .sort((a,z)=>a.slot-z.slot||a.uid-z.uid)){
+    const reactor=neighbors(b,unit,false).filter(v=>!v.removed&&!token(v)&&v.id==='titanReactor').sort((a,z)=>a.slot-z.slot||a.uid-z.uid)[0];
+    if(reactor)return{unit,reactor,apexId:mechPath(unit)};
+   }
+   return null;
+  }
+  function startScrapworkTrial(b){
+   if(!b||b.scrapworkTrial)return b?.scrapworkTrial||null;
+   const c=scrapworkTrialCandidate(b);if(!c)return null;
+   const t=b.scrapworkTrial={status:'active',unitUid:c.unit.uid,reactorUid:c.reactor.uid,apexId:c.apexId,modules:[...c.unit.modules],moduleHits:{},startedAt:b.time,nodeType:b.run.node.type};
+   b.metrics.scrapworkTrial={status:'active',unitUid:t.unitUid,reactorUid:t.reactorUid,apexId:t.apexId,modules:[...t.modules],moduleHits:{},startedAt:b.time,nodeType:t.nodeType};
+   interact(b,c.unit,c.reactor,'scrapwork-trial','TITAN FIELD TEST · each locked module must strike a priority target, then clear with zero leaks');
+   fx(b,'growth',c.unit,null,'TITAN FIELD TEST · PROVE BOTH MODULES');return t;
+  }
+  function markScrapworkTrialHit(b,u,module,index,e){
+   const t=b?.scrapworkTrial;if(!t||t.status!=='active'||u.uid!==t.unitUid||!e||!(e.elite||e.champion||e.boss)||t.modules[index]!==module)return false;
+   const key=`${module}:${index+1}`;if(t.moduleHits[key])return false;
+   t.moduleHits[key]=true;b.metrics.scrapworkTrial={...b.metrics.scrapworkTrial,moduleHits:{...t.moduleHits}};
+   interact(b,u,e,'scrapwork-proof',`${module.toUpperCase()} module proof · ${Object.keys(t.moduleHits).length}/${t.modules.length}`);
+   fx(b,'growth',u,e,`${module.toUpperCase()} PROVED`);return true;
+  }
+  function failScrapworkTrial(b,reason='A runner leaked'){
+   const t=b?.scrapworkTrial;if(!t||t.status!=='active')return false;
+   const titan=b.units.find(u=>u.uid===t.unitUid),reactor=b.units.find(u=>u.uid===t.reactorUid);
+   if(titan)titan.removed=true;if(reactor)reactor.removed=true;
+   const lost=new Set([t.unitUid,t.reactorUid]);b.run.roster=b.run.roster.filter(u=>!lost.has(u.uid));
+   t.status='failed';t.reason=reason;t.failedAt=b.time;b.metrics.scrapworkTrial={...b.metrics.scrapworkTrial,status:'failed',reason,failedAt:b.time};
+   interact(b,titan||null,reactor||null,'scrapwork-trial-failed',`TITAN FIELD TEST FAILED · ${reason}; Titan and Reactor Core lost`);fx(b,'impact',titan||null,null,'TITAN TRIAL FAILED');return true;
+  }
+  function passScrapworkTrial(b){
+   const t=b?.scrapworkTrial;if(!t||t.status!=='active'||!b.won||(b.metrics?.leaks||0)!==0||!['elite','boss'].includes(b.run?.node?.type)||!t.modules.every((m,i)=>t.moduleHits[`${m}:${i+1}`]))return false;
+   const titan=b.units.find(u=>u.uid===t.unitUid&&!u.removed),reactor=b.units.find(u=>u.uid===t.reactorUid&&!u.removed);
+   if(!titan||!reactor)return failScrapworkTrial(b,'Titan or Reactor Core was removed');
+   consume(b,titan,reactor,'Titan Field Test',0);evolve(b,titan,t.apexId);persist(b,titan);
+   t.status='passed';t.passedAt=b.time;b.metrics.scrapworkTrial={...b.metrics.scrapworkTrial,status:'passed',passedAt:b.time};
+   interact(b,titan,titan,'scrapwork-trial-passed',`TITAN FIELD TEST PASSED · ${card(t.apexId).name} awakened`);fx(b,'growth',titan,null,'TITAN MYTHIC AWAKENED');return true;
+  }
+  function tickScrapworkTrial(b){const t=b?.scrapworkTrial;if(!t||t.status!=='active')return;if(!b.units.some(u=>u.uid===t.unitUid&&!u.removed)||!b.units.some(u=>u.uid===t.reactorUid&&!u.removed))failScrapworkTrial(b,'Titan or Reactor Core was removed');}
+
  function addAlloy(b,u,n) {
   if(!isMech(u)||token(u)||u.removed)return;
   const before=u.alloy||0;u.alloy=before+n;
@@ -487,7 +526,7 @@ const Game = (() => {
   u.scrapIntake=[];persist(b,u);
   const distance=v=>Math.min(...occupiedSlots(v).map(s=>Math.abs(xy(s).x-u.x)+Math.abs(xy(s).y-u.y)));
   const recipient=mechs.filter(v=>(v.modules||[]).length<2).sort((a,z)=>distance(a)-distance(z)||a.uid-z.uid)[0];
-  if(recipient){recipient.modules=[...(recipient.modules||[]),module];persist(b,recipient);interact(b,u,recipient,'module',`${module.toUpperCase()} installed · ${recipient.modules.length}/2 locked`);}
+  if(recipient){recipient.modules=[...(recipient.modules||[]),module];persist(b,recipient);interact(b,u,recipient,'module',`${module.toUpperCase()} installed · ${recipient.modules.length}/2 locked`);startScrapworkTrial(b);}
   for(const mech of mechs)addAlloy(b,mech,3);
   b.metrics.smelts=(b.metrics.smelts||0)+1;
   interact(b,u,recipient||u,'smelt',recipient?'+3 Alloy to deployed Mechs':'Modules recycled · +3 Alloy to deployed Mechs');
@@ -555,14 +594,14 @@ const Game = (() => {
   const modules=u.modules||[];
   if(!modules.length){hit(b,u,target,power);return;}
   const scale=modules.length===2?.65:1;
-  modules.forEach(module=>{
+  modules.forEach((module,moduleIndex)=>{
    const lead=living(b)[0];if(!lead)return;
    if(module==='blade'){
-    const e=strongest();armorStrip(e,.5);hit(b,u,e,power*scale*(e.hp/e.maxHp<.35?3:1));
+    const e=strongest();armorStrip(e,.5);hit(b,u,e,power*scale*(e.hp/e.maxHp<.35?3:1));markScrapworkTrialHit(b,u,module,moduleIndex,e);
    }else if(module==='flak'){
-    const tiles=arcTiles(lead.p,6);for(const e of living(b).filter(e=>inArc(e,tiles))){armorStrip(e,.25);hit(b,u,e,power*scale*.65);}
-   }else if(u.attackCount%2){damage(b,lead,power*scale,u,'direct');}
-   else{const tiles=arcTiles(lead.p,4);for(const e of living(b).filter(e=>inArc(e,tiles)))hit(b,u,e,power*scale*.65);oilPool(b,u,lead.p,4,10*scale);}
+    const tiles=arcTiles(lead.p,6);for(const e of living(b).filter(e=>inArc(e,tiles))){armorStrip(e,.25);hit(b,u,e,power*scale*.65);markScrapworkTrialHit(b,u,module,moduleIndex,e);}
+   }else if(u.attackCount%2){damage(b,lead,power*scale,u,'direct');markScrapworkTrialHit(b,u,module,moduleIndex,lead);}
+   else{const tiles=arcTiles(lead.p,4);for(const e of living(b).filter(e=>inArc(e,tiles))){hit(b,u,e,power*scale*.65);markScrapworkTrialHit(b,u,module,moduleIndex,e);}oilPool(b,u,lead.p,4,10*scale);}
   });
  }
 
@@ -683,6 +722,7 @@ const Game = (() => {
   if (b.metrics.heavenlyTribulation) notes.push(b.metrics.heavenlyTribulation.status === 'passed' ? 'Heavenly Tribulation passed; the matching relic was consumed and a Mythic Immortal awakened.' : b.metrics.heavenlyTribulation.status === 'failed' ? `Heavenly Tribulation failed: ${b.metrics.heavenlyTribulation.reason}. The Nascent Soul and matching relic were removed from the roster.` : 'Heavenly Tribulation is active: clear the Elite/Boss node with zero leaks.');
   if (b.metrics.urbanContainmentTrial) notes.push(b.metrics.urbanContainmentTrial.status === 'passed' ? `Subject Zero contained with ${b.metrics.urbanContainmentTrial.finalMarks}/5 marks; the Relic was consumed and ${card(b.metrics.urbanContainmentTrial.apexId).name} awakened.` : b.metrics.urbanContainmentTrial.status === 'failed' ? `Subject Zero trial failed: ${b.metrics.urbanContainmentTrial.reason}. The Rule Enforcer and Relic were removed from the roster.` : `Subject Zero trial active: apply 5 Violation Marks and defeat it before it escapes.`);
   if (b.metrics.urbanLegendTrial) notes.push(b.metrics.urbanLegendTrial.status === 'passed' ? `Folklore Merger trial passed with zero runner leaks; ${card(b.metrics.urbanLegendTrial.apexId).name} awakened with +${b.metrics.urbanLegendTrial.inheritedAtk} inherited ATK.` : b.metrics.urbanLegendTrial.status === 'failed' ? `Folklore Merger trial failed: ${b.metrics.urbanLegendTrial.reason}. The devourer was removed; its same-lineage prey was already consumed.` : `Folklore Merger trial active: clear the Elite/Boss node with zero leaks to earn Mythic.`);
+  if (b.metrics.scrapworkTrial) notes.push(b.metrics.scrapworkTrial.status==='passed'?`Titan Field Test passed; ${card(b.metrics.scrapworkTrial.apexId).name} awakened and the Reactor Core was consumed.`:b.metrics.scrapworkTrial.status==='failed'?`Titan Field Test failed: ${b.metrics.scrapworkTrial.reason}. Titan and Reactor Core removed.`:'Titan Field Test active: prove both locked modules against priority enemies, then clear with zero leaks.');
   if (b.metrics.arcaneTrial) notes.push(b.metrics.arcaneTrial.status === 'passed' ? `Astral Weaving passed; ${card(b.metrics.arcaneTrial.apexId).name} awakened and the Loom was consumed.` : b.metrics.arcaneTrial.status === 'failed' ? `Astral Weaving failed: ${b.metrics.arcaneTrial.reason}. Mage and Astral Loom removed.` : `Astral Weaving active: prove ${b.metrics.arcaneTrial.pair} on a priority target, then clear with zero leaks.`);
   if (dormant.length) notes.push(`${dormant.map(c => card(c.id).name + ' #' + c.uid).join(', ')} did not fill a trigger gauge.`);
   const originals = consumed.filter(c => !c.token).length, tokens = consumed.filter(c => c.token).length;
@@ -814,7 +854,7 @@ const Game = (() => {
   startHeavenlyTrial(b);
  }
  function arcaneTrialCandidate(b) {
-  if(!b||b.run.depth<9||!['elite','boss'].includes(b.run?.node?.type)||(b.metrics?.leaks||0)>0)return null;
+  if(!b||!['elite','boss'].includes(b.run?.node?.type)||(b.metrics?.leaks||0)>0)return null;
   for(const unit of b.units.filter(u=>!u.removed&&!token(u)&&isApprentice(u)&&!isArchon(u))
     .sort((a,z)=>a.slot-z.slot||a.uid-z.uid)){
    const pair=bestPair(unit),points=unit.synthesis?.[pair]||0;
@@ -1554,6 +1594,7 @@ const Game = (() => {
   startUrbanContainmentTrial(b);
   startUrbanLegendTrial(b);
   startArcaneTrial(b);
+  startScrapworkTrial(b);
   startAbilities(b);
   
   return b;
@@ -2164,6 +2205,7 @@ const Game = (() => {
   tickBloodlineTrial(b);
   tickUrbanContainmentTrial(b);
   tickArcaneTrial(b);
+  tickScrapworkTrial(b);
   if (b.spawned < b.plan.count && b.time >= b.spawnAt) { spawn(b); b.spawnAt += b.plan.encounter === 'packs' ? (b.spawned % 3 === 0 ? b.plan.interval * 2 : .18) : b.plan.interval }
   for (const u of b.units.filter(u => !u.removed)) {
    if (u.removed) continue;
@@ -2216,6 +2258,7 @@ const Game = (() => {
     b.run.health = Math.max(0, b.run.health - leakLoss); b.metrics.leaks++; b.run.stats.leaks++;
     if (b.bloodlineTrial?.status === 'active') failBloodlineTrial(b, 'A runner leaked');
     if (b.arcaneTrial?.status === 'active') failArcaneTrial(b, 'A runner leaked');
+    if (b.scrapworkTrial?.status === 'active') failScrapworkTrial(b, 'A runner leaked');
     if (b.urbanLegendTrial?.status === 'active') failUrbanLegendTrial(b, 'A runner leaked');
     if (b.urbanContainmentTrial?.status === 'active') failUrbanContainmentTrial(b, 'A runner leaked');
     b.metrics.leakTypes ??= {}; const leakType = e.boss ? 'boss' : e.champion ? 'harbinger' : e.elite ? 'elite' : e.armored ? 'armored' : e.swift ? 'fast' : 'normal'; b.metrics.leakTypes[leakType] = (b.metrics.leakTypes[leakType] || 0) + 1; fx(b, 'leak', null, e, `−${leakLoss}`);
@@ -2257,6 +2300,11 @@ const Game = (() => {
     else {consume(b,enforcer,relic,'Subject Zero Containment',0);evolve(b,enforcer,t.apexId);enforcer.realm=4;persist(b,enforcer);t.status='passed';t.passedAt=b.time;b.metrics.urbanContainmentTrial={...b.metrics.urbanContainmentTrial,status:'passed',passedAt:b.time};interact(b,enforcer,enforcer,'subject-zero-contained',`SUBJECT ZERO BOUND · ${card(t.apexId).name} awakened · zero leaks`);fx(b,'growth',enforcer,null,'SUBJECT ZERO BOUND');}
    } else failUrbanContainmentTrial(b,'Subject Zero was not contained with five marks');
   }
+  if (b.scrapworkTrial?.status === 'active') {
+   const t=b.scrapworkTrial,proved=t.modules.every((m,i)=>t.moduleHits[`${m}:${i+1}`]);
+   if(won&&(b.metrics.leaks||0)===0&&proved)passScrapworkTrial(b);
+   else failScrapworkTrial(b,(b.metrics.leaks||0)>0?'A runner leaked':!proved?'A locked module did not hit a priority target':'Elite/Boss node was not cleared');
+  }
   const coinsEarned = r.node?.type === 'boss' ? 500 : r.node?.type === 'elite' ? 200 : 100;
   r.coins = (r.coins || 0) + coinsEarned; b.metrics.coinsEarned = coinsEarned;
   for (const u of b.units.filter(u => !u.phantom)) {
@@ -2264,7 +2312,7 @@ const Game = (() => {
    persist(b, u); src.threshold = abilityGauge(u) ? u.threshold.current : 0; src.naniteCrits = u.naniteCrits || 0; src.critCount = u.critCount || 0
   }
   r.recap = { ...b.metrics, time: b.time, ...report(b) };
-  r.battleHistory ??= []; r.battleHistory.push({ stage: r.depth + 1, leaks: b.metrics.leaks, closeCalls: b.metrics.closeCalls || 0, trial: b.metrics.trial || null, heavenlyTribulation: b.metrics.heavenlyTribulation || null, bloodlineTrial: b.metrics.bloodlineTrial || null, arcaneTrial: b.metrics.arcaneTrial || null, urbanLegendTrial: b.metrics.urbanLegendTrial || null });
+  r.battleHistory ??= []; r.battleHistory.push({ stage: r.depth + 1, leaks: b.metrics.leaks, closeCalls: b.metrics.closeCalls || 0, trial: b.metrics.trial || null, heavenlyTribulation: b.metrics.heavenlyTribulation || null, bloodlineTrial: b.metrics.bloodlineTrial || null, arcaneTrial: b.metrics.arcaneTrial || null, scrapworkTrial: b.metrics.scrapworkTrial || null, urbanLegendTrial: b.metrics.urbanLegendTrial || null });
   r.battleHistory = r.battleHistory.slice(-16);
   if (won) {
    r.cleared++; if (r.node.type === 'elite') { let options = D.RELICS.filter(v => !r.relics.includes(v.id)); if (options.length) { let item = options[Math.floor(rand(r) * options.length)]; addRelic(r, item.id); r.recap.relic = item.name } }
@@ -2333,7 +2381,7 @@ const Game = (() => {
    const branch = pair ? XENO_BRANCHES[pair] : null;
    return { current: g, max, label: `Genome ${g} / ${max}` + (branch ? ` · Serum: ${card(branch[1]).name}` : strains.length ? ` · Strains: ${strains.join('+')}` : '') };
   }
-  switch (family(u)) { case 'slumberingIdol':return {current:u.syllables||0,max:(u.syllables||0)<25?25:(u.syllables||0)<65?65:130}; case 'cyberSolo':return {current:u.chrome||0,max:(u.chrome||0)<25?25:(u.chrome||0)<65?65:120}; case 'elementalApprentice':{const pair=bestPair(u),p=u.synthesis?.[pair]||0,t=u.arcaneTrial;return {current:p,max:p<10?10:p<20?20:30,label:isArchon(u)?'Mythic · Astral Weaving complete':p<30?`${pair} synthesis · 10 / 20 / 30 toward Astral Weaving`:`${pair} · 30/30 · Crossing 10+ + adjacent Astral Loom · Elite/Boss reaction trial${t?.unitUid===u.uid?` · ${t.status}${t.featDone?' · reaction proved':''}`:''}`};} case 'mercenary':return {current:u.trophyPoints||0,max:(u.trophyPoints||0)<25?25:(u.trophyPoints||0)<60?60:100}; case 'scrapFrame': return {current:u.alloy||0,max:(u.alloy||0)<25?25:(u.alloy||0)<65?65:120}; case 'jade': return { current: u.qiGrowth || 0, max: 18 }; case 'cub': { const current=u.lineageStacks||0, tier=lineageTierIds[u.id]?.tier||0, relic=cubRelics[u.lineage]; return { current, max:6, label:tier>=4?'Mythic · ancestral trial complete':tier===3?`Tier 3 · Elite/Boss zero-leak trial + adjacent ${card(relic)?.name||'ancestral relic'}`:'Tier 3 at 6 matching meals · then ancestral Elite/Boss trial' }; } case 'spirit': return { current: u.returns || 0, max: 5 }; case 'monk': return { current: u.witnesses || 0, max: 3 };
+  switch (family(u)) { case 'slumberingIdol':return {current:u.syllables||0,max:(u.syllables||0)<25?25:(u.syllables||0)<65?65:130}; case 'cyberSolo':return {current:u.chrome||0,max:(u.chrome||0)<25?25:(u.chrome||0)<65?65:120}; case 'elementalApprentice':{const pair=bestPair(u),p=u.synthesis?.[pair]||0,t=u.arcaneTrial;return {current:p,max:p<10?10:p<20?20:30,label:isArchon(u)?'Mythic · Astral Weaving complete':p<30?`${pair} synthesis · 10 / 20 / 30 toward Astral Weaving`:`${pair} · 30/30 · adjacent Astral Loom · Elite/Boss reaction trial${t?.unitUid===u.uid?` · ${t.status}${t.featDone?' · reaction proved':''}`:''}`};} case 'mercenary':return {current:u.trophyPoints||0,max:(u.trophyPoints||0)<25?25:(u.trophyPoints||0)<60?60:100}; case 'scrapFrame': return {current:u.alloy||0,max:(u.alloy||0)<25?25:(u.alloy||0)<65?65:120}; case 'jade': return { current: u.qiGrowth || 0, max: 18 }; case 'cub': { const current=u.lineageStacks||0, tier=lineageTierIds[u.id]?.tier||0, relic=cubRelics[u.lineage]; return { current, max:6, label:tier>=4?'Mythic · ancestral trial complete':tier===3?`Tier 3 · Elite/Boss zero-leak trial + adjacent ${card(relic)?.name||'ancestral relic'}`:'Tier 3 at 6 matching meals · then ancestral Elite/Boss trial' }; } case 'spirit': return { current: u.returns || 0, max: 5 }; case 'monk': return { current: u.witnesses || 0, max: 3 };
    case 'investigator': {
     const dread = u.dread || 0;
     if (dread >= 140) return { current: 140, max: 140, label: 'Ready for Rule Binding' };
@@ -2690,7 +2738,7 @@ const Game = (() => {
   if (abilityGauge(u) && u.threshold.current >= u.threshold.max) tick(b, u, 0);
  }
 
- return { chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, isXenoApex, isSciFi, addWeakpoint, extractHelix, addGenome, checkXenoMetamorphosis, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, updateIdol, dropPage, addSyllables, forgeGrimoire, decipherPage, cosmicPanic, cosmicStatus, cosmicReward, cosmicDeath, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, augmented, hasAccess, ramCapacity, berserkActive, updateCyber, installChrome, addChromeAttack, addRAM, cyberPoison, uploadHack, cyberDeath, cyberZone, clearSprint, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, arcanePair, isApprentice, isArchon, isElemental, arcaneGauge, bestPair, updateApprentice, receiveEssence, startArcaneTrial, failArcaneTrial, passArcaneTrial, tickArcaneTrial, storeOverflow, elementalLinks, arcaneReaction, elementalSpell, arcaneZone, archonAttack, arcaneExtras, tickArcane, arcaneKill, HUNT_APEX, isSlayer, isHunter, priority, trophyFamily, huntAura, executeThreshold, wallOf, huntArmor, brandQuarry, updateSlayer, trophyPoints, harvestTrophy, forgeHuntRelic, carveTrophy, huntExtras, visceral, slayerAttack, isMech, isMechanical, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, inArc, oilPool, tickOil, mechAttack, addQi, addDread, acceptsQi, acceptsDread, isCultivationApex, isUrbanAuthority, bindUrbanRelic, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, passBloodlineTrial, tickBloodlineTrial, startUrbanContainmentTrial, failUrbanContainmentTrial, passUrbanContainmentTrial, tickUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, resolveUrbanLegendMerger, updateUrbanLegendLineage, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, practitionerRealmForQi, isPractitioner, isCultivationRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, breaksLegendNaturalRule, markNaturalBreach, URBAN_LEGEND_MARK_NAMES };
+ return { chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, isXenoApex, isSciFi, addWeakpoint, extractHelix, addGenome, checkXenoMetamorphosis, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, updateIdol, dropPage, addSyllables, forgeGrimoire, decipherPage, cosmicPanic, cosmicStatus, cosmicReward, cosmicDeath, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, augmented, hasAccess, ramCapacity, berserkActive, updateCyber, installChrome, addChromeAttack, addRAM, cyberPoison, uploadHack, cyberDeath, cyberZone, clearSprint, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, arcanePair, isApprentice, isArchon, isElemental, arcaneGauge, bestPair, updateApprentice, receiveEssence, startArcaneTrial, failArcaneTrial, passArcaneTrial, tickArcaneTrial, startScrapworkTrial, scrapworkTrialCandidate, markScrapworkTrialHit, failScrapworkTrial, passScrapworkTrial, tickScrapworkTrial, storeOverflow, elementalLinks, arcaneReaction, elementalSpell, arcaneZone, archonAttack, arcaneExtras, tickArcane, arcaneKill, HUNT_APEX, isSlayer, isHunter, priority, trophyFamily, huntAura, executeThreshold, wallOf, huntArmor, brandQuarry, updateSlayer, trophyPoints, harvestTrophy, forgeHuntRelic, carveTrophy, huntExtras, visceral, slayerAttack, isMech, isMechanical, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, inArc, oilPool, tickOil, mechAttack, addQi, addDread, acceptsQi, acceptsDread, isCultivationApex, isUrbanAuthority, bindUrbanRelic, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, passBloodlineTrial, tickBloodlineTrial, startUrbanContainmentTrial, failUrbanContainmentTrial, passUrbanContainmentTrial, tickUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, resolveUrbanLegendMerger, updateUrbanLegendLineage, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, practitionerRealmForQi, isPractitioner, isCultivationRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, breaksLegendNaturalRule, markNaturalBreach, URBAN_LEGEND_MARK_NAMES };
 })();
 if (typeof module !== 'undefined') module.exports = Game;
 

@@ -2697,7 +2697,7 @@ CARDS.push(...[
       "mechanical"
     ],
     "ecosystem": "Scrapwork · salvage and forging",
-    "rules": "Adjacent mechanical allies deal +20% damage; duplicate reactors do not stack. At Crossing 10+, a neighboring two-slot Titan with two locked modules permanently consumes this Core to become Mythic. Blade+Blade: Berserker. Flak+Flak: Siege. Every other pair: Vanguard.",
+    "rules": "Adjacent mechanical allies deal +20% damage; duplicate reactors do not stack. On an Elite/Boss, an adjacent two-slot Titan with 120 Alloy and two locked modules starts a field test. Each module must hit a priority enemy; then clear with zero leaks to consume this Core and awaken a Mythic. Failure removes the Titan and Core. Blade+Blade: Berserker. Flak+Flak: Siege. Every other pair: Vanguard.",
     "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
     "scrapworkAsset": "titanReactor"
   }
@@ -2885,7 +2885,7 @@ CARDS.push({
     "elemental"
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
-  "rules": "Each attack charges 1 tick. At 8, casts an four-target essence volley for 120 + 6× raw ATK + 8× highest pair points. Adjacent primary spells supply one essence; two different stored essences are consumed for +1 point in that pair. Highest pair advances at 10/20/30. At 30 points, an adjacent Astral Loom starts an Elite/Boss Astral Weaving trial at Crossing 10+: land the chosen pair’s reaction on an Elite, Harbinger, or Boss, then clear with zero leaks to awaken that Mythic. Failure removes the Mage and Loom.",
+  "rules": "Each attack charges 1 tick. At 8, casts an four-target essence volley for 120 + 6× raw ATK + 8× highest pair points. Adjacent primary spells supply one essence; two different stored essences are consumed for +1 point in that pair. Highest pair advances at 10/20/30. At 30 points, an adjacent Astral Loom starts an Elite/Boss Astral Weaving trial: land the chosen pair’s reaction on an Elite, Harbinger, or Boss, then clear with zero leaks to awaken that Mythic. Failure removes the Mage and Loom.",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 30 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "elementalApprentice"
 },
@@ -3015,7 +3015,7 @@ CARDS.push({
     "support"
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
-  "rules": "At Crossing 10+, this Loom begins the Astral Weaving trial for an adjacent Apprentice with 30 points in its highest pair. The Mage must land that pair’s reaction on an Elite, Harbinger, or Boss and clear the node with zero leaks; success consumes this Loom and awakens the matching Mythic. Failure removes both Mage and Loom. Ties follow the displayed pair order.",
+  "rules": "On an Elite/Boss, this Loom begins the Astral Weaving trial for an adjacent Apprentice with 30 points in its highest pair. The Mage must land that pair’s reaction on an Elite, Harbinger, or Boss and clear the node with zero leaks; success consumes this Loom and awakens the matching Mythic. Failure removes both Mage and Loom. Ties follow the displayed pair order.",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 30 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "astralLoom"
 });
@@ -3033,7 +3033,7 @@ FORMS.push({
     "elemental"
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
-  "rules": "Earned at 10 points in one pair. Essence bolt and synthesis continue; the adjacent Astral Loom starts an Elite/Boss reaction trial at Crossing 10+; prove the chosen reaction on an Elite, Harbinger, or Boss and clear with zero leaks. Failure removes the Mage and Loom.",
+  "rules": "Earned at 10 points in one pair. Essence bolt and synthesis continue; the adjacent Astral Loom starts an Elite/Boss reaction trial; prove the chosen reaction on an Elite, Harbinger, or Boss and clear with zero leaks. Failure removes the Mage and Loom.",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 30 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "elementalAdept",
   "evolvedFrom": "elementalApprentice",
@@ -3053,7 +3053,7 @@ FORMS.push({
     "elemental"
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
-  "rules": "Earned at 20 points in one pair. Essence bolt and synthesis continue; the adjacent Astral Loom starts an Elite/Boss reaction trial at Crossing 10+; prove the chosen reaction on an Elite, Harbinger, or Boss and clear with zero leaks. Failure removes the Mage and Loom.",
+  "rules": "Earned at 20 points in one pair. Essence bolt and synthesis continue; the adjacent Astral Loom starts an Elite/Boss reaction trial; prove the chosen reaction on an Elite, Harbinger, or Boss and clear with zero leaks. Failure removes the Mage and Loom.",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 30 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "elementalMaster",
   "evolvedFrom": "elementalApprentice",

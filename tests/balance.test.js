@@ -164,12 +164,12 @@ function arcaneTrialTarget(b,pair,kind='elite'){
  if(kind==='elite')e.elite=true;
  const [first]=pair.split('+');e.elements={[first]:b.time+4};return e;
 }
-test('Arcane Weaving trial starts at Crossing 10+ only for 30-point Mage with adjacent Loom on Elite/Boss',()=>{
+test('Arcane Weaving trial starts on Elite/Boss whenever 30-point Mage has adjacent Loom',()=>{
  for(const nodeType of ['elite','boss']){const b=arcaneTrialBattle('fire+water',nodeType);assert.equal(G.startArcaneTrial(b)?.apexId,'steamSovereign',nodeType);assert.equal(G.startArcaneTrial(b),b.arcaneTrial,nodeType);}
  const ordinary=arcaneTrialBattle();ordinary.run.node.type='battle';assert.equal(G.startArcaneTrial(ordinary),null);
- const early=arcaneTrialBattle();early.run.depth=8;assert.equal(G.startArcaneTrial(early),null);
+ const early=arcaneTrialBattle();early.run.depth=0;assert.equal(G.startArcaneTrial(early)?.status,'active');
  const short=arcaneTrialBattle();short.units[0].synthesis['fire+water']=29;assert.equal(G.startArcaneTrial(short),null);
- const far=arcaneTrialBattle();far.units[1].slot=8;Object.assign(far.units[1],G.xy(8));assert.equal(G.startArcaneTrial(far),null);
+ const far=arcaneTrialBattle();far.units[1].slot=6;Object.assign(far.units[1],G.xy(6));assert.equal(G.startArcaneTrial(far),null);
 });
 test('Arcane Weaving starts as soon as the 30-point gate is reached during an eligible node',()=>{
  const b=arcaneTrialBattle('fire+water','elite'),mage=b.units[0];mage.synthesis['fire+water']=29;b.run.roster[0].synthesis={'fire+water':29};
@@ -196,5 +196,35 @@ test('Arcane trial leak, failed clear, or missing priority reaction loses Mage a
  }
 });
 test('Arcane progress exposes the selected pair and exact final trial gate',()=>{
- const b=arcaneTrialBattle();G.startArcaneTrial(b);const p=G.evolutionProgress(b.units[0]);assert.equal(p.current,30);assert.match(p.label,/fire\+water/);assert.match(p.label,/Crossing 10\+/);assert.match(p.label,/Elite\/Boss reaction trial/);
+ const b=arcaneTrialBattle();G.startArcaneTrial(b);const p=G.evolutionProgress(b.units[0]);assert.equal(p.current,30);assert.match(p.label,/fire\+water/);assert.doesNotMatch(p.label,/Crossing 10\+/);assert.match(p.label,/Elite\/Boss reaction trial/);
+});
+
+function scrapworkTrialBattle(modules=['blade','flak'],nodeType='elite'){
+ const b=battle(['scrapFrame','titanReactor'],[4,1]);b.run.node.type=nodeType;
+ const titan=b.units[0],reactor=b.units[1];titan.id='titanFrame';titan.alloy=120;titan.extraSlot=5;titan.modules=[...modules];b.run.roster[0].id='titanFrame';b.run.roster[0].alloy=120;b.run.roster[0].extraSlot=5;b.run.roster[0].modules=[...modules];
+ return b;
+}
+test('Scrapwork trial starts on Elite/Boss without a Crossing gate when Titan and Reactor criteria are met',()=>{
+ for(const type of ['elite','boss']){const b=scrapworkTrialBattle(['blade','flak'],type);b.run.depth=0;assert.equal(G.startScrapworkTrial(b)?.status,'active',type);}
+ const ordinary=scrapworkTrialBattle();ordinary.run.node.type='battle';assert.equal(G.startScrapworkTrial(ordinary),null);
+ const short=scrapworkTrialBattle(['blade']);assert.equal(G.startScrapworkTrial(short),null);
+ const far=scrapworkTrialBattle();far.units[1].slot=6;Object.assign(far.units[1],G.xy(6));assert.equal(G.startScrapworkTrial(far),null);
+});
+test('Scrapwork trial starts as soon as final module is installed during an eligible node',()=>{
+ const b=scrapworkTrialBattle(['blade'],'elite');b.units[0].modules=['blade'];b.run.roster[0].modules=['blade'];
+ b.units[0].modules.push('flak');b.run.roster[0].modules.push('flak');G.updateMech(b,b.units[0]);assert.equal(b.scrapworkTrial?.status,'active');
+});
+test('Scrapwork actual module attacks prove each locked module and clean clear consumes Reactor into mapped Mythic',()=>{
+ for(const [mods,apex] of [[['blade','blade'],'berserkerColossus'],[['flak','flak'],'siegeDreadnought'],[['blade','flak'],'vanguardJuggernaut']]){
+  const b=scrapworkTrialBattle(mods,'boss'),t=b.units[0],core=b.units[1];G.startScrapworkTrial(b);const e=enemy(b,'boss',5);e.hp=e.maxHp=1e6;
+  t.attackCount=1;G.mechAttack(b,t,e,G.atk(b,t));
+  assert.deepEqual(Object.keys(b.scrapworkTrial.moduleHits).sort(),mods.map((m,i)=>`${m}:${i+1}`).sort(),mods.join('+'));
+  G.finish(b,true);assert.equal(b.scrapworkTrial.status,'passed');assert.equal(t.id,apex);assert.equal(core.removed,true);assert.ok(b.run.roster.some(u=>u.uid===t.uid&&u.id===apex));assert.ok(!b.run.roster.some(u=>u.uid===core.uid));
+ }
+});
+test('Scrapwork trial fails on leak, missing module proof, or failed clear and removes Titan plus Reactor',()=>{
+ for(const mode of ['leak','missing-proof','failed-clear']){const b=scrapworkTrialBattle(['blade','flak']),t=b.units[0],core=b.units[1];G.startScrapworkTrial(b);
+  if(mode==='leak')G.failScrapworkTrial(b,'A runner leaked');else if(mode==='missing-proof'){G.markScrapworkTrialHit(b,t,'blade',0,enemy(b,'elite',5));G.finish(b,true);}else G.finish(b,false);
+  assert.equal(b.scrapworkTrial.status,'failed',mode);assert.equal(t.removed,true,mode);assert.equal(core.removed,true,mode);assert.deepEqual(b.run.roster,[],mode);
+ }
 });
