@@ -3648,6 +3648,100 @@ for(const [id,atk,interval,max,rules] of [
  ['herald',25,2.5,0,'Every12s consumes an adjacent token, Shoggoth Mass or Mind Larva for100 stored Madness. Every8s releases stored Madness as true damage to all runners and warps late runners back5. Tokens are prioritized; consumed originals are permanently lost.']])Object.assign(CARDS.find(c=>c.id===id),{baseAtk:atk,attackInterval:interval,max,rules,ecosystem:'Forbidden Texts · three scripts, six awakenings'});
 
 for(const c of [...CARDS,...FORMS,...TOKENS].filter(c=>c.genre==='Lovecraft'))c.cosmicAsset=c.id;
+
+// Orbital Xeno-Lab: Alien CRISPR gene-splicing ecosystem
+const xenoCard = (id, name, rarity, baseAtk, attackInterval, rules, extra = {}) => ({
+  id, name, genre: 'SciFi', rarity, baseAtk, attackInterval, max: 0, icon: '⬡', sprite: 20, fav: 'neighbor',
+  tags: ['xeno'], ecosystem: 'Orbital Xeno-Lab · CRISPR gene-splicing & leviathans', rules,
+  synergy: 'Scan Weakpoints to amplify crits. Extract Helices with Nanites and sequence with Gene-Splicer. Awaken at 130 Genome with adjacent matching Serum.', ...extra
+});
+
+CARDS.push(
+  xenoCard('xenoSpecimen', 'Cryo-Specimen', 'Normal', 10, 1.2, 'Strikes the leading runner. Absorbs Genetic Helices sequenced by the Gene-Splicer across battles, evolving into 1 of 3 Larval Morphs at 25 Genome (Rare), 1 of 6 Chrysalis Strains at 65 Genome (Epic), and 1 of 6 Mythic Xeno-Leviathans at 130 Genome when adjacent to its Forged Mutagen Serum.'),
+  xenoCard('bioScanner', 'Orbital Bio-Scanner', 'Normal', 8, 1.3, 'Scans the leading and fastest runners, applying 1 Anatomical Weakpoint (+5% crit chance against target). Every 4th attack applies Weakpoints to 3 runners simultaneously.'),
+  xenoCard('geneSplicer', 'CRISPR Gene-Splicer', 'Rare', 11, 1.4, 'Every 5s, sequences an orthogonally adjacent Genetic Helix Token—clearing the slot, granting +3 permanent ATK and +12 Genome to your Cryo-Specimen, and triggering the Helix combat pulse. After sequencing 2 Helices across battles, synthesizes the matching Undraftable Mutagen Serum onto an empty slot!')
+);
+
+const XENO_BRANCH_DATA = [
+  ['chitin+chitin', 'impalerMorph', 'Sub-Orbital Impaler', 56, 1.2, 'keratinSerum', 'Hyper-Keratin Vial', 'impalerApex', 'Apex Impaler Behemoth', 245, 1.5, 'Pierces 4 runners in a line; critical hits ricochet bone shards to 2 nearby runners.', 'Relativistic Bone-Railgun: Sweeps an entire 4-tile perimeter track wall, ignoring 100% of armor. Against Weakpoint-marked runners, guaranteed critical hits deal 260%+ damage, knock targets backward 2 tiles, and ricochet splinter volleys to 3 additional runners. Grants +50% bonus permanent ATK transfer to any deployed Vector Railgun.'],
+  ['acid+acid', 'acidBrood', 'Royal Acid-Brood', 50, 1.0, 'royalSerum', 'Xenomorph Royal Jelly', 'xenoQueen', 'Sovereign Xenomorph Queen', 190, 0.9, 'Critical hits strip 60% armor and leave 3-tile acid puddles dealing 30 true DPS.', 'Molecular Dissolution: Critical strikes permanently dissolve 100% of runner armor and coat a 4-tile track edge in pressurized Molecular Acid (65 true DPS for 5s). Every 4th critical hit against an Elite, Harbinger, or Boss dissolves 14% of its current HP directly.'],
+  ['psionic+psionic', 'synapseNexus', 'Synaptic Nexus', 46, 0.8, 'cortexSerum', 'Overmind Cortex Vial', 'hiveOvermind', 'Cerebral Hive-Overmind', 175, 0.7, 'Grants all allies +20% crit chance; fires a bonus psychic ray whenever an adjacent ally crits.', 'Hive-Mind Telemetry Synchronization: Grants +30% Critical Strike Chance and +30% Critical Hit Damage across the entire 3×3 grid. Synchronized Fire: Whenever any allied card lands a Critical Hit, immediately fires a coordinated psionic lance at that target for 75% ATK true damage.'],
+  ['chitin+acid', 'ravagerMorph', 'Caustic Ravager', 54, 1.05, 'ordnanceSerum', 'Bio-Ordnance Vial', 'causticRavager', 'Caustic Ravager Titan', 210, 1.1, 'Launches barbed acid pods that explode on critical hit for 150% splash damage within 2 tiles.', 'Living Bio-Artillery: Launches clusters of Barbed Acid-Pods into the densest runner group. On Critical Hit, detonates in a 5-tile radius, dealing 220% Crit Damage, shredding 50% defense, and inflicting stacking acid bleed (40 DPS).'],
+  ['chitin+psionic', 'stalkerMorph', 'Phase-Chitin Hunter', 52, 0.75, 'phaseSerum', 'Phase-Chitin Vial', 'phaseStalker', 'Quantum Phase-Stalker', 200, 0.6, 'Prioritizes Elites/Harbingers; crits deal double damage to targets below 35% HP.', 'Predatory Phase-Execution: Prioritizes Elites/Harbingers/Bosses; attacks always critically strike Weakpoint-marked targets. Instantly executes non-boss runners below 35% HP. Against Bosses and Harbingers, every 5th critical slash phases inside their hull to deal 450 true damage and stun for 1.2s.'],
+  ['acid+psionic', 'siphonMorph', 'Bio-Plasma Leech', 48, 0.85, 'metroidSerum', 'Metroid Siphon Vial', 'metroidLeviathan', 'Parasitic Metroid Leviathan', 180, 0.75, 'Drains bio-energy from runners, granting +2 ticks to Singularity Core and allied ability gauges every 4th hit.', 'Bio-Electric Life Drain: Latches bio-electric tendrils onto the 2 highest-HP runners, slowing them by 45% and draining 8% of Max HP every 3 seconds as true damage. Reactor Siphon: Every 3rd attack charges Singularity Core and all allied ability gauges by +2 ticks and grants +2 permanent ATK.']
+];
+
+for (const [strain, id, name, atk, interval] of [
+  ['chitin', 'spineLurker', 'Spine-Lurker', 24, 1.1],
+  ['acid', 'bileSpitter', 'Bile-Spitter', 22, 1.2],
+  ['psionic', 'opticDrone', 'Optic-Drone', 20, 0.9]
+]) {
+  FORMS.push(xenoCard(id, name, 'Rare', atk, interval,
+    strain === 'chitin' ? 'Fires high-velocity bone needles that pierce 2 runners and always critically strike targets with 2+ Weakpoints.' :
+    strain === 'acid' ? 'Critical hits splash corrosive bile across 2 adjacent runners, melting 35% of their armor and applying 12 DPS acid burn.' :
+    'Every 3rd attack scans the leading runner with 2 Weakpoint stacks and arcs bio-electric lightning to a second target.',
+    { evolvedFrom: 'xenoSpecimen', draftable: false, xenoStrain: strain }
+  ));
+}
+
+for (const [pair, id, name, atk, interval, serum, serumName, apex, apexName, apexAtk, apexInterval, rule, apexRule] of XENO_BRANCH_DATA) {
+  FORMS.push(
+    xenoCard(id, name, 'Epic', atk, interval, rule, { evolvedFrom: 'xenoSpecimen', draftable: false, xenoPair: pair }),
+    xenoCard(serum, serumName, 'Epic', 0, 0, 'Forged from ' + pair.replace('+', ' + ') + ' Helices. Permanent undraftable serum; consumed by its adjacent matching 130-Genome chrysalis to awaken ' + apexName + '.', { draftable: false, xenoSerum: true, xenoPair: pair }),
+    xenoCard(apex, apexName, 'Mythic', apexAtk, apexInterval, apexRule, { evolvedFrom: 'xenoSpecimen', draftable: false, xenoPair: pair })
+  );
+}
+
+for (const [strain, id, name, rule] of [
+  ['chitin', 'chitinHelix', 'Alpha-Chitin Helix', 'Adjacent allies gain +25% Critical Hit Damage and their critical hits pierce 1 additional runner. Pulse: Grants +12 Genome and +3 permanent ATK to Specimen, and fires a piercing bone spike.'],
+  ['acid', 'acidHelix', 'Beta-Acid Helix', 'Adjacent allies critical hits apply Molecular Corrosion (shreds 30% armor and deals 10 true DPS for 4s). Pulse: Grants +12 Genome and +3 permanent ATK to Specimen, and sprays a 3-tile acid pool.'],
+  ['psionic', 'psionicHelix', 'Gamma-Synapse Helix', 'Adjacent allies gain +15% Critical Hit Chance and charge Singularity Core by +1 extra tick on crit. Pulse: Grants +12 Genome and +3 permanent ATK to Specimen, and stuns all Weakpoint runners for 1.0s.']
+]) {
+  TOKENS.push(xenoCard(id, name, 'Normal', 0, 0, rule, { token: true, draftable: false, xenoStrain: strain }));
+}
+
+// Map SVG assets for all Xeno cards
+const XENO_ASSET_MAP = {
+  xenoSpecimen: 'assets/larva.svg',
+  bioScanner: 'assets/sensor.svg',
+  geneSplicer: 'assets/nanite.svg',
+  chitinHelix: 'assets/nanite.svg',
+  acidHelix: 'assets/herald.svg',
+  psionicHelix: 'assets/core.svg',
+  spineLurker: 'assets/railgun.svg',
+  bileSpitter: 'assets/leech.svg',
+  opticDrone: 'assets/sensor.svg',
+  impalerMorph: 'assets/nanite.svg',
+  keratinSerum: 'assets/nanite.svg',
+  impalerApex: 'assets/nanite.svg',
+  acidBrood: 'assets/herald.svg',
+  royalSerum: 'assets/herald.svg',
+  xenoQueen: 'assets/herald.svg',
+  synapseNexus: 'assets/core.svg',
+  cortexSerum: 'assets/sensor.svg',
+  hiveOvermind: 'assets/sensor.svg',
+  ravagerMorph: 'assets/eye.svg',
+  ordnanceSerum: 'assets/eye.svg',
+  causticRavager: 'assets/eye.svg',
+  stalkerMorph: 'assets/railgun.svg',
+  phaseSerum: 'assets/railgun.svg',
+  phaseStalker: 'assets/railgun.svg',
+  siphonMorph: 'assets/leech.svg',
+  metroidSerum: 'assets/leech.svg',
+  metroidLeviathan: 'assets/leech.svg'
+};
+
+for (const [cid, assetPath] of Object.entries(XENO_ASSET_MAP)) {
+  const c = [...CARDS, ...FORMS, ...TOKENS].find(x => x.id === cid);
+  if (c) c.xenoAsset = assetPath;
+}
+
+// Update existing SciFi card rules to match design proposal
+Object.assign(CARDS.find(c => c.id === 'sensor'), { rules: 'Grants all other deployed allies +10 percentage points of critical hit chance and amplifies their critical hit damage to 230%. When an ally strikes critically, illuminates the target runner with an Anatomical Weakpoint.' });
+Object.assign(CARDS.find(c => c.id === 'nanite'), { rules: 'Strikes at 0.8s interval. Critical hits shred runner defense by 25% for 3s. Every 6 critical hits across battles grant +1 permanent ATK and extract a random Genetic Helix Token onto an empty adjacent slot.' });
+Object.assign(CARDS.find(c => c.id === 'railgun'), { rules: 'Pierces 3 runners in a line (5 with Telemetry Sensor and knocks back 1 tile), ignoring armor. Gains bonus attack damage equal to 200% of the single highest permanent ATK bonus among other allies.' });
+Object.assign(CARDS.find(c => c.id === 'core'), { rules: 'Grants all other allies +15 percentage points of critical hit chance. Gains 1 tick whenever an ally lands a critical hit. At 8 ticks, triggers Gravitational Collapse: deals 240 + 2× Team Power true damage and Warps all runners backward 2.5 tiles.' });
+
 const CARD = Object.fromEntries([...CARDS, ...FORMS, ...TOKENS, ...LEGACY_CARDS].map(c => [c.id, c]));
 if (typeof module !== 'undefined') module.exports = { GENRES, LEADERS, CARDS, CARD, NODES, RELICS, RARITIES, FORMS, TOKENS, LEGACY_CARDS };
 
