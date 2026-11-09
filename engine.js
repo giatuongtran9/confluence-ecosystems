@@ -673,7 +673,7 @@ const Game = (() => {
   const dormant = cards.filter(c => ['jade','eye','elementalApprentice','pyroMage','hydroMage','geoMage','aeroMage'].includes(c.id) && !c.consumed && c.triggers === 0);
   let notes = [];
   if (b.metrics.leaks) notes.push(`${b.metrics.leaks} runners escaped.`); else notes.push('No runners escaped. Formation held.');
-  if (b.metrics.heavenlyTribulation) notes.push(b.metrics.heavenlyTribulation.status === 'passed' ? 'Heavenly Tribulation passed; the matching relic was consumed and a Mythic Immortal awakened.' : b.metrics.heavenlyTribulation.status === 'failed' ? `Heavenly Tribulation failed: ${b.metrics.heavenlyTribulation.reason}. The Nascent Soul and matching relic were removed from the roster.` : 'Heavenly Tribulation is active: defeat the boss without any runner escaping.');
+  if (b.metrics.heavenlyTribulation) notes.push(b.metrics.heavenlyTribulation.status === 'passed' ? 'Heavenly Tribulation passed; the matching relic was consumed and a Mythic Immortal awakened.' : b.metrics.heavenlyTribulation.status === 'failed' ? `Heavenly Tribulation failed: ${b.metrics.heavenlyTribulation.reason}. The Nascent Soul and matching relic were removed from the roster.` : 'Heavenly Tribulation is active: clear the Elite/Boss node with zero leaks.');
   if (b.metrics.urbanContainmentTrial) notes.push(b.metrics.urbanContainmentTrial.status === 'passed' ? `Subject Zero contained with ${b.metrics.urbanContainmentTrial.finalMarks}/5 marks; the Relic was consumed and ${card(b.metrics.urbanContainmentTrial.apexId).name} awakened.` : b.metrics.urbanContainmentTrial.status === 'failed' ? `Subject Zero trial failed: ${b.metrics.urbanContainmentTrial.reason}. The Rule Enforcer and Relic were removed from the roster.` : `Subject Zero trial active: apply 5 Violation Marks and defeat it before it escapes.`);
   if (b.metrics.urbanLegendTrial) notes.push(b.metrics.urbanLegendTrial.status === 'passed' ? `Folklore Merger trial passed with zero runner leaks; ${card(b.metrics.urbanLegendTrial.apexId).name} awakened with +${b.metrics.urbanLegendTrial.inheritedAtk} inherited ATK.` : b.metrics.urbanLegendTrial.status === 'failed' ? `Folklore Merger trial failed: ${b.metrics.urbanLegendTrial.reason}. The devourer was removed; its same-lineage prey was already consumed.` : `Folklore Merger trial active: clear the Elite/Boss node with zero leaks to earn Mythic.`);
   if (dormant.length) notes.push(`${dormant.map(c => card(c.id).name + ' #' + c.uid).join(', ')} did not fill a trigger gauge.`);
@@ -711,7 +711,7 @@ const Game = (() => {
   return neighbors(b, u, false).filter(v => !v.removed && (cultivationRelicApex[v.id] || (v.id === 'soulBanner' && (v.souls || 0) >= 100))).sort((a, z) => a.slot - z.slot)[0] || null;
  }
  function startHeavenlyTrial(b) {
-  if (!b || b.run.node?.type !== 'boss') return null;
+  if (!b || !['elite', 'boss'].includes(b.run.node?.type) || (b.metrics?.leaks || 0) > 0) return null;
   if (b.heavenlyTrial) return b.heavenlyTrial;
   const candidates = b.units.filter(u => !u.removed && !token(u) && isPractitioner(u) && u.id === 'cultivationNascentSoul' && (u.qi || 0) >= 175)
    .map(u => ({ unit: u, relic: trialRelicFor(b, u) })).filter(v => v.relic)
@@ -721,7 +721,7 @@ const Game = (() => {
   const apexId = selected.relic.id === 'soulBanner' ? 'soulReapingDemon' : cultivationRelicApex[selected.relic.id];
   const trial = b.heavenlyTrial = { status: 'active', unitUid: selected.unit.uid, relicUid: selected.relic.uid, relicId: selected.relic.id, apexId, startedAt: b.time, nextStrikeAt: b.time + 4, strikes: 0 };
   b.metrics.heavenlyTribulation = { status: 'active', practitionerId: selected.unit.id, practitionerUid: selected.unit.uid, relicId: selected.relic.id, relicUid: selected.relic.uid, apexId, qi: selected.unit.qi || 0, startedAt: b.time, strikes: 0 };
-  interact(b, selected.unit, selected.relic, 'tribulation', 'Heavenly Tribulation begins · no leaks; defeat the boss');
+  interact(b, selected.unit, selected.relic, 'tribulation', 'Heavenly Tribulation begins · clear the Elite/Boss node with zero leaks');
   fx(b, 'pulse', selected.unit, null, 'HEAVENLY TRIBULATION');
   return trial;
  }
@@ -742,7 +742,7 @@ const Game = (() => {
  }
  function passHeavenlyTrial(b) {
   const trial = b?.heavenlyTrial;
-  if (!trial || trial.status !== 'active' || !b.enemies.some(e => e.boss && e.hp <= 0)) return false;
+  if (!trial || trial.status !== 'active' || !b.won || (b.metrics?.leaks || 0) > 0 || !['elite', 'boss'].includes(b.run?.node?.type)) return false;
   const practitioner = b.units.find(u => u.uid === trial.unitUid && !u.removed);
   const relic = b.units.find(u => u.uid === trial.relicUid && !u.removed);
   if (!practitioner || !relic) return failHeavenlyTrial(b, 'Nascent Soul or matching relic was removed');
@@ -803,6 +803,7 @@ const Game = (() => {
    while (u.apexQi >= 30) { u.apexQi -= 30; growth(b, u, 2); }
   } else updatePractitionerRealm(b, u);
   persist(b, u);
+  startHeavenlyTrial(b);
  }
  function addDread(b, u, amount) {
   u.dread = (u.dread || 0) + amount;
@@ -1465,7 +1466,6 @@ const Game = (() => {
     if ((e.ruleMarks || 0) >= b.urbanContainmentTrial.marksRequired) passUrbanContainmentTrial(b, e);
     else failUrbanContainmentTrial(b, `Subject Zero defeated with only ${e.ruleMarks || 0}/5 Violation Marks`);
    }
-   if (e.boss && b.heavenlyTrial?.status === 'active') passHeavenlyTrial(b);
    salvage(b);
    harvestTrophy(b,e);arcaneKill(b);cyberDeath(b,e);cosmicDeath(b,e,source);
    if (e.rumorInfected) spreadRumor(b, e, true);
@@ -1476,10 +1476,10 @@ const Game = (() => {
     persist(b, banner);
     if (banner.souls === 100 && !banner.soulMaxLogged) {
      banner.soulMaxLogged = true;
-     
      fx(b, 'state', banner, null, 'SOULS 100/100');
     }
    }
+   startHeavenlyTrial(b);
 
    // Soul-Reaping Heavenly Demon perimeter detonation
    const demon = b.units.find(v => !v.removed && v.id === 'soulReapingDemon');
@@ -1962,6 +1962,10 @@ const Game = (() => {
   if (b.done) return;
   if(won)for(const u of b.units.filter(v=>!v.removed&&!token(v)&&isMech(v)))addAlloy(b,u,5);
   b.done = true; b.won = won; let r = b.run;
+  if (b.heavenlyTrial?.status === 'active') {
+   if (won && (b.metrics.leaks || 0) === 0) passHeavenlyTrial(b);
+   else failHeavenlyTrial(b, (b.metrics.leaks || 0) > 0 ? 'A runner leaked' : 'Elite/Boss node was not cleared');
+  }
   if (b.urbanLegendTrial?.status === 'active') {
    if (won && (b.metrics.leaks || 0) === 0) passUrbanLegendTrial(b);
    else failUrbanLegendTrial(b, (b.metrics.leaks || 0) > 0 ? 'A runner leaked' : 'Elite/Boss node was not cleared');
@@ -2337,7 +2341,7 @@ const Game = (() => {
    }
   }
 
-  // Boss-only Heavenly Tribulation gates all Cultivation Mythic evolutions.
+  // Elite/Boss zero-leak Heavenly Tribulation gates all Cultivation Mythic evolutions.
 
   // 8. Relic Resonance: Apex Immortal adjacent to Relic (Does NOT consume, triggers Resonance)
   if (isApexImmortal(u)) {
