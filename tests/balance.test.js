@@ -108,11 +108,16 @@ test('Subject Zero trial requires 140 Dread and orthogonal adjacency',()=>{
  let {b}=urbanTrialBattle('ruleboard','elite',139);assert.equal(b.urbanContainmentTrial,undefined);
  let x=urbanTrialBattle('ruleboard','elite',140);x.b.urbanContainmentTrial=undefined;x.b.metrics.urbanContainmentTrial=undefined;x.b.enemies=x.b.enemies.filter(e=>!e.subjectZero);x.focus.slot=8;Object.assign(x.focus,G.xy(8));assert.equal(G.startUrbanContainmentTrial(x.b),null);
 });
-test('Subject Zero is contained only after five marks and its kill consumes Relic into matching Mythic',()=>{
+test('Subject Zero kill completes its feat; Mythic binding waits for a zero-leak Elite/Boss clear',()=>{
  for(const [relic,apex] of Object.entries(urbanApexByRelic)){
   const {b,enforcer,focus}=urbanTrialBattle(relic,'elite');const zero=b.enemies.find(e=>e.subjectZero);zero.ruleMarks=5;
-  assert.equal(G.damage(b,zero,zero.hp,enforcer),zero.maxHp);assert.equal(b.urbanContainmentTrial.status,'passed');assert.equal(enforcer.id,apex);assert.ok(focus.removed);assert.ok(b.run.roster.some(u=>u.uid===enforcer.uid&&u.id===apex));assert.ok(!b.run.roster.some(u=>u.uid===focus.uid));
+  assert.equal(G.damage(b,zero,zero.hp,enforcer),zero.maxHp);assert.equal(b.urbanContainmentTrial.status,'active');assert.equal(b.urbanContainmentTrial.subjectZeroContained,true);assert.equal(enforcer.id,'ruleEnforcer');assert.equal(focus.removed,false);
+  G.finish(b,true);assert.equal(b.urbanContainmentTrial.status,'passed');assert.equal(enforcer.id,apex);assert.ok(focus.removed);assert.ok(b.run.roster.some(u=>u.uid===enforcer.uid&&u.id===apex));assert.ok(!b.run.roster.some(u=>u.uid===focus.uid));
  }
+});
+test('Subject Zero does not bind if a runner leaks after its five-mark kill',()=>{
+ const {b,enforcer,focus}=urbanTrialBattle();const zero=b.enemies.find(e=>e.subjectZero);zero.ruleMarks=5;G.damage(b,zero,zero.hp,enforcer);b.metrics.leaks=1;G.finish(b,true);
+ assert.equal(b.urbanContainmentTrial.status,'failed');assert.equal(enforcer.removed,true);assert.equal(focus.removed,true);assert.ok(!b.run.roster.some(u=>u.uid===enforcer.uid||u.uid===focus.uid));
 });
 test('Subject Zero under-marked kill and escape fail and permanently remove Enforcer and Relic',()=>{
  let {b,enforcer,focus}=urbanTrialBattle();let zero=b.enemies.find(e=>e.subjectZero);zero.ruleMarks=4;G.damage(b,zero,zero.hp,enforcer);assert.equal(b.urbanContainmentTrial.status,'failed');assert.ok(enforcer.removed&&focus.removed);assert.equal(b.run.roster.length,0);

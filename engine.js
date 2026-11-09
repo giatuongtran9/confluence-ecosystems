@@ -818,7 +818,7 @@ const Game = (() => {
   return startUrbanContainmentTrial(b);
  }
  function urbanTrialCandidate(b) {
-  if (!b || !['elite', 'boss'].includes(b.run?.node?.type)) return null;
+  if (!b || !['elite', 'boss'].includes(b.run?.node?.type) || (b.metrics?.leaks || 0) > 0) return null;
   const enforcers = b.units.filter(u => !u.removed && !token(u) && u.id === 'ruleEnforcer' && (u.dread || 0) >= 140)
     .sort((a,z)=>a.slot-z.slot||a.uid-z.uid);
   for (const enforcer of enforcers) {
@@ -855,7 +855,7 @@ const Game = (() => {
   return trial;
  }
  function urbanLegendTrialCandidate(b) {
-  if (!b || !['elite', 'boss'].includes(b.run?.node?.type)) return null;
+  if (!b || !['elite', 'boss'].includes(b.run?.node?.type) || (b.metrics?.leaks || 0) > 0) return null;
   const devourers = b.units.filter(u => !u.removed && !token(u) && isUrbanLegend(u)
     && !APEX_FORMS.includes(u.id) && (u.violations || 0) >= 80)
     .sort((a,z)=>(z.violations||0)-(a.violations||0)||a.slot-z.slot||a.uid-z.uid);
@@ -935,13 +935,10 @@ const Game = (() => {
   const enforcer = b.units.find(u => u.uid === t.enforcerUid && !u.removed);
   const relic = b.units.find(u => u.uid === t.relicUid && !u.removed);
   if (!enforcer || !relic) return failUrbanContainmentTrial(b, 'Rule Enforcer or Relic was removed');
-  consume(b, enforcer, relic, 'Subject Zero Containment', 0);
-  evolve(b, enforcer, t.apexId);
-  enforcer.realm = 4; persist(b, enforcer);
-  t.status = 'passed'; t.passedAt = b.time; t.finalMarks = e.ruleMarks || 0;
-  b.metrics.urbanContainmentTrial = { ...b.metrics.urbanContainmentTrial, status: 'passed', passedAt: b.time, finalMarks: t.finalMarks };
-  interact(b, enforcer, e, 'subject-zero-contained', `SUBJECT ZERO CONTAINED · ${card(t.apexId).name} awakened`);
-  fx(b, 'growth', enforcer, null, 'SUBJECT ZERO CONTAINED');
+  t.subjectZeroContained = true; t.finalMarks = e.ruleMarks || 0;
+  b.metrics.urbanContainmentTrial = { ...b.metrics.urbanContainmentTrial, subjectZeroContained: true, finalMarks: t.finalMarks };
+  interact(b, enforcer, e, 'subject-zero-contained', 'SUBJECT ZERO CONTAINED · survive this Elite/Boss with zero leaks');
+  fx(b, 'growth', enforcer, null, 'ZERO-LEAK CLEAR REQUIRED');
   return true;
  }
  function tickUrbanContainmentTrial(b) {
@@ -1026,6 +1023,7 @@ const Game = (() => {
   const progress=canReward?amount*0.35:0;
   u.violations = Math.round(((u.violations || 0) + progress)*10000)/10000;
   updateUrbanLegendLineage(b, u);
+  startUrbanLegendTrial(b);
   if (b.time >= (b.blackoutLockoutUntil || 0) && b.time >= (b.curfewUntil || 0)) {
    b.urbanViolationsForBlackout = (b.urbanViolationsForBlackout || 0) + amount;
    if (b.urbanViolationsForBlackout >= 5) {
@@ -1949,6 +1947,7 @@ const Game = (() => {
     const leakLoss=e.boss ? b.run.maxHealth : Math.max(1, e.leak + mod(b.run, 'leak', 0) - (b.run.relics.includes('mercy') ? 1 : 0));
     b.run.health = Math.max(0, b.run.health - leakLoss); b.metrics.leaks++; b.run.stats.leaks++;
     if (b.urbanLegendTrial?.status === 'active') failUrbanLegendTrial(b, 'A runner leaked');
+    if (b.urbanContainmentTrial?.status === 'active') failUrbanContainmentTrial(b, 'A runner leaked');
     b.metrics.leakTypes ??= {}; const leakType = e.boss ? 'boss' : e.champion ? 'harbinger' : e.elite ? 'elite' : e.armored ? 'armored' : e.swift ? 'fast' : 'normal'; b.metrics.leakTypes[leakType] = (b.metrics.leakTypes[leakType] || 0) + 1; fx(b, 'leak', null, e, `−${leakLoss}`);
     if (b.run.health <= 0) { const phoenix=b.units.find(v=>!v.removed&&v.lineage==='phoenix'&&(lineageTierIds[v.id]?.tier||0)>=4); if(phoenix&&!b.run.phoenixRevived){b.run.phoenixRevived=true;b.run.health=1;interact(b,phoenix,e,'revive','Phoenix revival → restore 1 HP');}else{finish(b,false);break} }
    }
@@ -1966,6 +1965,15 @@ const Game = (() => {
   if (b.urbanLegendTrial?.status === 'active') {
    if (won && (b.metrics.leaks || 0) === 0) passUrbanLegendTrial(b);
    else failUrbanLegendTrial(b, (b.metrics.leaks || 0) > 0 ? 'A runner leaked' : 'Elite/Boss node was not cleared');
+  }
+  if (b.urbanContainmentTrial?.status === 'active') {
+   const t=b.urbanContainmentTrial;
+   if (!won || (b.metrics.leaks || 0) > 0) failUrbanContainmentTrial(b,(b.metrics.leaks||0)>0?'A runner leaked':'Elite/Boss node was not cleared');
+   else if (t.subjectZeroContained) {
+    const enforcer=b.units.find(u=>u.uid===t.enforcerUid&&!u.removed),relic=b.units.find(u=>u.uid===t.relicUid&&!u.removed);
+    if(!enforcer||!relic) failUrbanContainmentTrial(b,'Rule Enforcer or Relic was removed');
+    else {consume(b,enforcer,relic,'Subject Zero Containment',0);evolve(b,enforcer,t.apexId);enforcer.realm=4;persist(b,enforcer);t.status='passed';t.passedAt=b.time;b.metrics.urbanContainmentTrial={...b.metrics.urbanContainmentTrial,status:'passed',passedAt:b.time};interact(b,enforcer,enforcer,'subject-zero-contained',`SUBJECT ZERO BOUND · ${card(t.apexId).name} awakened · zero leaks`);fx(b,'growth',enforcer,null,'SUBJECT ZERO BOUND');}
+   } else failUrbanContainmentTrial(b,'Subject Zero was not contained with five marks');
   }
   const coinsEarned = r.node?.type === 'boss' ? 500 : r.node?.type === 'elite' ? 200 : 100;
   r.coins = (r.coins || 0) + coinsEarned; b.metrics.coinsEarned = coinsEarned;
