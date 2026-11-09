@@ -56,6 +56,48 @@ const Game = (() => {
  const CYBER_APEX=Object.values(CYBER_MATRIX).flatMap(Object.values);
  const isCyber=u=>family(u)==='cyberSolo';
  const cyberApex=u=>CYBER_APEX.includes(u.id);
+ function cyberTrialCandidate(b,u){
+  if(!b||!u||u.removed||token(u)||cyberApex(u)||!isCyber(u)||!['elite','boss'].includes(b.run?.node?.type)||(b.metrics?.leaks||0)>0)return null;
+  if((u.chrome||0)<120||!CYBER_MATRIX[u.arm]?.[u.os])return null;
+  const reactor=neighbors(b,u,false).filter(v=>!v.removed&&!token(v)&&v.id==='cyberReactor').sort((a,z)=>a.slot-z.slot||a.uid-z.uid)[0];
+  return reactor?{unit:u,reactor,apexId:CYBER_MATRIX[u.arm][u.os]}:null;
+ }
+ function startCyberTrial(b,u){
+  if(!b||b.cyberTrial)return b?.cyberTrial||null;
+  const c=cyberTrialCandidate(b,u);if(!c)return null;
+  const t=b.cyberTrial={status:'active',unitUid:c.unit.uid,reactorUid:c.reactor.uid,apexId:c.apexId,os:c.unit.os,arm:c.unit.arm,startedAt:b.time,nodeType:b.run.node.type};
+  b.metrics.cyberTrial={status:'active',unitUid:t.unitUid,reactorUid:t.reactorUid,apexId:t.apexId,os:t.os,arm:t.arm,startedAt:b.time,nodeType:t.nodeType};
+  interact(b,c.unit,c.reactor,'cyber-trial','OS OVERDRIVE TRIAL · signature proved; clear with zero leaks');
+  fx(b,'growth',c.unit,null,'CYBER TRIAL · ZERO-LEAK CLEAR');return t;
+ }
+ function cyberTrialProof(b,u,kind){
+  if(!cyberTrialCandidate(b,u)||b.cyberTrial)return false;
+  if(kind==='sandy')u.cyberSandyProof=(u.cyberSandyProof||0)+1;
+  else if(kind==='berserk')u.cyberBerserkProof=(u.cyberBerserkProof||0)+1;
+  else if(kind==='shortCircuit')u.cyberShortProof=true;
+  else if(kind==='contagion')u.cyberContagionProof=true;
+  persist(b,u);
+  const complete=u.os==='sandyOS'?(u.cyberSandyProof||0)>=3:u.os==='berserkOS'?(u.cyberBerserkProof||0)>=3:!!u.cyberShortProof&&!!u.cyberContagionProof;
+  if(complete)startCyberTrial(b,u);
+  return complete;
+ }
+ function failCyberTrial(b,reason='A runner leaked'){
+  const t=b?.cyberTrial;if(!t||t.status!=='active')return false;
+  const unit=b.units.find(u=>u.uid===t.unitUid),reactor=b.units.find(u=>u.uid===t.reactorUid);
+  if(unit)unit.removed=true;if(reactor)reactor.removed=true;
+  const lost=new Set([t.unitUid,t.reactorUid]);b.run.roster=b.run.roster.filter(u=>!lost.has(u.uid));
+  t.status='failed';t.reason=reason;t.failedAt=b.time;b.metrics.cyberTrial={...b.metrics.cyberTrial,status:'failed',reason,failedAt:b.time};
+  interact(b,unit||null,reactor||null,'cyber-trial-failed',`OS OVERDRIVE FAILED · ${reason}; Operative and Reactor lost`);fx(b,'impact',unit||null,null,'CYBER TRIAL FAILED');return true;
+ }
+ function passCyberTrial(b){
+  const t=b?.cyberTrial;if(!t||t.status!=='active'||!b.won||(b.metrics?.leaks||0)!==0||!['elite','boss'].includes(b.run?.node?.type))return false;
+  const unit=b.units.find(u=>u.uid===t.unitUid&&!u.removed),reactor=b.units.find(u=>u.uid===t.reactorUid&&!u.removed);
+  if(!unit||!reactor)return failCyberTrial(b,'The Operative or Reactor was removed');
+  consume(b,unit,reactor,'Cyber OS Overdrive Trial',0);evolve(b,unit,t.apexId);persist(b,unit);
+  t.status='passed';t.passedAt=b.time;b.metrics.cyberTrial={...b.metrics.cyberTrial,status:'passed',passedAt:b.time};
+  interact(b,unit,unit,'cyber-trial-passed',`OS OVERDRIVE PASSED · ${card(t.apexId).name} awakened`);fx(b,'growth',unit,null,'CYBER MYTHIC AWAKENED');return true;
+ }
+ function tickCyberTrial(b){const t=b?.cyberTrial;if(!t||t.status!=='active')return;if(!b.units.some(u=>u.uid===t.unitUid&&!u.removed)||!b.units.some(u=>u.uid===t.reactorUid&&!u.removed))failCyberTrial(b,'The Operative or Reactor was removed');}
  const augmented=u=>isCyber(u)&&!!(u.arm||u.os);
  const hasAccess=(b,u)=>neighbors(b,u).some(v=>v.id==='accessPoint');
  const ramCapacity=(b,u)=>hasAccess(b,u)?12:8;
@@ -64,10 +106,6 @@ const Game = (() => {
   if(!isCyber(u)||token(u)||u.removed)return;
   if(!cyberApex(u)){
    const id=(u.chrome||0)>=65?'eliteSolo':(u.chrome||0)>=25?'chromedSolo':'cyberSolo';if(u.id!==id)evolve(b,u,id);
-   if((u.chrome||0)>=120&&b.run.depth>=9&&CYBER_MATRIX[u.arm]?.[u.os]){
-    const reactor=neighbors(b,u).find(v=>v.id==='cyberReactor'&&!token(v));
-    if(reactor){const apex=CYBER_MATRIX[u.arm][u.os];consume(b,u,reactor,'Military Reactor Binding',0);evolve(b,u,apex);u.sandyUntil=0;}
-   }
   }persist(b,u);
  }
  function installChrome(b,module){
@@ -88,6 +126,7 @@ const Game = (() => {
   const target=living(b)[0],contagion=u.id!=='networkReaper'&&(u.hackIndex||0)%2===1;u.hackIndex=(u.hackIndex||0)+1;
   if(contagion){for(const e of living(b).slice(0,3))cyberPoison(b,u,e,24+rawAtk(u)*.25,4);}
   else trueHit(b,u,target,220+3*rawAtk(u));
+  if(isCyber(u)&&!cyberApex(u)&&u.os==='cyberdeckOS')cyberTrialProof(b,u,contagion?'contagion':'shortCircuit');
   fx(b,'spell',u,target,contagion?'CONTAGION · −3 RAM':'SHORT CIRCUIT · −3 RAM');return true;
  }
  function cyberDeath(b,e){
@@ -99,7 +138,7 @@ const Game = (() => {
  function cyberZone(b,u,type,p,dps){b.cyberZones??=[];const wall=wallOf({p}),old=b.cyberZones.find(z=>z.owner===u.uid&&z.wall===wall&&z.until>b.time);b.cyberZones=b.cyberZones.filter(z=>z.owner!==u.uid);b.cyberZones.push({owner:u.uid,type,wall,dps,until:b.time+4,shredAt:old?.shredAt??b.time+1});}
  function clearSprint(e){e.speedBoostUntil=0;if(e.baseSpeed!=null)e.speed=e.baseSpeed;else if(e.swift&&!e.cyberSprintSuppressed&&!e.steamSuppressed){e.speed/=1.6;e.cyberSprintSuppressed=true;}}
  function cyberAttack(b,u,target,power){
-  const overdrive=berserkActive(u),wall=wallOf(target),truePower=power/mod(b.run,'basicDamage');
+  const overdrive=berserkActive(u),berserkProof=overdrive&&u.heat<86, sandyProof=u.os==='sandyOS'&&!cyberApex(u)&&u.sandyUntil>b.time,wall=wallOf(target),truePower=power/mod(b.run,'basicDamage');
   let targets=[target];
   if(u.id==='thermalRipper')targets=living(b).slice(0,4);
   else if(u.id==='razorPhantom')targets=living(b).slice(0,8);
@@ -131,7 +170,9 @@ const Game = (() => {
   }
   if(u.os==='sandyOS'&&!cyberApex(u)){
    if((u.sandyUntil||0)<=b.time){u.sandyCharge=(u.sandyCharge||0)+1;if(u.sandyCharge>=8){u.sandyCharge=0;u.sandyUntil=b.time+3.5;}}
+   if(sandyProof)cyberTrialProof(b,u,'sandy');
   }
+  if(berserkProof)cyberTrialProof(b,u,'berserk');
   if(u.os==='cyberdeckOS'&&u.id!=='networkReaper'){
    u.ramAttacks=(u.ramAttacks||0)+1;const threshold=hasAccess(b,u)?2:3;
    if(u.ramAttacks>=threshold){u.ramAttacks-=threshold;addRAM(b,u,1);}
@@ -724,6 +765,7 @@ const Game = (() => {
   if (b.metrics.urbanLegendTrial) notes.push(b.metrics.urbanLegendTrial.status === 'passed' ? `Folklore Merger trial passed with zero runner leaks; ${card(b.metrics.urbanLegendTrial.apexId).name} awakened with +${b.metrics.urbanLegendTrial.inheritedAtk} inherited ATK.` : b.metrics.urbanLegendTrial.status === 'failed' ? `Folklore Merger trial failed: ${b.metrics.urbanLegendTrial.reason}. The devourer was removed; its same-lineage prey was already consumed.` : `Folklore Merger trial active: clear the Elite/Boss node with zero leaks to earn Mythic.`);
   if (b.metrics.scrapworkTrial) notes.push(b.metrics.scrapworkTrial.status==='passed'?`Titan Field Test passed; ${card(b.metrics.scrapworkTrial.apexId).name} awakened and the Reactor Core was consumed.`:b.metrics.scrapworkTrial.status==='failed'?`Titan Field Test failed: ${b.metrics.scrapworkTrial.reason}. Titan and Reactor Core removed.`:'Titan Field Test active: prove both locked modules against priority enemies, then clear with zero leaks.');
   if (b.metrics.arcaneTrial) notes.push(b.metrics.arcaneTrial.status === 'passed' ? `Astral Weaving passed; ${card(b.metrics.arcaneTrial.apexId).name} awakened and the Loom was consumed.` : b.metrics.arcaneTrial.status === 'failed' ? `Astral Weaving failed: ${b.metrics.arcaneTrial.reason}. Mage and Astral Loom removed.` : `Astral Weaving active: prove ${b.metrics.arcaneTrial.pair} on a priority target, then clear with zero leaks.`);
+  if (b.metrics.cyberTrial) notes.push(b.metrics.cyberTrial.status==='passed'?`OS Overdrive passed; ${card(b.metrics.cyberTrial.apexId).name} awakened and the Reactor was consumed.`:b.metrics.cyberTrial.status==='failed'?`OS Overdrive failed: ${b.metrics.cyberTrial.reason}. Operative and Military Cyber-Reactor removed.`:'OS Overdrive active: clear the Elite/Boss node with zero leaks.');
   if (dormant.length) notes.push(`${dormant.map(c => card(c.id).name + ' #' + c.uid).join(', ')} did not fill a trigger gauge.`);
   const originals = consumed.filter(c => !c.token).length, tokens = consumed.filter(c => c.token).length;
   if (originals) notes.push(`${originals} original cards permanently lost.`);
@@ -1547,7 +1589,7 @@ const Game = (() => {
    else { baseAtk = 75; attackInterval = 0.75; }
   }
   return {
-   ...u, ...pos, scripts:[...(u.scripts||[])], pageRecipe:[...(u.pageRecipe||[])], arm:u.arm||d.cyberArm||null, os:u.os||d.cyberOS||null, heat:20, ram:0, ramAttacks:0, sandyCharge:0, sandyUntil:0, synthesis:{...(u.synthesis||{})}, essences:[...(u.essences||[])], manaStored:0, tempestKills:0, carvings: {...(u.carvings||{})}, mountedHead:null, huntFrenzy:0, huntWall:null, carveAt:6, modules: [...(u.modules || [])], scrapIntake: [...(u.scrapIntake || [])], extraSlot: undefined, apexQi: u.apexQi ?? u.swordQi ?? 0, apexDread: u.apexDread || 0, slot, name: d.name, genre: d.genre, lineage: u.lineage || d.lineage, lineageTier: u.lineageTier || d.lineageTier, baseAtk, attackInterval,
+   ...u, ...pos, scripts:[...(u.scripts||[])], pageRecipe:[...(u.pageRecipe||[])], arm:u.arm||d.cyberArm||null, os:u.os||d.cyberOS||null, heat:20, ram:0, ramAttacks:0, sandyCharge:0, sandyUntil:0, cyberSandyProof:0, cyberBerserkProof:0, cyberShortProof:false, cyberContagionProof:false, synthesis:{...(u.synthesis||{})}, essences:[...(u.essences||[])], manaStored:0, tempestKills:0, carvings: {...(u.carvings||{})}, mountedHead:null, huntFrenzy:0, huntWall:null, carveAt:6, modules: [...(u.modules || [])], scrapIntake: [...(u.scrapIntake || [])], extraSlot: undefined, apexQi: u.apexQi ?? u.swordQi ?? 0, apexDread: u.apexDread || 0, slot, name: d.name, genre: d.genre, lineage: u.lineage || d.lineage, lineageTier: u.lineageTier || d.lineageTier, baseAtk, attackInterval,
    currentCooldown: .15 + rand(b.run) * .25,
    threshold: { current: u.threshold || 0, max: d.max || 0, onTrigger: null },
    state: 'active', stateRemaining: 0, removed: false, phantom, mimic: 0, scale: phantom ? .5 : 1,
@@ -2206,6 +2248,7 @@ const Game = (() => {
   tickUrbanContainmentTrial(b);
   tickArcaneTrial(b);
   tickScrapworkTrial(b);
+  tickCyberTrial(b);
   if (b.spawned < b.plan.count && b.time >= b.spawnAt) { spawn(b); b.spawnAt += b.plan.encounter === 'packs' ? (b.spawned % 3 === 0 ? b.plan.interval * 2 : .18) : b.plan.interval }
   for (const u of b.units.filter(u => !u.removed)) {
    if (u.removed) continue;
@@ -2253,6 +2296,7 @@ const Game = (() => {
     const guardian=b.units.find(v=>!v.removed&&v.lineage==='xuanwu'&&(lineageTierIds[v.id]?.tier||0)>=4&&(v.savedLeaks||0)<2);
     if (!e.boss && !e.champion && guardian) { guardian.savedLeaks=(guardian.savedLeaks||0)+1; e.gone=true; interact(b,guardian,e,'save',`Xuanwu prevents leak ${guardian.savedLeaks}/2`); continue; }
     if (b.heavenlyTrial?.status === 'active') failHeavenlyTrial(b, e.boss ? 'boss escaped' : 'a runner escaped');
+    if (b.cyberTrial?.status === 'active') failCyberTrial(b, e.boss ? 'boss escaped' : 'a runner escaped');
     e.gone = true;
     const leakLoss=e.boss ? b.run.maxHealth : Math.max(1, e.leak + mod(b.run, 'leak', 0) - (b.run.relics.includes('mercy') ? 1 : 0));
     b.run.health = Math.max(0, b.run.health - leakLoss); b.metrics.leaks++; b.run.stats.leaks++;
@@ -2275,6 +2319,10 @@ const Game = (() => {
   if (b.done) return;
   if(won)for(const u of b.units.filter(v=>!v.removed&&!token(v)&&isMech(v)))addAlloy(b,u,5);
   b.done = true; b.won = won; let r = b.run;
+  if (b.cyberTrial?.status === 'active') {
+   if(won&&(b.metrics.leaks||0)===0)passCyberTrial(b);
+   else failCyberTrial(b,(b.metrics.leaks||0)>0?'A runner leaked':'Elite/Boss node was not cleared');
+  }
   if (b.heavenlyTrial?.status === 'active') {
    if (won && (b.metrics.leaks || 0) === 0) passHeavenlyTrial(b);
    else failHeavenlyTrial(b, (b.metrics.leaks || 0) > 0 ? 'A runner leaked' : 'Elite/Boss node was not cleared');
@@ -2312,7 +2360,7 @@ const Game = (() => {
    persist(b, u); src.threshold = abilityGauge(u) ? u.threshold.current : 0; src.naniteCrits = u.naniteCrits || 0; src.critCount = u.critCount || 0
   }
   r.recap = { ...b.metrics, time: b.time, ...report(b) };
-  r.battleHistory ??= []; r.battleHistory.push({ stage: r.depth + 1, leaks: b.metrics.leaks, closeCalls: b.metrics.closeCalls || 0, trial: b.metrics.trial || null, heavenlyTribulation: b.metrics.heavenlyTribulation || null, bloodlineTrial: b.metrics.bloodlineTrial || null, arcaneTrial: b.metrics.arcaneTrial || null, scrapworkTrial: b.metrics.scrapworkTrial || null, urbanLegendTrial: b.metrics.urbanLegendTrial || null });
+  r.battleHistory ??= []; r.battleHistory.push({ stage: r.depth + 1, leaks: b.metrics.leaks, closeCalls: b.metrics.closeCalls || 0, trial: b.metrics.trial || null, heavenlyTribulation: b.metrics.heavenlyTribulation || null, bloodlineTrial: b.metrics.bloodlineTrial || null, arcaneTrial: b.metrics.arcaneTrial || null, scrapworkTrial: b.metrics.scrapworkTrial || null, cyberTrial: b.metrics.cyberTrial || null, urbanLegendTrial: b.metrics.urbanLegendTrial || null });
   r.battleHistory = r.battleHistory.slice(-16);
   if (won) {
    r.cleared++; if (r.node.type === 'elite') { let options = D.RELICS.filter(v => !r.relics.includes(v.id)); if (options.length) { let item = options[Math.floor(rand(r) * options.length)]; addRelic(r, item.id); r.recap.relic = item.name } }
@@ -2738,7 +2786,7 @@ const Game = (() => {
   if (abilityGauge(u) && u.threshold.current >= u.threshold.max) tick(b, u, 0);
  }
 
- return { chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, isXenoApex, isSciFi, addWeakpoint, extractHelix, addGenome, checkXenoMetamorphosis, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, updateIdol, dropPage, addSyllables, forgeGrimoire, decipherPage, cosmicPanic, cosmicStatus, cosmicReward, cosmicDeath, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, augmented, hasAccess, ramCapacity, berserkActive, updateCyber, installChrome, addChromeAttack, addRAM, cyberPoison, uploadHack, cyberDeath, cyberZone, clearSprint, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, arcanePair, isApprentice, isArchon, isElemental, arcaneGauge, bestPair, updateApprentice, receiveEssence, startArcaneTrial, failArcaneTrial, passArcaneTrial, tickArcaneTrial, startScrapworkTrial, scrapworkTrialCandidate, markScrapworkTrialHit, failScrapworkTrial, passScrapworkTrial, tickScrapworkTrial, storeOverflow, elementalLinks, arcaneReaction, elementalSpell, arcaneZone, archonAttack, arcaneExtras, tickArcane, arcaneKill, HUNT_APEX, isSlayer, isHunter, priority, trophyFamily, huntAura, executeThreshold, wallOf, huntArmor, brandQuarry, updateSlayer, trophyPoints, harvestTrophy, forgeHuntRelic, carveTrophy, huntExtras, visceral, slayerAttack, isMech, isMechanical, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, inArc, oilPool, tickOil, mechAttack, addQi, addDread, acceptsQi, acceptsDread, isCultivationApex, isUrbanAuthority, bindUrbanRelic, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, passBloodlineTrial, tickBloodlineTrial, startUrbanContainmentTrial, failUrbanContainmentTrial, passUrbanContainmentTrial, tickUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, resolveUrbanLegendMerger, updateUrbanLegendLineage, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, practitionerRealmForQi, isPractitioner, isCultivationRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, breaksLegendNaturalRule, markNaturalBreach, URBAN_LEGEND_MARK_NAMES };
+ return { chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, isXenoApex, isSciFi, addWeakpoint, extractHelix, addGenome, checkXenoMetamorphosis, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, updateIdol, dropPage, addSyllables, forgeGrimoire, decipherPage, cosmicPanic, cosmicStatus, cosmicReward, cosmicDeath, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, cyberTrialCandidate, startCyberTrial, cyberTrialProof, failCyberTrial, passCyberTrial, tickCyberTrial, augmented, hasAccess, ramCapacity, berserkActive, updateCyber, installChrome, addChromeAttack, addRAM, cyberPoison, uploadHack, cyberDeath, cyberZone, clearSprint, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, arcanePair, isApprentice, isArchon, isElemental, arcaneGauge, bestPair, updateApprentice, receiveEssence, startArcaneTrial, failArcaneTrial, passArcaneTrial, tickArcaneTrial, startScrapworkTrial, scrapworkTrialCandidate, markScrapworkTrialHit, failScrapworkTrial, passScrapworkTrial, tickScrapworkTrial, storeOverflow, elementalLinks, arcaneReaction, elementalSpell, arcaneZone, archonAttack, arcaneExtras, tickArcane, arcaneKill, HUNT_APEX, isSlayer, isHunter, priority, trophyFamily, huntAura, executeThreshold, wallOf, huntArmor, brandQuarry, updateSlayer, trophyPoints, harvestTrophy, forgeHuntRelic, carveTrophy, huntExtras, visceral, slayerAttack, isMech, isMechanical, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, inArc, oilPool, tickOil, mechAttack, addQi, addDread, acceptsQi, acceptsDread, isCultivationApex, isUrbanAuthority, bindUrbanRelic, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, passBloodlineTrial, tickBloodlineTrial, startUrbanContainmentTrial, failUrbanContainmentTrial, passUrbanContainmentTrial, tickUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, resolveUrbanLegendMerger, updateUrbanLegendLineage, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, practitionerRealmForQi, isPractitioner, isCultivationRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, breaksLegendNaturalRule, markNaturalBreach, URBAN_LEGEND_MARK_NAMES };
 })();
 if (typeof module !== 'undefined') module.exports = Game;
 

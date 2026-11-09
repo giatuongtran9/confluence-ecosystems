@@ -3194,8 +3194,8 @@ CARDS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Two permanent sockets: one Arm, one OS. Every4 attacks earns1 Chrome across battles; cleaves count once. Evolves at25 and65; at120 Chrome and Crossing10+, binds an adjacent Military Cyber-Reactor if both sockets are filled. Base heat20°C; attacks generate8°C (14°C with Berserk), passive cooling4°C/s. At100°C shuts down for3s and purges to40°C.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "rules": "Two permanent sockets: one Arm, one OS. Every4 attacks earns1 Chrome across battles; cleaves count once. Evolves at25 and65. At120 Chrome with both sockets and an adjacent Military Cyber-Reactor, prove the OS signature on an Elite/Boss, then clear with zero leaks to awaken its matching Mythic; trial failure removes the Operative and Reactor. Sandevistan: land3 attacks during its window. Berserk: land3 attacks at80–99°C without shutdown. Cyberdeck: complete one Short Circuit and one Contagion. Base heat20°C; attacks generate8°C (14°C with Berserk), passive cooling4°C/s. At100°C shuts down for3s and purges to40°C.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "cyberSolo"
 },
 {
@@ -3213,7 +3213,7 @@ CARDS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Automatically consumed into an adjacent Operative’s empty Arm socket; oldest eligible instance first. Locked for the run. Leading hit plus two50% cleaves. All hits inflict stacking Plasma Bleed:8 true DPS for4s.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "mantisImplant",
   "cyberModule": "arm"
 },
@@ -3232,7 +3232,7 @@ CARDS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Automatically consumed into an adjacent Operative’s empty Arm socket; oldest eligible instance first. Locked for the run. Targets the highest current HP runner. Strips40% armor; every fourth attack stuns1s.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "gorillaImplant",
   "cyberModule": "arm"
 },
@@ -3251,7 +3251,7 @@ CARDS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Automatically consumed into an adjacent Operative’s empty Arm socket; oldest eligible instance first. Locked for the run. Hits up to five runners on the leading target’s aligned4-tile wall; destroys shields and ignores50% defense.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "monowireImplant",
   "cyberModule": "arm"
 },
@@ -3270,7 +3270,7 @@ CARDS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Automatically consumed into an adjacent Operative’s empty OS socket; oldest eligible instance first. Locked for the run. Every8 attacks opens a3.5s window:2.5× owner speed and50% track-wide slow. Boss slow resistance applies. Cannot retrigger during an active window.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "sandyOS",
   "cyberModule": "os"
 },
@@ -3289,7 +3289,7 @@ CARDS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Automatically consumed into an adjacent Operative’s empty OS socket; oldest eligible instance first. Locked for the run. At80°C and above, attacks become double true damage and radiate12 true Burn DPS for2s on the target wall. Cooling below80°C ends Overdrive.100°C still shuts down.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "berserkOS",
   "cyberModule": "os"
 },
@@ -3308,7 +3308,7 @@ CARDS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Automatically consumed into an adjacent Operative’s empty OS socket; oldest eligible instance first. Locked for the run. Earn1 RAM every3 attacks (every2 with adjacent Access Point). Capacity8 (+4 with Access Point). Every3s, spend3 RAM on alternating Short Circuit and Contagion.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "cyberdeckOS",
   "cyberModule": "os"
 },
@@ -3327,7 +3327,7 @@ CARDS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Every6s removes40°C from orthogonally adjacent Operatives and freezes its facing4-tile wall for2s. Interior center pumps face north; edge/corner pumps face the nearest outer wall (ties N/E/S/W). Boss resistance applies.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "cryoPump"
 },
 {
@@ -3345,7 +3345,7 @@ CARDS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Every second equalizes heat between adjacent Operatives, preserving their total temperature. Grants adjacent augmented Operatives +15 percentage points of critical chance. Duplicate critical auras do not stack.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "biomonitor"
 },
 {
@@ -3363,7 +3363,7 @@ CARDS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Adjacent Cyberdeck users have12 RAM capacity instead of8 and earn1 RAM per2 attacks instead of3. Duplicate hubs do not stack.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "accessPoint"
 },
 {
@@ -3380,8 +3380,8 @@ CARDS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Draftable from Crossing5. At Crossing10+, consumed by an adjacent120-Chrome Operative with both sockets installed, awakening the matching Mythic. One grid slot per Operative, including Mythics.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "rules": "Draftable from Crossing5. On an Elite/Boss, an adjacent120-Chrome Operative with both sockets filled must prove its OS signature and clear with zero leaks to consume this Reactor and awaken the matching Mythic. Failure removes the Operative and Reactor. One grid slot per Operative, including Mythics.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "cyberReactor"
 });
 FORMS.push({
@@ -3399,7 +3399,7 @@ FORMS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Earned at25 Chrome. Retains installed modules. Four attacks earn1 Chrome. Heat and socket rules remain.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "chromedSolo",
   "evolvedFrom": "cyberSolo",
   "draftable": false
@@ -3418,8 +3418,8 @@ FORMS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Earned at65 Chrome. At120 Chrome and Crossing10+, bind an adjacent Military Cyber-Reactor with both sockets filled.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "rules": "Earned at65 Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "eliteSolo",
   "evolvedFrom": "cyberSolo",
   "draftable": false
@@ -3439,7 +3439,7 @@ FORMS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Permanent40% track slow replaces Sandevistan windows. Mantis slashes execute ordinary runners below30% HP (35% with carved Witch Eye). Bosses/Harbingers cannot execute.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "chronoPhantom",
   "evolvedFrom": "cyberSolo",
   "draftable": false,
@@ -3461,7 +3461,7 @@ FORMS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Four full-damage true-fire cleaves replace ordinary Mantis cleaves and Berserk doubling. Retains Plasma Bleed. Creates one4-tile slag trail for4s at50 true DPS; recasts refresh/replace, never stack.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "thermalRipper",
   "evolvedFrom": "cyberSolo",
   "draftable": false,
@@ -3483,7 +3483,7 @@ FORMS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Mantis hits inject viral nanites. When an infected bleeding runner dies, infects its wall with Contagion at24 true DPS for4s. Viral death explosions occur once per victim and cannot propagate further death explosions. Retains RAM and regular paid hacks.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "glitchAssassin",
   "evolvedFrom": "cyberSolo",
   "draftable": false,
@@ -3505,7 +3505,7 @@ FORMS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Every4s creates a gravity impact: freezes the target2s and pulls nearby runners within2 track tiles backward up to2 tiles. Replaces Sandevistan windows. Boss resistance/enrage remain.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "gravitonColossus",
   "evolvedFrom": "cyberSolo",
   "draftable": false,
@@ -3527,7 +3527,7 @@ FORMS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Punches remove all target armor. Every third punch removes15% current boss/Harbinger HP. Signature replaces Berserk doubling; retains Gorilla targeting and fourth-hit stun.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "juggernautSmasher",
   "evolvedFrom": "cyberSolo",
   "draftable": false,
@@ -3549,7 +3549,7 @@ FORMS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Punches strike a6-tile perimeter arc, erase shields and cancel temporary sprint boosts. Never resets boss enrage or its timer. Retains Gorilla priority, fourth-hit stun, RAM and paid hacks.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "empBreaker",
   "evolvedFrom": "cyberSolo",
   "draftable": false,
@@ -3571,7 +3571,7 @@ FORMS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Whips up to eight leading runners track-wide with guaranteed criticals (normal critical multipliers apply). Retains shield stripping and50% defense ignore. Replaces Sandevistan windows.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "razorPhantom",
   "evolvedFrom": "cyberSolo",
   "draftable": false,
@@ -3593,7 +3593,7 @@ FORMS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Wire attacks create one4-tile blue-plasma zone for4s:40 true DPS and10% base armor stripped per second. Retains wire pattern; signature replaces Berserk doubling.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "plasmaTempest",
   "evolvedFrom": "cyberSolo",
   "draftable": false,
@@ -3615,7 +3615,7 @@ FORMS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Wire hits generate1 RAM per runner hit instead of attack-count generation. Every1.5s spends3 RAM on Short Circuit. Retains RAM capacity and wire pattern; uploads are never free.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At Crossing10+,120 Chrome plus an adjacent Military Cyber-Reactor unlocks the matching Mythic.",
+  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "networkReaper",
   "evolvedFrom": "cyberSolo",
   "draftable": false,

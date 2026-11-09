@@ -7,7 +7,42 @@ function battle(ids,slots=ids.map((_,i)=>i),leader='none'){
 function enemy(b,kind='',p=1,hp=100000){const e={uid:++b.enemyUid,p,hp,maxHp:hp,speed:.3,defense:0,boss:kind==='boss',champion:kind==='champion',elite:kind==='elite',gone:false,bornAt:0,frozenUntil:0,slows:[],bleeds:[],burns:[],venoms:[],auras:[]};b.enemies.push(e);return e;}
 const close=(a,b)=>assert.ok(Math.abs(a-b)<1e-6,`${a} != ${b}`);
 test('twelve draftable cards, nine earned hybrids, legacy catalogs removed',()=>{assert.equal(D.CARDS.filter(c=>c.genre==='Cyberpunk').length,12);assert.equal(G.CYBER_APEX.length,9);for(const id of ['mantis','netrunner','plasma'])assert.equal(D.CARD[id],undefined);const r=G.newRun('nyx',{},3);for(let i=0;i<200;i++){r.depth=i%16;for(const id of G.offers(r)){assert.ok(!G.CYBER_APEX.includes(id));if(r.depth<3)assert.notEqual(id,'cyberReactor');}}});
-for(const [arm,oses] of Object.entries(G.CYBER_MATRIX))for(const [os,id] of Object.entries(oses))test('binding '+id+' needs120 Chrome, installed pair, adjacency and Crossing10',()=>{const b=battle(['cyberSolo','cyberReactor'],[0,1]),u=b.units[0];u.arm=arm;u.os=os;u.chrome=119;G.updateCyber(b,u);assert.equal(u.id,'eliteSolo');u.chrome=120;b.run.depth=8;G.updateCyber(b,u);assert.equal(u.id,'eliteSolo');b.run.depth=9;G.updateCyber(b,u);assert.equal(u.id,id);assert.equal(b.run.roster.length,1);assert.equal(u.arm,arm);assert.equal(u.os,os);assert.equal(G.occupiedSlots(u).length,1);});
+for(const [arm,oses] of Object.entries(G.CYBER_MATRIX))for(const [os,id] of Object.entries(oses))test('binding '+id+' waits for its OS trial and zero-leak clear',()=>{const b=battle(['cyberSolo','cyberReactor'],[0,1]),u=b.units[0];b.run.node.type='elite';u.arm=arm;u.os=os;u.chrome=120;G.updateCyber(b,u);assert.equal(u.id,'eliteSolo');assert.equal(b.run.roster.length,2);assert.equal(b.cyberTrial,undefined);assert.equal(G.cyberTrialCandidate(b,u).apexId,id);});
+function cyberReady(os='sandyOS',arm='mantisImplant',node='elite'){
+ const b=battle(['cyberSolo','cyberReactor'],[0,1]);b.run.node.type=node;const u=b.units[0];u.arm=arm;u.os=os;u.chrome=120;G.updateCyber(b,u);return{b,u};
+}
+function proveCyber(b,u){
+ if(u.os==='sandyOS')for(let i=0;i<3;i++)G.cyberTrialProof(b,u,'sandy');
+ else if(u.os==='berserkOS')for(let i=0;i<3;i++)G.cyberTrialProof(b,u,'berserk');
+ else {G.cyberTrialProof(b,u,'shortCircuit');G.cyberTrialProof(b,u,'contagion');}
+}
+test('Cyber OS feat starts only on an eligible Elite/Boss with 120 Chrome, both sockets, and adjacent Reactor',()=>{
+ const {b,u}=cyberReady();assert.equal(G.cyberTrialCandidate(b,u).apexId,'chronoPhantom');
+ assert.equal(G.cyberTrialProof(b,u,'sandy'),false);assert.equal(b.cyberTrial,undefined);
+ assert.equal(G.cyberTrialProof(b,u,'sandy'),false);assert.equal(b.cyberTrial,undefined);
+ assert.equal(G.cyberTrialProof(b,u,'sandy'),true);assert.equal(b.cyberTrial.status,'active');assert.equal(b.cyberTrial.apexId,'chronoPhantom');
+ const noReactor=cyberReady();noReactor.b.units[1].removed=true;assert.equal(G.cyberTrialCandidate(noReactor.b,noReactor.u),null);
+ const wrongNode=cyberReady('sandyOS','mantisImplant','battle');assert.equal(G.cyberTrialCandidate(wrongNode.b,wrongNode.u),null);
+ const leaked=cyberReady();leaked.b.metrics.leaks=1;assert.equal(G.cyberTrialCandidate(leaked.b,leaked.u),null);
+});
+test('Sandevistan, Berserk, and Cyberdeck signatures each start the correct Cyber trial',()=>{
+ for(const [os,arm,apex] of [['sandyOS','mantisImplant','chronoPhantom'],['berserkOS','mantisImplant','thermalRipper'],['cyberdeckOS','gorillaImplant','empBreaker']]){
+  const {b,u}=cyberReady(os,arm);proveCyber(b,u);assert.equal(b.cyberTrial?.status,'active');assert.equal(b.cyberTrial.apexId,apex);
+ }
+});
+test('real OS actions record Cyber proof and start the trial',()=>{
+ const sandy=cyberReady('sandyOS');sandy.u.sandyUntil=3.5;enemy(sandy.b);for(let i=0;i<3;i++)G.attack(sandy.b,sandy.u);assert.equal(sandy.b.cyberTrial?.status,'active');
+ const berserk=cyberReady('berserkOS');const boss=enemy(berserk.b,'boss');for(let i=0;i<3;i++){berserk.u.heat=80;G.attack(berserk.b,berserk.u);}assert.equal(berserk.b.cyberTrial?.status,'active');assert.ok(boss.hp<100000);
+ const deck=cyberReady('cyberdeckOS','gorillaImplant');const target=enemy(deck.b);deck.u.ram=6;assert.equal(G.uploadHack(deck.b,deck.u),true);deck.b.time=3;assert.equal(G.uploadHack(deck.b,deck.u),true);assert.equal(deck.b.cyberTrial?.status,'active');assert.equal(deck.b.cyberTrial.apexId,'empBreaker');assert.ok(target.hp<100000);
+});
+test('zero-leak Elite clear consumes Reactor and awakens the mapped Cyber Mythic',()=>{
+ const {b,u}=cyberReady();proveCyber(b,u);const reactor=b.units[1];G.finish(b,true);
+ assert.equal(b.cyberTrial.status,'passed');assert.equal(u.id,'chronoPhantom');assert.equal(reactor.removed,true);assert.equal(b.run.roster.length,1);assert.equal(b.run.roster[0].id,'chronoPhantom');
+});
+test('failed Cyber trial removes Operative and Reactor and preserves unrelated roster cards',()=>{
+ const b=battle(['cyberSolo','cyberReactor','vent'],[0,1,2]),u=b.units[0];b.run.node.type='boss';u.arm='gorillaImplant';u.os='cyberdeckOS';u.chrome=120;G.updateCyber(b,u);proveCyber(b,u);b.metrics.leaks=1;G.finish(b,false);
+ assert.equal(b.cyberTrial.status,'failed');assert.equal(u.removed,true);assert.equal(b.units[1].removed,true);assert.deepEqual(b.run.roster.map(v=>v.id),['vent']);
+});
 test('module installs in oldest adjacent empty socket, consumed permanently; occupied sockets locked',()=>{const b=battle(['cyberSolo','cyberSolo','mantisImplant','gorillaImplant'],[0,2,1,3]);assert.equal(G.installChrome(b,b.units[2]),true);assert.equal(b.units[0].arm,'mantisImplant');assert.equal(b.units[1].arm,null);assert.equal(b.units[2].removed,true);assert.equal(b.run.roster.some(u=>u.id==='mantisImplant'),false);assert.equal(G.installChrome(b,b.units[3]),false);assert.equal(b.units[0].arm,'mantisImplant');});
 test('no remote, diagonal or token installation; no free Chrome from installing',()=>{const b=battle(['cyberSolo','sandyOS'],[0,4]);assert.equal(G.installChrome(b,b.units[1]),false);b.units[1].x=1;b.units[1].y=0;b.units[1].phantom=true;assert.equal(G.installChrome(b,b.units[1]),false);b.units[1].phantom=false;G.installChrome(b,b.units[1]);assert.equal(b.units[0].chrome,undefined);});
 test('three attack remainder persists; fourth grants exactly1 Chrome regardless of cleave hits',()=>{const b=battle(['cyberSolo']),u=b.units[0];u.arm='mantisImplant';G.persist(b,u);for(let i=0;i<3;i++)enemy(b,'',i+1);for(let i=0;i<3;i++)G.attack(b,u);assert.equal(u.chrome,undefined);assert.equal(b.run.roster[0].chromeAttackCharge,3);const v=G.runtime(b,JSON.parse(JSON.stringify(b.run.roster[0])),0);G.prepareHooks(b,v);b.units[0]=v;G.attack(b,v);assert.equal(v.chrome,1);assert.equal(v.chromeAttackCharge,0);});
@@ -36,7 +71,7 @@ test('Sandy and Chrono global slows use strongest effect without stacking or bos
 test('partial sockets and a nonadjacent Reactor cannot awaken',()=>{const b=battle(['cyberSolo','cyberReactor'],[0,8]),u=b.units[0];u.chrome=120;u.arm='mantisImplant';G.updateCyber(b,u);assert.equal(u.id,'eliteSolo');u.os='sandyOS';G.updateCyber(b,u);assert.equal(u.id,'eliteSolo');assert.equal(b.run.roster.length,2);});
 test('baseline Cyberdeck generates one RAM per3 attacks without Access Point',()=>{const b=battle(['cyberSolo']),u=b.units[0];u.os='cyberdeckOS';u.hackUploadAt=999;enemy(b);G.attack(b,u);G.attack(b,u);assert.equal(u.ram,0);G.attack(b,u);assert.equal(u.ram,1);});
 test('old Cyberpunk saves reset safely, clean sockets and Chrome survive serialization',()=>{const fs=require('node:fs'),vm=require('node:vm'),code=fs.readFileSync(require.resolve('../app'),'utf8').split('let feedbackSeen=')[0];for(const id of ['mantis','netrunner','plasma','cyberSolo']){const values=new Map([['confluence-run-v3',JSON.stringify({version:3,roster:[{id,arm:'mantisImplant',os:'sandyOS',chrome:65,chromeAttackCharge:3}]})],['confluence-meta-v1',JSON.stringify({shards:50,power:7})]]),ctx={Game:G,document:{querySelector:()=>({})},localStorage:{getItem:k=>values.get(k),removeItem:k=>values.delete(k)}};vm.createContext(ctx);vm.runInContext(code+';globalThis.result={run,meta};',ctx);assert.equal(ctx.result.run===null,id!=='cyberSolo');assert.equal(ctx.result.meta.shards,50);if(id==='cyberSolo')assert.equal(ctx.result.run.roster[0].chromeAttackCharge,3);}});
-test('all new Cyber art paths exist and UI exposes sockets, heat, RAM and Chrome',()=>{const fs=require('node:fs'),path=require('node:path');for(const c of Object.values(D.CARD).filter(c=>c.cyberAsset))assert.ok(fs.existsSync(path.join(__dirname,'../assets/cyber-matrix',c.cyberAsset+'.svg')));const s=fs.readFileSync(require.resolve('../app'),'utf8');assert.match(s,/Chrome Tolerance/);assert.match(s,/THERMAL SHUTDOWN/);assert.match(s,/hacks cost3 RAM/);assert.match(s,/Installed choices are locked/);});
+test('all new Cyber art paths exist and UI exposes sockets, heat, RAM and Chrome',()=>{const fs=require('node:fs'),path=require('node:path');for(const c of Object.values(D.CARD).filter(c=>c.cyberAsset))assert.ok(fs.existsSync(path.join(__dirname,'../assets/cyber-matrix',c.cyberAsset+'.svg')));const s=fs.readFileSync(require.resolve('../app'),'utf8');assert.match(s,/Chrome Tolerance/);assert.match(s,/THERMAL SHUTDOWN/);assert.match(s,/hacks cost3 RAM/);assert.match(s,/Installed choices are locked/);assert.match(s,/OS OVERDRIVE TRIAL/);assert.match(s,/zero leaks/);});
 test('Juggernaut percentage strike stays15% currentHP even with extreme Haunted rule marks',()=>{const b=battle(['juggernautSmasher']),u=b.units[0],e=enemy(b,'boss');e.ruleMarks=1000;u.attackCount=3;G.cyberAttack(b,u,e,0);close(e.hp,85000);});
 test('Cyber detail renders permanent sockets outside battle without stale heat or RAM',()=>{const fs=require('node:fs'),vm=require('node:vm'),s=fs.readFileSync(require.resolve('../app'),'utf8');const code=s.slice(s.indexOf('function cyberDetail('),s.indexOf('function arcaneDetail('));const ctx={Game:G,CARD:D.CARD,battle:null,u:{id:'cyberSolo',arm:'mantisImplant',os:'sandyOS',chrome:65,chromeAttackCharge:3}};vm.createContext(ctx);vm.runInContext(code+';globalThis.html=cyberDetail(u);',ctx);assert.match(ctx.html,/Thermal Mantis Blades/);assert.match(ctx.html,/Sandevistan OS/);assert.match(ctx.html,/65 Chrome/);assert.match(ctx.html,/Heat and RAM reset/);});
 test('battle completion grants no Chrome bonus',()=>{const b=battle(['cyberSolo']);G.finish(b,true);assert.equal(b.run.roster[0].chrome,undefined);});
