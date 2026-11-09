@@ -1005,7 +1005,7 @@ const CARDS = [
     "predator"
   ],
   "ecosystem": "Bloodline · first-meal destiny",
-  "rules": "Attacks runners and devours orthogonally adjacent Bloodline prey at combat opening and every 6 seconds. Its first meal permanently locks one lineage. Every meal grants permanent ATK: +4 for matching prey, +3 for off-lineage prey. Matching meals alone add evolution stacks; it evolves at 2, 4, and 6 matching stacks. Bloodline fodder breeds temporary copies of its own species at a 10% per-second same-species adjacency chance into an empty orthogonal slot.",
+  "rules": "Attacks runners and devours orthogonally adjacent Bloodline prey at combat opening and every 6 seconds. Its first meal permanently locks one lineage. Every meal grants permanent ATK: +4 for matching prey, +3 for off-lineage prey. Matching meals alone add evolution stacks; it evolves at 2, 4, and 6 matching stacks. At six matching meals it reaches Tier 3; an adjacent matching ancestral relic starts an Elite/Boss Ancestral Ascension trial. Clear the node with zero leaks to awaken Mythic and consume the relic; any leak removes the Tier 3 Cub and relic. Bloodline fodder breeds temporary copies of its own species at a 10% per-second same-species adjacency chance into an empty orthogonal slot.",
   "synergy": "Five Bloodline prey, their attacking offspring, and matching ancestral relics."
 },
 {
@@ -1105,7 +1105,7 @@ const CARDS = [
     "bloodline-relic"
   ],
   "ecosystem": "Bloodline · ancestral relic",
-  "rules": "When adjacent to the matching Tier 3 Cub, consume this relic to unlock the Azure Dragon Apex form.",
+  "rules": "When adjacent to the matching Tier 3 Dragon, starts an Elite/Boss Ancestral Ascension trial. The relic is consumed only if the node is cleared with zero leaks; any leak fails the trial and removes the Tier 3 Dragon and relic.",
   "synergy": "Primordial Blood Cub and matching lineage."
 },
 {
@@ -1125,7 +1125,7 @@ const CARDS = [
     "bloodline-relic"
   ],
   "ecosystem": "Bloodline · ancestral relic",
-  "rules": "When adjacent to the matching Tier 3 Cub, consume this relic to unlock the White Tiger Apex form.",
+  "rules": "When adjacent to the matching Tier 3 Tiger, starts an Elite/Boss Ancestral Ascension trial. The relic is consumed only if the node is cleared with zero leaks; any leak fails the trial and removes the Tier 3 Tiger and relic.",
   "synergy": "Primordial Blood Cub and matching lineage."
 },
 {
@@ -1145,7 +1145,7 @@ const CARDS = [
     "bloodline-relic"
   ],
   "ecosystem": "Bloodline · ancestral relic",
-  "rules": "When adjacent to the matching Tier 3 Cub, consume this relic to unlock the Black Tortoise & Serpent Apex form.",
+  "rules": "When adjacent to the matching Tier 3 Xuanwu, starts an Elite/Boss Ancestral Ascension trial. The relic is consumed only if the node is cleared with zero leaks; any leak fails the trial and removes the Tier 3 Xuanwu and relic.",
   "synergy": "Primordial Blood Cub and matching lineage."
 },
 {
@@ -1165,7 +1165,7 @@ const CARDS = [
     "bloodline-relic"
   ],
   "ecosystem": "Bloodline · ancestral relic",
-  "rules": "When adjacent to the matching Tier 3 Cub, consume this relic to unlock the Vermilion Phoenix Apex form.",
+  "rules": "When adjacent to the matching Tier 3 Phoenix, starts an Elite/Boss Ancestral Ascension trial. The relic is consumed only if the node is cleared with zero leaks; any leak fails the trial and removes the Tier 3 Phoenix and relic.",
   "synergy": "Primordial Blood Cub and matching lineage."
 },
 {
@@ -1185,7 +1185,7 @@ const CARDS = [
     "bloodline-relic"
   ],
   "ecosystem": "Bloodline · ancestral relic",
-  "rules": "When adjacent to the matching Tier 3 Cub, consume this relic to unlock the Divine Monkey Apex form.",
+  "rules": "When adjacent to the matching Tier 3 Simian, starts an Elite/Boss Ancestral Ascension trial. The relic is consumed only if the node is cleared with zero leaks; any leak fails the trial and removes the Tier 3 Simian and relic.",
   "synergy": "Primordial Blood Cub and matching lineage."
 }
 ];

@@ -128,3 +128,28 @@ test('Subject Zero under-marked kill and escape fail and permanently remove Enfo
 test('trial progress display advertises the 80-point Elite/Boss zero-leak gate',()=>{
  const b=battle(['kuchisake']),u=b.units[0];u.violations=80;const progress=G.evolutionProgress(u);assert.equal(progress.current,80);assert.equal(progress.max,80);assert.match(progress.label,/Elite\/Boss/);
 });
+
+// Bloodline Mythic trial: only the Tier 3 lineage and matching relic are at stake.
+function bloodlineTrialBattle(unitId='dragonCubT3', relicId='dragonPearl', nodeType='elite') {
+ const b=battle([unitId,relicId],[0,1]);b.run.node.type=nodeType;return b;
+}
+test('Bloodline trial starts only for matching Tier 3 lineage and relic on Elite/Boss with no prior leaks',()=>{
+ for(const nodeType of ['elite','boss']){const b=bloodlineTrialBattle('tigerCubT3','tigerSeal',nodeType);assert.equal(G.startBloodlineTrial(b)?.apexId,'tigerCubApex',nodeType);assert.equal(G.startBloodlineTrial(b),b.bloodlineTrial,nodeType);}
+ const ordinary=bloodlineTrialBattle();ordinary.run.node.type='battle';assert.equal(G.startBloodlineTrial(ordinary),null);
+ const leaked=bloodlineTrialBattle();leaked.metrics.leaks=1;assert.equal(G.startBloodlineTrial(leaked),null);
+ const mismatch=bloodlineTrialBattle('dragonCubT3','tigerSeal');assert.equal(G.startBloodlineTrial(mismatch),null);
+});
+test('Bloodline trial starts when Tier 3 criteria become ready mid-node',()=>{
+ const b=bloodlineTrialBattle('dragonCubT3','dragonPearl','elite');assert.equal(b.bloodlineTrial,undefined);G.extras(b,b.units[0],0);assert.equal(b.bloodlineTrial?.status,'active');
+});
+test('Bloodline evolves to its mapped Mythic and consumes relic only after a zero-leak Elite/Boss clear',()=>{
+ for(const [relic,apex] of [['dragonPearl','dragonCubApex'],['tigerSeal','tigerCubApex'],['earthTablet','xuanwuCubApex'],['phoenixTree','phoenixCubApex'],['goldenStaff','monkeyCubApex']]){
+  for(const nodeType of ['elite','boss']){const lineage={dragon:'dragonCubT3',tiger:'tigerCubT3',xuanwu:'xuanwuCubT3',phoenix:'phoenixCubT3',monkey:'monkeyCubT3'}[G.lineageTierIds[{dragonPearl:'dragonCubApex',tigerSeal:'tigerCubApex',earthTablet:'xuanwuCubApex',phoenixTree:'phoenixCubApex',goldenStaff:'monkeyCubApex'}[relic]].path];const b=bloodlineTrialBattle(lineage,relic,nodeType),unit=b.units[0],focus=b.units[1];assert.ok(G.startBloodlineTrial(b));G.finish(b,true);assert.equal(b.bloodlineTrial.status,'passed',relic+' '+nodeType);assert.equal(unit.id,apex,relic+' '+nodeType);assert.equal(focus.removed,true,relic+' '+nodeType);assert.ok(b.run.roster.some(u=>u.uid===unit.uid&&u.id===apex));assert.ok(!b.run.roster.some(u=>u.uid===focus.uid));}
+ }
+});
+test('Bloodline trial leak or failed node removes Tier 3 candidate and relic only',()=>{
+ for(const mode of ['leak','failed-clear']){const b=bloodlineTrialBattle();const unit=b.units[0],focus=b.units[1],other=G.instance(b.run,'hound');b.run.roster.push(other);b.units.push(G.runtime(b,other,4));assert.ok(G.startBloodlineTrial(b));if(mode==='leak')assert.ok(G.failBloodlineTrial(b,'A runner leaked'));else G.finish(b,false);assert.equal(b.bloodlineTrial.status,'failed');assert.equal(unit.removed,true);assert.equal(focus.removed,true);assert.deepEqual(b.run.roster.map(u=>u.uid),[other.uid]);}
+});
+test('Bloodline Tier 3 progress explains its distinct final trial gate',()=>{
+ const b=bloodlineTrialBattle();b.units[0].lineageStacks=6;const p=G.evolutionProgress(b.units[0]);assert.equal(p.current,6);assert.equal(p.max,6);assert.match(p.label,/Elite\/Boss zero-leak trial/);assert.match(p.label,/Dragon Pearl/);
+});
