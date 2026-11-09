@@ -153,3 +153,48 @@ test('Bloodline trial leak or failed node removes Tier 3 candidate and relic onl
 test('Bloodline Tier 3 progress explains its distinct final trial gate',()=>{
  const b=bloodlineTrialBattle();b.units[0].lineageStacks=6;const p=G.evolutionProgress(b.units[0]);assert.equal(p.current,6);assert.equal(p.max,6);assert.match(p.label,/Elite\/Boss zero-leak trial/);assert.match(p.label,/Dragon Pearl/);
 });
+
+// Arcane Mythic proof: the chosen synthesis reaction must strike a priority target.
+function arcaneTrialBattle(pair='fire+water',nodeType='elite'){
+ const b=battle(['elementalApprentice','astralLoom'],[0,1]);b.run.node.type=nodeType;b.run.depth=9;
+ const mage=b.units[0];mage.synthesis={[pair]:30};b.run.roster[0].synthesis={...mage.synthesis};return b;
+}
+function arcaneTrialTarget(b,pair,kind='elite'){
+ const e=enemy(b,kind==='boss'?'boss':kind==='champion'?'champion':'ordinary',6);
+ if(kind==='elite')e.elite=true;
+ const [first]=pair.split('+');e.elements={[first]:b.time+4};return e;
+}
+test('Arcane Weaving trial starts at Crossing 10+ only for 30-point Mage with adjacent Loom on Elite/Boss',()=>{
+ for(const nodeType of ['elite','boss']){const b=arcaneTrialBattle('fire+water',nodeType);assert.equal(G.startArcaneTrial(b)?.apexId,'steamSovereign',nodeType);assert.equal(G.startArcaneTrial(b),b.arcaneTrial,nodeType);}
+ const ordinary=arcaneTrialBattle();ordinary.run.node.type='battle';assert.equal(G.startArcaneTrial(ordinary),null);
+ const early=arcaneTrialBattle();early.run.depth=8;assert.equal(G.startArcaneTrial(early),null);
+ const short=arcaneTrialBattle();short.units[0].synthesis['fire+water']=29;assert.equal(G.startArcaneTrial(short),null);
+ const far=arcaneTrialBattle();far.units[1].slot=8;Object.assign(far.units[1],G.xy(8));assert.equal(G.startArcaneTrial(far),null);
+});
+test('Arcane Weaving starts as soon as the 30-point gate is reached during an eligible node',()=>{
+ const b=arcaneTrialBattle('fire+water','elite'),mage=b.units[0];mage.synthesis['fire+water']=29;b.run.roster[0].synthesis={'fire+water':29};
+ G.receiveEssence(b,mage,'fire');mage.essences=['water'];G.receiveEssence(b,mage,'fire');
+ assert.equal(mage.synthesis['fire+water'],30);assert.equal(b.arcaneTrial?.status,'active');
+});
+test('Arcane proof requires the highest chosen pair reaction to hit Elite, Harbinger, or Boss',()=>{
+ for(const [pair,apex] of Object.entries(G.ARCANE_PAIRS)){
+  const b=arcaneTrialBattle(pair);G.startArcaneTrial(b);const mage=b.units[0],elements=pair.split('+'),sourceId={earth:'geoMage',fire:'pyroMage',water:'hydroMage',wind:'aeroMage'}[elements[1]],sourceInstance=G.instance(b.run,sourceId),source=G.runtime(b,sourceInstance,4);G.prepareHooks(b,source);b.units.push(source);const e=arcaneTrialTarget(b,pair,'ordinary');G.arcaneReaction(b,source,e,elements[1]);assert.equal(b.arcaneTrial.featDone,false,pair);
+  const priority=arcaneTrialTarget(b,pair,'elite');G.arcaneReaction(b,source,priority,elements[1]);assert.equal(b.arcaneTrial.featDone,true,pair);assert.equal(b.metrics.arcaneTrial.targetType,'Elite');
+ }
+});
+test('zero-leak Arcane trial clear consumes Loom and awakens the Mythic for each synthesis pair',()=>{
+ for(const [pair,apex] of Object.entries(G.ARCANE_PAIRS)){
+  const b=arcaneTrialBattle(pair,'boss'),mage=b.units[0],loom=b.units[1];G.startArcaneTrial(b);const target=arcaneTrialTarget(b,pair,'boss');G.arcaneReaction(b,mage,target,pair.split('+')[1]);G.finish(b,true);
+  assert.equal(b.arcaneTrial.status,'passed',pair);assert.equal(mage.id,apex,pair);assert.equal(loom.removed,true,pair);assert.ok(b.run.roster.some(u=>u.uid===mage.uid&&u.id===apex),pair);assert.ok(!b.run.roster.some(u=>u.uid===loom.uid),pair);
+ }
+});
+test('Arcane trial leak, failed clear, or missing priority reaction loses Mage and Loom',()=>{
+ for(const mode of ['leak','failed-clear','no-feat']){
+  const b=arcaneTrialBattle(),mage=b.units[0],loom=b.units[1],other=G.instance(b.run,'pyroMage');b.run.roster.push(other);b.units.push(G.runtime(b,other,4));assert.ok(G.startArcaneTrial(b));
+  if(mode==='leak')G.failArcaneTrial(b,'A runner leaked');else G.finish(b,false);
+  assert.equal(b.arcaneTrial.status,'failed',mode);assert.equal(mage.removed,true,mode);assert.equal(loom.removed,true,mode);assert.deepEqual(b.run.roster.map(u=>u.uid),[other.uid],mode);
+ }
+});
+test('Arcane progress exposes the selected pair and exact final trial gate',()=>{
+ const b=arcaneTrialBattle();G.startArcaneTrial(b);const p=G.evolutionProgress(b.units[0]);assert.equal(p.current,30);assert.match(p.label,/fire\+water/);assert.match(p.label,/Crossing 10\+/);assert.match(p.label,/Elite\/Boss reaction trial/);
+});

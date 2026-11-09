@@ -2885,8 +2885,8 @@ CARDS.push({
     "elemental"
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
-  "rules": "Each attack charges 1 tick. At 8, casts an four-target essence volley for 120 + 6× raw ATK + 8× highest pair points. Adjacent primary spells supply one essence; two different stored essences are consumed for +1 point in that pair. Highest pair advances at 10/20/30. At Crossing 10+, bind an adjacent Astral Loom at 30 points to become that pair’s Mythic.",
-  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "rules": "Each attack charges 1 tick. At 8, casts an four-target essence volley for 120 + 6× raw ATK + 8× highest pair points. Adjacent primary spells supply one essence; two different stored essences are consumed for +1 point in that pair. Highest pair advances at 10/20/30. At 30 points, an adjacent Astral Loom starts an Elite/Boss Astral Weaving trial at Crossing 10+: land the chosen pair’s reaction on an Elite, Harbinger, or Boss, then clear with zero leaks to awaken that Mythic. Failure removes the Mage and Loom.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 30 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "elementalApprentice"
 },
 {
@@ -2904,7 +2904,7 @@ CARDS.push({
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
   "rules": "Each attack charges 1 tick. At 6: Ignite Blast deals 200 + 8× raw ATK to the leader and applies stacking Burn, 8 true DPS for 4s. Supplies Fire Essence to adjacent Apprentices.",
-  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 30 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "pyroMage",
   "element": "fire"
 },
@@ -2923,7 +2923,7 @@ CARDS.push({
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
   "rules": "Each attack charges 1 tick. At 8: Tidal Wave deals 100 + 6× raw ATK to four leading runners, slows 35% for 3s and drenches for 4s. Supplies Water Essence.",
-  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 30 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "hydroMage",
   "element": "water"
 },
@@ -2942,7 +2942,7 @@ CARDS.push({
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
   "rules": "Each attack charges 1 tick. At 10: Seismic Spike deals 250 + 10× raw ATK, strips 40% armor and stuns for 1s. Leaves an Earth mark for 4s. Supplies Earth Essence.",
-  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 30 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "geoMage",
   "element": "earth"
 },
@@ -2961,7 +2961,7 @@ CARDS.push({
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
   "rules": "Each attack charges 1 tick. At 5: Gale Blast deals 100 + 5× raw ATK, knocks back 2 tiles and grants adjacent elemental mages +20% haste for 3s. Leaves a Wind mark for 4s. Supplies Wind Essence.",
-  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 30 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "aeroMage",
   "element": "wind"
 },
@@ -2980,7 +2980,7 @@ CARDS.push({
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
   "rules": "Works from any slot. An adjacent elemental spell refracts +2 gauge ticks to orthogonal allies with ability gauges. Once per second per Prism; duplicate Prisms cannot amplify the same spell.",
-  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 30 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "elementalPrism"
 },
 {
@@ -2998,7 +2998,7 @@ CARDS.push({
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
   "rules": "Collects excess charge after elemental spell triggers, up to 32 mana. Every 6s spends stored mana on the deployed elemental mage with the lowest gauge fraction, up to a full gauge. Discharged mana cannot generate new overflow. Stored mana lasts this battle only.",
-  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 30 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "manaBattery"
 },
 {
@@ -3015,8 +3015,8 @@ CARDS.push({
     "support"
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
-  "rules": "At Crossing 10+, an adjacent Apprentice with at least 30 points in one pair permanently binds this relic to become the corresponding Mythic. Consumed on binding. Highest pair wins; ties follow the displayed pair order.",
-  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "rules": "At Crossing 10+, this Loom begins the Astral Weaving trial for an adjacent Apprentice with 30 points in its highest pair. The Mage must land that pair’s reaction on an Elite, Harbinger, or Boss and clear the node with zero leaks; success consumes this Loom and awakens the matching Mythic. Failure removes both Mage and Loom. Ties follow the displayed pair order.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 30 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "astralLoom"
 });
 FORMS.push({
@@ -3033,8 +3033,8 @@ FORMS.push({
     "elemental"
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
-  "rules": "Earned at 10 points in one pair. Essence bolt and synthesis continue; bind Astral Loom at 30 points and Crossing 10+.",
-  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "rules": "Earned at 10 points in one pair. Essence bolt and synthesis continue; the adjacent Astral Loom starts an Elite/Boss reaction trial at Crossing 10+; prove the chosen reaction on an Elite, Harbinger, or Boss and clear with zero leaks. Failure removes the Mage and Loom.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 30 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "elementalAdept",
   "evolvedFrom": "elementalApprentice",
   "draftable": false
@@ -3053,8 +3053,8 @@ FORMS.push({
     "elemental"
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
-  "rules": "Earned at 20 points in one pair. Essence bolt and synthesis continue; bind Astral Loom at 30 points and Crossing 10+.",
-  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "rules": "Earned at 20 points in one pair. Essence bolt and synthesis continue; the adjacent Astral Loom starts an Elite/Boss reaction trial at Crossing 10+; prove the chosen reaction on an Elite, Harbinger, or Boss and clear with zero leaks. Failure removes the Mage and Loom.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 30 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "elementalMaster",
   "evolvedFrom": "elementalApprentice",
   "draftable": false
@@ -3074,7 +3074,7 @@ FORMS.push({
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
   "rules": "Each attack blasts the leading cluster within 1 track tile, melts all armor and deals triple damage to priority enemies. Creates one 4-tile molten fissure for 5s, 60 true DPS. Recasting replaces its previous fissure.",
-  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 30 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "magmaLord",
   "evolvedFrom": "elementalApprentice",
   "draftable": false
@@ -3094,7 +3094,7 @@ FORMS.push({
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
   "rules": "Every fourth attack creates one clockwise cyclone for 4s, carrying up to six ordinary runners at 2 tiles/s and burning for 35 true DPS. Bosses take damage but cannot be carried. Each 10 team kills in a battle grant +5% permanent attack speed.",
-  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 30 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "tempestArchon",
   "evolvedFrom": "elementalApprentice",
   "draftable": false
@@ -3114,7 +3114,7 @@ FORMS.push({
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
   "rules": "Each attack drenches its target then deals a 20% missing-HP scald. Disables temporary sprint boosts track-wide while deployed. Every fifth attack additionally strips 12% current HP from bosses/Harbingers hit.",
-  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 30 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "steamSovereign",
   "evolvedFrom": "elementalApprentice",
   "draftable": false
@@ -3134,7 +3134,7 @@ FORMS.push({
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
   "rules": "First attack creates one permanent 4-tile swamp for this battle. Occupants take 45 true DPS and 60% slow. Boss slow resistance and enrage remain active.",
-  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 30 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "quagmireColossus",
   "evolvedFrom": "elementalApprentice",
   "draftable": false
@@ -3154,7 +3154,7 @@ FORMS.push({
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
   "rules": "Every 5s freezes the track for 2.5s; when its freeze expires, pushes affected survivors back 3 tiles. Boss duration/knockback resistance and enrage immunity apply.",
-  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 30 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "blizzardArchon",
   "evolvedFrom": "elementalApprentice",
   "draftable": false
@@ -3174,7 +3174,7 @@ FORMS.push({
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
   "rules": "Every second removes 10% base armor from all runners. At zero armor applies one refreshing 40 true DPS Bleed for 4s. Every third attack pierces five leading runners.",
-  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. Astral Loom binds at Crossing 10+.",
+  "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 30 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "sandstormTitan",
   "evolvedFrom": "elementalApprentice",
   "draftable": false
