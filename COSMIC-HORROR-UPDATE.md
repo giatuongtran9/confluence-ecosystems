@@ -6,7 +6,7 @@ Based on GitHub commit 1cf0404c72a80490c03ab6cbde984486b5fd3526 (November 5, 202
 
 - Seven draftable cards: Slumbering Idol, Blind Astrologer, Mad Archivist, Mind Larva, Shoggoth Mass, Void Eye and Azathoth Herald.
 - Three Rare Idol forms, six Epic Herald forms, six Mythic awakenings, six undraftable permanent Grimoires, three temporary page tokens, temporary Mind Larva and Dark Young tokens: 33 definitions total.
-- Seal milestones:25 /65 /130 Syllables. There is NO Crossing gate.130 plus an orthogonally adjacent matching Grimoire awakens the Mythic and permanently consumes the Grimoire.
+- Seal milestones:25 /65 /154 Syllables. At154, an Epic Herald with an orthogonally adjacent matching Grimoire starts its Forbidden Recitation on an Elite or Boss node. It must channel for8 seconds, prove each distinct script effect on a priority target, and clear the node with zero leaks. Success consumes the Grimoire and awakens the mapped Mythic. Any leak, failed clear, or missing script proof removes the Herald and Grimoire. There is NO Crossing gate.
 - First two deciphered scripts lock permanently. First selects the Rare branch, both select the Epic/Mythic branch. Pure and mixed pairs are supported.
 - Combat chants advance every deployed original Idol. A decipher grants12 Syllables to them and assigns its script only to the oldest deployed Idol missing a script. Reserves do not progress.
 - Only explicit chants from Astrologer, Larva and Eye advance the shared10-Syllable page-drop meter. The remainder persists across battles. Decipher rewards never generate pages. Astrologer's45% chance is additional; Larva-generated pages are Flesh and Eye-generated pages are Astral. Other page rolls are equal thirds.
@@ -40,6 +40,6 @@ Existing Cosmic sprites remain. New cards use transparent SVG seal emblems, not 
 
 -251 gameplay/UI-code tests passed, including31 new Cosmic regression tests. Run `node --test tests/*.test.js` in the updated full repository.
 -The upstream WebP-on-disk test could not run locally because the GitHub content connection does not transfer binary files.156 existing mapped WebP references were separately verified against the latest GitHub tree; original WebP files remain required in the checkout.
--36 controlled16-stage simulations:34 victories,35 awakenings, median awakening Crossing8 (range4–15). All six Mythics occurred naturally. Guaranteed supporting drafts, random deployments and natural page rolls; these are not random-draft win rates. See audit/cosmic-simulation.js and cosmic-results.json.
+- The original36 controlled16-stage simulations (34 victories,35 awakenings, median awakening Crossing8, range4–15) predate the Forbidden Recitation gate and do not estimate its Mythic rate. See audit/cosmic-simulation.js and cosmic-results.json for historical pre-trial results.
 -Early awakening is intentionally possible, including Crossing4 in the simulation. Uncapped Shub growth remains strong by user choice. No hidden stage gate or growth cap was added.
 -No browser visual playthrough was performed. This package is an update overlay, not a standalone asset-complete game or a GitHub push.
