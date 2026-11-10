@@ -997,3 +997,153 @@ body.has-dock .shell{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))
 .cyber-trial-hud{margin:.65rem 0;padding:.8rem 1rem;border:1px solid #4f9ab0;border-radius:12px;background:linear-gradient(135deg,rgba(17,39,49,.97),rgba(20,24,32,.98));color:#dff7ff}.cyber-trial-hud.active{box-shadow:inset 0 0 0 1px rgba(85,213,239,.25)}.cyber-trial-hud.passed{border-color:#75b986;color:#c8f0ce}.cyber-trial-hud.failed{border-color:#c45a65;color:#ffd2d2}.cyber-trial-hud .urban-trial-head span{color:#83d9eb}.cyber-trial-hud p{margin:.45rem 0 0;font-size:.86rem;line-height:1.4;color:#c7dce4}
 
 .hunt-trial-hud{margin:.65rem 0;padding:.8rem 1rem;border:1px solid #a66c4e;border-radius:12px;background:linear-gradient(135deg,rgba(48,27,24,.97),rgba(24,22,27,.98));color:#f3e3d4}.hunt-trial-hud.passed{border-color:#75b986;color:#c8f0ce}.hunt-trial-hud.failed{border-color:#c45a65;color:#ffd2d2}.hunt-trial-hud .urban-trial-head span{color:#e6ad82}.hunt-trial-hud p{margin:.45rem 0 0;font-size:.86rem;line-height:1.4;color:#dfcec0}
+
+/* === 4-LAYER PROCEDURAL ANIMATION & VFX PIPELINE (Y=467 PLINTH BASELINE) === */
+.in-combat .board .field-card {
+  overflow: visible !important;
+}
+.in-combat .board .field-card .sprite,
+.in-combat .board .field-card .realistic-unit,
+.in-combat .board .field-card .cultivation-unit-sprite {
+  --dx: 0px;
+  --dy: -12px;
+  --rx: 0px;
+  --ry: 8px;
+  --rot: 0deg;
+  --anim-dur: 280ms;
+  transform-origin: 50% 91.2% !important;
+  will-change: transform, filter;
+}
+
+/* Layer 1A: Predatory / Melee Lunge (.anim-lunge) */
+@keyframes unit-lunge {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1, 1) rotate(0deg);
+  }
+  22% {
+    transform: translate3d(calc(var(--dx) * -0.28), calc(var(--dy) * -0.28), 0) scale(0.94, 1.04) rotate(calc(var(--rot) * -0.75));
+    filter: drop-shadow(0 5px 6px #0009) brightness(0.96);
+  }
+  50% {
+    transform: translate3d(var(--dx), var(--dy), 0) scale(1.08, 0.94) rotate(var(--rot));
+    filter: drop-shadow(0 8px 12px var(--realm, #e8c97a)) brightness(1.26);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1, 1) rotate(0deg);
+  }
+}
+
+/* Layer 1B: Ballistic / Heavy Artillery Recoil (.anim-recoil) */
+@keyframes unit-recoil {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1, 1);
+  }
+  18% {
+    transform: translate3d(calc(var(--dx) * 0.18), calc(var(--dy) * 0.18), 0) scale(1.03, 0.97);
+    filter: drop-shadow(0 0 10px var(--realm, #ff9233)) brightness(1.3);
+  }
+  42% {
+    transform: translate3d(var(--rx), calc(var(--ry) - 3px), 0) scale(1.06, 0.92) rotate(calc(var(--rot) * -0.6));
+    filter: drop-shadow(0 6px 8px #000a) brightness(1.12);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1, 1);
+  }
+}
+
+/* Layer 1C: Arcane / Qi Levitation Pulse (.anim-cast) */
+@keyframes unit-cast {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1, 1);
+  }
+  28% {
+    transform: translate3d(0, -6px, 0) scale(0.96, 1.05);
+    filter: drop-shadow(0 0 10px var(--realm, #5ce1e6)) brightness(1.15);
+  }
+  56% {
+    transform: translate3d(calc(var(--dx) * 0.35), -8px, 0) scale(1.07, 1.07);
+    filter: drop-shadow(0 0 16px var(--realm, #a855f7)) brightness(1.32);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1, 1);
+  }
+}
+
+/* Layer 1D: Glitch / Flicker Teleport (.anim-glitch) */
+@keyframes unit-glitch {
+  0% {
+    transform: translate3d(0, 0, 0) skewX(0deg) scale(1, 1);
+  }
+  20% {
+    transform: translate3d(-3px, 0, 0) skewX(6deg) scale(0.97, 1.03);
+    filter: drop-shadow(-3px 0 0 #00f0ff) drop-shadow(3px 0 0 #ff2a6d) brightness(1.25);
+    opacity: 0.86;
+  }
+  48% {
+    transform: translate3d(calc(var(--dx) * 0.85), calc(var(--dy) * 0.85), 0) skewX(-4deg) scale(1.06, 0.96);
+    filter: drop-shadow(2px 0 0 #00f0ff) drop-shadow(-2px 0 0 #b91c1c) brightness(1.35);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 0, 0) skewX(0deg) scale(1, 1);
+    opacity: 1;
+  }
+}
+
+/* Layer 4: Mythic Awakening & Trial Showstopper Silhouette Pop */
+@keyframes mythic-showstopper-pop {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1, 1);
+  }
+  28% {
+    transform: translate3d(0, -10px, 0) scale(1.16, 1.16);
+    filter: drop-shadow(0 0 22px #f6d365) drop-shadow(0 0 10px var(--realm, #fff)) brightness(1.45);
+  }
+  65% {
+    transform: translate3d(0, -6px, 0) scale(1.12, 1.12);
+    filter: drop-shadow(0 0 16px var(--realm, #f6d365)) brightness(1.25);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1, 1);
+  }
+}
+
+@keyframes board-heavy-shake {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  20% { transform: translate3d(-3px, 4px, 0); }
+  45% { transform: translate3d(3px, -3px, 0); }
+  70% { transform: translate3d(-2px, 2px, 0); }
+}
+
+.in-combat .board .field-card .sprite.anim-lunge {
+  animation: unit-lunge var(--anim-dur, 280ms) cubic-bezier(0.22, 1, 0.36, 1) 1 !important;
+}
+.in-combat .board .field-card .sprite.anim-recoil {
+  animation: unit-recoil var(--anim-dur, 300ms) cubic-bezier(0.18, 0.89, 0.32, 1.15) 1 !important;
+}
+.in-combat .board .field-card .sprite.anim-cast {
+  animation: unit-cast var(--anim-dur, 320ms) cubic-bezier(0.34, 1.56, 0.64, 1) 1 !important;
+}
+.in-combat .board .field-card .sprite.anim-glitch {
+  animation: unit-glitch var(--anim-dur, 240ms) steps(4, end) 1 !important;
+}
+.in-combat .board .field-card.showstopper-pop {
+  z-index: 12 !important;
+}
+.in-combat .board .field-card.showstopper-pop .sprite {
+  animation: mythic-showstopper-pop 650ms cubic-bezier(0.22, 1, 0.36, 1) 1 !important;
+}
+.in-combat .board.screen-shake {
+  animation: board-heavy-shake 320ms ease-out 1 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .in-combat .board .field-card .sprite.anim-lunge,
+  .in-combat .board .field-card .sprite.anim-recoil,
+  .in-combat .board .field-card .sprite.anim-cast,
+  .in-combat .board .field-card .sprite.anim-glitch,
+  .in-combat .board .field-card.showstopper-pop .sprite,
+  .in-combat .board.screen-shake {
+    animation-duration: 1ms !important;
+  }
+}
