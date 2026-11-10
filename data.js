@@ -3653,13 +3653,13 @@ for(const c of [...CARDS,...FORMS,...TOKENS].filter(c=>c.genre==='Lovecraft'))c.
 const xenoCard = (id, name, rarity, baseAtk, attackInterval, rules, extra = {}) => ({
   id, name, genre: 'SciFi', rarity, baseAtk, attackInterval, max: 0, icon: '⬡', sprite: 20, fav: 'neighbor',
   tags: ['xeno'], ecosystem: 'Orbital Xeno-Lab · CRISPR gene-splicing & leviathans', rules,
-  synergy: 'Scan Weakpoints to amplify crits. Extract Helices with Nanites and sequence with Gene-Splicer. Awaken at 130 Genome with adjacent matching Serum.', ...extra
+  synergy: 'Scan Weakpoints to amplify crits. Extract Helices with Nanites and sequence with Gene-Splicer. At 130 Genome with a two-strain lineage and its adjacent matching Serum, start an Elite/Boss Mythic trial. Clear with zero leaks to consume the Serum and awaken the matching Xeno-Leviathan; any leak or failed node removes both candidate and Serum.', ...extra
 });
 
 CARDS.push(
-  xenoCard('xenoSpecimen', 'Cryo-Specimen', 'Normal', 10, 1.2, 'Strikes the leading runner. Absorbs Genetic Helices sequenced by the Gene-Splicer across battles, evolving into 1 of 3 Larval Morphs at 25 Genome (Rare), 1 of 6 Chrysalis Strains at 65 Genome (Epic), and 1 of 6 Mythic Xeno-Leviathans at 130 Genome when adjacent to its Forged Mutagen Serum.'),
+  xenoCard('xenoSpecimen', 'Cryo-Specimen', 'Normal', 10, 1.2, 'Strikes the leading runner. Absorbs Genetic Helices sequenced by the Gene-Splicer across battles, evolving into 1 of 3 Larval Morphs at 25 Genome (Rare), 1 of 6 Chrysalis Strains at 65 Genome (Epic), and 1 of 6 Mythic Xeno-Leviathans through an Elite/Boss trial at 130 Genome with a two-strain lineage and its adjacent matching Forged Mutagen Serum. Clear with zero leaks to consume the Serum and awaken the matching Mythic; any leak or failed node removes both cards.'),
   xenoCard('bioScanner', 'Orbital Bio-Scanner', 'Normal', 8, 1.3, 'Scans the leading and fastest runners, applying 1 Anatomical Weakpoint (+5% crit chance against target). Every 4th attack applies Weakpoints to 3 runners simultaneously.'),
-  xenoCard('geneSplicer', 'CRISPR Gene-Splicer', 'Rare', 11, 1.4, 'Every 5s, sequences an orthogonally adjacent Genetic Helix Token—clearing the slot, granting +3 permanent ATK and +12 Genome to your Cryo-Specimen, and triggering the Helix combat pulse. After sequencing 2 Helices across battles, synthesizes the matching Undraftable Mutagen Serum onto an empty slot!')
+  xenoCard('geneSplicer', 'CRISPR Gene-Splicer', 'Rare', 11, 1.4, 'Every 5s, sequences an orthogonally adjacent Genetic Helix Token—clearing the slot, granting +3 permanent ATK and +12 Genome to your Cryo-Specimen, and triggering the Helix combat pulse. When the Specimen reaches its 65-Genome Epic form, forge its matching undraftable Serum as a permanent roster card if an adjacent slot is free.')
 );
 
 const XENO_BRANCH_DATA = [
@@ -3687,7 +3687,7 @@ for (const [strain, id, name, atk, interval] of [
 for (const [pair, id, name, atk, interval, serum, serumName, apex, apexName, apexAtk, apexInterval, rule, apexRule] of XENO_BRANCH_DATA) {
   FORMS.push(
     xenoCard(id, name, 'Epic', atk, interval, rule, { evolvedFrom: 'xenoSpecimen', draftable: false, xenoPair: pair }),
-    xenoCard(serum, serumName, 'Epic', 0, 0, 'Forged from ' + pair.replace('+', ' + ') + ' Helices. Permanent undraftable serum; consumed by its adjacent matching 130-Genome chrysalis to awaken ' + apexName + '.', { draftable: false, xenoSerum: true, xenoPair: pair }),
+    xenoCard(serum, serumName, 'Epic', 0, 0, 'Forged from ' + pair.replace('+', ' + ') + ' Helices. Permanent undraftable serum; its adjacent matching 130-Genome chrysalis must clear an Elite/Boss trial with zero leaks to consume this Serum and awaken ' + apexName + '.', { draftable: false, xenoSerum: true, xenoPair: pair }),
     xenoCard(apex, apexName, 'Mythic', apexAtk, apexInterval, apexRule, { evolvedFrom: 'xenoSpecimen', draftable: false, xenoPair: pair })
   );
 }

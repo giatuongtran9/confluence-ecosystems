@@ -28,6 +28,14 @@ function battle(ids, slots = ids.map((_, i) => i), leader = 'orion') {
  return b;
 }
 
+function persistentSerum(b, id, slot) {
+ const source = G.instance(b.run, id);
+ b.run.roster.push(source);
+ const serum = G.runtime(b, source, slot);
+ b.units.push(serum);
+ return serum;
+}
+
 function enemy(b, p = 4, hp = 10000, maxHp = 10000, defense = 0, priority = false) {
  const e = {
   uid: b.enemies.length + 1,
@@ -122,35 +130,129 @@ test('Gene-Splicer consumes Helices, awards +12 Genome and +3 permanent ATK stri
  assert.deepEqual(specimen.strains, ['chitin']);
 });
 
-test('Xeno Metamorphosis: Larva at 25, Epic + Serum forge at 65, and Mythic Apex at 130 + adjacent Serum', () => {
+test('Xeno Metamorphosis: Larva at 25, Epic + Serum forge at 65, then Elite/Boss zero-leak trial at 130', () => {
  const b = battle(['geneSplicer', 'xenoSpecimen'], [4, 3], 'orion');
  const splicer = b.units[0];
  const specimen = b.units[1];
 
- // 1. First strain: chitin -> 25 Genome evolves to spineLurker
  G.addGenome(b, specimen, 25, 'chitin');
  assert.equal(specimen.id, 'spineLurker');
-
- // 2. Second strain: chitin -> chitin+chitin pair -> 65 Genome evolves to impalerMorph
  G.addGenome(b, specimen, 40, 'chitin');
  assert.equal(specimen.genome, 65);
  assert.equal(specimen.id, 'impalerMorph');
 
- // Gene-Splicer should have forged keratinSerum in an adjacent free slot
  const serum = b.units.find(v => v.id === 'keratinSerum');
  assert.ok(serum, 'keratinSerum should be forged');
- assert.ok(!serum.removed);
+ assert.ok(b.run.roster.some(v => v.uid === serum.uid), 'forged Serum persists as a roster card');
+ assert.equal(specimen.serumForged, true);
+ serum.slot = 0; serum.x = 0; serum.y = 0;
 
- // Move serum to be adjacent to specimen (e.g. slot 0 is adjacent to 3)
- serum.slot = 0;
- serum.x = 0;
- serum.y = 0;
-
- // 3. Genome to 130 -> triggers Mythic Apex awakening
+ // Reaching 130 Genome outside an eligible node must not awaken Mythic.
  G.addGenome(b, specimen, 65);
  assert.equal(specimen.genome, 130);
+ assert.equal(specimen.id, 'impalerMorph');
+ assert.equal(b.xenoTrial, undefined);
+
+ // The same ready lineage starts its trial when it reaches the gate on an Elite.
+ b.run.node.type = 'elite';
+ G.addGenome(b, specimen, 0);
+ const trial = b.xenoTrial;
+ assert.equal(trial.status, 'active');
+ assert.equal(trial.apexId, 'impalerApex');
+ assert.equal(trial.serumUid, serum.uid);
+ assert.equal(serum.removed, false);
+
+ b.won = true;
+ b.metrics.leaks = 1;
+ assert.equal(G.passXenoTrial(b), false, 'a trial with any leak cannot pass');
+ assert.equal(trial.status, 'active');
+ b.metrics.leaks = 0;
+ G.finish(b, true);
  assert.equal(specimen.id, 'impalerApex');
- assert.ok(serum.removed, 'Serum should be consumed upon Mythic Awakening');
+ assert.equal(serum.removed, true);
+ assert.equal(trial.status, 'passed');
+ assert.equal(b.done, true);
+ assert.equal(b.won, true);
+ assert.ok(!b.run.roster.some(v => v.uid === serum.uid), 'successful trial consumes Serum from persistent roster');
+ assert.equal(b.run.roster.find(v => v.uid === specimen.uid)?.id, 'impalerApex');
+});
+
+test('SciFi trial requires Elite/Boss, 130 Genome, two strains, and the adjacent Serum mapped to that lineage', () => {
+ const b = battle(['geneSplicer', 'xenoSpecimen'], [4, 3], 'orion');
+ const specimen = b.units[1];
+ G.addGenome(b, specimen, 130, 'chitin');
+ G.addGenome(b, specimen, 0, 'chitin');
+ b.run.node.type = 'elite';
+ assert.equal(G.xenoTrialCandidate(b, specimen), null, 'a single strain is not a complete lineage');
+ assert.equal(G.startXenoTrial(b), null);
+
+ specimen.strains = ['chitin', 'acid'];
+ const wrong = persistentSerum(b, 'royalSerum', 0);
+ assert.equal(G.xenoTrialCandidate(b, specimen), null, 'a mismatched Serum cannot start the trial');
+ wrong.removed = true;
+ b.run.roster = b.run.roster.filter(u => u.uid !== wrong.uid);
+ const matching = persistentSerum(b, 'ordnanceSerum', 0);
+ assert.equal(G.xenoTrialCandidate(b, specimen).apexId, 'causticRavager');
+ assert.equal(G.startXenoTrial(b).status, 'active');
+});
+
+test('Xeno readiness on an ordinary node waits until an Elite/Boss and starts as soon as criteria are met', () => {
+ const b = battle(['geneSplicer', 'xenoSpecimen'], [4, 3], 'orion');
+ const specimen = b.units[1];
+ const serum = persistentSerum(b, 'keratinSerum', 0);
+ G.addGenome(b, specimen, 130, 'chitin');
+ G.addGenome(b, specimen, 0, 'chitin');
+ assert.equal(b.xenoTrial, undefined, 'ordinary battle cannot start the Mythic trial');
+ b.run.node.type = 'boss';
+ G.startXenoTrial(b);
+ assert.equal(b.xenoTrial?.status, 'active');
+ assert.equal(b.xenoTrial?.serumUid, serum.uid);
+});
+
+test('Xeno Genome, strains, and serum-forged state persist from one battle to the next', () => {
+ const b = battle(['geneSplicer', 'xenoSpecimen'], [4, 3], 'orion');
+ const specimen = b.units[1];
+ G.addGenome(b, specimen, 25, 'chitin');
+ G.addGenome(b, specimen, 40, 'chitin');
+ assert.equal(specimen.id, 'impalerMorph');
+ assert.equal(specimen.serumForged, true);
+ G.finish(b, true);
+ const saved = b.run.roster.find(v => v.uid === specimen.uid);
+ assert.equal(saved.genome, 65);
+ assert.deepEqual(saved.strains, ['chitin', 'chitin']);
+ assert.equal(saved.serumForged, true);
+ assert.ok(b.run.roster.some(v => v.id === 'keratinSerum'));
+});
+
+test('SciFi trial failure permanently removes the candidate and matching Serum', () => {
+ const b = battle(['geneSplicer', 'xenoSpecimen'], [4, 3], 'orion');
+ const specimen = b.units[1];
+ G.addGenome(b, specimen, 130, 'chitin');
+ G.addGenome(b, specimen, 0, 'chitin');
+ const serum = persistentSerum(b, 'keratinSerum', 0);
+ b.run.node.type = 'boss';
+ const t = G.startXenoTrial(b);
+ assert.equal(t.status, 'active');
+ assert.equal(G.failXenoTrial(b, 'A runner leaked'), true);
+ assert.equal(t.status, 'failed');
+ assert.equal(specimen.removed, true);
+ assert.equal(serum.removed, true);
+ assert.ok(!b.run.roster.some(u => u.uid === specimen.uid));
+ assert.ok(!b.run.roster.some(u => u.uid === serum.uid));
+});
+
+test('An unsuccessful Elite/Boss clear fails the active Xeno trial and removes its stakes', () => {
+ const b = battle(['geneSplicer', 'xenoSpecimen'], [4, 3], 'orion');
+ const specimen = b.units[1];
+ specimen.id = 'impalerMorph'; specimen.genome = 130; specimen.strains = ['chitin', 'chitin'];
+ const serum = persistentSerum(b, 'keratinSerum', 0);
+ b.run.node.type = 'elite';
+ const trial = G.startXenoTrial(b);
+ assert.equal(trial.status, 'active');
+ G.finish(b, false);
+ assert.equal(trial.status, 'failed');
+ assert.ok(!b.run.roster.some(v => v.uid === specimen.uid));
+ assert.ok(!b.run.roster.some(v => v.uid === serum.uid));
 });
 
 test('All 6 genetic pairings map to unique Epic morphs, Serums, and Mythic Apex Leviathans', () => {
