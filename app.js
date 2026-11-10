@@ -320,7 +320,8 @@ function mapScreen(){return `${gamehead()}<div class="map-layout">${mapView(run.
 function fieldUnit(u){
   const c=CARD[u.id],fav=Game.favored(battle,u),isApex=Game.isApexImmortal(u)||c.rarity==='Mythic';
   const cells=Game.occupiedSlots(u).map(Game.xy),left=Math.min(...cells.map(p=>p.x)),top=Math.min(...cells.map(p=>p.y)),w=Math.max(...cells.map(p=>p.x))-left+1,h=Math.max(...cells.map(p=>p.y))-top+1;
-  return `<button class="field-card ${u.extraSlot!=null?'scrap-titan':''} ${fav?'favored':''} ${isApex?'apex-unit':''} ${u.state!=='active'?'inactive':''} ${String(selected)===String(u.uid)?'selected':''}" style="--realm:${GENRES[c.genre][1]};--unit-width:${w*100/3}%;--unit-height:${h*100/3}%;left:${left*100/3}%;top:${top*100/3}%" data-action="unit" data-card="${u.id}" data-layout="${u.slot}:${u.extraSlot??''}:${(u.modules||[]).join()}:${u.mountedHead||''}" data-id="${u.uid}" aria-label="${c.name}, ${Math.round(Game.atk(battle,u))} attack">
+  const titanClass = u.extraSlot != null ? `scrap-titan ${h > w ? "titan-vertical" : "titan-horizontal"}` : "";
+  return `<button class="field-card ${titanClass} ${fav?'favored':''} ${isApex?'apex-unit':''} ${u.state!=='active'?'inactive':''} ${String(selected)===String(u.uid)?'selected':''}" style="--realm:${GENRES[c.genre][1]};--unit-width:${w*100/3}%;--unit-height:${h*100/3}%;left:${left*100/3}%;top:${top*100/3}%" data-action="unit" data-card="${u.id}" data-layout="${u.slot}:${u.extraSlot??''}:${(u.modules||[]).join()}:${u.mountedHead||''}" data-id="${u.uid}" aria-label="${c.name}, ${Math.round(Game.atk(battle,u))} attack">
     <div class="unit-shadow"></div>
     ${art(c)}${u.mountedHead?'<span class="trophy-mount-label">'+u.mountedHead.toUpperCase()+'</span>':''}${u.extraSlot!=null?'<span class="titan-label">2 SLOTS</span>':''}
     <span class="field-atk">${Math.round(Game.atk(battle,u))}</span>

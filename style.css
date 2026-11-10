@@ -974,8 +974,22 @@ body.has-dock .shell{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))
 
 
 /* A Titan merges existing cells without resizing the nine-slot grid. */
-.board .field-card.scrap-titan{width:var(--unit-width)!important;height:var(--unit-height)!important;border:2px solid #d09c56!important;background:linear-gradient(135deg,#3b3028c9,#141d22c9)!important;border-radius:12px;z-index:3}
-.titan-label{position:absolute;top:5px;left:7px;font-size:9px;color:#ffcd83;letter-spacing:1px}
+/* A Titan merges existing cells without resizing the nine-slot grid. Transparent background & border like 1-slot cards. */
+.board .field-card.scrap-titan{width:var(--unit-width)!important;height:var(--unit-height)!important;border:1px solid transparent!important;background:transparent!important;box-shadow:none!important;border-radius:12px;z-index:3}
+.board .field-card.scrap-titan:hover,.board .field-card.scrap-titan.selected{background:#d6c58e13!important;border-color:#e2d4a180!important}
+.titan-label{position:absolute;top:5px;left:7px;font-size:9px;color:#ffcd83;letter-spacing:1px;pointer-events:none;z-index:4}
+
+/* Dedicated Titan sprite & shadow sizing rules for Vertical orientation (1 wide x 2 tall) */
+.in-combat .board .field-card.scrap-titan.titan-vertical .realistic-unit,
+.in-combat .board .field-card.scrap-titan.titan-vertical .cultivation-unit-sprite,
+.in-combat .board .field-card.scrap-titan.titan-vertical .sprite{width:160%!important;height:80%!important;left:-30%!important;bottom:8%!important;top:auto!important}
+.board .field-card.scrap-titan.titan-vertical .unit-shadow{width:140%!important;height:14%!important;left:-20%!important;bottom:6%!important}
+
+/* Dedicated Titan sprite & shadow sizing rules for Horizontal orientation (2 wide x 1 tall) */
+.in-combat .board .field-card.scrap-titan.titan-horizontal .realistic-unit,
+.in-combat .board .field-card.scrap-titan.titan-horizontal .cultivation-unit-sprite,
+.in-combat .board .field-card.scrap-titan.titan-horizontal .sprite{width:80%!important;height:160%!important;left:10%!important;bottom:8%!important;top:auto!important}
+.board .field-card.scrap-titan.titan-horizontal .unit-shadow{width:70%!important;height:22%!important;left:15%!important;bottom:8%!important}
 .scrap-progress{padding:10px;border:1px solid #9e7955;border-radius:8px;background:#30261d;color:#eacda4;font-size:12px}.scrap-progress p{margin:5px 0}
 
 
