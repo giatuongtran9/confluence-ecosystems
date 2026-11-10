@@ -614,6 +614,938 @@ function drawImpactSparks(ctx, tx, ty, progress, pal, isCrit) {
   }
   ctx.restore();
 }
+function drawEmeraldSwordBlade(ctx, x, y, ang, scale, alpha, isColossal = false) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(ang);
+  ctx.globalAlpha = Math.min(1, Math.max(0, alpha));
+
+  const len = (isColossal ? 155 : 44) * scale;
+  const w = (isColossal ? 13 : 4.2) * scale;
+
+  // Outer Emerald Jade Qi Glow
+  ctx.shadowColor = '#10b981';
+  ctx.shadowBlur = (isColossal ? 26 : 12) * scale;
+
+  // 1. Flowing Silk Tassel from Pommel (behind the hilt)
+  ctx.strokeStyle = isColossal ? 'rgba(52, 211, 153, 0.9)' : 'rgba(110, 231, 183, 0.75)';
+  ctx.lineWidth = (isColossal ? 3.2 : 1.6) * scale;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-len * 0.36, 0);
+  const wave = Math.sin((x + y) * 0.04) * (isColossal ? 12 : 4.5) * scale;
+  ctx.quadraticCurveTo(-len * 0.56, wave, -len * 0.76, -wave * 0.6);
+  ctx.stroke();
+
+  if (isColossal) {
+    ctx.strokeStyle = 'rgba(254, 240, 138, 0.7)';
+    ctx.lineWidth = 1.8 * scale;
+    ctx.beginPath();
+    ctx.moveTo(-len * 0.36, 0);
+    ctx.quadraticCurveTo(-len * 0.52, -wave * 0.8, -len * 0.68, wave * 0.5);
+    ctx.stroke();
+  }
+
+  // 2. Pommel Ring & Jade Bead (Kiếm Thủ)
+  ctx.fillStyle = '#fde047';
+  ctx.strokeStyle = '#b45309';
+  ctx.lineWidth = (isColossal ? 2 : 1) * scale;
+  ctx.beginPath();
+  ctx.arc(-len * 0.33, 0, w * 0.62, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = '#10b981';
+  ctx.beginPath();
+  ctx.arc(-len * 0.33, 0, w * 0.32, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 3. Cord-Wrapped Hilt Grip (Kiếm Bính)
+  const gripLen = len * 0.23;
+  const gripW = w * 0.46;
+  ctx.fillStyle = '#064e3b';
+  ctx.strokeStyle = '#34d399';
+  ctx.lineWidth = 1 * scale;
+  ctx.beginPath();
+  ctx.rect(-len * 0.29, -gripW, gripLen, gripW * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Criss-cross gold cord wrap on grip
+  ctx.strokeStyle = '#fcd34d';
+  ctx.lineWidth = (isColossal ? 1.5 : 0.8) * scale;
+  const steps = isColossal ? 5 : 3;
+  for (let i = 0; i < steps; i++) {
+    const gx0 = -len * 0.28 + (i / steps) * gripLen;
+    const gx1 = -len * 0.28 + ((i + 1) / steps) * gripLen;
+    ctx.beginPath();
+    ctx.moveTo(gx0, -gripW);
+    ctx.lineTo(gx1, gripW);
+    ctx.moveTo(gx0, gripW);
+    ctx.lineTo(gx1, -gripW);
+    ctx.stroke();
+  }
+
+  // 4. Double-Faceted Beveled Jian Blade (Upper & Lower Edges for 3D Metallic/Jade Sheen)
+  // Upper Blade Facet (Bright Crystalline Jade)
+  ctx.beginPath();
+  ctx.moveTo(0, 0); // Center spine at guard
+  ctx.lineTo(0, -w * 0.92); // Base edge at guard
+  ctx.lineTo(len * 0.14, -w * 0.72); // Ricasso notch
+  ctx.lineTo(len * 0.20, -w * 1.02); // Flare barb
+  ctx.lineTo(len * 0.78, -w * 0.78); // Straight taper toward tip
+  ctx.lineTo(len, 0); // Needle-sharp Jian point
+  ctx.closePath();
+
+  const upGrad = ctx.createLinearGradient(0, -w, len, 0);
+  upGrad.addColorStop(0, '#10b981');
+  upGrad.addColorStop(0.55, '#6ee7b7');
+  upGrad.addColorStop(0.9, '#d1fae5');
+  upGrad.addColorStop(1, '#ffffff');
+  ctx.fillStyle = upGrad;
+  ctx.fill();
+
+  // Lower Blade Facet (Deep Imperial Emerald Shade)
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(0, w * 0.92);
+  ctx.lineTo(len * 0.14, w * 0.72);
+  ctx.lineTo(len * 0.20, w * 1.02);
+  ctx.lineTo(len * 0.78, w * 0.78);
+  ctx.lineTo(len, 0);
+  ctx.closePath();
+
+  const lowGrad = ctx.createLinearGradient(0, w, len, 0);
+  lowGrad.addColorStop(0, '#064e3b');
+  lowGrad.addColorStop(0.45, '#047857');
+  lowGrad.addColorStop(0.85, '#10b981');
+  lowGrad.addColorStop(1, '#ecfdf5');
+  ctx.fillStyle = lowGrad;
+  ctx.fill();
+
+  // Razor-sharp outer blade edge highlight
+  ctx.strokeStyle = '#ecfdf5';
+  ctx.lineWidth = (isColossal ? 2.0 : 1.0) * scale;
+  ctx.beginPath();
+  ctx.moveTo(0, -w * 0.92);
+  ctx.lineTo(len * 0.14, -w * 0.72);
+  ctx.lineTo(len * 0.20, -w * 1.02);
+  ctx.lineTo(len * 0.78, -w * 0.78);
+  ctx.lineTo(len, 0);
+  ctx.lineTo(len * 0.78, w * 0.78);
+  ctx.lineTo(len * 0.20, w * 1.02);
+  ctx.lineTo(len * 0.14, w * 0.72);
+  ctx.lineTo(0, w * 0.92);
+  ctx.stroke();
+
+  // Central Spine Ridge (Jian脊) & Blood/Qi Fuller Groove (Huyết Tào)
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = (isColossal ? 2.4 : 1.1) * scale;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(len * 0.96, 0);
+  ctx.stroke();
+
+  if (isColossal) {
+    // Glowing Ancient Seal Runes etched along the blade spine
+    ctx.fillStyle = '#fef08a';
+    for (let r = 0; r < 5; r++) {
+      const rx = len * (0.18 + r * 0.13);
+      ctx.beginPath();
+      ctx.moveTo(rx, -w * 0.26);
+      ctx.lineTo(rx + w * 0.35, 0);
+      ctx.lineTo(rx, w * 0.26);
+      ctx.lineTo(rx - w * 0.35, 0);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  // 5. Ornate Winged Cloud-Dragon Crossguard (Kiếm Cách / Hộ Thủ)
+  ctx.beginPath();
+  ctx.moveTo(len * 0.06, 0); // Forward prong over blade base
+  ctx.lineTo(-len * 0.02, -w * 1.1);
+  ctx.lineTo(len * 0.08, -w * 2.25); // Swept forward wingtip (Upper)
+  ctx.lineTo(-len * 0.07, -w * 1.85);
+  ctx.lineTo(-len * 0.09, -w * 0.65);
+  ctx.lineTo(-len * 0.09, w * 0.65);
+  ctx.lineTo(-len * 0.07, w * 1.85);
+  ctx.lineTo(len * 0.08, w * 2.25); // Swept forward wingtip (Lower)
+  ctx.lineTo(-len * 0.02, w * 1.1);
+  ctx.closePath();
+
+  const guardGrad = ctx.createLinearGradient(-len * 0.08, -w * 2, len * 0.06, w * 2);
+  guardGrad.addColorStop(0, '#fde047');
+  guardGrad.addColorStop(0.5, '#f59e0b');
+  guardGrad.addColorStop(1, '#fef08a');
+  ctx.fillStyle = guardGrad;
+  ctx.fill();
+  ctx.strokeStyle = '#78350f';
+  ctx.lineWidth = (isColossal ? 1.8 : 0.9) * scale;
+  ctx.stroke();
+
+  // Center Spirit Jade Core Gem set in the Crossguard
+  ctx.fillStyle = '#ecfdf5';
+  ctx.strokeStyle = '#10b981';
+  ctx.lineWidth = (isColossal ? 2.2 : 1.1) * scale;
+  ctx.beginPath();
+  ctx.moveTo(len * 0.03, 0);
+  ctx.lineTo(-len * 0.02, -w * 0.65);
+  ctx.lineTo(-len * 0.07, 0);
+  ctx.lineTo(-len * 0.02, w * 0.65);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawSwordTorrentChannel(ctx, cx, cy, prog, size) {
+  ctx.save();
+
+  const haloRad = 70 + 35 * Math.sin(prog * Math.PI);
+  const radGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, haloRad);
+  radGrad.addColorStop(0, 'rgba(52, 211, 153, 0.42)');
+  radGrad.addColorStop(0.5, 'rgba(16, 185, 129, 0.22)');
+  radGrad.addColorStop(1, 'rgba(4, 120, 87, 0)');
+  ctx.fillStyle = radGrad;
+  ctx.beginPath();
+  ctx.arc(cx, cy, haloRad, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  const rotAng = prog * Math.PI * 3.5;
+  ctx.rotate(rotAng);
+
+  ctx.strokeStyle = '#34d399';
+  ctx.lineWidth = 2;
+  ctx.shadowColor = '#10b981';
+  ctx.shadowBlur = 12;
+  ctx.beginPath();
+  ctx.arc(0, 0, 48, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.strokeStyle = '#6ee7b7';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.arc(0, 0, 36, 0, Math.PI * 2);
+  ctx.stroke();
+
+  for (let i = 0; i < 8; i++) {
+    const a = (i * Math.PI) / 4;
+    const rx = Math.cos(a) * 42;
+    const ry = Math.sin(a) * 42;
+    ctx.fillStyle = '#ecfdf5';
+    ctx.fillRect(rx - 2, ry - 2, 4, 4);
+    ctx.strokeStyle = 'rgba(52, 211, 153, 0.5)';
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * 36, Math.sin(a) * 36);
+    ctx.lineTo(Math.cos(a) * 48, Math.sin(a) * 48);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = '#a7f3d0';
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.arc(0, -8, 8, -Math.PI * 0.5, Math.PI * 0.5);
+  ctx.arc(0, 8, 8, Math.PI * 0.5, -Math.PI * 0.5);
+  ctx.stroke();
+  ctx.restore();
+
+  for (let i = 0; i < 9; i++) {
+    const seed = i * 47;
+    const sparkT = (prog * 3 + seed * 0.1) % 1;
+    const sparkRad = 15 + ((seed * 19) % 35);
+    const sparkAng = (seed * 31) + prog * 4;
+    const sx = cx + Math.cos(sparkAng) * sparkRad;
+    const sy = cy + Math.sin(sparkAng) * (sparkRad * 0.6) - sparkT * 60;
+
+    ctx.fillStyle = i % 2 === 0 ? '#ecfdf5' : '#34d399';
+    ctx.shadowColor = '#10b981';
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.arc(sx, sy, 2.2 * (1 - sparkT * 0.4), 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // 8 Levitating Jade Jian Swords pointing skyward (-Math.PI/2) and oscillating before launch
+  const swordCount = 8;
+  for (let i = 0; i < swordCount; i++) {
+    const baseAng = (i * (Math.PI * 2)) / swordCount;
+    const curAng = baseAng + prog * Math.PI * 4.5;
+    const orbitRad = 54 - prog * 12;
+    const sx = cx + Math.cos(curAng) * orbitRad;
+    const sy = cy + Math.sin(curAng) * (orbitRad * 0.68);
+    // Pointing upward with slight outward fan
+    const swordAng = -Math.PI * 0.5 + Math.cos(curAng) * 0.22;
+    const jitter = Math.sin(prog * 42 + i) * (prog * 4);
+    drawEmeraldSwordBlade(ctx, sx, sy + jitter, swordAng, 0.62 + prog * 0.16, 0.8 + prog * 0.2, false);
+  }
+
+  ctx.shadowBlur = 0;
+  ctx.textAlign = 'center';
+  ctx.font = '700 11px system-ui, -apple-system, sans-serif';
+  ctx.fillStyle = '#6ee7b7';
+  ctx.fillText('⚡ VẠN KIẾM QUY TÔNG · ĐANG TỤ KHÍ (1.2s)', cx, cy - 68);
+
+  const barW = 96, barH = 5;
+  ctx.fillStyle = '#064e3b';
+  ctx.fillRect(cx - barW * 0.5, cy - 60, barW, barH);
+  ctx.fillStyle = '#34d399';
+  ctx.fillRect(cx - barW * 0.5, cy - 60, barW * Math.min(1, prog), barH);
+  ctx.strokeStyle = '#10b981';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(cx - barW * 0.5, cy - 60, barW, barH);
+
+  ctx.restore();
+}
+
+function drawSwordTorrentA(ctx, x, y, tx, ty, prog, size) {
+  ctx.save();
+  if (prog < 0.35) {
+    const flashAlpha = (1 - prog / 0.35) * 0.22;
+    ctx.fillStyle = 'rgba(16, 185, 129, ' + flashAlpha + ')';
+    ctx.fillRect(0, 0, size, size);
+  }
+
+  for (let i = 0; i < 16; i++) {
+    const tp = Game.track(i);
+    const pt = routePoint(tp.x, tp.y, size);
+
+    for (let s = 0; s < 2; s++) {
+      const delay = (i * 0.02) + (s * 0.14);
+      const localProg = Math.min(1, Math.max(0, (prog - delay) * 2.4));
+      if (localProg <= 0) continue;
+
+      const startY = pt.y - 165;
+      const startX = pt.x + 38;
+      const fallT = Math.min(1, localProg * 1.35);
+      const curX = startX + (pt.x - startX) * fallT;
+      const curY = startY + (pt.y - startY) * fallT;
+      const angle = Math.atan2(pt.y - startY, pt.x - startX);
+
+      ctx.strokeStyle = s === 0 ? 'rgba(52, 211, 153, 0.65)' : 'rgba(110, 231, 183, 0.5)';
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(curX, curY);
+      ctx.stroke();
+
+      // Offset back along angle so the sword TIP lands cleanly on curX, curY
+      const tipOffset = 34 * 0.72;
+      const drawX = curX - Math.cos(angle) * tipOffset;
+      const drawY = curY - Math.sin(angle) * tipOffset;
+      const sAlpha = Math.min(1, (1 - localProg * 0.32));
+      drawEmeraldSwordBlade(ctx, drawX, drawY, angle, 0.72, sAlpha, false);
+
+      if (localProg >= 0.72) {
+        const impT = (localProg - 0.72) / 0.28;
+        const impRad = impT * 26;
+        ctx.strokeStyle = `rgba(52, 211, 153, ${(1 - impT) * 0.9})`;
+        ctx.lineWidth = 2 * (1 - impT);
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, impRad, 0, Math.PI * 2);
+        ctx.stroke();
+
+        for (let k = 0; k < 4; k++) {
+          const spAng = k * (Math.PI / 2) + i;
+          const spDist = impT * 18;
+          ctx.fillStyle = '#ecfdf5';
+          ctx.fillRect(pt.x + Math.cos(spAng) * spDist - 1.5, pt.y + Math.sin(spAng) * spDist - 1.5, 3, 3);
+        }
+      }
+    }
+  }
+
+  ctx.fillStyle = '#34d399';
+  ctx.font = '800 13px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.shadowColor = '#10b981';
+  ctx.shadowBlur = 10;
+  ctx.fillText('TEN-THOUSAND SWORD TORRENT · CELESTIAL RAIN', size * 0.5, 26);
+  ctx.restore();
+}
+
+function drawSwordTorrentB(ctx, x, y, tx, ty, prog, size) {
+  ctx.save();
+  const cx = x, cy = y;
+  const maxRadius = size * 0.58;
+  const curRadius = Math.min(maxRadius, (prog / 0.85) * maxRadius);
+
+  const arms = 6;
+  ctx.save();
+  ctx.translate(cx, cy);
+  const rot = prog * Math.PI * 6.5;
+  ctx.rotate(rot);
+
+  for (let i = 0; i < arms; i++) {
+    const a = (i * Math.PI * 2) / arms;
+    ctx.strokeStyle = i % 2 === 0 ? 'rgba(52, 211, 153, ' + ((1 - prog * 0.5) * 0.8) + ')' : 'rgba(16, 185, 129, ' + ((1 - prog * 0.5) * 0.5) + ')';
+    ctx.lineWidth = 4 * (1 - prog * 0.4);
+    ctx.shadowColor = '#34d399';
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    for (let r = 10; r <= curRadius; r += 12) {
+      const theta = a + r * 0.04;
+      const px = Math.cos(theta) * r;
+      const py = Math.sin(theta) * (r * 0.85);
+      if (r === 10) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  const ringCount = 16;
+  for (let i = 0; i < ringCount; i++) {
+    const bladeAng = (i * Math.PI * 2) / ringCount + rot * 0.7;
+    const bx = cx + Math.cos(bladeAng) * curRadius;
+    const by = cy + Math.sin(bladeAng) * (curRadius * 0.82);
+    const tangent = bladeAng + Math.PI * 0.5;
+    drawEmeraldSwordBlade(ctx, bx, by, tangent, 0.78, Math.min(1, (1 - prog * 0.35)), false);
+  }
+
+  ctx.fillStyle = '#6ee7b7';
+  ctx.font = '800 13px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.shadowColor = '#10b981';
+  ctx.shadowBlur = 10;
+  ctx.fillText('TEN-THOUSAND SWORD TORRENT · BLADE STORM', size * 0.5, 26);
+  ctx.restore();
+}
+
+// === LOCKED-IN OPTION C: COLOSSAL HEAVEN-SPLITTING JADE JIAN + CELESTIAL SWORD RAIN ===
+function drawSwordTorrentC(ctx, x, y, tx, ty, prog, size) {
+  ctx.save();
+  const bX = tx, bY = ty;
+
+  // 1. Emerald Celestial Sky Flash on Impact
+  if (prog > 0.35 && prog < 0.65) {
+    const flashAlpha = (1 - Math.abs(prog - 0.45) / 0.20) * 0.24;
+    if (flashAlpha > 0) {
+      ctx.fillStyle = 'rgba(16, 185, 129, ' + flashAlpha + ')';
+      ctx.fillRect(0, 0, size, size);
+    }
+  }
+
+  // 2. CELESTIAL SWORD RAIN (Like Option A) Across All 16 Perimeter Tiles!
+  for (let i = 0; i < 16; i++) {
+    const tp = Game.track(i);
+    const pt = routePoint(tp.x, tp.y, size);
+
+    for (let s = 0; s < 2; s++) {
+      const delay = (i * 0.018) + (s * 0.13);
+      const localProg = Math.min(1, Math.max(0, (prog - delay) * 2.35));
+      if (localProg <= 0) continue;
+
+      const startY = pt.y - 165;
+      const startX = pt.x + 36;
+      const fallT = Math.min(1, localProg * 1.35);
+      const curX = startX + (pt.x - startX) * fallT;
+      const curY = startY + (pt.y - startY) * fallT;
+      const angle = Math.atan2(pt.y - startY, pt.x - startX);
+
+      // Jade Qi tail streak from the heavens
+      ctx.strokeStyle = s === 0 ? 'rgba(52, 211, 153, 0.68)' : 'rgba(110, 231, 183, 0.52)';
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(curX, curY);
+      ctx.stroke();
+
+      // Draw authentic Jian sword with tip touching curX, curY
+      const tipOffset = 34 * 0.72;
+      const drawX = curX - Math.cos(angle) * tipOffset;
+      const drawY = curY - Math.sin(angle) * tipOffset;
+      const sAlpha = Math.min(1, (1 - localProg * 0.3));
+      drawEmeraldSwordBlade(ctx, drawX, drawY, angle, 0.72, sAlpha, false);
+
+      // Jade Lotus / Bagua Ripple on each tile upon impact
+      if (localProg >= 0.72) {
+        const impT = (localProg - 0.72) / 0.28;
+        const impRad = impT * 26;
+        ctx.strokeStyle = `rgba(52, 211, 153, ${(1 - impT) * 0.9})`;
+        ctx.lineWidth = 2 * (1 - impT);
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, impRad, 0, Math.PI * 2);
+        ctx.stroke();
+
+        for (let k = 0; k < 4; k++) {
+          const spAng = k * (Math.PI / 2) + i;
+          const spDist = impT * 18;
+          ctx.fillStyle = '#ecfdf5';
+          ctx.fillRect(pt.x + Math.cos(spAng) * spDist - 1.5, pt.y + Math.sin(spAng) * spDist - 1.5, 3, 3);
+        }
+      }
+    }
+  }
+
+  // 3. COLOSSAL SOVEREIGN JADE JIAN (巨型翡翠仙劍) Crashing Vertically Onto Highest-HP Target!
+  const dropProg = Math.min(1, prog / 0.42);
+  const colossalScale = 1.15;
+  const colossalBladeLen = 155 * colossalScale;
+
+  // Vertical Heavenly Pillar Beam locking onto the target before & during impact
+  const pillarAlpha = prog < 0.42 ? 0.55 : Math.max(0, (1 - (prog - 0.42) / 0.58) * 0.65);
+  const pillarW = prog < 0.42 ? 22 : 36 * (1 - (prog - 0.42) / 0.58);
+  const pillarGrad = ctx.createLinearGradient(bX - pillarW, 0, bX + pillarW, 0);
+  pillarGrad.addColorStop(0, 'rgba(16, 185, 129, 0)');
+  pillarGrad.addColorStop(0.5, `rgba(110, 231, 183, ${pillarAlpha})`);
+  pillarGrad.addColorStop(1, 'rgba(16, 185, 129, 0)');
+  ctx.fillStyle = pillarGrad;
+  ctx.fillRect(bX - pillarW, 0, pillarW * 2, bY + 12);
+
+  // Calculate sword guard position so the colossal sword TIP embeds into (bX, bY) at dropProg = 1
+  const tipStartY = -40;
+  const curTipY = tipStartY + dropProg * (bY - tipStartY);
+  const guardY = curTipY - colossalBladeLen * 0.92; // Tip slightly buried into ground at impact
+  const colAlpha = prog > 0.78 ? Math.max(0, 1 - (prog - 0.78) / 0.22) : 1;
+
+  // Render the Colossal Celestial Jade Jian pointing straight down (Math.PI * 0.5)
+  drawEmeraldSwordBlade(ctx, bX, guardY, Math.PI * 0.5, colossalScale, colAlpha, true);
+
+  // 4. Colossal Impact Crater, 8-Trigram Bagua Shockwave & -30% Current HP Strip Callout
+  if (dropProg >= 1.0) {
+    const impactT = Math.min(1, (prog - 0.42) / 0.58);
+
+    // Isometric ground Bagua octagon seal under the pinned Colossal Sword
+    ctx.save();
+    ctx.translate(bX, bY);
+    ctx.scale(1.0, 0.52);
+    const baguaR = 25 + impactT * 75;
+    ctx.strokeStyle = `rgba(254, 240, 138, ${(1 - impactT) * 0.95})`;
+    ctx.lineWidth = 3 * (1 - impactT * 0.6);
+    ctx.beginPath();
+    for (let k = 0; k <= 8; k++) {
+      const a = (k / 8) * Math.PI * 2 + impactT * 1.5;
+      const px = Math.cos(a) * baguaR, py = Math.sin(a) * baguaR;
+      if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    // Expanding Jade Shockwave Rings
+    for (let r = 0; r < 3; r++) {
+      const ringT = Math.max(0, impactT - r * 0.12);
+      if (ringT <= 0) continue;
+      ctx.strokeStyle = r === 0 ? `rgba(236, 253, 245, ${(1 - ringT) * 0.95})` : `rgba(52, 211, 153, ${(1 - ringT) * 0.9})`;
+      ctx.lineWidth = (4 - r) * (1 - ringT);
+      ctx.beginPath();
+      ctx.arc(bX, bY, ringT * 82, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Callout Banner for 30% Current HP Strip
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.font = '900 15px system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = '#fef08a';
+    ctx.shadowColor = '#047857';
+    ctx.shadowBlur = 14;
+    ctx.fillText('🗡 −30% CURRENT HP! · VẠN KIẾM QUY TÔNG', bX, bY - 45 - impactT * 24);
+    ctx.restore();
+  }
+
+  ctx.fillStyle = '#a7f3d0';
+  ctx.font = '800 13px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.shadowColor = '#10b981';
+  ctx.shadowBlur = 10;
+  ctx.fillText('TEN-THOUSAND SWORD TORRENT · COLOSSAL JIAN & SWORD RAIN', size * 0.5, 26);
+  ctx.restore();
+}
+
+function drawCultivationSword(ctx, x0, y0, tx, ty, curve, prog, pal) {
+  const dx = tx - x0, dy = ty - y0;
+  const cx = (x0 + tx) * 0.5 - dy * (curve || 0.22);
+  const cy = (y0 + ty) * 0.5 - Math.abs(dx) * 0.24 - 30;
+  const headT = Math.min(1, Math.max(0.05, prog * 1.15));
+  const tailT = Math.max(0, headT - 0.28);
+
+  ctx.save();
+  // Talisman ribbon trail with rune dashes
+  ctx.lineCap = 'round';
+  ctx.setLineDash([5, 6]);
+  ctx.strokeStyle = pal.trail;
+  ctx.lineWidth = 3.5 * (1 - prog * 0.4);
+  ctx.globalAlpha = Math.min(1, (1 - prog) * 1.3);
+  ctx.beginPath();
+  for (let i = 0; i <= 6; i++) {
+    const t = tailT + (headT - tailT) * (i / 6);
+    const p = bezierPt(x0, y0, cx, cy, tx, ty, t);
+    if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Flying Sword Blade oriented along tangent
+  const head = bezierPt(x0, y0, cx, cy, tx, ty, headT);
+  const prev = bezierPt(x0, y0, cx, cy, tx, ty, Math.max(0, headT - 0.04));
+  const ang = Math.atan2(head.y - prev.y, head.x - prev.x);
+  ctx.translate(head.x, head.y);
+  ctx.rotate(ang);
+  ctx.globalAlpha = Math.min(1, (1 - prog) * 1.6);
+
+  // Sword Blade
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = pal.primary;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(14, 0);       // tip
+  ctx.lineTo(-6, -3.5);   // left edge
+  ctx.lineTo(-8, 0);      // hilt
+  ctx.lineTo(-6, 3.5);    // right edge
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Golden Crossguard & Bagua Ring
+  ctx.strokeStyle = pal.secondary;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-6, -7); ctx.lineTo(-6, 7);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(-8, 0, 3, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// --- 2. BLOODLINE: TRIPLE CLAW TEARS & SNAPPING BEAST FANGS ---
+function drawBloodlineClaws(ctx, x0, y0, tx, ty, prog, pal) {
+  const ang = Math.atan2(ty - y0, tx - x0);
+  ctx.save();
+  ctx.translate(tx, ty);
+  ctx.rotate(ang);
+  ctx.globalAlpha = Math.min(1, (1 - prog) * 1.5);
+
+  // 3 Jagged Crimson Claw Tears
+  const spread = 0.88;
+  const r = 26 + prog * 16;
+  for (let c = -1; c <= 1; c++) {
+    ctx.save();
+    ctx.translate(c * 6, c * 8);
+    ctx.strokeStyle = c === 0 ? pal.primary : pal.secondary;
+    ctx.lineWidth = 6 * (1 - prog * 0.45);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(-10, 0, r, -spread, spread);
+    ctx.stroke();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(-9, 0, r, -spread * 0.7, spread * 0.7);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Snapping Beast Fangs (close shut at impact)
+  const jawClose = Math.max(0, 1 - prog * 1.8) * 12;
+  ctx.fillStyle = '#fff4ea';
+  ctx.strokeStyle = pal.primary;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-8, -10 - jawClose); ctx.lineTo(4, -jawClose); ctx.lineTo(-12, -4 - jawClose);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-8, 10 + jawClose); ctx.lineTo(4, jawClose); ctx.lineTo(-12, 4 + jawClose);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+
+// --- 3. SCRAPWORK: SPINNING ARTILLERY SHELL WITH EXHAUST PUFFS ---
+function drawScrapworkShell(ctx, x0, y0, tx, ty, curve, prog, pal) {
+  const dx = tx - x0, dy = ty - y0;
+  const cx = (x0 + tx) * 0.5 - dy * (curve || -0.2);
+  const cy = (y0 + ty) * 0.5 - Math.abs(dx) * 0.22 - 28;
+  const headT = Math.min(1, Math.max(0.05, prog * 1.15));
+
+  ctx.save();
+  // Trailing grey exhaust smoke puffs
+  for (let i = 1; i <= 4; i++) {
+    const t = Math.max(0, headT - i * 0.08);
+    const p = bezierPt(x0, y0, cx, cy, tx, ty, t);
+    ctx.globalAlpha = Math.max(0, (1 - prog) * (0.65 - i * 0.12));
+    ctx.fillStyle = '#6c757d';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4 + i * 3.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Spinning Artillery Shell
+  const head = bezierPt(x0, y0, cx, cy, tx, ty, headT);
+  const prev = bezierPt(x0, y0, cx, cy, tx, ty, Math.max(0, headT - 0.04));
+  const ang = Math.atan2(head.y - prev.y, head.x - prev.x);
+  ctx.translate(head.x, head.y);
+  ctx.rotate(ang);
+  ctx.globalAlpha = Math.min(1, (1 - prog) * 1.6);
+
+  // Shell Body
+  ctx.fillStyle = '#c89d5c';
+  ctx.strokeStyle = pal.primary;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(11, 0);        // conical nose
+  ctx.lineTo(4, -4.5);
+  ctx.lineTo(-7, -4.5);     // body
+  ctx.lineTo(-7, 4.5);
+  ctx.lineTo(4, 4.5);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+
+  // Stabilizer Fins & Orange Rocket Plume
+  ctx.fillStyle = pal.secondary;
+  ctx.fillRect(-12, -2, 5, 4);
+  ctx.restore();
+}
+
+// --- 4. CYBER MATRIX: ZIG-ZAG DIGITAL MONOWIRE WHIP ---
+function drawCyberMonowire(ctx, x0, y0, tx, ty, prog, pal) {
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, (1 - prog) * 1.6);
+  const segments = 8;
+  const dx = tx - x0, dy = ty - y0;
+
+  // Chromatic Aberration Underlayer
+  ctx.strokeStyle = pal.secondary;
+  ctx.lineWidth = 3.5;
+  ctx.beginPath();
+  ctx.moveTo(x0 + 3, y0 - 2);
+  for (let i = 1; i <= segments; i++) {
+    const t = i / segments;
+    const jitter = Math.sin(t * 14 + prog * 18) * 8 * (1 - t * 0.4);
+    ctx.lineTo(x0 + dx * t + 3, y0 + dy * t + jitter - 2);
+  }
+  ctx.stroke();
+
+  // Primary High-Voltage Cyan Monowire
+  ctx.strokeStyle = pal.primary;
+  ctx.lineWidth = 4.5;
+  ctx.beginPath();
+  ctx.moveTo(x0, y0);
+  for (let i = 1; i <= segments; i++) {
+    const t = i / segments;
+    const jitter = Math.sin(t * 14 + prog * 18) * 8 * (1 - t * 0.4);
+    ctx.lineTo(x0 + dx * t, y0 + dy * t + jitter);
+  }
+  ctx.stroke();
+
+  // White High-Intensity Laser Core
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
+  ctx.restore();
+}
+
+// --- 5. ARCANE LOOM: DUAL-HELIX ORBITING ELEMENTAL SPHERES ---
+function drawArcaneRunes(ctx, x0, y0, tx, ty, curve, prog, pal) {
+  const dx = tx - x0, dy = ty - y0;
+  const cx = (x0 + tx) * 0.5 - dy * (curve || 0.24);
+  const cy = (y0 + ty) * 0.5 - Math.abs(dx) * 0.22 - 28;
+  const headT = Math.min(1, Math.max(0.05, prog * 1.15));
+
+  ctx.save();
+  const head = bezierPt(x0, y0, cx, cy, tx, ty, headT);
+  const ang = Math.atan2(head.y - y0, head.x - x0);
+
+  // Trailing violet aether ribbon
+  ctx.strokeStyle = pal.primary;
+  ctx.lineWidth = 3;
+  ctx.globalAlpha = Math.min(1, (1 - prog) * 1.2);
+  ctx.beginPath();
+  for (let i = 0; i <= 6; i++) {
+    const t = Math.max(0, headT - i * 0.05);
+    const p = bezierPt(x0, y0, cx, cy, tx, ty, t);
+    if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+  }
+  ctx.stroke();
+
+  // Two Orbiting Elemental Spheres (Fire Orange & Ice Cyan)
+  const orbitR = 8;
+  const spin = prog * Math.PI * 8;
+  const o1x = head.x + Math.cos(spin) * orbitR;
+  const o1y = head.y + Math.sin(spin) * orbitR * 0.6;
+  const o2x = head.x - Math.cos(spin) * orbitR;
+  const o2y = head.y - Math.sin(spin) * orbitR * 0.6;
+
+  ctx.fillStyle = '#f97316'; // Fire Orb
+  ctx.beginPath(); ctx.arc(o1x, o1y, 4.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#38bdf8'; // Ice Orb
+  ctx.beginPath(); ctx.arc(o2x, o2y, 4.5, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+// --- 6. HAUNTED: CURSED BLOOD SCISSOR SHEARS & VHS TEAR LINES ---
+function drawHauntedScissors(ctx, x0, y0, tx, ty, prog, pal) {
+  const ang = Math.atan2(ty - y0, tx - x0);
+  ctx.save();
+  ctx.translate(tx, ty);
+  ctx.rotate(ang);
+  ctx.globalAlpha = Math.min(1, (1 - prog) * 1.5);
+
+  // Horizontal VHS Glitch Scanlines
+  ctx.strokeStyle = '#ffffff88';
+  ctx.lineWidth = 1.5;
+  for (let g = -1; g <= 1; g++) {
+    const gy = g * 12 + Math.sin(prog * 15) * 4;
+    ctx.beginPath();
+    ctx.moveTo(-35, gy); ctx.lineTo(35, gy);
+    ctx.stroke();
+  }
+
+  // Dual Scissor Blades slicing inward in X-Shear
+  const snipAngle = Math.max(0.12, (1 - prog * 2.2) * 0.75);
+  for (let side = -1; side <= 1; side += 2) {
+    ctx.save();
+    ctx.rotate(side * snipAngle);
+    ctx.fillStyle = '#f1f5f9';
+    ctx.strokeStyle = pal.secondary;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(-22, -side * 6);
+    ctx.lineTo(18, 0);          // point
+    ctx.lineTo(-14, side * 3);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+
+    // Finger loop handle
+    ctx.beginPath();
+    ctx.arc(-22, -side * 7, 5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+// --- 7. FORBIDDEN TEXTS: WRITHING SINE-WAVE TENTACLE & VOID EYE ---
+function drawCosmicTentacle(ctx, x0, y0, tx, ty, curve, prog, pal) {
+  const dx = tx - x0, dy = ty - y0;
+  const segments = 10;
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, (1 - prog) * 1.6);
+
+  // Writhing Sine-Wave Spine
+  ctx.strokeStyle = pal.primary;
+  ctx.lineWidth = 7 * (1 - prog * 0.4);
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x0, y0);
+  for (let i = 1; i <= segments; i++) {
+    const t = i / segments;
+    const wave = Math.sin(t * 8 + prog * 16) * 10 * (1 - t * 0.3);
+    const px = x0 + dx * t + wave * (dy / (Math.hypot(dx, dy) || 1));
+    const py = y0 + dy * t - wave * (dx / (Math.hypot(dx, dy) || 1));
+    ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // Dark Abyssal Core
+  ctx.strokeStyle = pal.trail;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Opening Void Eye Pupil at target
+  if (prog > 0.45) {
+    const ep = Math.min(1, (prog - 0.45) / 0.55);
+    ctx.translate(tx, ty);
+    ctx.fillStyle = '#06020c';
+    ctx.strokeStyle = pal.secondary;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 14 * ep, 7 * ep, 0, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#ff2a6d';
+    ctx.beginPath();
+    ctx.arc(0, 0, 3.5 * ep, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+// --- 8. ECLIPSE HUNT: 180° MOONLIGHT-SILVER BROADSWORD WAVE ---
+function drawHuntBroadsword(ctx, x0, y0, tx, ty, prog, pal) {
+  const ang = Math.atan2(ty - y0, tx - x0);
+  ctx.save();
+  ctx.translate(tx, ty);
+  ctx.rotate(ang);
+  ctx.globalAlpha = Math.min(1, (1 - prog) * 1.6);
+
+  // Massive 180° Silver Arc
+  const r = 36 + prog * 18;
+  ctx.strokeStyle = pal.primary;
+  ctx.lineWidth = 8 * (1 - prog * 0.45);
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.arc(-12, 0, r, -Math.PI * 0.55, Math.PI * 0.55);
+  ctx.stroke();
+
+  // Razor-sharp inner white core
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(-10, 0, r, -Math.PI * 0.45, Math.PI * 0.45);
+  ctx.stroke();
+
+  // Black Iron Sparks
+  ctx.fillStyle = pal.secondary;
+  for (let s = -2; s <= 2; s++) {
+    const a = s * 0.35;
+    const sx = Math.cos(a) * (r + 8 * prog) - 12;
+    const sy = Math.sin(a) * (r + 8 * prog);
+    ctx.fillRect(sx, sy, 3, 3);
+  }
+  ctx.restore();
+}
+
+// --- 9. ORBITAL XENO-LAB: NEEDLE SPIKE & ROTATING BIOMETRIC RETICLE ---
+function drawScifiNeedle(ctx, x0, y0, tx, ty, prog, pal) {
+  const dx = tx - x0, dy = ty - y0;
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, (1 - prog) * 1.6);
+
+  // Rotating Triangular Biometric Target-Lock Reticle on Runner
+  const lockR = Math.max(12, 28 * (1 - prog * 0.8));
+  const spin = prog * Math.PI * 4;
+  ctx.save();
+  ctx.translate(tx, ty);
+  ctx.rotate(spin);
+  ctx.strokeStyle = pal.secondary;
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI * 2;
+    const px = Math.cos(a) * lockR, py = Math.sin(a) * lockR;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.stroke();
+  ctx.restore();
+
+  // Needle Spike Projectile
+  const curX = x0 + dx * prog, curY = y0 + dy * prog;
+  const ang = Math.atan2(dy, dx);
+  ctx.translate(curX, curY);
+  ctx.rotate(ang);
+  ctx.fillStyle = pal.primary;
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(12, 0);
+  ctx.lineTo(-8, -2.5);
+  ctx.lineTo(-4, 0);
+  ctx.lineTo(-8, 2.5);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+
+  // Acid droplet trail
+  ctx.fillStyle = pal.primary;
+  ctx.beginPath(); ctx.arc(-14, -1, 2.5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(-22, 1, 2, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
 function draw() {
   let canvas = $('#arena');
   if (!canvas || !battle) return;
@@ -812,49 +1744,82 @@ function draw() {
   }
   ctx.globalAlpha = 1;
 
-  // PASS 3: Aerial VFX (Bezier Projectiles, Crescent Slashes, Beams, Sparks & Floating Text)
+    // Active Unit Channeling VFX (Real-Time)
+  for (const u of battle.units.filter(u => !u.removed)) {
+    if (u.channeling && u.channeling.type === 'sword-torrent') {
+      const pt = routePoint(u.x + 1, u.y + 1, size);
+      const chProg = Math.min(1, Math.max(0, 1 - (u.channeling.remaining / (u.channeling.duration || 1.2))));
+      drawSwordTorrentChannel(ctx, pt.x, pt.y, chProg, size);
+    }
+  }
+
+  // PASS 3: Aerial VFX (9 Distinct Per-Genre Projectiles, Slashes & Spells)
   for (const f of battle.effects) {
     let from = routePoint(f.x, f.y, size), to = routePoint(f.tx, f.ty, size);
     let x = from.x, y = from.y, tx = to.x, ty = to.y;
     const maxT = f.maxTtl || 0.65;
     const prog = Math.min(1, Math.max(0, 1 - f.ttl / maxT));
     const pal = vfxPaletteFor(f.genre);
+    const kind = f.vfxKind || 'projectile';
 
-    if (f.vfxKind === 'slash') {
+    if (f.type === 'sword-channel' || kind === 'sword-channel') {
+      drawSwordTorrentChannel(ctx, x, y, prog, size);
+    } else if (f.type === 'sword-torrent-a' || kind === 'sword-torrent-a') {
+      drawSwordTorrentA(ctx, x, y, tx, ty, prog, size);
+    } else if (f.type === 'sword-torrent-b' || kind === 'sword-torrent-b') {
+      drawSwordTorrentB(ctx, x, y, tx, ty, prog, size);
+    } else if (f.type === 'sword-torrent-c' || kind === 'sword-torrent-c' || f.type === 'sword-torrent' || kind === 'sword-torrent') {
+      drawSwordTorrentC(ctx, x, y, tx, ty, prog, size);
+    } else if (kind === 'sword' || (f.genre === 'Cultivation' && ['shot', 'spell', 'sword'].includes(kind))) {
+      drawCultivationSword(ctx, x, y, tx, ty, f.curve, prog, pal);
+    } else if (kind === 'claw' || (f.genre === 'Bloodline' && ['slash', 'claw'].includes(kind))) {
+      drawBloodlineClaws(ctx, x, y, tx, ty, prog, pal);
+    } else if (kind === 'shell' || (f.genre === 'PostApoc' && ['shot', 'shell'].includes(kind))) {
+      drawScrapworkShell(ctx, x, y, tx, ty, f.curve, prog, pal);
+    } else if (kind === 'laser' || (f.genre === 'Cyberpunk' && ['beam', 'laser'].includes(kind))) {
+      drawCyberMonowire(ctx, x, y, tx, ty, prog, pal);
+    } else if (kind === 'orb' || (f.genre === 'Arcane' && ['spell', 'orb'].includes(kind))) {
+      drawArcaneRunes(ctx, x, y, tx, ty, f.curve, prog, pal);
+    } else if (kind === 'scissor' || (f.genre === 'Haunted' && ['slash', 'scissor'].includes(kind))) {
+      drawHauntedScissors(ctx, x, y, tx, ty, prog, pal);
+    } else if (kind === 'tentacle' || (f.genre === 'Lovecraft' && ['spell', 'tentacle'].includes(kind))) {
+      drawCosmicTentacle(ctx, x, y, tx, ty, f.curve, prog, pal);
+    } else if (kind === 'broadsword' || (f.genre === 'Grimdark' && ['slash', 'broadsword'].includes(kind))) {
+      drawHuntBroadsword(ctx, x, y, tx, ty, prog, pal);
+    } else if (kind === 'needle' || (f.genre === 'SciFi' && ['shot', 'needle'].includes(kind))) {
+      drawScifiNeedle(ctx, x, y, tx, ty, prog, pal);
+    } else if (kind === 'slash') {
       drawCrescentSlash(ctx, x, y, tx, ty, prog, pal, f.genre);
-    } else if (f.vfxKind === 'beam' || f.type === 'beam') {
+    } else if (kind === 'beam' || f.type === 'beam') {
       ctx.save();
       ctx.globalAlpha = Math.min(1, f.ttl * 2.8);
       ctx.strokeStyle = pal.primary;
       ctx.lineWidth = 9 * (1 - prog * 0.4);
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(tx, ty);
+      ctx.moveTo(x, y); ctx.lineTo(tx, ty);
       ctx.stroke();
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 3.2 * (1 - prog * 0.4);
       ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(tx, ty);
+      ctx.moveTo(x, y); ctx.lineTo(tx, ty);
       ctx.stroke();
       ctx.restore();
       drawImpactSparks(ctx, tx, ty, prog, pal, true);
-    } else if (f.vfxKind === 'impact') {
+    } else if (kind === 'impact') {
       drawImpactSparks(ctx, tx, ty, prog, pal, f.crit);
     } else if (f.type === 'warp') {
       ctx.strokeStyle = '#b9a5e7';
       ctx.lineWidth = 4;
       ctx.setLineDash([7, 5]);
       ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(tx, ty);
+      ctx.moveTo(x, y); ctx.lineTo(tx, ty);
       ctx.stroke();
       ctx.setLineDash([]);
       ctx.beginPath();
       ctx.arc(tx, ty, unit * 0.22, 0, Math.PI * 2);
       ctx.stroke();
-    } else if (['shot', 'spell'].includes(f.type)) {
+    } else {
       drawBezierProjectile(ctx, x, y, tx, ty, f.curve, prog, pal);
       if (prog > 0.65) drawImpactSparks(ctx, tx, ty, (prog - 0.65) / 0.35, pal, f.crit);
     }
@@ -863,11 +1828,10 @@ function draw() {
       ctx.save();
       ctx.globalAlpha = Math.min(1, f.ttl * 2.2);
       const breakthrough = ['FOUNDATION ESTABLISHMENT', 'GOLDEN CORE', 'NASCENT SOUL'].includes(String(f.text).toUpperCase());
-      const atTarget = f.type === 'impact' || f.type === 'warp' || f.vfxKind === 'impact';
       ctx.font = breakthrough ? 'bold 9px system-ui' : f.crit ? '800 17px system-ui' : 'bold 15px system-ui';
       ctx.textAlign = 'center';
-      const textX = atTarget ? tx : (Number.isFinite(x) ? x : tx);
-      const textY = (atTarget ? ty : (Number.isFinite(y) ? y : ty)) - (breakthrough ? 52 : 30) - prog * 26;
+      const textX = f.vfxKind === 'impact' ? tx : (Number.isFinite(x) ? x : tx);
+      const textY = (f.vfxKind === 'impact' ? ty : (Number.isFinite(y) ? y : ty)) - (breakthrough ? 52 : 30) - prog * 26;
       ctx.strokeStyle = '#090d0acc';
       ctx.lineWidth = 3.5;
       ctx.strokeText(f.text, textX, textY);
@@ -877,7 +1841,7 @@ function draw() {
     }
   }
 
-  // LAYER 4: Mythic Showstopper Radial Vignette Spotlight
+// LAYER 4: Mythic Showstopper Radial Vignette Spotlight
   if (battle.showstopper && battle.showstopper.ttl > 0) {
     const sh = battle.showstopper;
     const spot = routePoint(sh.x, sh.y, size);

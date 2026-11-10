@@ -778,8 +778,15 @@ function resolveVfxKind(type, u) {
  if (type === 'impact') return 'impact';
  if (!u) return 'projectile';
  const d = card(u.id) || {}, g = d.genre || '', id = u.id || '';
- const fam = card(u.id) ? family(u) : id;
- if (['Bloodline', 'Grimdark'].includes(g) || ['kuchisake', 'redRaincoat', 'cub', 'heir', 'monk'].includes(fam) || ['demonBlade', 'bloodFiendMaster', 'mantis', 'bladeTitan', 'juggernautTitan'].includes(id)) return 'slash';
+ if (g === 'Cultivation') return 'sword';
+ if (g === 'Bloodline') return 'claw';
+ if (g === 'PostApoc') return 'shell';
+ if (g === 'Cyberpunk') return 'laser';
+ if (g === 'Arcane') return 'orb';
+ if (g === 'Haunted') return 'scissor';
+ if (g === 'Lovecraft') return 'tentacle';
+ if (g === 'Grimdark') return 'broadsword';
+ if (g === 'SciFi') return 'needle';
  return 'projectile';
 }
 function triggerShowstopper(b, u, label = 'MYTHIC AWAKENED', preset = 'mythic') {
@@ -818,9 +825,9 @@ function fx(b, type, u, e, text, extra = {}) {
  const d = u ? card(u.id) : null;
  const genre = extra.genre || d?.genre || 'Cultivation';
  const vfxKind = extra.vfxKind || resolveVfxKind(type, u);
- const ttl = extra.ttl || (type === 'beam' ? 0.35 : vfxKind === 'slash' ? 0.28 : 0.65);
- const tx = e ? track(e.p).x : (u ? u.x + 1 : 2);
- const ty = e ? track(e.p).y : (u ? u.y + 1 : 2);
+ const ttl = extra.ttl || (type === 'beam' ? 0.35 : (type && type.startsWith('sword-torrent')) ? 0.85 : vfxKind === 'slash' ? 0.28 : 0.65);
+ const tx = (e && typeof e.p === 'number') ? track(e.p).x : (e && typeof e.x === 'number' ? e.x + 1 : (u ? u.x + 1 : 2));
+ const ty = (e && typeof e.p === 'number') ? track(e.p).y : (e && typeof e.y === 'number' ? e.y + 1 : (u ? u.y + 1 : 2));
  if (u && e && ['shot', 'spell', 'beam', 'slash'].includes(type)) {
   u.animSeq = (u.animSeq || 0) + 1;
   u.animType = resolveAnimArchetype(u);
@@ -2075,12 +2082,17 @@ function fx(b, type, u, e, text, extra = {}) {
   else if (u.id === 'demonBlade') { hit(b, u, target, power); dot(b, target, 'bleed', 5, 4, u); }
   else if (u.id === 'swordImmortal') {
    hit(b, u, target, power);
-   if (u.attackCount % 4 === 0) {
-    for (const e of living(b)) trueHit(b, u, e, rawAtk(u));
-    const highestHp = living(b).sort((a, z) => z.hp - a.hp)[0];
-    if (highestHp) damage(b, highestHp, highestHp.hp * 0.3, u, 'ability');
-    fx(b, 'beam', u, target, 'SWORD TORRENT');
-    interact(b, u, u, 'sword-torrent', 'Ten-Thousand Sword Torrent: all 16 tiles + 30% HP strip');
+   if (u.attackCount % 10 === 0) {
+    const opt = u.torrentOption || 'C';
+    u.channeling = {
+     type: 'sword-torrent',
+     duration: 1.2,
+     remaining: 1.2,
+     option: opt
+    };
+    u.currentCooldown = Math.max(u.currentCooldown || 0, 1.2);
+    fx(b, 'sword-channel', u, u, 'CHANNELING TORRENT');
+    interact(b, u, u, 'sword-channel', 'Sword Immortal channels Ten-Thousand Sword Torrent (1.2s)...');
    }
   }
   else if (u.id === 'melodicSaint') {
@@ -2376,6 +2388,20 @@ function fx(b, type, u, e, text, extra = {}) {
    u.flash = Math.max(0, u.flash - dt); extras(b, u, dt); flushEvents(b); if (u.removed) continue;
    if (u.state !== 'active') { u.stateRemaining -= dt; if (u.stateRemaining <= 0) flip(b, u, 'active'); else continue }
    if ((u.trialStunnedUntil || 0) > b.time) continue;
+   if (u.channeling) {
+    u.channeling.remaining -= dt;
+    u.currentCooldown = Math.max(u.currentCooldown || 0, 0.1);
+    if (u.channeling.remaining <= 0) {
+     const opt = u.channeling.option || 'C';
+     u.channeling = null;
+     for (const e of living(b)) trueHit(b, u, e, rawAtk(u));
+     const highestHp = living(b).sort((a, z) => z.hp - a.hp)[0];
+     if (highestHp) damage(b, highestHp, highestHp.hp * 0.3, u, 'ability');
+     fx(b, 'sword-torrent-' + opt.toLowerCase(), u, highestHp || u, 'SWORD TORRENT (' + opt + ')');
+     interact(b, u, u, 'sword-torrent', 'Ten-Thousand Sword Torrent [' + opt + ']: all 16 tiles + 30% HP strip');
+    }
+    continue;
+   }
    if (u.id === 'herb' && b.time >= u.sacrificeAt && herbOffering(b, u)) continue;
    if (u.id === 'herb' && b.time >= u.herbAt) { u.herbAt = b.time + 12; teamCharge(b, u, 3); }
    if (u.id === 'vent' && support(b, 'vent') === u && b.time >= u.ventAt) { u.ventAt = b.time + 8; for (const e of living(b).slice(0, 2)) status(b, e, 'freeze', (e.burns || []).some(d => d.until > b.time) ? 2 : 1, 0, u); fx(b, 'pulse', u, null, 'FREEZE') }

@@ -1712,7 +1712,7 @@ const FORMS = [
     "tags": ["apex", "pierce", "boss-slayer"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Earned only by passing the Elite/Boss Heavenly Tribulation with a zero-leak node clear. During the trial, every 4s the storm stuns the Nascent Soul for 0.5s and deals 25 damage to active enemies. Every 4th attack releases a Ten-Thousand Sword Torrent piercing all 16 perimeter tiles, dealing unbuffed ATK damage and stripping 30% current HP from the highest-HP target. Triggers Relic Resonance when adjacent to another Relic (+20% damage, +25% relic speed). Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after ascension. In addition, every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
+    "rules": "Earned only by passing the Elite/Boss Heavenly Tribulation with a zero-leak node clear. During the trial, every 4s the storm stuns the Nascent Soul for 0.5s and deals 25 damage to active enemies. Every 10th attack, channels for 1.2s to release a Ten-Thousand Sword Torrent piercing all 16 perimeter tiles, dealing unbuffed ATK damage and stripping 30% current HP from the highest-HP target. Triggers Relic Resonance when adjacent to another Relic (+20% damage, +25% relic speed). Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after ascension. In addition, every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
     "synergy": "Ancient Flying Sword, Relic Resonance."
   },
   // 2. Melodic Saint
