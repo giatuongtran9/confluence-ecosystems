@@ -1923,7 +1923,6 @@ function fx(b, type, u, e, text, extra = {}) {
  function speed(b, u) {
   let n = 1 + (b.run.relics.includes('clock') ? .1 : 0) + (u.emptySpeed + (u.offeringSpeed || 0) + (u.hasteUntil > b.time ? .15 : 0) + (u.manualUntil > b.time ? .25 : 0) + (u.pillSpeedUntil > b.time ? .15 : 0) + (u.hotlineUntil > b.time ? .20 : 0) + (u.harmonyChordUntil > b.time ? .50 : 0)) * mod(b.run, 'buffPower');
   if (support(b, 'matriarch') && BLOODLINE_FODDER.includes(species(u))) n += .4 * mod(b.run, 'buffPower');
-  if ((isCultivationRelic(u) || isUrbanRelic(u)) && neighbors(b, u, false).some(v => !v.removed && isApexImmortal(v))) n *= 1.25;
   if (neighbors(b, u, false).some(v => v.id === 'guqin')) n += .20;
   if (neighbors(b, u, false).some(v => v.id === 'demonBlade')) n += .10;
   const inBlackout = b.curfewUntil > b.time;
@@ -3197,7 +3196,7 @@ function fx(b, type, u, e, text, extra = {}) {
    const adjRelics = neighbors(b, u, false).filter(v => !v.removed && isCultivationRelic(v));
    if (adjRelics.length && b.time >= (u.resonanceLogAt || 0)) {
     u.resonanceLogAt = b.time + 6;
-    interact(b, u, adjRelics[0], 'relic-resonance', 'Relic Resonance: +20% Apex Dmg, +25% Relic Spd');
+    interact(b, u, adjRelics[0], 'relic-resonance', 'Relic Resonance: +20% Mythic damage');
     fx(b, 'state', u, null, 'RESONANCE');
    }
   }

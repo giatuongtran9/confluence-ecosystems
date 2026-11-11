@@ -1712,7 +1712,7 @@ const FORMS = [
     "tags": ["apex", "pierce", "boss-slayer"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks pierce 50% DEF and hit the target plus up to 3 enemies behind (100%→70% damage). Every 10th attack, channels for 1.2s to release a Ten-Thousand Sword Torrent dealing 100% ATK to all tiles and dropping a Colossal Sword onto the highest-threat enemy for 100% ATK + 10% enemy current HP. Triggers Relic Resonance when adjacent to another Relic (+20% damage, +25% relic speed).",
+    "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks pierce 50% DEF and hit the target plus up to 3 enemies behind (100%→70% damage). Every 10th attack, channels for 1.2s to release a Ten-Thousand Sword Torrent dealing 100% ATK to all tiles and dropping a Colossal Sword onto the highest-threat enemy for 100% ATK + 10% enemy current HP. Triggers Relic Resonance when adjacent to another Cultivation relic (+20% Mythic damage).",
     "synergy": "Ancient Flying Sword, Relic Resonance."
   },
   // 2. Melodic Saint
@@ -1750,7 +1750,7 @@ const FORMS = [
     "tags": ["apex", "trap", "stasis"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks alternate between Black Stone (deals 120% ATK) and White Stone (deals 80% ATK and slows target 30% for 2s). Every 10th attack, channels for 1.2s to activate Star-River Weiqi Board: warps all enemies backward 2 tiles and deals 150% ATK (300% on corner tiles 0, 4, 8, 12). Triggers Relic Resonance when adjacent to another Relic.",
+    "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks alternate between Black Stone (deals 120% ATK) and White Stone (deals 80% ATK and slows target 30% for 2s). Every 10th attack, channels for 1.2s to activate Star-River Weiqi Board: warps all enemies backward 2 tiles and deals 150% ATK (300% on corner tiles 0, 4, 8, 12). Triggers Relic Resonance when adjacent to another Cultivation relic (+20% Mythic damage).",
     "synergy": "Star-River Weiqi Board, Relic Resonance."
   },
   // 4. Talisman Sovereign
@@ -1773,7 +1773,7 @@ const FORMS = [
   ],
   "evolvedFrom": "practitioner",
   "draftable": false,
-  "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks deal 100% ATK, apply +50% Vulnerable for 3s, and execute non-boss/non-champion runners below 10% HP. Every 10th attack, channels for 1.2s to inscribe Imperial Ink Decree: deals 250% ATK board-wide, executes non-bosses below 15% HP, and applies +50% Vulnerable for 3s to survivors. Triggers Relic Resonance when adjacent to another Relic.",
+  "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks deal 100% ATK, apply +50% Vulnerable for 3s, and execute non-boss/non-champion runners below 10% HP. Every 10th attack, channels for 1.2s to inscribe Imperial Ink Decree: deals 250% ATK board-wide, executes non-bosses below 15% HP, and applies +50% Vulnerable for 3s to survivors. Triggers Relic Resonance when adjacent to another Cultivation relic (+20% Mythic damage).",
     "synergy": "Dragon-Tail Ink Brush, Relic Resonance."
 },
   // 5. Landscape Sage
@@ -1811,7 +1811,7 @@ const FORMS = [
     "tags": ["apex", "demonic", "chain"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks fire a volley hitting up to 5 targets for 50% ATK each. Every enemy death adds +1 permanent Soul to the banner. Every 10th attack, channels for 1.2s to detonate Ten-Thousand Soul Banner: deals (150% + floor(Souls / 2)%) ATK to all enemies. Triggers Relic Resonance when adjacent to another Relic.",
+    "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks fire a volley hitting up to 5 targets for 50% ATK each. Every enemy death adds +1 permanent Soul to the banner. Every 10th attack, channels for 1.2s to detonate Ten-Thousand Soul Banner: deals (150% + floor(Souls / 2)%) ATK to all enemies. Triggers Relic Resonance when adjacent to another Cultivation relic (+20% Mythic damage).",
     "synergy": "Ten-Thousand Soul Banner, Relic Resonance."
   },
   // 7. Blood-Fiend Sword Master
@@ -2527,8 +2527,8 @@ const TOKENS = [
 ];
 
 const LEGACY_CARDS = [
-  { "id": "immortal", "name": "Jade Immortal (Retired)", "genre": "Cultivation", "baseAtk": 20, "attackInterval": 1.5, "rarity": "Epic", "draftable": false, "retired": true },
-  { "id": "asura", "name": "Asura Monk (Retired)", "genre": "Cultivation", "baseAtk": 24, "attackInterval": 1.2, "rarity": "Epic", "draftable": false, "retired": true },
+  { "id": "immortal", "name": "Jade Immortal (Retired)", "genre": "Cultivation", "baseAtk": 0, "attackInterval": 0, "rarity": "Epic", "draftable": false, "retired": true },
+  { "id": "asura", "name": "Asura Monk (Retired)", "genre": "Cultivation", "baseAtk": 0, "attackInterval": 0, "rarity": "Epic", "draftable": false, "retired": true },
   { "id": "spirit", "name": "Restless Spirit", "genre": "Haunted", "baseAtk": 10, "attackInterval": 1.2, "rarity": "Normal", "draftable": false, "retired": true },
   { "id": "bell", "name": "Soul-Wailing Bell", "genre": "Haunted", "baseAtk": 8, "attackInterval": 2.2, "rarity": "Normal", "draftable": false, "retired": true },
   { "id": "lantern", "name": "Grave Lantern", "genre": "Haunted", "baseAtk": 0, "attackInterval": 0, "rarity": "Rare", "draftable": false, "retired": true },
@@ -2540,10 +2540,10 @@ const LEGACY_CARDS = [
   { "id": "wraith", "name": "Nine-Abyss Wraith", "genre": "Haunted", "baseAtk": 28, "attackInterval": 0.7, "rarity": "Epic", "draftable": false, "retired": true },
 
 
-  { "id": "jade", "name": "Jade Disciple (Retired)", "genre": "Cultivation", "baseAtk": 14, "attackInterval": 1.5, "max": 36, "rarity": "Rare", "draftable": false, "retired": true },
+  { "id": "jade", "name": "Jade Disciple (Retired)", "genre": "Cultivation", "baseAtk": 0, "attackInterval": 0, "rarity": "Rare", "draftable": false, "retired": true },
   { "id": "herb", "name": "Spirit Herb Spring", "genre": "Cultivation", "baseAtk": 0, "attackInterval": 0, "rarity": "Normal", "draftable": false },
   { "id": "lotus", "name": "Spirit Lotus", "genre": "Cultivation", "rarity": "Normal", "baseAtk": 0, "attackInterval": 0, "max": 18, "draftable": false },
-  { "id": "monk", "name": "Mortal Monk (Retired)", "genre": "Cultivation", "rarity": "Normal", "baseAtk": 12, "attackInterval": 1.2, "max": 3, "draftable": false, "retired": true },
+  { "id": "monk", "name": "Mortal Monk (Retired)", "genre": "Cultivation", "rarity": "Normal", "baseAtk": 0, "attackInterval": 0, "draftable": false, "retired": true },
   { "id": "alchemist", "name": "Alchemical Adept", "genre": "Cultivation", "rarity": "Rare", "baseAtk": 18, "attackInterval": 1.5, "draftable": false },
   { "id": "catalyst", "name": "Threefold Pill Blossom", "genre": "Cultivation", "rarity": "Normal", "baseAtk": 0, "attackInterval": 0, "draftable": false }
 ];

@@ -315,6 +315,6 @@ test('Demon Blade grants adjacent attack speed and normal hits add a one-second 
  const b=battle(['practitioner','demonBlade'],[0,1]),u=b.units[0],e=supportEnemy(b);assert.equal(G.speed(b,u),1.1);G.hit(b,u,e,100,true,{criticalMultiplier:1});assert.ok(e.bleeds.some(d=>d.dps===1000&&d.until===1));
 });
 test('Jade Immortal and Asura Monk evolution lines are retired',()=>{
- for(const id of ['jade','monk','immortal','asura']){const c=D.CARD[id];assert.ok(c?.retired,id);assert.equal(c.evolveTo,undefined,id);assert.equal(D.FORMS.some(f=>f.id===id),false,id);}
+ for(const id of ['jade','monk','immortal','asura']){const c=D.CARD[id];assert.ok(c?.retired,id);assert.equal(c.evolveTo,undefined,id);assert.equal(D.FORMS.some(f=>f.id===id),false,id);assert.equal(c.baseAtk,0,id);assert.equal(c.attackInterval,0,id);}
  assert.equal(D.FORMS.some(f=>f.id==='monkeyCubApex'),true,'Bloodline Great Sage lineage remains available');
 });
