@@ -11,7 +11,7 @@ const Game = (() => {
  function shuffle(r, a) { a = [...a]; for (let i = a.length - 1; i > 0; i--) { let j = Math.floor(rand(r) * (i + 1)); [a[i], a[j]] = [a[j], a[i]] } return a }
  function instance(r, id) { return { uid: ++r.uid, id, permanentAtkBonus: 0, threshold: 0 } }
  function newRun(leader, meta = {}, seed = Date.now() >>> 0) {
-  const r = { version: 3, leader, seed, uid: 0, roster: [], health: 100 + (meta.vitality || 0) * 5 + (D.LEADERS.find(l => l.id === leader)?.mods?.health || 0), maxHealth: 100 + (meta.vitality || 0) * 5 + (D.LEADERS.find(l => l.id === leader)?.mods?.health || 0), legacyPower: (meta.power || 0) * .02, phase: 'draft', draftReason: 'first', coins: 0, depth: -1, lane: 1, visited: [], relics: [], cleared: 0, stats: { kills: 0, leaks: 0, growth: 0 }, map: [] };
+  const r = { version: 3, leader, seed, uid: 0, roster: [], health: 100 + (meta.vitality || 0) * 5 + (D.LEADERS.find(l => l.id === leader)?.mods?.health || 0), maxHealth: 100 + (meta.vitality || 0) * 5 + (D.LEADERS.find(l => l.id === leader)?.mods?.health || 0), legacyPower: (meta.power || 0) * .02, phase: 'draft', draftReason: 'first', coins: 0, depth: -1, lane: 1, visited: [], relics: [], breakthroughPills: 0, cleared: 0, stats: { kills: 0, leaks: 0, growth: 0 }, map: [] };
   for (let row = 0; row < 16; row++) {
    r.map.push(Array.from({ length: row === 15 ? 1 : 3 }, (_, lane) => {
     let type = 'battle';
@@ -914,7 +914,7 @@ function fx(b, type, u, e, text, extra = {}) {
  function startHeavenlyTrial(b) {
   if (!b || !['elite', 'boss'].includes(b.run.node?.type) || (b.metrics?.leaks || 0) > 0) return null;
   if (b.heavenlyTrial) return b.heavenlyTrial;
-  const candidates = b.units.filter(u => !u.removed && !token(u) && isPractitioner(u) && u.id === 'cultivationNascentSoul' && (u.qi || 0) >= 175)
+  const candidates = b.units.filter(u => !u.removed && !token(u) && isPractitioner(u) && u.id === 'cultivationNascentSoul' && (u.qi || 0) >= 200)
    .map(u => ({ unit: u, relic: trialRelicFor(b, u) })).filter(v => v.relic)
    .sort((a, z) => (z.unit.qi || 0) - (a.unit.qi || 0) || a.unit.slot - z.unit.slot || a.unit.uid - z.unit.uid);
   const selected = candidates[0];
@@ -922,7 +922,7 @@ function fx(b, type, u, e, text, extra = {}) {
   const apexId = selected.relic.id === 'soulBanner' ? 'soulReapingDemon' : cultivationRelicApex[selected.relic.id];
   const trial = b.heavenlyTrial = { status: 'active', unitUid: selected.unit.uid, relicUid: selected.relic.uid, relicId: selected.relic.id, apexId, startedAt: b.time, nextStrikeAt: b.time + 4, strikes: 0 };
   b.metrics.heavenlyTribulation = { status: 'active', practitionerId: selected.unit.id, practitionerUid: selected.unit.uid, relicId: selected.relic.id, relicUid: selected.relic.uid, apexId, qi: selected.unit.qi || 0, startedAt: b.time, strikes: 0 };
-  interact(b, selected.unit, selected.relic, 'tribulation', 'Heavenly Tribulation begins · clear the Elite/Boss node with zero leaks');
+  interact(b, selected.unit, selected.relic, 'tribulation', 'Heavenly Tribulation begins at 200 Qi · clear the Elite/Boss node with zero leaks');
   fx(b, 'pulse', selected.unit, null, 'HEAVENLY TRIBULATION');
   return trial;
  }
@@ -995,15 +995,21 @@ function fx(b, type, u, e, text, extra = {}) {
  const acceptsQi = u => !token(u) && (isPractitioner(u) || isCultivationApex(u));
  const acceptsDread = u => !token(u) && (isUrbanInvestigator(u) || isUrbanAuthority(u));
  function addQi(b, u, amount) {
+  if (!Number.isFinite(amount) || amount <= 0) return;
   const previousQi = u.qi || 0;
-  u.qi = previousQi + amount;
   if (isCultivationApex(u)) {
+   u.qi = previousQi + amount;
+   const excessQi = Math.max(0, u.qi - Math.max(175, previousQi));
+   if (excessQi > 0) growth(b, u, excessQi * 0.15);
    u.apexQi = (u.apexQi || 0) + amount;
    while (u.apexQi >= 30) { u.apexQi -= 30; growth(b, u, 2); }
+  } else if (isPractitioner(u)) {
+   u.qi = previousQi + amount;
+   processPractitionerBreakthroughs(b);
+   const excessQi = Math.max(0, (u.qi || 0) - Math.max(175, previousQi));
+   if (excessQi > 0) growth(b, u, excessQi * 0.15);
   } else {
-   const bonusQi = Math.max(0, u.qi - Math.max(175, previousQi));
-   if (bonusQi > 0) growth(b, u, bonusQi * 0.15);
-   updatePractitionerRealm(b, u);
+   u.qi = previousQi + amount;
   }
   persist(b, u);
   startHeavenlyTrial(b);
@@ -1366,25 +1372,45 @@ function fx(b, type, u, e, text, extra = {}) {
   fx(b, 'violation', source || e, e, e.subjectZero ? `SUBJECT ZERO · ${e.ruleMarks}/5 MARKS` : 'PHẠM QUY');
  }
 
+ const practitionerRealmById = Object.freeze({ practitioner: 0, cultivationFoundation: 1, cultivationGoldenCore: 2, cultivationNascentSoul: 3 });
+ const practitionerThresholds = [30, 85, 175];
+ const practitionerNextForms = ['cultivationFoundation', 'cultivationGoldenCore', 'cultivationNascentSoul'];
  function practitionerRealmForQi(qi = 0) { return qi >= 175 ? 3 : qi >= 85 ? 2 : qi >= 30 ? 1 : 0 }
-
- function updatePractitionerRealm(b, u) {
-  if (!isPractitioner(u)) return;
-  const qi = u.qi || 0, newRealm = practitionerRealmForQi(qi), oldRealm = u.realm || 0;
-  u.realm = newRealm;
-  if (newRealm !== oldRealm || u.id !== cultivationRealmIds[newRealm]) {
-   const nextId = cultivationRealmIds[newRealm];
-   if (u.id !== nextId) evolve(b, u, nextId);
-   const stats = [[6, 1.5], [18, 1.2], [40, 1.0], [75, .75]][newRealm];
-   u.baseAtk = stats[0]; u.attackInterval = stats[1];
-   if (newRealm > oldRealm) {
-    const title = ['Qi-Refining', 'Foundation Establishment', 'Golden Core', 'Nascent Soul'][newRealm];
-     fx(b, 'growth', u, null, title.toUpperCase());
-   }
-   persist(b, u);
+ function practitionerRealmForUnit(u) { return practitionerRealmById[u?.id] ?? Math.max(0, Math.min(3, u?.realm || 0)); }
+ function processPractitionerBreakthroughs(b) {
+  if (!b?.run || !Array.isArray(b.units)) return false;
+  const cauldronInRoster = b.run.roster.some(v => v.id === 'cauldron');
+  if (!cauldronInRoster) b.run.breakthroughPills = 0;
+  b.run.breakthroughPills = Math.max(0, Math.min(3, Math.floor(b.run.breakthroughPills || 0)));
+  const deployedCauldron = b.units.some(v => !v.removed && !token(v) && v.id === 'cauldron');
+  let changed = false;
+  while (b.run.breakthroughPills > 0 && deployedCauldron) {
+   const eligible = b.units.filter(v => !v.removed && !token(v) && isPractitioner(v))
+    .map(unit => ({ unit, realm: practitionerRealmForUnit(unit) }))
+    .filter(v => v.realm < 3 && (v.unit.qi || 0) >= practitionerThresholds[v.realm])
+    .sort((a,z) => (z.unit.qi || 0) - (a.unit.qi || 0) || a.unit.uid - z.unit.uid);
+   if (!eligible.length) break;
+   const { unit, realm } = eligible[0], source = b.units.find(v => !v.removed && v.id === 'cauldron') || unit;
+   b.run.breakthroughPills--;
+   evolve(b, unit, practitionerNextForms[realm]);
+   unit.realm = realm + 1;
+   persist(b, unit);
+   event(b, 'breakthrough', { unit });
+   b.metrics.breakthroughPillsUsed = (b.metrics.breakthroughPillsUsed || 0) + 1;
+   const names = ['Foundation Establishment', 'Golden Core', 'Nascent Soul'];
+   interact(b, source, unit, 'breakthrough-pill', `BREAKTHROUGH PILL · ${names[realm]} · ${b.run.breakthroughPills}/3 stored`);
+   fx(b, 'growth', unit, null, 'PILL BREAKTHROUGH');
+   changed = true;
   }
+  for (const unit of b.units.filter(v => !v.removed && !token(v) && isPractitioner(v))) {
+   const realm = practitionerRealmForUnit(unit); unit.realm = realm;
+   const gate = realm < 3 ? practitionerThresholds[realm] : Infinity;
+   if ((unit.qi || 0) > gate) unit.qi = gate;
+   persist(b, unit);
+  }
+  return changed;
  }
- 
+ function updatePractitionerRealm(b, u) { if (!isPractitioner(u) || u.removed || token(u)) return false; return processPractitionerBreakthroughs(b); }
  // Orbital Xeno-Lab: Alien CRISPR gene-splicing ecosystem
  const XENO_BRANCHES = {
   'chitin+chitin': ['impalerMorph', 'keratinSerum', 'impalerApex'],
@@ -1778,7 +1804,7 @@ function fx(b, type, u, e, text, extra = {}) {
    baseAtk = stats[0]; attackInterval = stats[1];
   }
   if (isPractitioner(u)) {
-   const r = practitionerRealmForQi(u.qi || 0);
+   const r = practitionerRealmForUnit(u);
    if (r === 0) { baseAtk = 6; attackInterval = 1.5; }
    else if (r === 1) { baseAtk = 18; attackInterval = 1.2; }
    else if (r === 2) { baseAtk = 40; attackInterval = 1.0; }
@@ -1794,7 +1820,7 @@ function fx(b, type, u, e, text, extra = {}) {
    ventAt: 0, herbAt: 12, sacrificeAt: 18, offeringSpeed: 0, eliteHits: 0, feedAt: d.id === 'herald' ? 12 : 6,
    summonAt: 12, madnessAt: 8, flash: 0, spatialRole: { isCenter, isCorner, isEdge, sharesRowOrCol },
    onAdjacentAttack: null, onAdjacentStateFlip: null, onAdjacentTrigger: null,
-   qi: u.qi || 0, realm: isPractitioner(u) ? practitionerRealmForQi(u.qi || 0) : (isUrbanInvestigator(u) ? urbanInvestigatorRealmForDread(u.dread || 0) : (u.realm || 0)), dread: u.dread || 0, violations: u.violations || 0, blackouts: u.blackouts || 0, busSweepAt: 8, abductAt: 6, swordQi: u.swordQi || 0, souls: u.souls || 0, bladeKills: u.bladeKills || 0, demonAtkBonus: u.demonAtkBonus || 0,
+   qi: u.qi || 0, realm: isPractitioner(u) ? practitionerRealmForUnit(u) : (isUrbanInvestigator(u) ? urbanInvestigatorRealmForDread(u.dread || 0) : (u.realm || 0)), dread: u.dread || 0, violations: u.violations || 0, blackouts: u.blackouts || 0, busSweepAt: 8, abductAt: 6, swordQi: u.swordQi || 0, souls: u.souls || 0, bladeKills: u.bladeKills || 0, demonAtkBonus: u.demonAtkBonus || 0,
    bloomAt: 8, mistAt: 4, brewAt: 8, pillSpeedUntil: 0, missileAt: 5, banishAt: 10
   }
  }
@@ -1820,7 +1846,7 @@ function fx(b, type, u, e, text, extra = {}) {
    b.units=picked.map((u,i)=>runtime(b,u,slots[i]));
   }
   b.units.sort((a, z) => a.uid - z.uid);
-  b.units.filter(isPractitioner).forEach(u => updatePractitionerRealm(b, u));
+  processPractitionerBreakthroughs(b);
   b.units.filter(isUrbanInvestigator).forEach(u => updateUrbanInvestigatorRealm(b, u));
   b.units.filter(isUrbanLegend).forEach(u => updateUrbanLegendLineage(b, u));
   b.units.forEach(u => prepareHooks(b, u));
@@ -2150,10 +2176,7 @@ function fx(b, type, u, e, text, extra = {}) {
    }
    else hit(b,u,target,power);
   } else if (isPractitioner(u)) {
-   u.qiAttackCharge=(u.qiAttackCharge||0)+1;
-   if(u.qiAttackCharge>=3){u.qiAttackCharge-=3;addQi(b,u,1);}
-   else persist(b,u);
-   const r = u.realm || 0;
+   const r = practitionerRealmForUnit(u);
    if (r === 0) { hit(b, u, target, power); }
    else if (r === 1) { for (const e of living(b).slice(0, 2)) hit(b, u, e, power); }
    else if (r === 2) {
@@ -2827,6 +2850,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (consumer.removed || victim.removed || consumer === victim) return false;
   const isToken = token(victim); victim.removed = true;
   if (!isToken) { b.run.roster = b.run.roster.filter(v => v.uid !== victim.uid); (b.run.devoured ??= []).push({ uid: victim.uid, id: victim.id, depth: b.run.depth, reason }); }
+  if (victim.id === 'cauldron' && !b.run.roster.some(v => v.id === 'cauldron')) b.run.breakthroughPills = 0;
   const before = consumer.permanentAtkBonus; growth(b, consumer, reward);
   if (reason === 'Devour') b.metrics.devours++;
   const item = { uid: victim.uid, id: victim.id, slot: victim.slot, by: consumer.id, byUid: consumer.uid, toSlot: consumer.slot, bonus: consumer.permanentAtkBonus - before, reason, token: isToken, permanent: !isToken };
@@ -3104,7 +3128,8 @@ function fx(b, type, u, e, text, extra = {}) {
   }
   if (acceptsQi(u)) {
    const blossom = neighbors(b, u).find(v => v.id === 'lotusBlossom');
-   if (blossom) {
+   const cauldronWillBrew = blossom && b.units.some(v => !v.removed && v.id === 'cauldron' && neighbors(b, v, false).some(n => n.uid === blossom.uid));
+   if (blossom && !cauldronWillBrew) {
     const apex = isCultivationApex(u);
     consume(b, u, blossom, 'Blossom Absorption', apex ? 0 : 2);
     addQi(b, u, apex?15:5);
@@ -3112,21 +3137,37 @@ function fx(b, type, u, e, text, extra = {}) {
    }
   }
   if (u.id === 'cauldron' && b.time >= u.brewAt) {
-   const target = allies(b, u).filter(acceptsQi).sort((a, z) => Number(isCultivationApex(a)) - Number(isCultivationApex(z)) || (a.qi || 0) - (z.qi || 0))[0];
-   if (target) {
-    const blossom = neighbors(b, u).find(v => v.id === 'lotusBlossom');
-    const grass = neighbors(b, u).find(v => v.id === 'herbGrass');
-    if (blossom || grass) {
-     u.brewAt = b.time + 8;
-     const apex = isCultivationApex(target);
-     if (blossom) consume(b, u, blossom, 'Brewing', 0);
-     // Apex recipients gain ATK through new Qi only, not both reward paths.
-     if (!apex) growth(b, target, blossom ? 4 : 3);
-     addQi(b, target, apex?(blossom?35:18):(blossom?12:6));
-     if (!blossom) target.pillSpeedUntil = Math.max(target.pillSpeedUntil || 0, b.time + 8 * mod(b.run, 'buffDuration'));
-     interact(b, u, target, 'pill', blossom ? `+${apex?35:12} Qi: Breakthrough Dan` : `+${apex?18:6} Qi, temporary +15% speed: Qi Gathering Pill`);
+   const grass = neighbors(b, u, false).find(v => !v.removed && !token(v) && v.id === 'herbGrass');
+   const blossom = neighbors(b, u, false).find(v => !v.removed && token(v) && v.id === 'lotusBlossom');
+   const eligibleCultivators = () => allies(b, u).filter(acceptsQi);
+   const overflowRecipient = () => eligibleCultivators().sort((a, z) => (z.qi || 0) - (a.qi || 0) || a.uid - z.uid)[0];
+   const blossomRecipient = () => eligibleCultivators().sort((a, z) => (a.qi || 0) - (z.qi || 0) || a.uid - z.uid)[0];
+   const atCap = (b.run.breakthroughPills || 0) >= 3;
+   let brewed = false;
+   if (grass && (!atCap || overflowRecipient())) {
+    const target = atCap ? overflowRecipient() : null;
+    consume(b, u, grass, atCap ? 'Overflow Qi Brewing' : 'Breakthrough Pill Brewing', 0);
+    if (atCap) {
+     addQi(b, target, 12);
+     interact(b, u, target, 'pill-overflow', '+12 Qi · full pill storage · Spirit Grass consumed');
+    } else {
+     b.run.breakthroughPills = Math.min(3, (b.run.breakthroughPills || 0) + 1);
+     interact(b, u, u, 'pill-brewed', `BREAKTHROUGH PILL BREWED · ${b.run.breakthroughPills}/3 stored · Spirit Grass consumed`);
+     processPractitionerBreakthroughs(b);
+    }
+    brewed = true;
+   }
+   if (blossom) {
+    const target = blossomRecipient();
+    if (target) {
+     consume(b, u, blossom, 'Blossom Brewing', 0);
+     addQi(b, target, 6);
+     growth(b, target, 4);
+     interact(b, u, target, 'blossom-brew', '+6 Qi and +4 permanent ATK · Lotus Blossom brewed');
+     brewed = true;
     }
    }
+   if (brewed) u.brewAt = b.time + 8;
   }
 
   // 5. Ten-Thousand Soul Banner Missiles
@@ -3162,7 +3203,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (abilityGauge(u) && u.threshold.current >= u.threshold.max) tick(b, u, 0);
  }
 
- return { chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, isXenoApex, isSciFi, xenoTrialCandidate, startXenoTrial, failXenoTrial, passXenoTrial, tickXenoTrial, addWeakpoint, extractHelix, addGenome, checkXenoMetamorphosis, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, cosmicTrialCandidate, startCosmicTrial, cosmicTrialProof, failCosmicTrial, passCosmicTrial, tickCosmicTrial, updateIdol, dropPage, addSyllables, forgeGrimoire, decipherPage, cosmicPanic, cosmicStatus, cosmicReward, cosmicDeath, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, cyberTrialCandidate, startCyberTrial, cyberTrialProof, failCyberTrial, passCyberTrial, tickCyberTrial, augmented, hasAccess, ramCapacity, berserkActive, updateCyber, installChrome, addChromeAttack, addRAM, cyberPoison, uploadHack, cyberDeath, cyberZone, clearSprint, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, arcanePair, isApprentice, isArchon, isElemental, arcaneGauge, bestPair, updateApprentice, receiveEssence, startArcaneTrial, failArcaneTrial, passArcaneTrial, tickArcaneTrial, startScrapworkTrial, scrapworkTrialCandidate, markScrapworkTrialHit, failScrapworkTrial, passScrapworkTrial, tickScrapworkTrial, storeOverflow, elementalLinks, arcaneReaction, elementalSpell, arcaneZone, archonAttack, arcaneExtras, tickArcane, arcaneKill, HUNT_APEX, isSlayer, huntTrialCandidate, startHuntTrial, failHuntTrial, passHuntTrial, tickHuntTrial, isHunter, priority, trophyFamily, huntAura, executeThreshold, wallOf, huntArmor, brandQuarry, updateSlayer, trophyPoints, harvestTrophy, forgeHuntRelic, carveTrophy, huntExtras, visceral, slayerAttack, isMech, isMechanical, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, inArc, oilPool, tickOil, mechAttack, addQi, addDread, acceptsQi, acceptsDread, isCultivationApex, isUrbanAuthority, bindUrbanRelic, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, passBloodlineTrial, tickBloodlineTrial, startUrbanContainmentTrial, failUrbanContainmentTrial, passUrbanContainmentTrial, tickUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, resolveUrbanLegendMerger, updateUrbanLegendLineage, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, practitionerRealmForQi, isPractitioner, isCultivationRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, breaksLegendNaturalRule, markNaturalBreach, URBAN_LEGEND_MARK_NAMES, cornerSection, resolveAnimArchetype, resolveVfxKind, triggerShowstopper };
+ return { breakthroughPills: b => Math.max(0, Math.min(3, Math.floor(b?.run?.breakthroughPills || 0))), chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, isXenoApex, isSciFi, xenoTrialCandidate, startXenoTrial, failXenoTrial, passXenoTrial, tickXenoTrial, addWeakpoint, extractHelix, addGenome, checkXenoMetamorphosis, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, cosmicTrialCandidate, startCosmicTrial, cosmicTrialProof, failCosmicTrial, passCosmicTrial, tickCosmicTrial, updateIdol, dropPage, addSyllables, forgeGrimoire, decipherPage, cosmicPanic, cosmicStatus, cosmicReward, cosmicDeath, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, cyberTrialCandidate, startCyberTrial, cyberTrialProof, failCyberTrial, passCyberTrial, tickCyberTrial, augmented, hasAccess, ramCapacity, berserkActive, updateCyber, installChrome, addChromeAttack, addRAM, cyberPoison, uploadHack, cyberDeath, cyberZone, clearSprint, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, arcanePair, isApprentice, isArchon, isElemental, arcaneGauge, bestPair, updateApprentice, receiveEssence, startArcaneTrial, failArcaneTrial, passArcaneTrial, tickArcaneTrial, startScrapworkTrial, scrapworkTrialCandidate, markScrapworkTrialHit, failScrapworkTrial, passScrapworkTrial, tickScrapworkTrial, storeOverflow, elementalLinks, arcaneReaction, elementalSpell, arcaneZone, archonAttack, arcaneExtras, tickArcane, arcaneKill, HUNT_APEX, isSlayer, huntTrialCandidate, startHuntTrial, failHuntTrial, passHuntTrial, tickHuntTrial, isHunter, priority, trophyFamily, huntAura, executeThreshold, wallOf, huntArmor, brandQuarry, updateSlayer, trophyPoints, harvestTrophy, forgeHuntRelic, carveTrophy, huntExtras, visceral, slayerAttack, isMech, isMechanical, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, inArc, oilPool, tickOil, mechAttack, addQi, addDread, acceptsQi, acceptsDread, isCultivationApex, isUrbanAuthority, bindUrbanRelic, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, passBloodlineTrial, tickBloodlineTrial, startUrbanContainmentTrial, failUrbanContainmentTrial, passUrbanContainmentTrial, tickUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, resolveUrbanLegendMerger, updateUrbanLegendLineage, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, processPractitionerBreakthroughs, practitionerRealmForQi, isPractitioner, isCultivationRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, breaksLegendNaturalRule, markNaturalBreach, URBAN_LEGEND_MARK_NAMES, cornerSection, resolveAnimArchetype, resolveVfxKind, triggerShowstopper };
 })();
 if (typeof module !== 'undefined') module.exports = Game;
 

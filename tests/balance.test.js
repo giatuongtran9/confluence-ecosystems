@@ -11,10 +11,10 @@ for(const id of ['ruleArchitect','livingTaboo','xuanwuCubApex'])for(const kind o
  else {assert.equal(e.hp,11000);assert.equal(b.metrics.leaks,1);assert.ok(b.run.health<100);if(kind==='boss')assert.equal(b.won,false);}
 });
 for(const kind of ['boss','champion','ordinary'])test('Penrose execution: '+kind,()=>{const b=battle(['penroseLabyrinth']),u=b.units[0],e=enemy(b,kind,3.99);u.violations=45;e.hp=2000;e.panicUntil=10;b.curfewUntil=10;b.blackoutLockoutUntil=18;G.step(b,.1);if(kind==='ordinary')assert.equal(e.hp,0);else assert.ok(e.hp>0);});
-for(const id of ['talismanSovereign','slitMouthedSovereign'])for(const kind of ['boss','champion','ordinary'])test(id+' execution: '+kind,()=>{const b=battle([id]),e=enemy(b,kind,4);e.maxHp=100000;e.hp=12000;e.speed=.5;G.attack(b,b.units[0]);if(kind==='ordinary')assert.equal(e.hp,0);else assert.ok(e.hp>0);});
+for(const id of ['talismanSovereign','slitMouthedSovereign'])for(const kind of ['boss','champion','ordinary'])test(id+' execution: '+kind,()=>{const b=battle([id]),e=enemy(b,kind,4);e.maxHp=100000;e.hp=9000;e.speed=.5;G.attack(b,b.units[0]);if(kind==='ordinary')assert.equal(e.hp,0);else assert.ok(e.hp>0);});
 test('Kuchisake earns progression, cooldown throttles rewards but not damage or marks',()=>{const b=battle(['kuchisake','mannequin'],[0,1]),[u,v]=b.units,e=enemy(b,'ordinary',4);e.hp=e.maxHp=1e6;e.speed=.5;G.attack(b,u);assert.equal(u.violations,.35);assert.equal(v.violations||0,0);const hp=e.hp;G.attack(b,u);assert.ok(e.hp<hp);assert.equal(G.getTabooMark(e,'kuchisake'),2);assert.equal(u.violations,.35);b.time=8;G.attack(b,u);assert.equal(u.violations,.7);assert.equal(v.violations||0,0);});
 test('different runners earn independent reaction rewards',()=>{const b=battle(['nightBus']),u=b.units[0];for(let i=0;i<2;i++){const e=enemy(b,'ordinary',4+i);e.speed=.5;}G.attack(b,u);assert.equal(u.violations,.7);});
-test('three cultivation attacks earn one Qi and remainder persists',()=>{const b=battle(['practitioner']),u=b.units[0];enemy(b,'ordinary',4);G.attack(b,u);G.attack(b,u);assert.equal(u.qi,0);const restored=G.runtime(b,b.run.roster[0],0);assert.equal(restored.qiAttackCharge,2);G.attack(b,restored);assert.equal(restored.qi,1);assert.equal(restored.qiAttackCharge,0);});
+test('normal Practitioner attacks grant no Qi',()=>{const b=battle(['practitioner']),u=b.units[0];enemy(b,'ordinary',4);for(let i=0;i<6;i++)G.attack(b,u);assert.equal(u.qi||0,0);assert.equal(b.run.roster[0].qi||0,0);});
 test('one forge working slot can complete two-piece recipe across deployments',()=>{
  const b=battle(['smelter','scrapFrame','magneticCrane','magneticCrane','magneticCrane'],[4,0,1,3,5]),s=b.units[0];
  function input(id){const t=G.spawnToken(b,s,id,true,{origin:id,tokenAtk:0,attackInterval:0});assert.equal(t.slot,7);G.forge(b,s);assert.ok(t.removed);}
@@ -25,11 +25,61 @@ test('one forge working slot can complete two-piece recipe across deployments',(
 test('intake capacity and forge cooldown prevent duplicate smelts',()=>{const b=battle(['smelter','scrapFrame'],[4,8]),s=b.units[0];s.scrapIntake=['rustSword','rustGun'];s.forgeAt=4;const t=G.spawnToken(b,s,'rustGun',true);G.forge(b,s);assert.equal(t.removed,false);assert.equal(s.scrapIntake.length,2);b.time=4;G.forge(b,s);assert.equal(b.metrics.smelts,1);G.forge(b,s);assert.equal(b.metrics.smelts,1);assert.deepEqual(s.scrapIntake,['rustGun']);});
 test('stored intake is preserved when no Mech is deployed',()=>{const b=battle(['smelter']),s=b.units[0];s.scrapIntake=['rustSword'];const t=G.spawnToken(b,s,'rustGun',true);G.forge(b,s);assert.equal(t.removed,false);assert.deepEqual(s.scrapIntake,['rustSword']);});
 
-test('Cultivation gains uncapped permanent ATK for each Qi gained above 175',()=>{
- const b=battle(['practitioner']),u=b.units[0];u.qi=174;b.run.roster[0].qi=174;
+test('Nascent Soul earns uncapped permanent ATK for each Qi gained above 175',()=>{
+ const b=battle(['cultivationNascentSoul']),u=b.units[0];u.qi=174;b.run.roster[0].qi=174;
  G.addQi(b,u,4);
  assert.equal(u.qi,178);assert.equal(u.permanentAtkBonus,.45);
  assert.equal(b.run.roster[0].permanentAtkBonus,.45);assert.equal(u.id,'cultivationNascentSoul');
+});
+test('Breakthrough Pill unlocks a realm and carries overflow Qi through the gate',()=>{
+ const b=battle(['practitioner','cauldron'],[0,1]),u=b.units[0];u.qi=29;b.run.roster[0].qi=29;b.run.breakthroughPills=1;
+ G.addQi(b,u,6);
+ assert.equal(u.id,'cultivationFoundation');assert.equal(u.realm,1);assert.equal(u.qi,35);assert.equal(b.run.breakthroughPills,0);
+});
+test('Qi waits at each realm gate until a pill is spent; no deployed Cauldron cannot spend',()=>{
+ const b=battle(['practitioner','cauldron'],[0,1]),u=b.units[0];b.units=b.units.filter(v=>v.id!=='cauldron');u.qi=29;b.run.roster[0].qi=29;
+ G.addQi(b,u,10);assert.equal(u.qi,30);assert.equal(u.id,'practitioner');
+ b.run.breakthroughPills=1;G.processPractitionerBreakthroughs(b);assert.equal(u.id,'practitioner');assert.equal(b.run.breakthroughPills,1);
+});
+test('Crossing multiple paid realm thresholds spends multiple pills and preserves the remainder',()=>{
+ const b=battle(['practitioner','cauldron'],[0,1]),u=b.units[0];u.qi=29;b.run.roster[0].qi=29;b.run.breakthroughPills=2;
+ G.addQi(b,u,60);assert.equal(u.id,'cultivationGoldenCore');assert.equal(u.qi,89);assert.equal(b.run.breakthroughPills,0);
+});
+test('Breakthrough pill target is the eligible deployed Practitioner with the most Qi',()=>{
+ const b=battle(['practitioner','cultivationFoundation','cauldron'],[0,1,2]);
+ b.units[0].qi=30;b.run.roster[0].qi=30;b.units[1].qi=85;b.run.roster[1].qi=85;b.run.breakthroughPills=1;
+ G.processPractitionerBreakthroughs(b);
+ assert.equal(b.units[1].id,'cultivationGoldenCore');assert.equal(b.units[0].id,'practitioner');assert.equal(b.run.breakthroughPills,0);
+});
+test('Cauldron storage is capped at three and is cleared when its last roster copy is lost',()=>{
+ const b=battle(['cauldron']),u=b.units[0];b.run.breakthroughPills=2;
+ const grass=G.instance(b.run,'herbGrass');b.run.roster.push(grass);const g=G.runtime(b,grass,3);b.units.push(g);G.prepareHooks(b,g);b.time=8;G.extras(b,u,0);
+ assert.equal(b.run.breakthroughPills,3);assert.ok(g.removed);
+ b.run.roster=b.run.roster.filter(v=>v.uid!==u.uid);G.processPractitionerBreakthroughs(b);assert.equal(b.run.breakthroughPills,0);
+});
+test('Cauldron brews one pill from adjacent Grass and leaves the Blossom for its next brew',()=>{
+ const b=battle(['practitioner','cauldron','herbGrass','lotusBlossom'],[0,1,2,3]),pot=b.units.find(v=>v.id==='cauldron'),grass=b.units.find(v=>v.id==='herbGrass'),blossom=b.units.find(v=>v.id==='lotusBlossom');
+ b.time=8;G.extras(b,pot,0);
+ assert.equal(b.run.breakthroughPills,1);assert.equal(grass.removed,true);assert.equal(blossom.removed,false);
+});
+test('Full Cauldron storage turns adjacent Grass into +12 Qi for the highest-Qi deployed Practitioner',()=>{
+ const b=battle(['practitioner','cultivationFoundation','cauldron','herbGrass'],[0,2,1,4]),low=b.units[0],high=b.units[1],pot=b.units[2],grass=b.units[3];
+ low.qi=30;high.qi=70;b.run.roster[0].qi=30;b.run.roster[1].qi=70;b.run.breakthroughPills=3;
+ b.time=8;G.extras(b,pot,0);
+ assert.equal(high.qi,82);assert.equal(high.id,'cultivationFoundation');assert.equal(low.qi,30);assert.equal(b.run.breakthroughPills,2);assert.equal(grass.removed,true);
+});
+test('Cauldron independently brews adjacent Grass and Blossom on the same cycle',()=>{
+ const b=battle(['practitioner','cauldron','herbGrass','lotusBlossom'],[0,1,2,4]),cultivator=b.units[0],pot=b.units[1],grass=b.units[2],blossom=b.units[3];
+ b.time=8;G.extras(b,pot,0);assert.equal(b.run.breakthroughPills,1);assert.equal(cultivator.qi,6);assert.equal(cultivator.permanentAtkBonus,4);assert.equal(grass.removed,true);assert.equal(blossom.removed,true);
+});
+test('Cauldron brews a Blossom for +6 Qi and +4 ATK to the least-Qi unit; direct absorption remains +5 Qi/+2 ATK',()=>{
+ const brewed=battle(['practitioner','cultivationFoundation','cauldron','lotusBlossom'],[0,2,1,4]),cultivator=brewed.units[0],foundation=brewed.units[1],pot=brewed.units[2],blossom=brewed.units[3];
+ cultivator.qi=30;foundation.qi=20;brewed.time=8;G.extras(brewed,pot,0);assert.equal(cultivator.qi,30);assert.equal(foundation.qi,26);assert.equal(foundation.permanentAtkBonus,4);assert.equal(blossom.removed,true);
+ const direct=battle(['practitioner','lotusBlossom'],[0,1]),p=direct.units[0],token=direct.units[1];G.extras(direct,p,0);assert.equal(p.qi,5);assert.equal(p.permanentAtkBonus,2);assert.equal(token.removed,true);
+});
+test('Nascent Soul starts its Elite/Boss trial at 200 Qi, not 175',()=>{
+ const b=tribulationBattle();b.units[0].qi=199;b.run.roster[0].qi=199;assert.equal(G.startHeavenlyTrial(b),null);
+ G.addQi(b,b.units[0],1);assert.equal(b.heavenlyTrial?.status,'active');
 });
 test('Cultivation Qi ATK continues after Apex alongside the existing 30-Qi growth',()=>{
  const b=battle(['swordImmortal']),u=b.units[0];u.qi=180;u.apexQi=0;b.run.roster[0].qi=180;
@@ -39,7 +89,7 @@ test('Cultivation Qi ATK continues after Apex alongside the existing 30-Qi growt
 });
 function tribulationBattle(practitionerId='cultivationNascentSoul', relicId='flyingSword', slots=[0,1]){const r=G.newRun('none',{},91);r.roster=[G.instance(r,practitionerId),G.instance(r,relicId)];r.roster[0].qi=200;r.depth=15;r.node={row:15,lane:1,type:'boss'};r.phase='combat';const b={run:r,time:0,units:[],enemies:[],effects:[],metrics:{kills:0,leaks:0,growth:0,triggers:0,devours:0},plan:{count:42,interval:1.4,hp:100,bossHp:11000},spawned:0,enemyUid:0,done:false};b.units=r.roster.map((u,i)=>G.runtime(b,u,slots[i]));b.units.forEach(u=>{G.prepareHooks(b,u);G.record(b,u)});return b;}
 test('Heavenly Tribulation starts on Elite or Boss with an adjacent matching relic',()=>{const b=tribulationBattle();b.run.node.type='battle';assert.equal(G.startHeavenlyTrial(b),null);b.run.node.type='elite';assert.equal(G.startHeavenlyTrial(b).apexId,'swordImmortal');const boss=tribulationBattle();assert.equal(G.startHeavenlyTrial(boss).apexId,'swordImmortal');});
-test('Cultivation trial starts mid-node when Qi reaches 175 and is blocked after a leak',()=>{const b=tribulationBattle();const soul=b.units[0];soul.qi=174;b.run.roster[0].qi=174;assert.equal(G.startHeavenlyTrial(b),null);G.addQi(b,soul,1);assert.equal(b.heavenlyTrial?.status,'active');const blocked=tribulationBattle();blocked.units[0].qi=174;blocked.run.roster[0].qi=174;blocked.metrics.leaks=1;G.addQi(blocked,blocked.units[0],1);assert.equal(blocked.heavenlyTrial,undefined);});
+test('Cultivation trial starts mid-node when Qi reaches 200 and is blocked after a leak',()=>{const b=tribulationBattle();const soul=b.units[0];soul.qi=199;b.run.roster[0].qi=199;assert.equal(G.startHeavenlyTrial(b),null);G.addQi(b,soul,1);assert.equal(b.heavenlyTrial?.status,'active');const blocked=tribulationBattle();blocked.units[0].qi=199;blocked.run.roster[0].qi=199;blocked.metrics.leaks=1;G.addQi(blocked,blocked.units[0],1);assert.equal(blocked.heavenlyTrial,undefined);});
 test('Heavenly storm stuns the Nascent Soul for 0.5s and hits all active runners for 25',()=>{const b=tribulationBattle();G.startHeavenlyTrial(b);const soul=b.units[0],a=enemy(b,'ordinary',2),boss=enemy(b,'boss',3);a.hp=a.maxHp=1000;boss.hp=boss.maxHp=11000;b.time=4;G.tickHeavenlyTrial(b);assert.equal(soul.trialStunnedUntil,4.5);assert.equal(a.hp,975);assert.equal(boss.hp,10975);assert.equal(b.heavenlyTrial.strikes,1);});
 test('Cultivation evolves only after a zero-leak Elite/Boss node clear',()=>{for(const nodeType of ['elite','boss']){const b=tribulationBattle('cultivationNascentSoul','guqin');b.run.node.type=nodeType;G.startHeavenlyTrial(b);const soul=b.units[0],relic=b.units[1];if(nodeType==='boss'){const boss=enemy(b,'boss',6);boss.hp=1;G.damage(b,boss,2,soul);assert.equal(b.heavenlyTrial.status,'active');assert.equal(soul.id,'cultivationNascentSoul');}G.finish(b,true);assert.equal(b.heavenlyTrial.status,'passed',nodeType);assert.equal(soul.id,'melodicSaint',nodeType);assert.equal(relic.removed,true,nodeType);assert.ok(b.run.roster.some(u=>u.uid===soul.uid&&u.id==='melodicSaint'),nodeType);}});
 test('runner escape fails on Elite or Boss and permanently removes Nascent Soul plus matching relic',()=>{for(const nodeType of ['elite','boss']){const b=tribulationBattle();b.run.node.type=nodeType;G.startHeavenlyTrial(b);const e=enemy(b,'ordinary',15.99);e.hp=e.maxHp=10000;G.step(b,.1);assert.equal(b.heavenlyTrial.status,'failed',nodeType);assert.equal(b.metrics.leaks,1,nodeType);assert.equal(b.run.roster.length,0,nodeType);assert.equal(b.run.health,90,nodeType);}});

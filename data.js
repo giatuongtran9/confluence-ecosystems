@@ -166,7 +166,7 @@ const CARDS = [
     "fodder"
   ],
   "ecosystem": "Cultivation · Dan Dao",
-  "rules": "Every 4s, grants +1 Qi to all deployed cultivators (+2 Qi to ascended Immortals). An adjacent Cauldron can brew this renewable grass into Qi Gathering Pills without consuming the grass.",
+  "rules": "Every 4s, grants +1 Qi to all deployed unascended practitioners and +2 Qi to ascended Cultivation Mythics; realm-gated Qi stops at the next locked threshold. An adjacent Cauldron consumes this card to brew one Breakthrough Pill (only while shared storage is below 3); when storage is full, it instead converts the grass into +12 Qi for the deployed practitioner with the most Qi.",
   "synergy": "Qi-Refining Practitioner and Nine-Turn Alchemy Cauldron."
 },
   // 3. Nine-Turn Alchemy Cauldron
@@ -189,7 +189,7 @@ const CARDS = [
   ],
   "growthRole": "engine",
   "ecosystem": "Cultivation · Dan Dao",
-  "rules": "First brew at 8s, then one recipe every 8s when ingredients and a recipient exist. An adjacent Blossom is consumed for +12 Qi and +4 permanent ATK; otherwise adjacent renewable Spirit Grass yields +6 Qi, +3 permanent ATK, and +15% speed for 8s. Pills prefer an unascended cultivator. Ascended recipients instead gain 35/18 Qi from the two recipes, with permanent ATK earned only through their 30-Qi cycle. The team elixir grants +1 permanent ATK after an eligible consumption/refinement, at most once per 8s.",
+  "rules": "Stores up to 3 shared Breakthrough Pills while any Cauldron remains in the roster; stored pills persist between battles and can be spent only when a Cauldron is deployed. Starting at 8s and every 8s, consumes adjacent Spirit Grass to brew exactly 1 pill while below cap; at cap, consumes the grass for +12 Qi to the deployed practitioner with the most Qi. Each adjacent Lotus Blossom is independently consumed for +6 Qi and +4 permanent ATK to the deployed eligible Cultivation unit with the least Qi; direct Practitioner absorption remains +5 Qi/+2 ATK. A stored pill is automatically spent at the next 30/85/175 Qi gate, targeting the eligible Practitioner with the most Qi.",
   "synergy": "Spirit Lotus Root, Cloud-Mist Spirit Grass, Qi-Refining Practitioner."
 },
   // 4. Qi-Refining Practitioner
@@ -211,7 +211,7 @@ const CARDS = [
     "scaling"
   ],
   "ecosystem": "Cultivation · Ascension",
-  "rules": "Gains +1 Qi every three attacks; partial progress survives battles. From 175 Qi onward, each newly gained Qi grants +0.15 permanent ATK, uncapped. Devours adjacent Lotus Blossoms for +5 Qi and +2 permanent ATK. Advances permanently into earned card forms: Foundation Establishment (Rare) at 30 Qi (ATK 18, 1.2s, 2-tile pierce); Golden Core (Epic) at 85 Qi (ATK 40, 1.0s, 50% splash); Nascent Soul (Legendary) at 175 Qi (ATK 75, 0.75s, 3 highest-HP targets). At 175 Qi, an adjacent eligible relic starts the Elite/Boss Heavenly Tribulation as soon as the gate is met. During the trial, every 4s the storm stuns the Nascent Soul for 0.5s and deals 25 damage to all active enemies. Success requires clearing the node with zero leaks; the relic is consumed and its Mythic form awakens. Any leak or failed node removes both cards from the roster.",
+  "rules": "Gains Qi only from Cloud-Mist Spirit Grass, Lotus Blossoms, and Cauldron brewing; normal attacks grant none. Qi carries across battles and stops at each locked realm gate until a Breakthrough Pill is automatically spent by a deployed Cauldron: 30 Qi → Foundation Establishment (Rare, 18 ATK, 1.2s, 2-tile pierce); 85 Qi → Golden Core (Epic, 40 ATK, 1.0s, 50% splash); 175 Qi → Nascent Soul (Legendary, 75 ATK, 0.75s, 3 highest-HP targets). Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after Mythic ascension. At 200 Qi, an adjacent eligible relic starts the Elite/Boss Heavenly Tribulation. During the trial, every 4s the storm stuns the Nascent Soul for 0.5s and deals 25 damage to all active enemies. Clear with zero leaks to consume the relic and awaken its Mythic form; any leak or failed node removes both cards from the roster.",
   "synergy": "Lotus Blossoms, Spirit Grass, Cauldron Pills, and Relics."
 },
   // 5. Ancient Flying Sword
@@ -230,7 +230,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "pierce"],
     "ecosystem": "Cultivation · Relic",
-    "rules": "Piercing blade prioritizing the leading runner. When adjacent to a Nascent Soul Practitioner, begins the Elite/Boss Heavenly Tribulation. Pass by clearing the Elite/Boss node with zero leaks; the relic is consumed to awaken the Sword Immortal. Any leak or failed node removes both cards from the roster. If adjacent to an Apex Immortal, triggers Relic Resonance (+25% relic attack speed, +20% Apex damage).",
+    "rules": "Piercing blade prioritizing the leading runner. When adjacent to a 200-Qi Nascent Soul, begins the Elite/Boss Heavenly Tribulation. Pass by clearing the Elite/Boss node with zero leaks; the relic is consumed to awaken the Sword Immortal. Any leak or failed node removes both cards from the roster. If adjacent to an Apex Immortal, triggers Relic Resonance (+25% relic attack speed, +20% Apex damage).",
     "synergy": "Qi-Refining Practitioner (Nascent Soul) and Apex Immortals."
   },
   // 6. Celestial Guqin
@@ -249,7 +249,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "control"],
     "ecosystem": "Cultivation · Relic",
-    "rules": "Strikes slow enemies in a 3-tile arc by 25%. When adjacent to a Nascent Soul Practitioner, begins the Elite/Boss Heavenly Tribulation. Pass by clearing the Elite/Boss node with zero leaks; the relic is consumed to awaken the Melodic Saint. Any leak or failed node removes both cards from the roster. If adjacent to an Apex Immortal, triggers Relic Resonance.",
+    "rules": "Strikes slow enemies in a 3-tile arc by 25%. When adjacent to a 200-Qi Nascent Soul, begins the Elite/Boss Heavenly Tribulation. Pass by clearing the Elite/Boss node with zero leaks; the relic is consumed to awaken the Melodic Saint. Any leak or failed node removes both cards from the roster. If adjacent to an Apex Immortal, triggers Relic Resonance.",
     "synergy": "Qi-Refining Practitioner (Nascent Soul) and Apex Immortals."
   },
   // 7. Star-River Weiqi Board
@@ -268,7 +268,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "trap"],
     "ecosystem": "Cultivation · Relic",
-    "rules": "Lays Go stones along the track dealing 35 damage when stepped on. When adjacent to a Nascent Soul Practitioner, begins the Elite/Boss Heavenly Tribulation. Pass by clearing the Elite/Boss node with zero leaks; the relic is consumed to awaken the Formation Master. Any leak or failed node removes both cards from the roster. If adjacent to an Apex Immortal, triggers Relic Resonance.",
+    "rules": "Lays Go stones along the track dealing 35 damage when stepped on. When adjacent to a 200-Qi Nascent Soul, begins the Elite/Boss Heavenly Tribulation. Pass by clearing the Elite/Boss node with zero leaks; the relic is consumed to awaken the Formation Master. Any leak or failed node removes both cards from the roster. If adjacent to an Apex Immortal, triggers Relic Resonance.",
     "synergy": "Qi-Refining Practitioner (Nascent Soul) and Apex Immortals."
   },
   // 8. Dragon-Tail Ink Brush
@@ -287,7 +287,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "vulnerability"],
     "ecosystem": "Cultivation · Relic",
-    "rules": "Inks targets to take +15% damage from all cards. When adjacent to a Nascent Soul Practitioner, begins the Elite/Boss Heavenly Tribulation. Pass by clearing the Elite/Boss node with zero leaks; the relic is consumed to awaken the Talisman Sovereign. Any leak or failed node removes both cards from the roster. If adjacent to an Apex Immortal, triggers Relic Resonance.",
+    "rules": "Inks targets to take +15% damage from all cards. When adjacent to a 200-Qi Nascent Soul, begins the Elite/Boss Heavenly Tribulation. Pass by clearing the Elite/Boss node with zero leaks; the relic is consumed to awaken the Talisman Sovereign. Any leak or failed node removes both cards from the roster. If adjacent to an Apex Immortal, triggers Relic Resonance.",
     "synergy": "Qi-Refining Practitioner (Nascent Soul) and Apex Immortals."
   },
   // 9. Mountain-River Scroll
@@ -306,7 +306,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "banish"],
     "ecosystem": "Cultivation · Relic",
-    "rules": "Every 10s, banishes an enemy into the scroll for 2s. When adjacent to a Nascent Soul Practitioner, begins the Elite/Boss Heavenly Tribulation. Pass by clearing the Elite/Boss node with zero leaks; the relic is consumed to awaken the Landscape Sage. Any leak or failed node removes both cards from the roster. If adjacent to an Apex Immortal, triggers Relic Resonance.",
+    "rules": "Every 10s, banishes an enemy into the scroll for 2s. When adjacent to a 200-Qi Nascent Soul, begins the Elite/Boss Heavenly Tribulation. Pass by clearing the Elite/Boss node with zero leaks; the relic is consumed to awaken the Landscape Sage. Any leak or failed node removes both cards from the roster. If adjacent to an Apex Immortal, triggers Relic Resonance.",
     "synergy": "Qi-Refining Practitioner (Nascent Soul) and Apex Immortals."
   },
   // 10. Ten-Thousand Soul Banner
@@ -325,7 +325,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "demonic", "soul"],
     "ecosystem": "Cultivation · Demonic Relic",
-    "rules": "Passively captures 1 soul per team kill anywhere on the track (up to 100/100). Every 5s, releases 3 homing ghost missiles dealing Souls × 1.5 damage. At 100/100 souls, can serve as the matching relic for an adjacent Nascent Soul (175+ Qi) on an Elite/Boss node; the trial starts as soon as the requirements are met. Clear the node with zero leaks to consume the Banner and awaken the Soul-Reaping Heavenly Demon; any leak or failed node removes both cards from the roster. If adjacent to an Apex Immortal, triggers Relic Resonance.",
+    "rules": "Passively captures 1 soul per team kill anywhere on the track (up to 100/100). Every 5s, releases 3 homing ghost missiles dealing Souls × 1.5 damage. At 100/100 souls, can serve as the matching relic for an adjacent Nascent Soul at 200 Qi on an Elite/Boss node; the trial starts as soon as the requirements are met. Clear the node with zero leaks to consume the Banner and awaken the Soul-Reaping Heavenly Demon; any leak or failed node removes both cards from the roster. If adjacent to an Apex Immortal, triggers Relic Resonance.",
     "synergy": "Team kills, Qi-Refining Practitioner (Nascent Soul) and Apex Immortals."
   },
   // 11. Blood-Drinking Demon Blade
@@ -344,7 +344,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "demonic", "bleed"],
     "ecosystem": "Cultivation · Demonic Relic",
-    "rules": "Inflicts stacking Bleed on hit. Gains +1 permanent ATK per 10 kills (up to +30). When adjacent to a Nascent Soul Practitioner, begins the Elite/Boss Heavenly Tribulation. Pass by clearing the Elite/Boss node with zero leaks; the relic is consumed to awaken the Blood-Fiend Sword Master. Any leak or failed node removes both cards from the roster. If adjacent to an Apex Immortal, triggers Relic Resonance.",
+    "rules": "Inflicts stacking Bleed on hit. Gains +1 permanent ATK per 10 kills (up to +30). When adjacent to a 200-Qi Nascent Soul, begins the Elite/Boss Heavenly Tribulation. Pass by clearing the Elite/Boss node with zero leaks; the relic is consumed to awaken the Blood-Fiend Sword Master. Any leak or failed node removes both cards from the roster. If adjacent to an Apex Immortal, triggers Relic Resonance.",
     "synergy": "Bleed, Qi-Refining Practitioner (Nascent Soul) and Apex Immortals."
   },
   // 38 Other Genre Cards (Haunted, Bloodline, Arcane, PostApoc, SciFi, Cyberpunk, Grimdark, Lovecraft)
@@ -1651,7 +1651,7 @@ const FORMS = [
   ],
   "evolvedFrom": "practitioner",
   "draftable": false,
-  "rules": "Foundation realm · 30 Qi. Attacks pierce the two leading runners. Devours adjacent Lotus Blossoms for +5 Qi and +2 permanent ATK. Advances to Golden Core at 85 Qi. Gains +1 Qi every three attacks; each newly gained Qi beyond 175 grants +0.15 uncapped permanent ATK.",
+  "rules": "Foundation realm · 30 Qi. Attacks pierce the two leading runners. Directly absorbs adjacent Lotus Blossoms for +5 Qi/+2 permanent ATK; a Cauldron brews them for +6 Qi/+4 ATK. Qi stops at 85 until a stored Breakthrough Pill is spent by a deployed Cauldron, advancing to Golden Core. Normal attacks grant no Qi.",
   "synergy": "Spirit Lotus Blossoms, Spirit Grass, and Cauldron Pills."
 },
   {
@@ -1672,7 +1672,7 @@ const FORMS = [
   ],
   "evolvedFrom": "practitioner",
   "draftable": false,
-  "rules": "Golden Core realm · 85 Qi. Attacks the target and deals 50% splash damage to nearby runners. Devours adjacent Lotus Blossoms for +5 Qi and +2 permanent ATK. Advances to Nascent Soul at 175 Qi. Gains +1 Qi every three attacks; each newly gained Qi beyond 175 grants +0.15 uncapped permanent ATK.",
+  "rules": "Golden Core realm · 85 Qi. Attacks the target and deals 50% splash damage to nearby runners. Directly absorbs adjacent Lotus Blossoms for +5 Qi/+2 permanent ATK; a Cauldron brews them for +6 Qi/+4 ATK. Qi stops at 175 until a stored Breakthrough Pill is spent by a deployed Cauldron, advancing to Nascent Soul. Normal attacks grant no Qi.",
   "synergy": "Spirit Lotus Blossoms, Spirit Grass, Cauldron Pills, and Cultivation Relics."
 },
   {
@@ -1693,7 +1693,7 @@ const FORMS = [
   ],
   "evolvedFrom": "practitioner",
   "draftable": false,
-  "rules": "Nascent Soul realm · 175 Qi. Attacks the three highest-HP runners. Devours adjacent Lotus Blossoms for +5 Qi and +2 permanent ATK. Every newly gained Qi from here onward grants +0.15 uncapped permanent ATK. At this realm, an adjacent eligible Cultivation Relic is consumed to awaken an Apex Immortal. Gains +1 Qi every three attacks.",
+  "rules": "Nascent Soul realm · 175 Qi. Attacks the three highest-HP runners. Directly absorbs adjacent Lotus Blossoms for +5 Qi/+2 permanent ATK; a Cauldron brews them for +6 Qi/+4 ATK. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after Mythic ascension. At 200 Qi, an adjacent eligible relic starts the Elite/Boss Heavenly Tribulation; success requires a zero-leak clear. Normal attacks grant no Qi.",
   "synergy": "Cultivation Relics and the full Practitioner lineage."
 },
   // 1. Sword Immortal
@@ -2414,7 +2414,7 @@ const TOKENS = [
     "fav": "neighbor",
     "species": "lotusRoot",
     "ecosystem": "Cultivation · Dan Dao",
-    "rules": "An adjacent Practitioner absorbs this token for +5 Qi and +2 permanent ATK. Cultivation Apex forms absorb it for +15 Qi toward their 30-Qi growth cycle. A Cauldron can instead brew it into +12 Qi and +4 permanent ATK before ascension. Consuming the token preserves its parent root.",
+    "rules": "An adjacent Practitioner directly absorbs this token for +5 Qi and +2 permanent ATK. A Cauldron instead consumes it for +6 Qi and +4 permanent ATK to the deployed eligible Cultivation unit with the least Qi. Cultivation Mythics absorb it for +15 Qi; every 30 gained Qi grants +2 permanent ATK, and Qi above 175 also grants +0.15 permanent ATK per Qi. Consuming the token preserves its parent root.",
     "synergy": "Qi-Refining Practitioner, Nine-Turn Alchemy Cauldron."
   },
   {
