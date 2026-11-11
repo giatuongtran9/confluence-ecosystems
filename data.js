@@ -1703,7 +1703,7 @@ const FORMS = [
     "vn": "Kiếm Tiên",
     "genre": "Cultivation",
     "baseAtk": 150,
-    "attackInterval": 0.5,
+    "attackInterval": 1.0,
     "rarity": "Mythic",
     "asset": "immortal",
     "sprite": 0,
@@ -1712,7 +1712,7 @@ const FORMS = [
     "tags": ["apex", "pierce", "boss-slayer"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Earned only by passing the Elite/Boss Heavenly Tribulation with a zero-leak node clear. During the trial, every 4s the storm stuns the Nascent Soul for 0.5s and deals 25 damage to active enemies. Every 10th attack, channels for 1.2s to release a Ten-Thousand Sword Torrent piercing all 16 perimeter tiles, dealing unbuffed ATK damage and stripping 30% current HP from the highest-HP target. Triggers Relic Resonance when adjacent to another Relic (+20% damage, +25% relic speed). Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after ascension. In addition, every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
+    "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks pierce 50% DEF and hit the target plus up to 3 enemies behind (100%→70% damage). Every 10th attack, channels for 1.2s to release a Ten-Thousand Sword Torrent dealing 100% ATK to all tiles and dropping a Colossal Sword onto the highest-threat enemy for 100% ATK + 10% enemy current HP. Triggers Relic Resonance when adjacent to another Relic (+20% damage, +25% relic speed).",
     "synergy": "Ancient Flying Sword, Relic Resonance."
   },
   // 2. Melodic Saint
@@ -1731,7 +1731,7 @@ const FORMS = [
     "tags": ["apex", "control", "detonate"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Earned only by passing the Elite/Boss Heavenly Tribulation with a zero-leak node clear. During the trial, every 4s the storm stuns the Nascent Soul for 0.5s and deals 25 damage to active enemies. Strikes hit all 16 tiles simultaneously, applying Dissonance (45% slow). At 5 stacks, Dissonance explodes for 260 magic damage and stuns for 1.5s. Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after ascension. In addition, every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
+    "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks alternate between Harmony Chord (+50% attack speed to all allies for 2s) and Dissonance Chord (deals 50% ATK damage and applies 45% slow to all enemies for 2s). Every 10th attack, channels for 1.2s to release Celestial Resonance dealing 200% ATK to all enemies and stunning them for 1.5s. Triggers Relic Resonance when adjacent to another Relic.",
     "synergy": "Celestial Guqin, Relic Resonance."
   },
   // 3. Formation Master
@@ -1741,7 +1741,7 @@ const FORMS = [
     "vn": "Kỳ Tiên",
     "genre": "Cultivation",
     "baseAtk": 110,
-    "attackInterval": 1.1,
+    "attackInterval": 0.8,
     "rarity": "Mythic",
     "asset": "altar",
     "sprite": 0,
@@ -1750,7 +1750,7 @@ const FORMS = [
     "tags": ["apex", "trap", "stasis"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Earned only by passing the Elite/Boss Heavenly Tribulation with a zero-leak node clear. During the trial, every 4s the storm stuns the Nascent Soul for 0.5s and deals 25 damage to active enemies. Places alternating Black and White Go stones on the track. Black pushes enemies backward 3 tiles; White traps enemies in a 2s stasis prison. Sequence triggers 400 true damage. Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after ascension. In addition, every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
+    "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks alternate between Black Stone (deals 120% ATK) and White Stone (deals 80% ATK and slows target 30% for 2s). Every 10th attack, channels for 1.2s to activate Star-River Weiqi Board: warps all enemies backward 2 tiles and deals 150% ATK (300% on corner tiles 0, 4, 8, 12). Triggers Relic Resonance when adjacent to another Relic.",
     "synergy": "Star-River Weiqi Board, Relic Resonance."
   },
   // 4. Talisman Sovereign
@@ -1773,8 +1773,8 @@ const FORMS = [
   ],
   "evolvedFrom": "practitioner",
   "draftable": false,
-  "rules": "Earned only by passing the Elite/Boss Heavenly Tribulation with a zero-leak node clear. During the trial, every 4s the storm stuns the Nascent Soul for 0.5s and deals 25 damage to active enemies. Inscribes decrees on active track sections. Enemies take +70% damage from all allies. An ordinary runner below 15% HP is instantly executed. Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after ascension. In addition, every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused. Bosses and Harbingers cannot be executed.",
-  "synergy": "Dragon-Tail Ink Brush, Relic Resonance."
+  "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks deal 100% ATK, apply +50% Vulnerable for 3s, and execute non-boss/non-champion runners below 10% HP. Every 10th attack, channels for 1.2s to inscribe Imperial Ink Decree: deals 250% ATK board-wide, executes non-bosses below 15% HP, and applies +50% Vulnerable for 3s to survivors. Triggers Relic Resonance when adjacent to another Relic.",
+    "synergy": "Dragon-Tail Ink Brush, Relic Resonance."
 },
   // 5. Landscape Sage
   {
@@ -1783,7 +1783,7 @@ const FORMS = [
     "vn": "Họa Tiên",
     "genre": "Cultivation",
     "baseAtk": 95,
-    "attackInterval": 1.3,
+    "attackInterval": 0.8,
     "rarity": "Mythic",
     "asset": "lantern",
     "sprite": 0,
@@ -1792,7 +1792,7 @@ const FORMS = [
     "tags": ["apex", "banish"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Earned only by passing the Elite/Boss Heavenly Tribulation with a zero-leak node clear. During the trial, every 4s the storm stuns the Nascent Soul for 0.5s and deals 25 damage to active enemies. Every 8s, banishes the highest-threat enemy into the scroll for 5s. Target takes 90 crushing damage/sec while completely removed from the track. Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after ascension. In addition, every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
+    "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks deal 100% ATK and leave an ink puddle on the track slowing passing runners 25% for 2s. Every 10th attack, channels for 1.2s to summon Mountain-River Ink Dragon: sweeps counter-clockwise across the perimeter dealing 200% ATK, stuns all runners for 2s, and warps Boss/Elite/Champion runners backward 3 tiles. Triggers Relic Resonance when adjacent to another Relic.",
     "synergy": "Mountain-River Scroll, Relic Resonance."
   },
   // 6. Soul-Reaping Heavenly Demon
@@ -1802,7 +1802,7 @@ const FORMS = [
     "vn": "Vạn Hồn Ma Tôn",
     "genre": "Cultivation",
     "baseAtk": 140,
-    "attackInterval": 0.55,
+    "attackInterval": 1.0,
     "rarity": "Mythic",
     "asset": "totem",
     "sprite": 0,
@@ -1811,7 +1811,7 @@ const FORMS = [
     "tags": ["apex", "demonic", "chain"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Earned only by passing the Elite/Boss Heavenly Tribulation with a zero-leak node clear. During the trial, every 4s the storm stuns the Nascent Soul for 0.5s and deals 25 damage to active enemies. Attacks fire a continuous volley of 5 homing skulls. Every perimeter kill triggers an unholy soul detonation dealing 160 shadow damage in a 3-tile radius (no HP healing). Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after ascension. In addition, every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
+    "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks fire a volley hitting up to 5 targets for 50% ATK each. Every enemy death adds +1 permanent Soul to the banner. Every 10th attack, channels for 1.2s to detonate Ten-Thousand Soul Banner: deals (150% + floor(Souls / 2)%) ATK to all enemies. Triggers Relic Resonance when adjacent to another Relic.",
     "synergy": "Ten-Thousand Soul Banner, Relic Resonance."
   },
   // 7. Blood-Fiend Sword Master
@@ -1821,7 +1821,7 @@ const FORMS = [
     "vn": "Huyết Kiếm Ma Tu",
     "genre": "Cultivation",
     "baseAtk": 180,
-    "attackInterval": 0.35,
+    "attackInterval": 1.0,
     "rarity": "Mythic",
     "asset": "atlasCaster",
     "sprite": 0,
@@ -1830,7 +1830,7 @@ const FORMS = [
     "tags": ["apex", "demonic", "cleave"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Earned only by passing the Elite/Boss Heavenly Tribulation with a zero-leak node clear. During the trial, every 4s the storm stuns the Nascent Soul for 0.5s and deals 25 damage to active enemies. Attacks at blinding speed. Every 4th attack sweeps across an entire 4-tile perimeter edge for 280% damage, leaving a pool of boiling blood dealing 50 bleed damage/sec (no HP healing). Triggers Relic Resonance when adjacent to another Relic. Absorbs adjacent Lotus Blossoms and receives spirit dew/pills. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after ascension. In addition, every 30 Qi earned after ascension grants +2 permanent ATK; pre-ascension Qi is not reused.",
+    "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks deal 100% ATK and apply 1 stack of bleed (1% target max HP/sec for 3s). Every 10th attack, channels for 1.2s to trigger Boiling Blood Domain: deals 150% ATK to all enemies, detonates all existing bleed stacks on every enemy for instant true damage, and applies 20 bleed stacks (1% max HP/sec for 20s). Triggers Relic Resonance when adjacent to another Relic.",
     "synergy": "Blood-Drinking Demon Blade, Relic Resonance."
   },
   // 4 Other Earned Forms

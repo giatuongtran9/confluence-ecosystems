@@ -806,7 +806,17 @@ function drawEmeraldSwordBlade(ctx, x, y, ang, scale, alpha, isColossal = false)
   ctx.restore();
 }
 
-function drawSwordTorrentChannel(ctx, cx, cy, prog, size) {
+function drawSwordTorrentChannel(ctx, cx, cy, prog, size, channelType = 'sword-torrent') {
+  const channelLabels = {
+    'sword-torrent': { text: '⚡ VẠN KIẾM QUY TÔNG (1.2s)', color: '#34d399', glow: '#10b981', bg: '#064e3b' },
+    'melodic-resonance': { text: '🎵 THIÊN LÃI CỘNG HƯỞNG (1.2s)', color: '#818cf8', glow: '#6366f1', bg: '#1e1b4b' },
+    'formation-star-river': { text: '✨ TINH HÀ KỲ TRẬN (1.2s)', color: '#60a5fa', glow: '#3b82f6', bg: '#172554' },
+    'talisman-decree': { text: '📜 HOÀNG KIM THÁNH CHỈ (1.2s)', color: '#f59e0b', glow: '#d97706', bg: '#451a03' },
+    'landscape-dragon': { text: '🐉 SƠN HÀ MỰC LONG (1.2s)', color: '#34d399', glow: '#059669', bg: '#022c22' },
+    'soul-reap-detonation': { text: '💀 VẠN HỒN BẠO PHÁ (1.2s)', color: '#c084fc', glow: '#a855f7', bg: '#3b0764' },
+    'blood-domain': { text: '🩸 HUYẾT HẢI CUỒNG LỘC (1.2s)', color: '#ef4444', glow: '#dc2626', bg: '#450a0a' }
+  };
+  const theme = channelLabels[channelType] || channelLabels['sword-torrent'];
   ctx.save();
 
   const haloRad = 70 + 35 * Math.sin(prog * Math.PI);
@@ -893,14 +903,15 @@ function drawSwordTorrentChannel(ctx, cx, cy, prog, size) {
   ctx.textAlign = 'center';
   ctx.font = '700 11px system-ui, -apple-system, sans-serif';
   ctx.fillStyle = '#6ee7b7';
-  ctx.fillText('⚡ VẠN KIẾM QUY TÔNG · ĐANG TỤ KHÍ (1.2s)', cx, cy - 68);
+  ctx.fillStyle = theme.color;
+  ctx.fillText(theme.text, cx, cy - 68);
 
   const barW = 96, barH = 5;
-  ctx.fillStyle = '#064e3b';
+  ctx.fillStyle = theme.bg;
   ctx.fillRect(cx - barW * 0.5, cy - 60, barW, barH);
-  ctx.fillStyle = '#34d399';
+  ctx.fillStyle = theme.color;
   ctx.fillRect(cx - barW * 0.5, cy - 60, barW * Math.min(1, prog), barH);
-  ctx.strokeStyle = '#10b981';
+  ctx.strokeStyle = theme.glow;
   ctx.lineWidth = 1;
   ctx.strokeRect(cx - barW * 0.5, cy - 60, barW, barH);
 
@@ -1752,10 +1763,10 @@ function draw() {
 
     // Active Unit Channeling VFX (Real-Time)
   for (const u of battle.units.filter(u => !u.removed)) {
-    if (u.channeling && u.channeling.type === 'sword-torrent') {
+    if (u.channeling) {
       const pt = routePoint(u.x + 1, u.y + 1, size);
       const chProg = Math.min(1, Math.max(0, 1 - (u.channeling.remaining / (u.channeling.duration || 1.2))));
-      drawSwordTorrentChannel(ctx, pt.x, pt.y, chProg, size);
+      drawSwordTorrentChannel(ctx, pt.x, pt.y, chProg, size, u.channeling.type);
     }
   }
 

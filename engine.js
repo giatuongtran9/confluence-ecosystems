@@ -997,12 +997,14 @@ function fx(b, type, u, e, text, extra = {}) {
  function addQi(b, u, amount) {
   const previousQi = u.qi || 0;
   u.qi = previousQi + amount;
-  const bonusQi = Math.max(0, u.qi - Math.max(175, previousQi));
-  if (bonusQi > 0) growth(b, u, bonusQi * 0.15);
   if (isCultivationApex(u)) {
    u.apexQi = (u.apexQi || 0) + amount;
    while (u.apexQi >= 30) { u.apexQi -= 30; growth(b, u, 2); }
-  } else updatePractitionerRealm(b, u);
+  } else {
+   const bonusQi = Math.max(0, u.qi - Math.max(175, previousQi));
+   if (bonusQi > 0) growth(b, u, bonusQi * 0.15);
+   updatePractitionerRealm(b, u);
+  }
   persist(b, u);
   startHeavenlyTrial(b);
  }
@@ -1879,7 +1881,7 @@ function fx(b, type, u, e, text, extra = {}) {
  }
 
  function speed(b, u) {
-  let n = 1 + (b.run.relics.includes('clock') ? .1 : 0) + (u.emptySpeed + (u.offeringSpeed || 0) + (u.hasteUntil > b.time ? .15 : 0) + (u.manualUntil > b.time ? .25 : 0) + (u.pillSpeedUntil > b.time ? .15 : 0) + (u.hotlineUntil > b.time ? .20 : 0)) * mod(b.run, 'buffPower');
+  let n = 1 + (b.run.relics.includes('clock') ? .1 : 0) + (u.emptySpeed + (u.offeringSpeed || 0) + (u.hasteUntil > b.time ? .15 : 0) + (u.manualUntil > b.time ? .25 : 0) + (u.pillSpeedUntil > b.time ? .15 : 0) + (u.hotlineUntil > b.time ? .20 : 0) + (u.harmonyChordUntil > b.time ? .50 : 0)) * mod(b.run, 'buffPower');
   if (support(b, 'matriarch') && BLOODLINE_FODDER.includes(species(u))) n += .4 * mod(b.run, 'buffPower');
   if ((isCultivationRelic(u) || isUrbanRelic(u)) && neighbors(b, u, false).some(v => !v.removed && isApexImmortal(v))) n *= 1.25;
   const inBlackout = b.curfewUntil > b.time;
@@ -2011,6 +2013,10 @@ function fx(b, type, u, e, text, extra = {}) {
      banner.soulMaxLogged = true;
      fx(b, 'state', banner, null, 'SOULS 100/100');
     }
+   }
+   for (const demon of b.units.filter(v => !v.removed && v.id === 'soulReapingDemon')) {
+    demon.souls = (demon.souls || 0) + 1;
+    persist(b, demon);
    }
    startHeavenlyTrial(b);
 
@@ -2168,45 +2174,92 @@ function fx(b, type, u, e, text, extra = {}) {
   else if (u.id === 'inkBrush') { hit(b, u, target, power); status(b, target, 'vulnerable', 4, 0.15, u); }
   else if (u.id === 'demonBlade') { hit(b, u, target, power); dot(b, target, 'bleed', 5, 4, u); }
   else if (u.id === 'swordImmortal') {
-   hit(b, u, target, power);
+   const behind = living(b).filter(e => e !== target && e.p <= target.p).sort((a, z) => z.p - a.p);
+   hit(b, u, target, power, true, { armorFactor: 0.5 });
+   const falloff = [0.9, 0.8, 0.7];
+   behind.slice(0, 3).forEach((e, idx) => {
+    hit(b, u, e, power * falloff[idx], true, { armorFactor: 0.5, secondary: true });
+   });
    if (u.attackCount % 10 === 0) {
     const opt = u.torrentOption || 'C';
-    u.channeling = {
-     type: 'sword-torrent',
-     duration: 1.2,
-     remaining: 1.2,
-     option: opt
-    };
+    u.channeling = { type: 'sword-torrent', duration: 1.2, remaining: 1.2, option: opt };
     u.currentCooldown = Math.max(u.currentCooldown || 0, 1.2);
     fx(b, 'sword-channel', u, u, 'CHANNELING TORRENT');
     interact(b, u, u, 'sword-channel', 'Sword Immortal channels Ten-Thousand Sword Torrent (1.2s)...');
    }
   }
   else if (u.id === 'melodicSaint') {
-   for (const e of living(b)) {
-    hit(b, u, e, power);
-    status(b, e, 'slow', 2, 0.45, u);
-    e.dissonance = (e.dissonance || 0) + 1;
-    if (e.dissonance >= 5) {
-     e.dissonance = 0;
-     damage(b, e, 260 * mod(b.run, 'damage'), u, 'ability');
-     status(b, e, 'stun', 1.5, 0, u);
+   u.chordToggle = !u.chordToggle;
+   if (u.chordToggle) {
+    for (const ally of b.units.filter(v => !v.removed)) ally.harmonyChordUntil = b.time + 2;
+    fx(b, 'spell', u, null, 'HARMONY CHORD (+50% SPD)');
+   } else {
+    for (const e of living(b)) {
+     hit(b, u, e, power * 0.5);
+     status(b, e, 'slow', 2, 0.45, u);
     }
+    fx(b, 'pulse', u, null, 'DISSONANCE CHORD (SLOW)');
+   }
+   if (u.attackCount % 10 === 0) {
+    u.channeling = { type: 'melodic-resonance', duration: 1.2, remaining: 1.2 };
+    u.currentCooldown = Math.max(u.currentCooldown || 0, 1.2);
+    fx(b, 'sword-channel', u, u, 'CHANNELING CELESTIAL RESONANCE');
+    interact(b, u, u, 'melodic-resonance', 'Melodic Saint channels Celestial Resonance (1.2s)...');
    }
   }
   else if (u.id === 'formationMaster') {
-   hit(b, u, target, power);
    u.stoneToggle = !u.stoneToggle;
-   if (u.stoneToggle) { warp(b, target, 3, u); }
-   else { status(b, target, 'stun', 2, 0, u); damage(b, target, 400 * mod(b.run, 'damage'), u, 'ability'); }
+   if (u.stoneToggle) {
+    hit(b, u, target, power * 1.2);
+    fx(b, 'shot', u, target, 'BLACK STONE (120%)');
+   } else {
+    hit(b, u, target, power * 0.8);
+    status(b, target, 'slow', 2, 0.30, u);
+    fx(b, 'spell', u, target, 'WHITE STONE (SLOW)');
+   }
+   if (u.attackCount % 10 === 0) {
+    u.channeling = { type: 'formation-star-river', duration: 1.2, remaining: 1.2 };
+    u.currentCooldown = Math.max(u.currentCooldown || 0, 1.2);
+    fx(b, 'sword-channel', u, u, 'CHANNELING STAR-RIVER');
+    interact(b, u, u, 'formation-star-river', 'Formation Master channels Star-River Weiqi Board (1.2s)...');
+   }
   }
   else if (u.id === 'talismanSovereign') {
    hit(b, u, target, power);
-   status(b, target, 'vulnerable', 3, 0.70, u);
-   if (!target.boss && !target.champion && target.hp / target.maxHp < 0.15) { damage(b, target, target.hp, u, 'direct'); }
+   status(b, target, 'vulnerable', 3, 0.50, u);
+   if (!target.boss && !target.champion && target.hp > 0 && target.hp / target.maxHp < 0.10) {
+    damage(b, target, target.hp, u, 'direct');
+    fx(b, 'impact', u, target, 'EXECUTE');
+   }
+   if (u.attackCount % 10 === 0) {
+    u.channeling = { type: 'talisman-decree', duration: 1.2, remaining: 1.2 };
+    u.currentCooldown = Math.max(u.currentCooldown || 0, 1.2);
+    fx(b, 'sword-channel', u, u, 'CHANNELING IMPERIAL DECREE');
+    interact(b, u, u, 'talisman-decree', 'Talisman Sovereign channels Imperial Ink Decree (1.2s)...');
+   }
+  }
+  else if (u.id === 'landscapeSage') {
+   hit(b, u, target, power);
+   b.inkPuddles ??= [];
+   b.inkPuddles.push({ owner: u.uid, p: Math.floor(target.p), until: b.time + 2, slow: 0.25 });
+   fx(b, 'spell', u, target, 'INK PUDDLE');
+   if (u.attackCount % 10 === 0) {
+    u.channeling = { type: 'landscape-dragon', duration: 1.2, remaining: 1.2 };
+    u.currentCooldown = Math.max(u.currentCooldown || 0, 1.2);
+    fx(b, 'sword-channel', u, u, 'CHANNELING INK DRAGON');
+    interact(b, u, u, 'landscape-dragon', 'Landscape Sage channels Mountain-River Ink Dragon (1.2s)...');
+   }
   }
   else if (u.id === 'soulReapingDemon') {
-   for (const e of living(b).slice(0, 5)) { hit(b, u, e, power * 0.4); }
+   for (const e of living(b).slice(0, 5)) {
+    hit(b, u, e, power * 0.5);
+   }
+   if (u.attackCount % 10 === 0) {
+    u.channeling = { type: 'soul-reap-detonation', duration: 1.2, remaining: 1.2 };
+    u.currentCooldown = Math.max(u.currentCooldown || 0, 1.2);
+    fx(b, 'sword-channel', u, u, 'CHANNELING SOUL DETONATION');
+    interact(b, u, u, 'soul-reap-detonation', 'Soul-Reaping Demon channels Ten-Thousand Soul Detonation (1.2s)...');
+   }
   }
   else if (u.id === 'boneSaw') {
    hit(b, u, target, power * ((target.elite || target.champion || target.boss) ? 1.5 : 1));
@@ -2214,8 +2267,13 @@ function fx(b, type, u, e, text, extra = {}) {
   }
   else if (u.id === 'bloodFiendMaster') {
    hit(b, u, target, power);
-   if (u.attackCount % 4 === 0) {
-    for (const e of living(b).slice(0, 4)) { hit(b, u, e, power * 2.8); dot(b, e, 'bleed', 50, 4, u); }
+   const bleedDps = Math.max(1, target.maxHp * 0.01);
+   dot(b, target, 'bleed', bleedDps, 3, u);
+   if (u.attackCount % 10 === 0) {
+    u.channeling = { type: 'blood-domain', duration: 1.2, remaining: 1.2 };
+    u.currentCooldown = Math.max(u.currentCooldown || 0, 1.2);
+    fx(b, 'sword-channel', u, u, 'CHANNELING BLOOD DOMAIN');
+    interact(b, u, u, 'blood-domain', 'Blood-Fiend Sword Master channels Boiling Blood Domain (1.2s)...');
    }
   }
     else if (isUrbanInvestigator(u) || ['ruleArchitect', 'allSeeingOverseer', 'curfewDirector', 'forensicDemiurge', 'backroomsWarden'].includes(u.id)) {
@@ -2482,13 +2540,79 @@ function fx(b, type, u, e, text, extra = {}) {
     u.channeling.remaining -= dt;
     u.currentCooldown = Math.max(u.currentCooldown || 0, 0.1);
     if (u.channeling.remaining <= 0) {
+     const chType = u.channeling.type;
      const opt = u.channeling.option || 'C';
      u.channeling = null;
-     for (const e of living(b)) trueHit(b, u, e, rawAtk(u));
-     const highestHp = living(b).sort((a, z) => z.hp - a.hp)[0];
-     if (highestHp) damage(b, highestHp, highestHp.hp * 0.3, u, 'ability');
-     fx(b, 'sword-torrent-' + opt.toLowerCase(), u, highestHp || u, 'SWORD TORRENT (' + opt + ')');
-     interact(b, u, u, 'sword-torrent', 'Ten-Thousand Sword Torrent [' + opt + ']: all 16 tiles + 30% HP strip');
+     if (chType === 'sword-torrent') {
+      for (const e of living(b)) trueHit(b, u, e, rawAtk(u));
+      const prio = living(b).find(e => e.boss) || living(b).find(e => e.elite || e.champion) || living(b).sort((a, z) => z.hp - a.hp)[0];
+      if (prio) damage(b, prio, rawAtk(u) + prio.hp * 0.10, u, 'ability');
+      fx(b, 'sword-torrent-' + opt.toLowerCase(), u, prio || u, 'SWORD TORRENT (' + opt + ')');
+      interact(b, u, prio || u, 'sword-torrent', 'Ten-Thousand Sword Torrent [' + opt + ']: sword rain on all tiles + Colossal Sword on ' + (prio?.boss ? 'Boss' : prio?.elite ? 'Elite' : 'leader'));
+     }
+     else if (chType === 'melodic-resonance') {
+      for (const e of living(b)) {
+       damage(b, e, rawAtk(u) * 2.0, u, 'ability');
+       status(b, e, 'stun', 1.5, 0, u);
+      }
+      fx(b, 'pulse', u, null, 'CELESTIAL RESONANCE');
+      interact(b, u, u, 'melodic-resonance', 'Celestial Resonance: 200% ATK + 1.5s stun to all enemies');
+     }
+     else if (chType === 'formation-star-river') {
+      for (const e of living(b)) {
+       warp(b, e, 2, u);
+       const corner = (Math.floor(e.p) % 4 === 0);
+       damage(b, e, rawAtk(u) * (corner ? 3.0 : 1.5), u, 'ability');
+      }
+      fx(b, 'warp', u, null, 'STAR-RIVER FORMATION');
+      interact(b, u, u, 'formation-star-river', 'Star-River Weiqi Board: warps all enemies back 2 tiles (300% on corners)');
+     }
+     else if (chType === 'talisman-decree') {
+      for (const e of living(b)) {
+       damage(b, e, rawAtk(u) * 2.5, u, 'ability');
+       if (!e.boss && !e.champion && e.hp > 0 && e.hp / e.maxHp < 0.15) {
+        damage(b, e, e.hp, u, 'direct');
+       }
+       if (e.hp > 0) {
+        status(b, e, 'vulnerable', 3, 0.50, u);
+       }
+      }
+      fx(b, 'beam', u, null, 'IMPERIAL INK DECREE');
+      interact(b, u, u, 'talisman-decree', 'Imperial Ink Decree: 250% ATK board-wide + 15% execute + 50% Vulnerable');
+     }
+     else if (chType === 'landscape-dragon') {
+      for (const e of living(b)) {
+       damage(b, e, rawAtk(u) * 2.0, u, 'ability');
+       status(b, e, 'stun', 2.0, 0, u);
+       if (e.boss || e.elite || e.champion) warp(b, e, 3, u);
+      }
+      fx(b, 'slash', u, null, 'INK DRAGON SWEEP');
+      interact(b, u, u, 'landscape-dragon', 'Mountain-River Ink Dragon: 200% ATK + 2s stun to all runners + warps Boss/Elite 3 tiles');
+     }
+     else if (chType === 'soul-reap-detonation') {
+      const soulMult = 1.50 + Math.floor((u.souls || 0) / 2) / 100;
+      for (const e of living(b)) {
+       damage(b, e, rawAtk(u) * soulMult, u, 'ability');
+      }
+      fx(b, 'state', u, null, 'SOUL DETONATION (' + Math.round(soulMult * 100) + '%)');
+      interact(b, u, u, 'soul-reap-detonation', 'Ten-Thousand Soul Detonation: ' + Math.round(soulMult * 100) + '% ATK to all enemies (' + (u.souls || 0) + ' souls)');
+     }
+     else if (chType === 'blood-domain') {
+      for (const e of living(b)) {
+       damage(b, e, rawAtk(u) * 1.5, u, 'ability');
+       let detonateDmg = 0;
+       for (const bl of (e.bleeds || [])) {
+        const remTime = Math.max(0, bl.until - b.time);
+        detonateDmg += bl.dps * remTime;
+       }
+       if (detonateDmg > 0) damage(b, e, detonateDmg, u, 'ability');
+       e.bleeds = [];
+       const bleedDps = Math.max(1, e.maxHp * 0.01);
+       for (let s = 0; s < 20; s++) dot(b, e, 'bleed', bleedDps, 20, u);
+      }
+      fx(b, 'impact', u, null, 'BOILING BLOOD DOMAIN');
+      interact(b, u, u, 'blood-domain', 'Boiling Blood Domain: 150% ATK + detonates bleeds + applies 20 bleed stacks');
+     }
     }
     continue;
    }
@@ -2504,7 +2628,13 @@ function fx(b, type, u, e, text, extra = {}) {
   for (const e of living(b)) {
    if ((e.boss || e.champion) && !e.enraged && b.time - e.bornAt >= 45) { e.enraged = true; e.frozenUntil = 0;  }
    e.bleeds = e.bleeds.filter(z => z.until > b.time); e.burns = (e.burns || []).filter(z => z.until > b.time); e.venoms = (e.venoms || []).filter(z => z.until > b.time); for (const dot of [...e.bleeds, ...e.burns, ...e.venoms]) damage(b, e, dot.dps * dt * (e.vulnerableUntil > b.time ? 1 + e.vulnerability : 1), b.units.find(u => u.uid === dot.owner) || null, 'dot'); if (e.gone) continue;
-   e.slows = e.slows.filter(s => s.until > b.time); e.panic = e.panicUntil > b.time; let aura = b.units.some(v => !v.removed && v.id === 'wraith') ? ((e.boss || e.champion) ? .15 : .3) : 0; let slow = Math.max(aura, ...e.slows.map(s => s.power)), move = e.frozenUntil > b.time ? 0 : 1 - slow;
+   e.slows = e.slows.filter(s => s.until > b.time); e.panic = e.panicUntil > b.time;
+    let inkSlow = 0;
+    if (b.inkPuddles?.length) {
+     b.inkPuddles = b.inkPuddles.filter(p => p.until > b.time);
+     if (b.inkPuddles.some(p => p.p === Math.floor(e.p))) inkSlow = 0.25;
+    }
+    let aura = b.units.some(v => !v.removed && v.id === 'wraith') ? ((e.boss || e.champion) ? .15 : .3) : 0; let slow = Math.max(aura, inkSlow, ...e.slows.map(s => s.power)), move = e.frozenUntil > b.time ? 0 : 1 - slow;
    if (b.curfewUntil > b.time) move *= 0.75;
    const previousProgress = e.p, wasRetreating = e.retreatingUntil > b.time && !((e.boss||e.champion)&&e.enraged);
    e.p += e.speed * dt * move * (e.enraged ? 1.25 : 1) * (b.run.relics.includes('frost') ? .9 : 1);
