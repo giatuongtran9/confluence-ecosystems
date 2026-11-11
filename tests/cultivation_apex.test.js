@@ -33,12 +33,12 @@ function enemy(b, p = 4, hp = 100000, maxHp = 100000, defense = 0) {
 test('Cultivation Mythic Apex: base stats and attack intervals', () => {
   const expectedStats = {
     swordImmortal: { baseAtk: 150, interval: 1.0 },
-    melodicSaint: { baseAtk: 95, interval: 1.0 },
+    melodicSaint: { baseAtk: 110, interval: 1.0 },
     formationMaster: { baseAtk: 110, interval: 0.8 },
     talismanSovereign: { baseAtk: 120, interval: 0.7 },
-    landscapeSage: { baseAtk: 95, interval: 0.8 },
+    landscapeSage: { baseAtk: 110, interval: 0.8 },
     soulReapingDemon: { baseAtk: 140, interval: 1.0 },
-    bloodFiendMaster: { baseAtk: 180, interval: 1.0 }
+    bloodFiendMaster: { baseAtk: 150, interval: 1.0 }
   };
 
   for (const [id, stat] of Object.entries(expectedStats)) {

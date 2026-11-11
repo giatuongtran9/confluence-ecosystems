@@ -176,8 +176,8 @@ const CARDS = [
   "vn": "Cửu Chuyển Luyện Đan Lô",
   "genre": "Cultivation",
   "rarity": "Rare",
-  "baseAtk": 8,
-  "attackInterval": 2.0,
+  "baseAtk": 0,
+  "attackInterval": 0,
   "max": 0,
   "asset": "cauldron",
   "sprite": 0,
@@ -189,7 +189,7 @@ const CARDS = [
   ],
   "growthRole": "engine",
   "ecosystem": "Cultivation · Dan Dao",
-  "rules": "Stores up to 3 shared Breakthrough Pills while any Cauldron remains in the roster; stored pills persist between battles and can be spent only when a Cauldron is deployed. Starting at 8s and every 8s, consumes adjacent Spirit Grass to brew exactly 1 pill while below cap; at cap, consumes the grass for +12 Qi to the deployed practitioner with the most Qi. Each adjacent Lotus Blossom is independently consumed for +6 Qi and +4 permanent ATK to the deployed eligible Cultivation unit with the least Qi; direct Practitioner absorption remains +5 Qi/+2 ATK. A stored pill is automatically spent at the next 30/85/175 Qi gate, targeting the eligible Practitioner with the most Qi.",
+  "rules": "Does not attack. Stores up to 3 shared Breakthrough Pills while any Cauldron remains in the roster; stock persists between battles and pills can be spent only while one is deployed. Starting at 8s and every 8s, consumes adjacent Spirit Grass to brew 1 pill below cap; at cap, converts the Grass to +12 Qi for the deployed Practitioner with the most Qi. Each adjacent Lotus Blossom is independently consumed for +6 Qi/+4 permanent ATK to the eligible Cultivation unit with the least Qi; direct absorption remains +5 Qi/+2 ATK.",
   "synergy": "Spirit Lotus Root, Cloud-Mist Spirit Grass, Qi-Refining Practitioner."
 },
   // 4. Qi-Refining Practitioner
@@ -199,7 +199,7 @@ const CARDS = [
   "vn": "Luyện Khí Tu Sĩ",
   "genre": "Cultivation",
   "rarity": "Normal",
-  "baseAtk": 6,
+  "baseAtk": 12,
   "attackInterval": 1.5,
   "max": 0,
   "asset": "jade",
@@ -211,7 +211,7 @@ const CARDS = [
     "scaling"
   ],
   "ecosystem": "Cultivation · Ascension",
-  "rules": "Gains Qi only from Cloud-Mist Spirit Grass, Lotus Blossoms, and Cauldron brewing; normal attacks grant none. Qi carries across battles and stops at each locked realm gate until a Breakthrough Pill is automatically spent by a deployed Cauldron: 30 Qi → Foundation Establishment (Rare, 18 ATK, 1.2s, 2-tile pierce); 85 Qi → Golden Core (Epic, 40 ATK, 1.0s, 50% splash); 175 Qi → Nascent Soul (Legendary, 75 ATK, 0.75s, 3 highest-HP targets). Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after Mythic ascension. At 200 Qi, an adjacent eligible relic starts the Elite/Boss Heavenly Tribulation. During the trial, every 4s the storm stuns the Nascent Soul for 0.5s and deals 25 damage to all active enemies. Clear with zero leaks to consume the relic and awaken its Mythic form; any leak or failed node removes both cards from the roster.",
+  "rules": "Base 12 ATK, 1.5s interval. Gains Qi from Spirit Grass, Lotus Blossoms, and Cauldron brewing, never from normal attacks. Breakthrough Pills advance at 30/85/175 Qi to Foundation (25 ATK, 1.4s), Golden Core (50 ATK, 1.3s), and Nascent Soul (85 ATK, 1.2s); a deployed Cauldron is required to spend pills. Above 175 Qi, each Qi grants +0.15 uncapped permanent ATK, including after Mythic ascension. At 200 Qi with an adjacent eligible relic on an Elite/Boss node, begin Heavenly Tribulation. Every 4s during the trial, the storm stuns the Nascent Soul for 0.5s and deals 25 damage to active enemies. Clear with zero leaks to consume the relic and awaken its Mythic; any leak or failed node removes both cards.",
   "synergy": "Lotus Blossoms, Spirit Grass, Cauldron Pills, and Relics."
 },
   // 5. Ancient Flying Sword
@@ -221,8 +221,8 @@ const CARDS = [
     "vn": "Phi Kiếm",
     "genre": "Cultivation",
     "rarity": "Epic",
-    "baseAtk": 24,
-    "attackInterval": 1.0,
+    "baseAtk": 0,
+    "attackInterval": 0,
     "max": 0,
     "asset": "jade",
     "sprite": 0,
@@ -230,7 +230,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "pierce"],
     "ecosystem": "Cultivation · Relic",
-    "rules": "Piercing blade prioritizing the leading runner. When adjacent to a 200-Qi Nascent Soul, begins the Elite/Boss Heavenly Tribulation. Pass by clearing the Elite/Boss node with zero leaks; the relic is consumed to awaken the Sword Immortal. Any leak or failed node removes both cards from the roster. If adjacent to an Apex Immortal, triggers Relic Resonance (+25% relic attack speed, +20% Apex damage).",
+    "rules": "Does not attack. Adjacent allied attackers ignore 50% of enemy DEF. When adjacent to a 200-Qi Nascent Soul, starts the Elite/Boss Heavenly Tribulation. A zero-leak clear consumes the Sword and awakens the Sword Immortal; any leak or failed node removes both cards.",
     "synergy": "Qi-Refining Practitioner (Nascent Soul) and Apex Immortals."
   },
   // 6. Celestial Guqin
@@ -240,8 +240,8 @@ const CARDS = [
     "vn": "Thiên Cổ Cầm",
     "genre": "Cultivation",
     "rarity": "Epic",
-    "baseAtk": 14,
-    "attackInterval": 2.0,
+    "baseAtk": 0,
+    "attackInterval": 0,
     "max": 0,
     "asset": "bell",
     "sprite": 0,
@@ -249,7 +249,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "control"],
     "ecosystem": "Cultivation · Relic",
-    "rules": "Strikes slow enemies in a 3-tile arc by 25%. When adjacent to a 200-Qi Nascent Soul, begins the Elite/Boss Heavenly Tribulation. Pass by clearing the Elite/Boss node with zero leaks; the relic is consumed to awaken the Melodic Saint. Any leak or failed node removes both cards from the roster. If adjacent to an Apex Immortal, triggers Relic Resonance.",
+    "rules": "Does not attack. Slows all enemies by 20%; adjacent allies gain 20% attack speed. When adjacent to a 200-Qi Nascent Soul, starts the Elite/Boss Heavenly Tribulation. A zero-leak clear consumes the Guqin and awakens the Melodic Saint; any leak or failed node removes both cards.",
     "synergy": "Qi-Refining Practitioner (Nascent Soul) and Apex Immortals."
   },
   // 7. Star-River Weiqi Board
@@ -259,8 +259,8 @@ const CARDS = [
     "vn": "Kỳ Bàn",
     "genre": "Cultivation",
     "rarity": "Epic",
-    "baseAtk": 16,
-    "attackInterval": 1.8,
+    "baseAtk": 0,
+    "attackInterval": 0,
     "max": 0,
     "asset": "altar",
     "sprite": 0,
@@ -268,7 +268,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "trap"],
     "ecosystem": "Cultivation · Relic",
-    "rules": "Lays Go stones along the track dealing 35 damage when stepped on. When adjacent to a 200-Qi Nascent Soul, begins the Elite/Boss Heavenly Tribulation. Pass by clearing the Elite/Boss node with zero leaks; the relic is consumed to awaken the Formation Master. Any leak or failed node removes both cards from the roster. If adjacent to an Apex Immortal, triggers Relic Resonance.",
+    "rules": "Does not attack. Every 8s, warps all enemies back 2 tiles. The first time each enemy steps onto a corner tile, it is stunned for 1s. When adjacent to a 200-Qi Nascent Soul, starts the Elite/Boss Heavenly Tribulation. A zero-leak clear consumes the Board and awakens the Formation Master; any leak or failed node removes both cards.",
     "synergy": "Qi-Refining Practitioner (Nascent Soul) and Apex Immortals."
   },
   // 8. Dragon-Tail Ink Brush
@@ -278,8 +278,8 @@ const CARDS = [
     "vn": "Thần Bút",
     "genre": "Cultivation",
     "rarity": "Epic",
-    "baseAtk": 15,
-    "attackInterval": 1.2,
+    "baseAtk": 0,
+    "attackInterval": 0,
     "max": 0,
     "asset": "totem",
     "sprite": 0,
@@ -287,7 +287,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "vulnerability"],
     "ecosystem": "Cultivation · Relic",
-    "rules": "Inks targets to take +15% damage from all cards. When adjacent to a 200-Qi Nascent Soul, begins the Elite/Boss Heavenly Tribulation. Pass by clearing the Elite/Boss node with zero leaks; the relic is consumed to awaken the Talisman Sovereign. Any leak or failed node removes both cards from the roster. If adjacent to an Apex Immortal, triggers Relic Resonance.",
+    "rules": "Does not attack. All enemies take 10% more damage from every source. When adjacent to a 200-Qi Nascent Soul, starts the Elite/Boss Heavenly Tribulation. A zero-leak clear consumes the Brush and awakens the Talisman Sovereign; any leak or failed node removes both cards.",
     "synergy": "Qi-Refining Practitioner (Nascent Soul) and Apex Immortals."
   },
   // 9. Mountain-River Scroll
@@ -297,8 +297,8 @@ const CARDS = [
     "vn": "Sơn Hà Đồ",
     "genre": "Cultivation",
     "rarity": "Epic",
-    "baseAtk": 12,
-    "attackInterval": 2.5,
+    "baseAtk": 0,
+    "attackInterval": 0,
     "max": 0,
     "asset": "lantern",
     "sprite": 0,
@@ -306,7 +306,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "banish"],
     "ecosystem": "Cultivation · Relic",
-    "rules": "Every 10s, banishes an enemy into the scroll for 2s. When adjacent to a 200-Qi Nascent Soul, begins the Elite/Boss Heavenly Tribulation. Pass by clearing the Elite/Boss node with zero leaks; the relic is consumed to awaken the Landscape Sage. Any leak or failed node removes both cards from the roster. If adjacent to an Apex Immortal, triggers Relic Resonance.",
+    "rules": "Does not attack. Adjacent allies gain 15% ATK. When adjacent to a 200-Qi Nascent Soul, starts the Elite/Boss Heavenly Tribulation. A zero-leak clear consumes the Scroll and awakens the Landscape Sage; any leak or failed node removes both cards.",
     "synergy": "Qi-Refining Practitioner (Nascent Soul) and Apex Immortals."
   },
   // 10. Ten-Thousand Soul Banner
@@ -325,7 +325,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "demonic", "soul"],
     "ecosystem": "Cultivation · Demonic Relic",
-    "rules": "Passively captures 1 soul per team kill anywhere on the track (up to 100/100). Every 5s, releases 3 homing ghost missiles dealing Souls × 1.5 damage. At 100/100 souls, can serve as the matching relic for an adjacent Nascent Soul at 200 Qi on an Elite/Boss node; the trial starts as soon as the requirements are met. Clear the node with zero leaks to consume the Banner and awaken the Soul-Reaping Heavenly Demon; any leak or failed node removes both cards from the roster. If adjacent to an Apex Immortal, triggers Relic Resonance.",
+    "rules": "Epic relic. Does not attack. Captures 1 soul per team kill, up to 100, for the Soul-Reaping Heavenly Demon and slows all enemies by 20%. The Banner may start the adjacent 200-Qi Nascent Soul’s Elite/Boss Heavenly Tribulation with zero stored souls; collected souls transfer to the Demon when a zero-leak clear awakens it. Any leak or failed node removes both cards.",
     "synergy": "Team kills, Qi-Refining Practitioner (Nascent Soul) and Apex Immortals."
   },
   // 11. Blood-Drinking Demon Blade
@@ -335,8 +335,8 @@ const CARDS = [
     "vn": "Huyết Ma Đao",
     "genre": "Cultivation",
     "rarity": "Epic",
-    "baseAtk": 28,
-    "attackInterval": 1.5,
+    "baseAtk": 0,
+    "attackInterval": 0,
     "max": 0,
     "asset": "atlasCaster",
     "sprite": 0,
@@ -344,7 +344,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["relic", "demonic", "bleed"],
     "ecosystem": "Cultivation · Demonic Relic",
-    "rules": "Inflicts stacking Bleed on hit. Gains +1 permanent ATK per 10 kills (up to +30). When adjacent to a 200-Qi Nascent Soul, begins the Elite/Boss Heavenly Tribulation. Pass by clearing the Elite/Boss node with zero leaks; the relic is consumed to awaken the Blood-Fiend Sword Master. Any leak or failed node removes both cards from the roster. If adjacent to an Apex Immortal, triggers Relic Resonance.",
+    "rules": "Does not attack. Adjacent allies gain 10% attack speed; their normal attacks apply one Bleed stack dealing 1% of the target’s max HP over 1s. When adjacent to a 200-Qi Nascent Soul, starts the Elite/Boss Heavenly Tribulation. A zero-leak clear consumes the Blade and awakens the Blood-Fiend Sword Master; any leak or failed node removes both cards.",
     "synergy": "Bleed, Qi-Refining Practitioner (Nascent Soul) and Apex Immortals."
   },
   // 38 Other Genre Cards (Haunted, Bloodline, Arcane, PostApoc, SciFi, Cyberpunk, Grimdark, Lovecraft)
@@ -1638,8 +1638,8 @@ const FORMS = [
   "name": "Foundation Practitioner",
   "vn": "Trúc Cơ Tu Giả",
   "genre": "Cultivation",
-  "baseAtk": 18,
-  "attackInterval": 1.2,
+  "baseAtk": 25,
+  "attackInterval": 1.4,
   "rarity": "Rare",
   "asset": "jade",
   "icon": "築",
@@ -1651,7 +1651,7 @@ const FORMS = [
   ],
   "evolvedFrom": "practitioner",
   "draftable": false,
-  "rules": "Foundation realm · 30 Qi. Attacks pierce the two leading runners. Directly absorbs adjacent Lotus Blossoms for +5 Qi/+2 permanent ATK; a Cauldron brews them for +6 Qi/+4 ATK. Qi stops at 85 until a stored Breakthrough Pill is spent by a deployed Cauldron, advancing to Golden Core. Normal attacks grant no Qi.",
+  "rules": "Foundation realm · 30 Qi. Base 25 ATK, 1.4s interval. Attacks pierce the two leading runners. Directly absorbs adjacent Lotus Blossoms for +5 Qi/+2 permanent ATK; a Cauldron brews them for +6 Qi/+4 ATK. Qi stops at 85 until a stored Breakthrough Pill is spent by a deployed Cauldron, advancing to Golden Core. Normal attacks grant no Qi.",
   "synergy": "Spirit Lotus Blossoms, Spirit Grass, and Cauldron Pills."
 },
   {
@@ -1659,8 +1659,8 @@ const FORMS = [
   "name": "Golden Core Daoist",
   "vn": "Kim Đan Chân Nhân",
   "genre": "Cultivation",
-  "baseAtk": 40,
-  "attackInterval": 1.0,
+  "baseAtk": 50,
+  "attackInterval": 1.3,
   "rarity": "Epic",
   "asset": "jade",
   "icon": "丹",
@@ -1672,7 +1672,7 @@ const FORMS = [
   ],
   "evolvedFrom": "practitioner",
   "draftable": false,
-  "rules": "Golden Core realm · 85 Qi. Attacks the target and deals 50% splash damage to nearby runners. Directly absorbs adjacent Lotus Blossoms for +5 Qi/+2 permanent ATK; a Cauldron brews them for +6 Qi/+4 ATK. Qi stops at 175 until a stored Breakthrough Pill is spent by a deployed Cauldron, advancing to Nascent Soul. Normal attacks grant no Qi.",
+  "rules": "Golden Core realm · 85 Qi. Base 50 ATK, 1.3s interval. Attacks the target and deal 50% splash damage nearby. Directly absorbs adjacent Lotus Blossoms for +5 Qi/+2 permanent ATK; a Cauldron brews them for +6 Qi/+4 ATK. Qi stops at 175 until a stored Breakthrough Pill is spent by a deployed Cauldron. Normal attacks grant no Qi.",
   "synergy": "Spirit Lotus Blossoms, Spirit Grass, Cauldron Pills, and Cultivation Relics."
 },
   {
@@ -1680,8 +1680,8 @@ const FORMS = [
   "name": "Nascent Soul Sovereign",
   "vn": "Nguyên Anh Lão Tổ",
   "genre": "Cultivation",
-  "baseAtk": 75,
-  "attackInterval": 0.75,
+  "baseAtk": 85,
+  "attackInterval": 1.2,
   "rarity": "Legendary",
   "asset": "jade",
   "icon": "魂",
@@ -1693,7 +1693,7 @@ const FORMS = [
   ],
   "evolvedFrom": "practitioner",
   "draftable": false,
-  "rules": "Nascent Soul realm · 175 Qi. Attacks the three highest-HP runners. Directly absorbs adjacent Lotus Blossoms for +5 Qi/+2 permanent ATK; a Cauldron brews them for +6 Qi/+4 ATK. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after Mythic ascension. At 200 Qi, an adjacent eligible relic starts the Elite/Boss Heavenly Tribulation; success requires a zero-leak clear. Normal attacks grant no Qi.",
+  "rules": "Nascent Soul realm · 175 Qi. Base 85 ATK, 1.2s interval. Attacks the three highest-HP runners. Directly absorbs adjacent Lotus Blossoms for +5 Qi/+2 permanent ATK; a Cauldron brews them for +6 Qi/+4 ATK. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after Mythic ascension. At 200 Qi, an adjacent eligible relic starts the Elite/Boss Heavenly Tribulation; clear with zero leaks. Normal attacks grant no Qi.",
   "synergy": "Cultivation Relics and the full Practitioner lineage."
 },
   // 1. Sword Immortal
@@ -1721,7 +1721,7 @@ const FORMS = [
     "name": "Melodic Saint",
     "vn": "Cầm Tiên",
     "genre": "Cultivation",
-    "baseAtk": 95,
+    "baseAtk": 110,
     "attackInterval": 1.0,
     "rarity": "Mythic",
     "asset": "bell",
@@ -1731,7 +1731,7 @@ const FORMS = [
     "tags": ["apex", "control", "detonate"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks alternate between Harmony Chord (+50% attack speed to all allies for 2s) and Dissonance Chord (deals 50% ATK damage and applies 45% slow to all enemies for 2s). Every 10th attack, channels for 1.2s to release Celestial Resonance dealing 200% ATK to all enemies and stunning them for 1.5s. Triggers Relic Resonance when adjacent to another Relic.",
+    "rules": "Base 110 ATK. Attacks alternate between Harmony Chord (+50% attack speed to all allies for 2s) and Dissonance Chord (deals 50% ATK damage and applies 45% slow to all enemies for 2s). Every 10th attack, channels for 1.2s to release Celestial Resonance dealing 200% ATK to all enemies and stunning them for 1.5s. Gains +2 permanent ATK per 30 post-ascension Qi.",
     "synergy": "Celestial Guqin, Relic Resonance."
   },
   // 3. Formation Master
@@ -1782,7 +1782,7 @@ const FORMS = [
     "name": "Landscape Sage",
     "vn": "Họa Tiên",
     "genre": "Cultivation",
-    "baseAtk": 95,
+    "baseAtk": 110,
     "attackInterval": 0.8,
     "rarity": "Mythic",
     "asset": "lantern",
@@ -1792,7 +1792,7 @@ const FORMS = [
     "tags": ["apex", "banish"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks deal 100% ATK and leave an ink puddle on the track slowing passing runners 25% for 2s. Every 10th attack, channels for 1.2s to summon Mountain-River Ink Dragon: sweeps counter-clockwise across the perimeter dealing 200% ATK, stuns all runners for 2s, and warps Boss/Elite/Champion runners backward 3 tiles. Triggers Relic Resonance when adjacent to another Relic.",
+    "rules": "Base 110 ATK. Attacks deal 100% ATK and leave an ink puddle on the track slowing passing runners 25% for 2s. Every 10th attack, channels for 1.2s to summon Mountain-River Ink Dragon: sweeps counter-clockwise across the perimeter dealing 200% ATK, stuns all runners for 2s, and warps Boss/Elite/Champion runners backward 3 tiles. Gains +2 permanent ATK per 30 post-ascension Qi.",
     "synergy": "Mountain-River Scroll, Relic Resonance."
   },
   // 6. Soul-Reaping Heavenly Demon
@@ -1820,7 +1820,7 @@ const FORMS = [
     "name": "Blood-Fiend Sword Master",
     "vn": "Huyết Kiếm Ma Tu",
     "genre": "Cultivation",
-    "baseAtk": 180,
+    "baseAtk": 150,
     "attackInterval": 1.0,
     "rarity": "Mythic",
     "asset": "atlasCaster",
@@ -1830,33 +1830,11 @@ const FORMS = [
     "tags": ["apex", "demonic", "cleave"],
     "evolvedFrom": "practitioner",
     "draftable": false,
-    "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks deal 100% ATK and apply 1 stack of bleed (1% target max HP/sec for 3s). Every 10th attack, channels for 1.2s to trigger Boiling Blood Domain: deals 150% ATK to all enemies, detonates all existing bleed stacks on every enemy for instant true damage, and applies 20 bleed stacks (1% max HP/sec for 20s). Triggers Relic Resonance when adjacent to another Relic.",
+    "rules": "Base 150 ATK. Attacks deal 100% ATK and apply 1 bleed stack (1% target max HP/sec for 3s). Every 10th attack, channels for 1.2s to trigger Boiling Blood Domain: deals 150% ATK to all enemies, detonates existing bleed stacks for instant true damage, and applies 20 bleed stacks (1% max HP/sec for 20s). Gains +2 permanent ATK per 30 post-ascension Qi.",
     "synergy": "Blood-Drinking Demon Blade, Relic Resonance."
   },
   // 4 Other Earned Forms
-  {
-    "id": "immortal",
-    "name": "Jade Immortal",
-    "vn": "Bích Ngọc Chân Nhân",
-    "genre": "Cultivation",
-    "baseAtk": 20,
-    "attackInterval": 1.5,
-    "max": 36,
-    "sprite": 0,
-    "icon": "劍",
-    "fav": "team",
-    "ecosystem": "Cultivation · attack loops",
-    "rarity": "Epic",
-    "tags": [],
-    "evolvedFrom": "jade",
-    "draftable": false,
-    "asset": "jade",
-    "growthRole": "evolved-engine",
-    "rules": "Strike the leading runner for full attack damage and the next two for 55% each. Retain breakthroughs: each other ally attack adds 1 ability tick; at 36, gain +3 permanent ATK.",
-    "synergy": "Rapid attackers, ability-gauge batteries, and late payoffs."
-  },
-
-  {
+{
     "id": "wraith",
     "name": "Nine-Abyss Wraith",
     "vn": "Cửu U Ma Linh",
@@ -1876,26 +1854,6 @@ const FORMS = [
     "growthRole": "evolved-engine",
     "rules": "After 12 attacks, enter Dormant for 5s, grant allies +20% damage while Dormant, and slow every runner by 25% for 3s. Aura continuously radiates 30% slow. Attacks deal 50% more damage to Elites, Harbingers, and Bosses.",
     "synergy": "Bell, Smelter, Medium, and damage finishers."
-  },
-  {
-    "id": "asura",
-    "name": "Asura Monk",
-    "vn": "Tà Tăng",
-    "genre": "Cultivation",
-    "rarity": "Epic",
-    "baseAtk": 24,
-    "attackInterval": 1.2,
-    "max": 0,
-    "ecosystem": "Sacrifice · evolution",
-    "tags": [],
-    "fav": "team",
-    "icon": "✧",
-    "evolvedFrom": "monk",
-    "draftable": false,
-    "asset": "monk",
-    "growthRole": "evolved-engine",
-    "rules": "Attacks against defense-shredded enemies always critically strike. Apply a separate Bleed stack: 6 DPS for 4s. Every six critical hits across battles and every credited kill grant +1 permanent ATK.",
-    "synergy": "Hydraulic Riveter, Nanites, and Blood-Drunk Abyssal Hunter."
   },
 {
   "id": "dragonCubT1",
@@ -2569,6 +2527,8 @@ const TOKENS = [
 ];
 
 const LEGACY_CARDS = [
+  { "id": "immortal", "name": "Jade Immortal (Retired)", "genre": "Cultivation", "baseAtk": 20, "attackInterval": 1.5, "rarity": "Epic", "draftable": false, "retired": true },
+  { "id": "asura", "name": "Asura Monk (Retired)", "genre": "Cultivation", "baseAtk": 24, "attackInterval": 1.2, "rarity": "Epic", "draftable": false, "retired": true },
   { "id": "spirit", "name": "Restless Spirit", "genre": "Haunted", "baseAtk": 10, "attackInterval": 1.2, "rarity": "Normal", "draftable": false, "retired": true },
   { "id": "bell", "name": "Soul-Wailing Bell", "genre": "Haunted", "baseAtk": 8, "attackInterval": 2.2, "rarity": "Normal", "draftable": false, "retired": true },
   { "id": "lantern", "name": "Grave Lantern", "genre": "Haunted", "baseAtk": 0, "attackInterval": 0, "rarity": "Rare", "draftable": false, "retired": true },
@@ -2580,10 +2540,10 @@ const LEGACY_CARDS = [
   { "id": "wraith", "name": "Nine-Abyss Wraith", "genre": "Haunted", "baseAtk": 28, "attackInterval": 0.7, "rarity": "Epic", "draftable": false, "retired": true },
 
 
-  { "id": "jade", "name": "Jade Disciple", "genre": "Cultivation", "baseAtk": 14, "attackInterval": 1.5, "max": 36, "rarity": "Rare", "draftable": false, "evolveTo": "immortal" },
+  { "id": "jade", "name": "Jade Disciple (Retired)", "genre": "Cultivation", "baseAtk": 14, "attackInterval": 1.5, "max": 36, "rarity": "Rare", "draftable": false, "retired": true },
   { "id": "herb", "name": "Spirit Herb Spring", "genre": "Cultivation", "baseAtk": 0, "attackInterval": 0, "rarity": "Normal", "draftable": false },
   { "id": "lotus", "name": "Spirit Lotus", "genre": "Cultivation", "rarity": "Normal", "baseAtk": 0, "attackInterval": 0, "max": 18, "draftable": false },
-  { "id": "monk", "name": "Mortal Monk", "genre": "Cultivation", "rarity": "Normal", "baseAtk": 12, "attackInterval": 1.2, "max": 3, "draftable": false, "evolveTo": "asura" },
+  { "id": "monk", "name": "Mortal Monk (Retired)", "genre": "Cultivation", "rarity": "Normal", "baseAtk": 12, "attackInterval": 1.2, "max": 3, "draftable": false, "retired": true },
   { "id": "alchemist", "name": "Alchemical Adept", "genre": "Cultivation", "rarity": "Rare", "baseAtk": 18, "attackInterval": 1.5, "draftable": false },
   { "id": "catalyst", "name": "Threefold Pill Blossom", "genre": "Cultivation", "rarity": "Normal", "baseAtk": 0, "attackInterval": 0, "draftable": false }
 ];

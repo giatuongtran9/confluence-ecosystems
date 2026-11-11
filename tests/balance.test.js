@@ -1,5 +1,5 @@
 'use strict';
-const test=require('node:test'),assert=require('node:assert/strict'),G=require('../engine');
+const test=require('node:test'),assert=require('node:assert/strict'),G=require('../engine'),D=require('../data');
 function battle(ids,slots=ids.map((_,i)=>i)){
  const r=G.newRun('none',{},17);r.roster=ids.map(id=>G.instance(r,id));r.depth=15;r.node={row:15,lane:1,type:'boss'};r.phase='combat';
  const b={run:r,time:0,units:[],enemies:[],effects:[],metrics:{kills:0,leaks:0,growth:0,triggers:0,devours:0},plan:{count:1,interval:1,hp:100},spawned:1};b.units=r.roster.map((u,i)=>G.runtime(b,u,slots[i]));b.units.forEach(u=>{G.prepareHooks(b,u);G.record(b,u);u.currentCooldown=999});return b;
@@ -94,8 +94,9 @@ test('Heavenly storm stuns the Nascent Soul for 0.5s and hits all active runners
 test('Cultivation evolves only after a zero-leak Elite/Boss node clear',()=>{for(const nodeType of ['elite','boss']){const b=tribulationBattle('cultivationNascentSoul','guqin');b.run.node.type=nodeType;G.startHeavenlyTrial(b);const soul=b.units[0],relic=b.units[1];if(nodeType==='boss'){const boss=enemy(b,'boss',6);boss.hp=1;G.damage(b,boss,2,soul);assert.equal(b.heavenlyTrial.status,'active');assert.equal(soul.id,'cultivationNascentSoul');}G.finish(b,true);assert.equal(b.heavenlyTrial.status,'passed',nodeType);assert.equal(soul.id,'melodicSaint',nodeType);assert.equal(relic.removed,true,nodeType);assert.ok(b.run.roster.some(u=>u.uid===soul.uid&&u.id==='melodicSaint'),nodeType);}});
 test('runner escape fails on Elite or Boss and permanently removes Nascent Soul plus matching relic',()=>{for(const nodeType of ['elite','boss']){const b=tribulationBattle();b.run.node.type=nodeType;G.startHeavenlyTrial(b);const e=enemy(b,'ordinary',15.99);e.hp=e.maxHp=10000;G.step(b,.1);assert.equal(b.heavenlyTrial.status,'failed',nodeType);assert.equal(b.metrics.leaks,1,nodeType);assert.equal(b.run.roster.length,0,nodeType);assert.equal(b.run.health,90,nodeType);}});
 test('failure leaves the rest of the run active',()=>{const b=tribulationBattle();G.startHeavenlyTrial(b);G.failHeavenlyTrial(b,'runner escape');assert.equal(b.run.phase,'combat');});
-test('all seven relics map to a single trial and their Mythic forms',()=>{for(const [relic,apex] of [['flyingSword','swordImmortal'],['guqin','melodicSaint'],['weiqiBoard','formationMaster'],['inkBrush','talismanSovereign'],['mountainScroll','landscapeSage'],['demonBlade','bloodFiendMaster'],['soulBanner','soulReapingDemon']]){const b=tribulationBattle('cultivationNascentSoul',relic);if(relic==='soulBanner')b.units[1].souls=100;const t=G.startHeavenlyTrial(b);assert.equal(t?.apexId,apex,relic);assert.equal(G.startHeavenlyTrial(b),t,relic);}});
-test('Soul Banner only qualifies when it has 100 souls',()=>{const b=tribulationBattle('cultivationNascentSoul','soulBanner');assert.equal(G.startHeavenlyTrial(b),null);});
+test('all seven relics map to a single trial and their Mythic forms',()=>{for(const [relic,apex] of [['flyingSword','swordImmortal'],['guqin','melodicSaint'],['weiqiBoard','formationMaster'],['inkBrush','talismanSovereign'],['mountainScroll','landscapeSage'],['demonBlade','bloodFiendMaster'],['soulBanner','soulReapingDemon']]){const b=tribulationBattle('cultivationNascentSoul',relic);const t=G.startHeavenlyTrial(b);assert.equal(t?.apexId,apex,relic);assert.equal(G.startHeavenlyTrial(b),t,relic);}});
+test('Soul Banner qualifies for the Mythic trial without stored souls',()=>{const b=tribulationBattle('cultivationNascentSoul','soulBanner');assert.equal(b.units[1].souls,0);assert.equal(G.startHeavenlyTrial(b)?.apexId,'soulReapingDemon');});
+test('Soul Banner transfers captured souls into the Soul-Reaping Demon when the trial passes',()=>{const b=tribulationBattle('cultivationNascentSoul','soulBanner'),banner=b.units[1],soul=b.units[0];banner.souls=37;G.startHeavenlyTrial(b);b.won=true;assert.equal(G.passHeavenlyTrial(b),true);assert.equal(soul.id,'soulReapingDemon');assert.equal(soul.souls,37);});
 test('only the highest-Qi eligible Nascent Soul enters the trial',()=>{const b=tribulationBattle();const other=G.instance(b.run,'cultivationNascentSoul');other.qi=250;b.run.roster.push(other);const unit=G.runtime(b,other,0);G.prepareHooks(b,unit);b.units.push(unit);b.units[1].slot=1;const t=G.startHeavenlyTrial(b);assert.equal(t.unitUid,unit.uid);});
 test('Nascent Soul and relic cannot evolve outside an Elite/Boss trial',()=>{const b=tribulationBattle();b.run.node.type='battle';G.extras(b,b.units[0],0);assert.equal(b.units[0].id,'cultivationNascentSoul');assert.equal(b.units[1].removed,false);});
 test('a Cultivation trial cannot pass before a clean Elite/Boss clear',()=>{const b=tribulationBattle();G.startHeavenlyTrial(b);assert.equal(G.passHeavenlyTrial(b),false);assert.equal(b.heavenlyTrial.status,'active');b.won=true;b.metrics.leaks=1;assert.equal(G.passHeavenlyTrial(b),false);assert.equal(b.heavenlyTrial.status,'active');});
@@ -277,4 +278,43 @@ test('Scrapwork trial fails on leak, missing module proof, or failed clear and r
   if(mode==='leak')G.failScrapworkTrial(b,'A runner leaked');else if(mode==='missing-proof'){G.markScrapworkTrialHit(b,t,'blade',0,enemy(b,'elite',5));G.finish(b,true);}else G.finish(b,false);
   assert.equal(b.scrapworkTrial.status,'failed',mode);assert.equal(t.removed,true,mode);assert.equal(core.removed,true,mode);assert.deepEqual(b.run.roster,[],mode);
  }
+});
+
+
+test('Cultivation base stats are updated across Practitioner realms and Mythic forms',()=>{
+ const expected={practitioner:[12,1.5],cultivationFoundation:[25,1.4],cultivationGoldenCore:[50,1.3],cultivationNascentSoul:[85,1.2]};
+ for(const [id,[atk,interval]] of Object.entries(expected)){const b=battle([id]);assert.equal(b.units[0].baseAtk,atk,id);assert.equal(b.units[0].attackInterval,interval,id);}
+ for(const [id,atk] of [['melodicSaint',110],['landscapeSage',110],['bloodFiendMaster',150]])assert.equal(G.base(G.instance(G.newRun('none',{},2),id)),atk,id);
+});
+test('Cauldron and every Cultivation relic are non-attacking support cards',()=>{
+ const ids=['cauldron','flyingSword','guqin','weiqiBoard','inkBrush','mountainScroll','soulBanner','demonBlade'];
+ for(const id of ids){const b=battle([id]),u=b.units[0],e=enemy(b);const hp=e.hp;assert.equal(G.attack(b,u),false,id);assert.equal(u.attackCount,0,id);assert.equal(e.hp,hp,id);assert.equal(u.baseAtk,0,id);assert.equal(u.attackInterval,0,id);}
+});
+function supportEnemy(b,{p=5,hp=100000,maxHp=100000,defense=0,speed=0}={}){const e={uid:b.enemies.length+1,p,hp,maxHp,defense,speed,leak:10,gone:false,boss:false,champion:false,slows:[],bleeds:[],burns:[],venoms:[],auras:[],ruleMarks:0};b.enemies.push(e);return e;}
+test('Flying Sword lets adjacent allies pierce 50% defense',()=>{
+ const b=battle(['practitioner','flyingSword'],[0,1]),u=b.units[0],e=supportEnemy(b,{defense:.5});G.hit(b,u,e,100,true,{criticalMultiplier:1});assert.equal(100000-e.hp,75);
+});
+test('Guqin slows all enemies and grants adjacent allies 20% attack speed',()=>{
+ const b=battle(['practitioner','guqin'],[0,1]),u=b.units[0],e=supportEnemy(b);G.extras(b,b.units[1],0);G.step(b,.1);assert.ok(e.slows.some(x=>Math.abs(x.power-.2)<1e-9));assert.equal(G.speed(b,u),1.2);
+});
+test('Soul Banner slows all enemies while remaining a non-attacking soul store',()=>{
+ const b=battle(['soulBanner']),banner=b.units[0],e=supportEnemy(b);G.extras(b,banner,0);G.step(b,.1);assert.ok(e.slows.some(x=>Math.abs(x.power-.2)<1e-9));assert.equal(G.attack(b,banner),false);banner.souls=12;assert.equal(G.attack(b,banner),false);
+});
+test('Weiqi periodically warps enemies back and stuns once on a corner tile',()=>{
+ const b=battle(['weiqiBoard']),board=b.units[0],e=supportEnemy(b,{p:10,hp:1000,maxHp:1000});b.time=8;G.extras(b,board,0);assert.equal(e.p,8);assert.ok(b.effects.some(x=>String(x.text).includes('WEIQI')));
+ e.p=3.99;e.speed=1;b.time=8;board.formationAt=100;e.retreatingUntil=0;e.panicUntil=0;e.weiqiCornerStunned=false;G.step(b,.1);assert.equal(e.weiqiCornerStunned,true);assert.ok(e.frozenUntil>b.time+0.5);assert.ok(b.effects.some(x=>String(x.text).includes('CORNER')));
+ const previous=e.frozenUntil;e.frozenUntil=0;e.p=7.99;b.time=9;G.step(b,.1);assert.equal(e.weiqiCornerStunned,true);assert.equal(e.frozenUntil,0);assert.ok(previous>8);
+});
+test('Ink Brush increases damage taken by every enemy by 10%',()=>{
+ const b=battle(['inkBrush']),e=supportEnemy(b);G.damage(b,e,100,null,'direct',true);assert.equal(100000-e.hp,110);
+});
+test('Mountain-River Scroll gives adjacent attackers +15% ATK',()=>{
+ const b=battle(['practitioner','mountainScroll'],[0,1]);assert.ok(Math.abs(G.atk(b,b.units[0])-13.8)<1e-9);
+});
+test('Demon Blade grants adjacent attack speed and normal hits add a one-second 1%-max-HP bleed',()=>{
+ const b=battle(['practitioner','demonBlade'],[0,1]),u=b.units[0],e=supportEnemy(b);assert.equal(G.speed(b,u),1.1);G.hit(b,u,e,100,true,{criticalMultiplier:1});assert.ok(e.bleeds.some(d=>d.dps===1000&&d.until===1));
+});
+test('Jade Immortal and Asura Monk evolution lines are retired',()=>{
+ for(const id of ['jade','monk','immortal','asura']){const c=D.CARD[id];assert.ok(c?.retired,id);assert.equal(c.evolveTo,undefined,id);assert.equal(D.FORMS.some(f=>f.id===id),false,id);}
+ assert.equal(D.FORMS.some(f=>f.id==='monkeyCubApex'),true,'Bloodline Great Sage lineage remains available');
 });
