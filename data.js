@@ -696,15 +696,15 @@ const CARDS = [
     "name": "Crimson Hound",
     "vn": "Xích Huyết Khuyển",
     "genre": "Bloodline",
-    "baseAtk": 16,
-    "attackInterval": 1.3,
+    "baseAtk": 12,
+    "attackInterval": 1.5,
     "sprite": 10,
     "icon": "爪",
     "fav": "center",
     "ecosystem": "Execution · Bloodline fodder",
     "rarity": "Normal",
     "tags": ["predator", "fodder"],
-    "rules": "Prioritize runners below 30% health and deal double damage to them. Same-species Hound neighbors breed temporary Crimson Hound copies at the shared 10% per-second chance into an empty orthogonal slot. Eligible prey for the Primordial Blood Cub; consumed Hounds can also trigger the Broodkeeper.",
+    "rules": "Attacks runners for 100% ATK. Prioritizes runners below 30% HP and deals double damage to them. Eligible prey for the Primordial Blood Cub; its first meal imprints the Slaughter Tiger lineage. Same-species neighbors can breed a temporary Crimson Hound copy (10%/s).",
     "synergy": "Primordial Blood Cub, Crimson Broodkeeper, and other Crimson Hounds."
   },
   
@@ -858,7 +858,7 @@ const CARDS = [
     "icon": "✧",
     "growthRole": "engine",
     "ecosystem": "Sacrifice · neighborhood growth",
-    "rules": "Whenever an ally is consumed or an enemy dies while bleeding, grant all orthogonally adjacent original allies +1 permanent ATK.",
+    "rules": "Cannot attack. Whenever an ally is consumed anywhere or an enemy dies while bleeding, grants all orthogonally adjacent original allies +2 permanent ATK.",
     "synergy": "Primordial Blood Cub and all five Bloodline fodders."
   },
   
@@ -960,7 +960,7 @@ const CARDS = [
     "vn": "Xích Huyết Dục Trùng Giả",
     "genre": "Bloodline",
     "rarity": "Rare",
-    "baseAtk": 14,
+    "baseAtk": 20,
     "attackInterval": 1.4,
     "max": 0,
     "asset": "atlasCreature",
@@ -968,7 +968,7 @@ const CARDS = [
     "fav": "team",
     "icon": "✧",
     "ecosystem": "Predation · recycling",
-    "rules": "Whenever any of the five Bloodline fodders is consumed anywhere on the field, roll a 35% chance to spawn a temporary token copy of that same fodder species into any empty slot. Original and token meals can trigger it; the original remains lost.",
+    "rules": "Attacks runners for 100% ATK. Brood Recovery: Whenever any of the 5 Bloodline fodders is consumed anywhere on the board, rolls a 60% chance to spawn a temporary token copy of that same species into an empty slot (prioritizing slots orthogonally adjacent to the Cub). If an original fodder is consumed, rolls an independent 30% chance to recover and re-deploy the original card.",
     "synergy": "Primordial Blood Cub and all five Bloodline fodders."
   },
   {
@@ -977,15 +977,15 @@ const CARDS = [
     "vn": "Trùng Quần Mẫu Thể",
     "genre": "Bloodline",
     "rarity": "Epic",
-    "baseAtk": 22,
-    "attackInterval": 1.8,
+    "baseAtk": 45,
+    "attackInterval": 1.3,
     "max": 0,
     "asset": "atlasCaster",
     "tags": [],
     "fav": "team",
     "icon": "✧",
     "ecosystem": "Predation · swarm haste",
-    "rules": "Grants all five Bloodline fodder species and their tokens +40% attack speed: Horned Serpent, Crimson Hound, Iron-Shelled Scuttler, Flame Toad, and Spirit Peach. Bloodline Bleed duration increases by 0.5s per deployed Bloodline fodder original or token. Duplicate Matriarch auras do not stack.",
+    "rules": "3-Target Strike: Hits up to 3 leading runners for 70% ATK each. Matriarch's Haste: Passively grants adjacent allies +35% attack speed. Prey Mark: Her attacks mark targets for 3s (+20% damage taken from all Bloodline attacks) and apply 1 Bleed stack (1% enemy max HP/s for 1s).",
     "synergy": "Primordial Blood Cub, all five Bloodline fodders, and Bleed support."
   },
 {
@@ -994,8 +994,8 @@ const CARDS = [
   "vn": "Thái Cổ Ấu Thú",
   "genre": "Bloodline",
   "rarity": "Normal",
-  "baseAtk": 9,
-  "attackInterval": 1.2,
+  "baseAtk": 12,
+  "attackInterval": 1.5,
   "max": 0,
   "asset": "atlasCaster",
   "icon": "♜",
@@ -1005,7 +1005,7 @@ const CARDS = [
     "predator"
   ],
   "ecosystem": "Bloodline · first-meal destiny",
-  "rules": "Attacks runners and devours orthogonally adjacent Bloodline prey at combat opening and every 6 seconds. Its first meal permanently locks one lineage. Every meal grants permanent ATK: +4 for matching prey, +3 for off-lineage prey. Matching meals alone add evolution stacks; it evolves at 2, 4, and 6 matching stacks. At six matching meals it reaches Tier 3; an adjacent matching ancestral relic starts an Elite/Boss Ancestral Ascension trial. Clear the node with zero leaks to awaken Mythic and consume the relic; any leak removes the Tier 3 Cub and relic. Bloodline fodder breeds temporary copies of its own species at a 10% per-second same-species adjacency chance into an empty orthogonal slot.",
+  "rules": "Attacks runners for 100% ATK and devours orthogonally adjacent Bloodline prey at combat opening and every 6s. Its first meal permanently locks one lineage. Every meal grants permanent ATK: +4 for matching prey, +3 for off-lineage prey. Matching meals alone add evolution stacks (evolves at 2, 4, 6 matching stacks). At 6 matching meals it reaches Tier 3; an adjacent matching ancestral relic starts an Elite/Boss Ancestral Ascension trial.",
   "synergy": "Five Bloodline prey, their attacking offspring, and matching ancestral relics."
 },
 {
@@ -1015,7 +1015,7 @@ const CARDS = [
   "genre": "Bloodline",
   "rarity": "Normal",
   "baseAtk": 12,
-  "attackInterval": 1.2,
+  "attackInterval": 1.5,
   "max": 0,
   "asset": "atlasCreature",
   "icon": "🐉",
@@ -1025,7 +1025,7 @@ const CARDS = [
     "attacker"
   ],
   "ecosystem": "Bloodline · Azure Dragon prey",
-  "rules": "Attacks enemies. Its first meal can imprint the Azure Dragon lineage. Same-species neighbors roll once per second for a 10% chance to spawn a temporary Horned Serpent copy into an empty orthogonal slot.",
+  "rules": "Attacks runners for 100% ATK. Eligible prey for the Primordial Blood Cub; its first meal imprints the Azure Dragon lineage. Same-species neighbors roll once per second for a 10% chance to spawn a temporary Horned Serpent copy into an empty orthogonal slot.",
   "synergy": "Primordial Blood Cub and other Horned Serpents."
 },
 {
@@ -1034,7 +1034,7 @@ const CARDS = [
   "vn": "Thiết Giáp Miêu",
   "genre": "Bloodline",
   "rarity": "Normal",
-  "baseAtk": 14,
+  "baseAtk": 12,
   "attackInterval": 1.5,
   "max": 0,
   "asset": "atlasMachineC",
@@ -1045,7 +1045,7 @@ const CARDS = [
     "attacker"
   ],
   "ecosystem": "Bloodline · Xuanwu prey",
-  "rules": "Attacks enemies and slows targets by 15% for 2 seconds. Its first meal can imprint the Black Tortoise & Serpent lineage. Same-species neighbors can breed a temporary Iron-Shelled Scuttler copy using the shared 10%-per-second rule.",
+  "rules": "Attacks runners for 100% ATK. Eligible prey for the Primordial Blood Cub; its first meal imprints the Xuanwu lineage. Same-species neighbors can breed a temporary Iron-Shelled Scuttler copy (10%/s).",
   "synergy": "Primordial Blood Cub and other Iron-Shelled Scuttlers."
 },
 {
@@ -1054,8 +1054,8 @@ const CARDS = [
   "vn": "Hỏa Diệm Thiềm Thừ",
   "genre": "Bloodline",
   "rarity": "Normal",
-  "baseAtk": 11,
-  "attackInterval": 1.1,
+  "baseAtk": 12,
+  "attackInterval": 1.5,
   "max": 0,
   "asset": "atlasMachineB",
   "icon": "🐸",
@@ -1065,7 +1065,7 @@ const CARDS = [
     "attacker"
   ],
   "ecosystem": "Bloodline · Vermilion Phoenix prey",
-  "rules": "Attacks enemies and applies Burn: 3 DPS for 3 seconds. Its first meal can imprint the Vermilion Phoenix lineage. Same-species neighbors can breed a temporary Flame Toad copy using the shared 10%-per-second rule.",
+  "rules": "Attacks runners for 100% ATK. Eligible prey for the Primordial Blood Cub; its first meal imprints the Vermilion Phoenix lineage. Same-species neighbors can breed a temporary Flame Toad copy (10%/s).",
   "synergy": "Primordial Blood Cub and other Flame Toads."
 },
 {
@@ -1074,8 +1074,8 @@ const CARDS = [
   "vn": "Linh Đào",
   "genre": "Bloodline",
   "rarity": "Normal",
-  "baseAtk": 10,
-  "attackInterval": 0.9,
+  "baseAtk": 12,
+  "attackInterval": 1.5,
   "max": 0,
   "asset": "lotus",
   "icon": "🍑",
@@ -1085,7 +1085,7 @@ const CARDS = [
     "attacker"
   ],
   "ecosystem": "Bloodline · Divine Monkey prey",
-  "rules": "Attacks enemies with swift strikes. Its first meal can imprint the Divine Monkey lineage. Same-species neighbors can breed a temporary Spirit Peach Fodder copy using the shared 10%-per-second rule.",
+  "rules": "Attacks runners for 100% ATK. Eligible prey for the Primordial Blood Cub; its first meal imprints the Stone Simian lineage. Same-species neighbors can breed a temporary Spirit Peach copy (10%/s).",
   "synergy": "Primordial Blood Cub and other Spirit Peach Fodder."
 },
 {
@@ -1105,7 +1105,7 @@ const CARDS = [
     "bloodline-relic"
   ],
   "ecosystem": "Bloodline · ancestral relic",
-  "rules": "When adjacent to the matching Tier 3 Dragon, starts an Elite/Boss Ancestral Ascension trial. The relic is consumed only if the node is cleared with zero leaks; any leak fails the trial and removes the Tier 3 Dragon and relic.",
+  "rules": "Cannot attack. Ancestral Relic: Passively grants orthogonally adjacent allies +20% ATK. When adjacent to the matching Tier 3 Dragon, starts an Elite/Boss Ancestral Ascension trial (consumed on zero-leak clear).",
   "synergy": "Primordial Blood Cub and matching lineage."
 },
 {
@@ -1125,7 +1125,7 @@ const CARDS = [
     "bloodline-relic"
   ],
   "ecosystem": "Bloodline · ancestral relic",
-  "rules": "When adjacent to the matching Tier 3 Tiger, starts an Elite/Boss Ancestral Ascension trial. The relic is consumed only if the node is cleared with zero leaks; any leak fails the trial and removes the Tier 3 Tiger and relic.",
+  "rules": "Cannot attack. Ancestral Relic: Passively grants orthogonally adjacent allies +20% crit chance, and their normal attacks apply 1 Bleed stack (1% enemy max HP for 1s). When adjacent to the matching Tier 3 Tiger, starts an Ancestral Ascension trial.",
   "synergy": "Primordial Blood Cub and matching lineage."
 },
 {
@@ -1145,7 +1145,7 @@ const CARDS = [
     "bloodline-relic"
   ],
   "ecosystem": "Bloodline · ancestral relic",
-  "rules": "When adjacent to the matching Tier 3 Xuanwu, starts an Elite/Boss Ancestral Ascension trial. The relic is consumed only if the node is cleared with zero leaks; any leak fails the trial and removes the Tier 3 Xuanwu and relic.",
+  "rules": "Cannot attack. Ancestral Relic: Passively grants orthogonally adjacent allies the ability to apply slow (20% for 2s) and 1 Poison stack (1% enemy max HP for 1s) on normal attack. When adjacent to matching Tier 3 Xuanwu, starts an Ancestral Ascension trial.",
   "synergy": "Primordial Blood Cub and matching lineage."
 },
 {
@@ -1165,7 +1165,7 @@ const CARDS = [
     "bloodline-relic"
   ],
   "ecosystem": "Bloodline · ancestral relic",
-  "rules": "When adjacent to the matching Tier 3 Phoenix, starts an Elite/Boss Ancestral Ascension trial. The relic is consumed only if the node is cleared with zero leaks; any leak fails the trial and removes the Tier 3 Phoenix and relic.",
+  "rules": "Cannot attack. Ancestral Relic: Passively grants orthogonally adjacent allies the ability to apply 1 Burn stack (1% enemy max HP for 1s) on normal attack, and their normal attack targets 1 additional runner. When adjacent to Tier 3 Phoenix, starts an Ancestral Ascension trial.",
   "synergy": "Primordial Blood Cub and matching lineage."
 },
 {
@@ -1185,7 +1185,7 @@ const CARDS = [
     "bloodline-relic"
   ],
   "ecosystem": "Bloodline · ancestral relic",
-  "rules": "When adjacent to the matching Tier 3 Simian, starts an Elite/Boss Ancestral Ascension trial. The relic is consumed only if the node is cleared with zero leaks; any leak fails the trial and removes the Tier 3 Simian and relic.",
+  "rules": "Cannot attack. Ancestral Relic: Passively grants orthogonally adjacent allies +30% attack speed. When adjacent to matching Tier 3 Simian, starts an Ancestral Ascension trial.",
   "synergy": "Primordial Blood Cub and matching lineage."
 }
 ];
@@ -1840,8 +1840,8 @@ const FORMS = [
   "vn": "Horned Drake Cub",
   "genre": "Bloodline",
   "rarity": "Rare",
-  "baseAtk": 22,
-  "attackInterval": 1.1,
+  "baseAtk": 25,
+  "attackInterval": 1.4,
   "max": 0,
   "asset": "atlasCaster",
   "icon": "♜",
@@ -1854,7 +1854,7 @@ const FORMS = [
   "draftable": false,
   "lineage": "dragon",
   "lineageTier": 1,
-  "rules": "Hits the 2 leading runners. This ability is inherited by all higher Dragon evolutions.",
+  "rules": "Normal attack targets 2 enemies dealing 80% ATK damage each.",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
@@ -1864,7 +1864,7 @@ const FORMS = [
   "genre": "Bloodline",
   "rarity": "Epic",
   "baseAtk": 48,
-  "attackInterval": 1.0,
+  "attackInterval": 1.3,
   "max": 0,
   "asset": "atlasCaster",
   "icon": "♜",
@@ -1877,7 +1877,7 @@ const FORMS = [
   "draftable": false,
   "lineage": "dragon",
   "lineageTier": 2,
-  "rules": "Inherits the 2-runner strike. Every fourth attack hits 3 runners for double damage; higher Dragon evolutions retain both abilities.",
+  "rules": "Normal attack targets 2 enemies dealing 90% ATK damage each.",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
@@ -1887,7 +1887,7 @@ const FORMS = [
   "genre": "Bloodline",
   "rarity": "Legendary",
   "baseAtk": 85,
-  "attackInterval": 0.85,
+  "attackInterval": 1.2,
   "max": 0,
   "asset": "atlasCaster",
   "icon": "♜",
@@ -1900,7 +1900,7 @@ const FORMS = [
   "draftable": false,
   "lineage": "dragon",
   "lineageTier": 3,
-  "rules": "Inherits the Dragon’s 2-runner strike and every-fourth-attack double strike. Hits the 4 leading runners; these abilities remain at Apex.",
+  "rules": "Normal attack targets 3 enemies dealing 100% ATK damage each.",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
@@ -1909,8 +1909,8 @@ const FORMS = [
   "vn": "Primordial Azure Dragon",
   "genre": "Bloodline",
   "rarity": "Mythic",
-  "baseAtk": 160,
-  "attackInterval": 0.7,
+  "baseAtk": 150,
+  "attackInterval": 1.0,
   "max": 0,
   "asset": "atlasCaster",
   "icon": "♜",
@@ -1923,7 +1923,7 @@ const FORMS = [
   "draftable": false,
   "lineage": "dragon",
   "lineageTier": 4,
-  "rules": "Inherits all lower Dragon attacks and hits the 6 leading runners. Every 8 seconds knocks all runners back 2 tiles.",
+  "rules": "Normal attack targets 4 enemies dealing 100% ATK damage each. Every 10th attack, channels for 1.2s to release Primordial Wrath: targets all active enemies dealing 200% ATK damage and stuns them for 1s.",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
@@ -1933,7 +1933,7 @@ const FORMS = [
   "genre": "Bloodline",
   "rarity": "Rare",
   "baseAtk": 24,
-  "attackInterval": 1.0,
+  "attackInterval": 1.3,
   "max": 0,
   "asset": "atlasCaster",
   "icon": "♜",
@@ -1946,7 +1946,7 @@ const FORMS = [
   "draftable": false,
   "lineage": "tiger",
   "lineageTier": 1,
-  "rules": "15% extra critical chance. This ability remains through every higher Tiger evolution.",
+  "rules": "Normal attack deals 100% ATK damage. Passively gains +15% extra crit chance (base 25%).",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
@@ -1955,7 +1955,53 @@ const FORMS = [
   "vn": "Blood-Stripe Saber",
   "genre": "Bloodline",
   "rarity": "Epic",
-  "baseAtk": 52,
+  "baseAtk": 45,
+  "attackInterval": 1.2,
+  "max": 0,
+  "asset": "atlasCaster",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-tiger"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "tiger",
+  "lineageTier": 2,
+  "rules": "Normal attack deals 100% ATK damage and applies 1 Bleed stack (1% enemy max HP for 1s). Inherits +15% extra crit chance (base 25%).",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "tigerCubT3",
+  "name": "Slaughter War Tiger",
+  "vn": "Slaughter War Tiger",
+  "genre": "Bloodline",
+  "rarity": "Legendary",
+  "baseAtk": 80,
+  "attackInterval": 1.1,
+  "max": 0,
+  "asset": "atlasCaster",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-tiger"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "tiger",
+  "lineageTier": 3,
+  "rules": "Normal attack deals 100% ATK damage and applies 1 Bleed stack (1% enemy max HP for 1s). Gains +25% extra crit chance (base is now 50%).",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "tigerCubApex",
+  "name": "White Tiger God of Slaughter",
+  "vn": "White Tiger God of Slaughter",
+  "genre": "Bloodline",
+  "rarity": "Mythic",
+  "baseAtk": 130,
   "attackInterval": 0.9,
   "max": 0,
   "asset": "atlasCaster",
@@ -1968,54 +2014,8 @@ const FORMS = [
   "evolvedFrom": "cub",
   "draftable": false,
   "lineage": "tiger",
-  "lineageTier": 2,
-  "rules": "Inherits 15% extra critical chance. Attacks apply Bleed (3 DPS for 4s); critical strikes against bleeding targets deal triple damage. These abilities remain through higher Tiger evolutions.",
-  "synergy": "Primordial Blood Cub and matching prey/relics."
-},
-{
-  "id": "tigerCubT3",
-  "name": "Slaughter War Tiger",
-  "vn": "Slaughter War Tiger",
-  "genre": "Bloodline",
-  "rarity": "Legendary",
-  "baseAtk": 95,
-  "attackInterval": 0.75,
-  "max": 0,
-  "asset": "atlasCaster",
-  "icon": "♜",
-  "fav": "team",
-  "tags": [
-    "bloodline-form",
-    "lineage-tiger"
-  ],
-  "evolvedFrom": "cub",
-  "draftable": false,
-  "lineage": "tiger",
-  "lineageTier": 3,
-  "rules": "Inherits 15% extra critical chance, Bleed (3 DPS for 4s), and triple critical damage against bleeding targets. Prioritizes elites and deals triple damage to targets below 40% health; inherited abilities remain at Apex.",
-  "synergy": "Primordial Blood Cub and matching prey/relics."
-},
-{
-  "id": "tigerCubApex",
-  "name": "White Tiger God of Slaughter",
-  "vn": "White Tiger God of Slaughter",
-  "genre": "Bloodline",
-  "rarity": "Mythic",
-  "baseAtk": 210,
-  "attackInterval": 0.55,
-  "max": 0,
-  "asset": "atlasCaster",
-  "icon": "♜",
-  "fav": "team",
-  "tags": [
-    "bloodline-form",
-    "lineage-tiger"
-  ],
-  "evolvedFrom": "cub",
-  "draftable": false,
-  "lineage": "tiger",
   "lineageTier": 4,
-  "rules": "Inherits the Tiger Cub’s 15% extra critical chance, Bleed, triple critical damage against bleeding targets, elite priority, and triple damage below 40% health. Deals quadruple damage; kills stun all runners for 1.5 seconds.",
+  "rules": "Normal attack deals 100% ATK damage and applies 1 Bleed stack (1% enemy max HP for 1s). Gains +25% extra crit chance (base is now 75%). Every 10th attack, channels for 1.2s to roar and inflict Terror board-wide: all enemies run backward for 3s, then are slowed by 45% for 3s.",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
@@ -2024,7 +2024,30 @@ const FORMS = [
   "vn": "Xuanwu Hatchling",
   "genre": "Bloodline",
   "rarity": "Rare",
-  "baseAtk": 18,
+  "baseAtk": 20,
+  "attackInterval": 1.5,
+  "max": 0,
+  "asset": "atlasCaster",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-xuanwu"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "xuanwu",
+  "lineageTier": 1,
+  "rules": "Normal attack deals 100% ATK damage and applies 1 Poison stack (1% enemy max HP for 1s).",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "xuanwuCubT2",
+  "name": "Mountain-Back Behemoth",
+  "vn": "Mountain-Back Behemoth",
+  "genre": "Bloodline",
+  "rarity": "Epic",
+  "baseAtk": 45,
   "attackInterval": 1.4,
   "max": 0,
   "asset": "atlasCaster",
@@ -2037,17 +2060,40 @@ const FORMS = [
   "evolvedFrom": "cub",
   "draftable": false,
   "lineage": "xuanwu",
-  "lineageTier": 1,
-  "rules": "Inherits through every higher Xuanwu evolution: attacks slow targets by 20% for 2 seconds.",
+  "lineageTier": 2,
+  "rules": "Normal attack deals 100% ATK damage to 2 enemies and applies 1 Poison stack (1% enemy max HP for 1s).",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
-  "id": "xuanwuCubT2",
-  "name": "Mountain-Back Behemoth",
-  "vn": "Mountain-Back Behemoth",
+  "id": "xuanwuCubT3",
+  "name": "Abyssal Twin Sovereigns",
+  "vn": "Abyssal Twin Sovereigns",
   "genre": "Bloodline",
-  "rarity": "Epic",
-  "baseAtk": 42,
+  "rarity": "Legendary",
+  "baseAtk": 90,
+  "attackInterval": 1.4,
+  "max": 0,
+  "asset": "atlasCaster",
+  "icon": "♜",
+  "fav": "team",
+  "tags": [
+    "bloodline-form",
+    "lineage-xuanwu"
+  ],
+  "evolvedFrom": "cub",
+  "draftable": false,
+  "lineage": "xuanwu",
+  "lineageTier": 3,
+  "rules": "Normal attack deals 100% ATK damage to 3 enemies and applies 1 Poison stack (1% enemy max HP for 1s).",
+  "synergy": "Primordial Blood Cub and matching prey/relics."
+},
+{
+  "id": "xuanwuCubApex",
+  "name": "Xuanwu Divine Heaven-Bearer",
+  "vn": "Xuanwu Divine Heaven-Bearer",
+  "genre": "Bloodline",
+  "rarity": "Mythic",
+  "baseAtk": 150,
   "attackInterval": 1.3,
   "max": 0,
   "asset": "atlasCaster",
@@ -2060,54 +2106,8 @@ const FORMS = [
   "evolvedFrom": "cub",
   "draftable": false,
   "lineage": "xuanwu",
-  "lineageTier": 2,
-  "rules": "Inherits the 20% slow. Attacks apply Venom (4 DPS for 4s); every fifth attack deals 120 true damage to all runners. These abilities remain through higher Xuanwu evolutions.",
-  "synergy": "Primordial Blood Cub and matching prey/relics."
-},
-{
-  "id": "xuanwuCubT3",
-  "name": "Abyssal Twin Sovereigns",
-  "vn": "Abyssal Twin Sovereigns",
-  "genre": "Bloodline",
-  "rarity": "Legendary",
-  "baseAtk": 80,
-  "attackInterval": 1.1,
-  "max": 0,
-  "asset": "atlasCaster",
-  "icon": "♜",
-  "fav": "team",
-  "tags": [
-    "bloodline-form",
-    "lineage-xuanwu"
-  ],
-  "evolvedFrom": "cub",
-  "draftable": false,
-  "lineage": "xuanwu",
-  "lineageTier": 3,
-  "rules": "Inherits the Xuanwu slow, Venom, and every-fifth-attack true-damage pulse. When a runner is speed-boosted, deals 60 true damage and stuns it for 1 second; these abilities remain at Apex.",
-  "synergy": "Primordial Blood Cub and matching prey/relics."
-},
-{
-  "id": "xuanwuCubApex",
-  "name": "Xuanwu Divine Heaven-Bearer",
-  "vn": "Xuanwu Divine Heaven-Bearer",
-  "genre": "Bloodline",
-  "rarity": "Mythic",
-  "baseAtk": 150,
-  "attackInterval": 0.9,
-  "max": 0,
-  "asset": "atlasCaster",
-  "icon": "♜",
-  "fav": "team",
-  "tags": [
-    "bloodline-form",
-    "lineage-xuanwu"
-  ],
-  "evolvedFrom": "cub",
-  "draftable": false,
-  "lineage": "xuanwu",
   "lineageTier": 4,
-  "rules": "Inherits all lower Xuanwu abilities. Alternates added Venom and 2-tile knockback on attacks; prevents up to 2 leaks per battle. Leak prevention excludes bosses and Harbingers.",
+  "rules": "Normal attack deals 100% ATK damage to 3 enemies and applies 1 Poison stack (1% enemy max HP for 1s). Every 10th attack, channels for 1.2s to release a toxic pool onto the track quadrant (0-4, 4-8, 8-12, 12-16) with the highest enemy density for 5s: enemies on the toxin take 1 Poison stack every second and are slowed by 30%.",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
@@ -2116,8 +2116,8 @@ const FORMS = [
   "vn": "Fire-Fledged Chick",
   "genre": "Bloodline",
   "rarity": "Rare",
-  "baseAtk": 20,
-  "attackInterval": 1.1,
+  "baseAtk": 22,
+  "attackInterval": 1.4,
   "max": 0,
   "asset": "atlasCaster",
   "icon": "♜",
@@ -2130,7 +2130,7 @@ const FORMS = [
   "draftable": false,
   "lineage": "phoenix",
   "lineageTier": 1,
-  "rules": "Attacks apply stacking Burn (5 DPS for 4s). This ability remains through every higher Phoenix evolution.",
+  "rules": "Normal attack deals 100% ATK damage and applies 1 Burn stack (1% enemy max HP for 1s).",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
@@ -2140,7 +2140,7 @@ const FORMS = [
   "genre": "Bloodline",
   "rarity": "Epic",
   "baseAtk": 46,
-  "attackInterval": 0.95,
+  "attackInterval": 1.3,
   "max": 0,
   "asset": "atlasCaster",
   "icon": "♜",
@@ -2153,7 +2153,7 @@ const FORMS = [
   "draftable": false,
   "lineage": "phoenix",
   "lineageTier": 2,
-  "rules": "Inherits stacking Burn. Burns spread to the next runner, and attacks make targets take 15% more damage for 3s; these abilities remain through higher Phoenix evolutions.",
+  "rules": "Normal attack deals 100% ATK damage and applies 1 Burn stack (1% enemy max HP for 1s), spreading 1 Burn stack to 1 runner behind.",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
@@ -2162,8 +2162,8 @@ const FORMS = [
   "vn": "Nirvana Flame Bird",
   "genre": "Bloodline",
   "rarity": "Legendary",
-  "baseAtk": 82,
-  "attackInterval": 0.8,
+  "baseAtk": 86,
+  "attackInterval": 1.2,
   "max": 0,
   "asset": "atlasCaster",
   "icon": "♜",
@@ -2176,7 +2176,7 @@ const FORMS = [
   "draftable": false,
   "lineage": "phoenix",
   "lineageTier": 3,
-  "rules": "Inherits Burn spread and 15% increased damage taken. Every 8 seconds consumes active Burns, dealing their remaining damage immediately; inherited abilities remain at Apex.",
+  "rules": "Normal attack deals 100% ATK damage and applies 1 Burn stack (1% enemy max HP for 1s), spreading 1 Burn stack to 2 runners behind. If a burning runner dies, all its Burn stacks spread to the runner behind.",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
@@ -2185,8 +2185,8 @@ const FORMS = [
   "vn": "Immortal Vermilion Phoenix",
   "genre": "Bloodline",
   "rarity": "Mythic",
-  "baseAtk": 175,
-  "attackInterval": 0.65,
+  "baseAtk": 130,
+  "attackInterval": 1.0,
   "max": 0,
   "asset": "atlasCaster",
   "icon": "♜",
@@ -2199,7 +2199,7 @@ const FORMS = [
   "draftable": false,
   "lineage": "phoenix",
   "lineageTier": 4,
-  "rules": "Inherits all lower Phoenix abilities and deals 25% extra true fire damage on attacks. Once per run, revives after lethal damage with 1 HP.",
+  "rules": "Normal attack deals 100% ATK damage and applies 1 Burn stack (1% enemy max HP for 1s), spreading 1 Burn stack to 3 runners behind. Burning deaths spread stacks behind. Once per run, if player health drops to 0, revives with 15 HP.",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
@@ -2208,8 +2208,8 @@ const FORMS = [
   "vn": "Stone Simian Cub",
   "genre": "Bloodline",
   "rarity": "Rare",
-  "baseAtk": 16,
-  "attackInterval": 0.8,
+  "baseAtk": 29,
+  "attackInterval": 1.4,
   "max": 0,
   "asset": "atlasCaster",
   "icon": "♜",
@@ -2222,7 +2222,7 @@ const FORMS = [
   "draftable": false,
   "lineage": "monkey",
   "lineageTier": 1,
-  "rules": "Fast attacks grant 10 percentage points of extra critical chance. This ability remains through every higher Monkey evolution.",
+  "rules": "Normal attack deals 100% ATK damage. Passively gains +15% ATK (base 25 → 29 ATK).",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
@@ -2231,8 +2231,8 @@ const FORMS = [
   "vn": "Four-Eared Macaque",
   "genre": "Bloodline",
   "rarity": "Epic",
-  "baseAtk": 38,
-  "attackInterval": 0.7,
+  "baseAtk": 54,
+  "attackInterval": 1.3,
   "max": 0,
   "asset": "atlasCaster",
   "icon": "♜",
@@ -2245,7 +2245,7 @@ const FORMS = [
   "draftable": false,
   "lineage": "monkey",
   "lineageTier": 2,
-  "rules": "Inherits 10 percentage points of extra critical chance. Every sixth attack summons a temporary 50%-ATK clone; these abilities remain through higher Monkey evolutions.",
+  "rules": "Normal attack deals 100% ATK damage. Passively gains +20% ATK (base 45 → 54 ATK). Every 4th attack summons a clone with 75% ATK into an empty slot (clones perform normal attacks only).",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
@@ -2254,8 +2254,8 @@ const FORMS = [
   "vn": "Heaven-Shaking Ape King",
   "genre": "Bloodline",
   "rarity": "Legendary",
-  "baseAtk": 75,
-  "attackInterval": 0.6,
+  "baseAtk": 111,
+  "attackInterval": 1.2,
   "max": 0,
   "asset": "atlasCaster",
   "icon": "♜",
@@ -2268,7 +2268,7 @@ const FORMS = [
   "draftable": false,
   "lineage": "monkey",
   "lineageTier": 3,
-  "rules": "Inherits Monkey critical chance and the sixth-attack clone. Attacks cleave the 3 leading runners; inherited abilities remain at Apex.",
+  "rules": "Normal attack deals 100% ATK damage and cleaves up to 3 runners behind. Passively gains +30% ATK (base 85 → 111 ATK). Every 4th attack summons a clone with 75% ATK into an empty slot (clones also cleave 3 runners behind).",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
@@ -2277,8 +2277,8 @@ const FORMS = [
   "vn": "Great Sage Equal to Heaven",
   "genre": "Bloodline",
   "rarity": "Mythic",
-  "baseAtk": 185,
-  "attackInterval": 0.45,
+  "baseAtk": 169,
+  "attackInterval": 1.0,
   "max": 0,
   "asset": "atlasCaster",
   "icon": "♜",
@@ -2291,7 +2291,7 @@ const FORMS = [
   "draftable": false,
   "lineage": "monkey",
   "lineageTier": 4,
-  "rules": "Inherits all lower Monkey abilities. Strikes up to 8 runners for 150% ATK as true damage and strips active speed boosts and buffs.",
+  "rules": "Normal attack deals 100% ATK damage and cleaves up to 3 runners behind. Passively gains +30% ATK (base 130 → 169 ATK). Every 4th attack summons a clone with 75% ATK into an empty slot. Every 10th attack, channels for 1.2s: strikes staff down the track quadrant with the highest enemy density for 200% ATK damage board-wide in that quadrant.",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 }
 ];
@@ -2361,8 +2361,8 @@ const TOKENS = [
     "vn": "Hound Phantom",
     "genre": "Bloodline",
     "rarity": "Normal",
-    "baseAtk": 16,
-    "attackInterval": 1.3,
+    "baseAtk": 12,
+    "attackInterval": 1.5,
     "asset": "hound",
     "tags": ["token", "fodder"],
     "token": true,
