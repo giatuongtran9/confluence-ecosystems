@@ -26,8 +26,19 @@ test('grass brewing starts at 8s, shares cadence and temporary speed expires',()
  assert.equal(u.permanentSpeed,undefined);assert.equal(u.pillSpeedUntil,16);
  const faster=G.speed(b,u);b.time=16;assert.ok(G.speed(b,u)<faster);
  const blossom=G.spawnToken(b,b.units[3],'lotusBlossom');Object.assign(blossom,G.xy(7),{slot:7});
- G.extras(b,c,.1);assert.equal(u.qi,18);assert.equal(c.brewAt,24);assert.ok(blossom.removed);
+ G.extras(b,c,.1);assert.equal(u.qi,18);assert.equal(u.permanentAtkBonus,5);assert.equal(c.brewAt,24);assert.ok(blossom.removed);
  G.extras(b,c,.1);assert.equal(u.qi,18);
+});
+test('direct Blossom absorption grants +5 Qi and +1 permanent ATK',()=>{
+ const b=battle(['practitioner','lotusRoot'],[4,8]),u=b.units[0];
+ const blossom=G.spawnToken(b,b.units[1],'lotusBlossom');Object.assign(blossom,G.xy(5),{slot:5});
+ G.extras(b,u,.1);assert.equal(u.qi,5);assert.equal(u.permanentAtkBonus,1);assert.ok(blossom.removed);
+});
+test('Cauldron Blossom brewing grants +6 Qi and +2 permanent ATK',()=>{
+ const b=battle(['cauldron','practitioner','lotusRoot'],[4,5,8]),c=b.units[0],u=b.units[1];
+ const blossom=G.spawnToken(b,b.units[2],'lotusBlossom');Object.assign(blossom,G.xy(1),{slot:1});
+ b.time=8;G.extras(b,c,.1);
+ assert.equal(u.qi,6);assert.equal(u.permanentAtkBonus,2);assert.ok(blossom.removed);
 });
 test('Cauldron preserves ingredients without a valid recipient',()=>{
  const b=battle(['cauldron','lotusRoot'],[4,8]);const blossom=G.spawnToken(b,b.units[1],'lotusBlossom');
