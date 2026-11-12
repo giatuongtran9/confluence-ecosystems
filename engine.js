@@ -3107,9 +3107,9 @@ function fx(b, type, u, e, text, extra = {}) {
    const cauldronWillBrew = blossom && b.units.some(v => !v.removed && v.id === 'cauldron' && neighbors(b, v, false).some(n => n.uid === blossom.uid));
    if (blossom && !cauldronWillBrew) {
     const apex = isCultivationApex(u);
-    consume(b, u, blossom, 'Blossom Absorption', apex ? 0 : 2);
+    consume(b, u, blossom, 'Blossom Absorption', apex ? 0 : 1);
     addQi(b, u, apex?15:5);
-    interact(b, blossom, u, 'qi', apex ? '+15 Qi toward permanent growth' : '+5 Qi, +2 permanent ATK');
+    interact(b, blossom, u, 'qi', apex ? '+15 Qi toward permanent growth' : '+5 Qi, +1 permanent ATK');
    }
   }
   if (u.id === 'cauldron' && b.time >= u.brewAt) {
@@ -3138,8 +3138,8 @@ function fx(b, type, u, e, text, extra = {}) {
     if (target) {
      consume(b, u, blossom, 'Blossom Brewing', 0);
      addQi(b, target, 6);
-     growth(b, target, 4);
-     interact(b, u, target, 'blossom-brew', '+6 Qi and +4 permanent ATK · Lotus Blossom brewed');
+     growth(b, target, 2);
+     interact(b, u, target, 'blossom-brew', '+6 Qi and +2 permanent ATK · Lotus Blossom brewed');
      brewed = true;
     }
    }
