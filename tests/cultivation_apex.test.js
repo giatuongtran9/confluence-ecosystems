@@ -5,7 +5,7 @@ const G = require('../engine');
 const D = require('../data');
 
 function battle(ids, slots = ids.map((_, i) => i)) {
-  const r = G.newRun('none', {}, 17);
+  const r = G.newRun('none', 17);
   r.roster = ids.map(id => G.instance(r, id));
   r.node = { row: 5, lane: 1, type: 'battle' };
   r.depth = 5;

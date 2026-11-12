@@ -15,7 +15,7 @@
       ],
       "alpha_pixels": 28502,
       "size_bytes": 32700,
-      "repo_path": "assets/haunted-sprites/ancient-flying-sword.webp",
+      "repo_path": "assets/cultivation-sprites-webp/ancient-flying-sword.webp",
       "source_relative_path": "assets/cultivation-sprites/ancient-flying-sword.png"
     },
     {
@@ -31,7 +31,7 @@
       ],
       "alpha_pixels": 78658,
       "size_bytes": 91314,
-      "repo_path": "assets/haunted-sprites/blood-fiend-sword-master.webp",
+      "repo_path": "assets/cultivation-sprites-webp/blood-fiend-sword-master.webp",
       "source_relative_path": "assets/cultivation-sprites/blood-fiend-sword-master.png"
     },
     {
@@ -47,7 +47,7 @@
       ],
       "alpha_pixels": 52322,
       "size_bytes": 36058,
-      "repo_path": "assets/haunted-sprites/celestial-guqin.webp",
+      "repo_path": "assets/cultivation-sprites-webp/celestial-guqin.webp",
       "source_relative_path": "assets/cultivation-sprites/celestial-guqin.png"
     },
     {
@@ -63,7 +63,7 @@
       ],
       "alpha_pixels": 44437,
       "size_bytes": 44004,
-      "repo_path": "assets/haunted-sprites/cloud-mist-spirit-grass.webp",
+      "repo_path": "assets/cultivation-sprites-webp/cloud-mist-spirit-grass.webp",
       "source_relative_path": "assets/cultivation-sprites/cloud-mist-spirit-grass.png"
     },
     {
@@ -79,7 +79,7 @@
       ],
       "alpha_pixels": 27029,
       "size_bytes": 40512,
-      "repo_path": "assets/haunted-sprites/demon-blade.webp",
+      "repo_path": "assets/cultivation-sprites-webp/demon-blade.webp",
       "source_relative_path": "assets/cultivation-sprites/demon-blade.png"
     },
     {
@@ -95,7 +95,7 @@
       ],
       "alpha_pixels": 26363,
       "size_bytes": 29122,
-      "repo_path": "assets/haunted-sprites/dragon-tail-ink-brush.webp",
+      "repo_path": "assets/cultivation-sprites-webp/dragon-tail-ink-brush.webp",
       "source_relative_path": "assets/cultivation-sprites/dragon-tail-ink-brush.png"
     },
     {
@@ -111,7 +111,7 @@
       ],
       "alpha_pixels": 93314,
       "size_bytes": 68836,
-      "repo_path": "assets/haunted-sprites/formation-master.webp",
+      "repo_path": "assets/cultivation-sprites-webp/formation-master.webp",
       "source_relative_path": "assets/cultivation-sprites/formation-master.png"
     },
     {
@@ -127,7 +127,7 @@
       ],
       "alpha_pixels": 54127,
       "size_bytes": 36958,
-      "repo_path": "assets/haunted-sprites/foundation-practitioner.webp",
+      "repo_path": "assets/cultivation-sprites-webp/foundation-practitioner.webp",
       "source_relative_path": "assets/cultivation-sprites/foundation-practitioner.png"
     },
     {
@@ -143,7 +143,7 @@
       ],
       "alpha_pixels": 68361,
       "size_bytes": 57750,
-      "repo_path": "assets/haunted-sprites/golden-core-daoist.webp",
+      "repo_path": "assets/cultivation-sprites-webp/golden-core-daoist.webp",
       "source_relative_path": "assets/cultivation-sprites/golden-core-daoist.png"
     },
     {
@@ -159,7 +159,7 @@
       ],
       "alpha_pixels": 101839,
       "size_bytes": 72998,
-      "repo_path": "assets/haunted-sprites/landscape-sage.webp",
+      "repo_path": "assets/cultivation-sprites-webp/landscape-sage.webp",
       "source_relative_path": "assets/cultivation-sprites/landscape-sage.png"
     },
     {
@@ -175,7 +175,7 @@
       ],
       "alpha_pixels": 94754,
       "size_bytes": 83770,
-      "repo_path": "assets/haunted-sprites/melodic-saint.webp",
+      "repo_path": "assets/cultivation-sprites-webp/melodic-saint.webp",
       "source_relative_path": "assets/cultivation-sprites/melodic-saint.png"
     },
     {
@@ -191,7 +191,7 @@
       ],
       "alpha_pixels": 76417,
       "size_bytes": 64116,
-      "repo_path": "assets/haunted-sprites/mountain-river-scroll.webp",
+      "repo_path": "assets/cultivation-sprites-webp/mountain-river-scroll.webp",
       "source_relative_path": "assets/cultivation-sprites/mountain-river-scroll.png"
     },
     {
@@ -207,7 +207,7 @@
       ],
       "alpha_pixels": 81653,
       "size_bytes": 74732,
-      "repo_path": "assets/haunted-sprites/nascent-soul-sovereign.webp",
+      "repo_path": "assets/cultivation-sprites-webp/nascent-soul-sovereign.webp",
       "source_relative_path": "assets/cultivation-sprites/nascent-soul-sovereign.png"
     },
     {
@@ -223,7 +223,7 @@
       ],
       "alpha_pixels": 101961,
       "size_bytes": 69422,
-      "repo_path": "assets/haunted-sprites/nine-turn-alchemy-cauldron.webp",
+      "repo_path": "assets/cultivation-sprites-webp/nine-turn-alchemy-cauldron.webp",
       "source_relative_path": "assets/cultivation-sprites/nine-turn-alchemy-cauldron.png"
     },
     {
@@ -239,7 +239,7 @@
       ],
       "alpha_pixels": 39085,
       "size_bytes": 27656,
-      "repo_path": "assets/haunted-sprites/qi-refining-practitioner.webp",
+      "repo_path": "assets/cultivation-sprites-webp/qi-refining-practitioner.webp",
       "source_relative_path": "assets/cultivation-sprites/qi-refining-practitioner.png"
     },
     {
@@ -255,7 +255,7 @@
       ],
       "alpha_pixels": 36349,
       "size_bytes": 48522,
-      "repo_path": "assets/haunted-sprites/soul-banner.webp",
+      "repo_path": "assets/cultivation-sprites-webp/soul-banner.webp",
       "source_relative_path": "assets/cultivation-sprites/soul-banner.png"
     },
     {
@@ -271,7 +271,7 @@
       ],
       "alpha_pixels": 80255,
       "size_bytes": 78192,
-      "repo_path": "assets/haunted-sprites/soul-reaping-heavenly-demon.webp",
+      "repo_path": "assets/cultivation-sprites-webp/soul-reaping-heavenly-demon.webp",
       "source_relative_path": "assets/cultivation-sprites/soul-reaping-heavenly-demon.png"
     },
     {
@@ -287,7 +287,7 @@
       ],
       "alpha_pixels": 103614,
       "size_bytes": 59956,
-      "repo_path": "assets/haunted-sprites/spirit-lotus.webp",
+      "repo_path": "assets/cultivation-sprites-webp/spirit-lotus.webp",
       "source_relative_path": "assets/cultivation-sprites/spirit-lotus.png"
     },
     {
@@ -303,7 +303,7 @@
       ],
       "alpha_pixels": 85812,
       "size_bytes": 59840,
-      "repo_path": "assets/haunted-sprites/star-river-weiqi-board.webp",
+      "repo_path": "assets/cultivation-sprites-webp/star-river-weiqi-board.webp",
       "source_relative_path": "assets/cultivation-sprites/star-river-weiqi-board.png"
     },
     {
@@ -319,7 +319,7 @@
       ],
       "alpha_pixels": 74288,
       "size_bytes": 75724,
-      "repo_path": "assets/haunted-sprites/sword-immortal.webp",
+      "repo_path": "assets/cultivation-sprites-webp/sword-immortal.webp",
       "source_relative_path": "assets/cultivation-sprites/sword-immortal.png"
     },
     {
@@ -335,7 +335,7 @@
       ],
       "alpha_pixels": 97482,
       "size_bytes": 82440,
-      "repo_path": "assets/haunted-sprites/talisman-sovereign.webp",
+      "repo_path": "assets/cultivation-sprites-webp/talisman-sovereign.webp",
       "source_relative_path": "assets/cultivation-sprites/talisman-sovereign.png"
     },
     {
@@ -351,7 +351,7 @@
       ],
       "alpha_pixels": 101338,
       "size_bytes": 65590,
-      "repo_path": "assets/haunted-sprites/blood-altar.webp",
+      "repo_path": "assets/bloodline-sprites-webp/blood-altar.webp",
       "source_relative_path": "assets/bloodline-sprites/blood-altar.png"
     },
     {
@@ -367,7 +367,7 @@
       ],
       "alpha_pixels": 89317,
       "size_bytes": 86410,
-      "repo_path": "assets/haunted-sprites/brood-matriarch.webp",
+      "repo_path": "assets/bloodline-sprites-webp/brood-matriarch.webp",
       "source_relative_path": "assets/bloodline-sprites/brood-matriarch.png"
     },
     {
@@ -383,7 +383,7 @@
       ],
       "alpha_pixels": 69055,
       "size_bytes": 71228,
-      "repo_path": "assets/haunted-sprites/crimson-broodkeeper.webp",
+      "repo_path": "assets/bloodline-sprites-webp/crimson-broodkeeper.webp",
       "source_relative_path": "assets/bloodline-sprites/crimson-broodkeeper.png"
     },
     {
@@ -399,7 +399,7 @@
       ],
       "alpha_pixels": 84001,
       "size_bytes": 80268,
-      "repo_path": "assets/haunted-sprites/crimson-hound.webp",
+      "repo_path": "assets/bloodline-sprites-webp/crimson-hound.webp",
       "source_relative_path": "assets/bloodline-sprites/crimson-hound.png"
     },
     {
@@ -415,7 +415,7 @@
       ],
       "alpha_pixels": 116891,
       "size_bytes": 106260,
-      "repo_path": "assets/haunted-sprites/dragon-cub-apex.webp",
+      "repo_path": "assets/bloodline-sprites-webp/dragon-cub-apex.webp",
       "source_relative_path": "assets/bloodline-sprites/dragon-cub-apex.png"
     },
     {
@@ -431,7 +431,7 @@
       ],
       "alpha_pixels": 79576,
       "size_bytes": 57054,
-      "repo_path": "assets/haunted-sprites/dragon-cub-t1.webp",
+      "repo_path": "assets/bloodline-sprites-webp/dragon-cub-t1.webp",
       "source_relative_path": "assets/bloodline-sprites/dragon-cub-t1.png"
     },
     {
@@ -447,7 +447,7 @@
       ],
       "alpha_pixels": 69740,
       "size_bytes": 80360,
-      "repo_path": "assets/haunted-sprites/dragon-cub-t2.webp",
+      "repo_path": "assets/bloodline-sprites-webp/dragon-cub-t2.webp",
       "source_relative_path": "assets/bloodline-sprites/dragon-cub-t2.png"
     },
     {
@@ -463,7 +463,7 @@
       ],
       "alpha_pixels": 58902,
       "size_bytes": 66954,
-      "repo_path": "assets/haunted-sprites/dragon-cub-t3.webp",
+      "repo_path": "assets/bloodline-sprites-webp/dragon-cub-t3.webp",
       "source_relative_path": "assets/bloodline-sprites/dragon-cub-t3.png"
     },
     {
@@ -479,7 +479,7 @@
       ],
       "alpha_pixels": 96119,
       "size_bytes": 126702,
-      "repo_path": "assets/haunted-sprites/dragon-pearl.webp",
+      "repo_path": "assets/bloodline-sprites-webp/dragon-pearl.webp",
       "source_relative_path": "assets/bloodline-sprites/dragon-pearl.png"
     },
     {
@@ -495,7 +495,7 @@
       ],
       "alpha_pixels": 95451,
       "size_bytes": 74188,
-      "repo_path": "assets/haunted-sprites/flame-toad.webp",
+      "repo_path": "assets/bloodline-sprites-webp/flame-toad.webp",
       "source_relative_path": "assets/bloodline-sprites/flame-toad.png"
     },
     {
@@ -511,7 +511,7 @@
       ],
       "alpha_pixels": 24635,
       "size_bytes": 25102,
-      "repo_path": "assets/haunted-sprites/golden-hooped-staff.webp",
+      "repo_path": "assets/bloodline-sprites-webp/golden-hooped-staff.webp",
       "source_relative_path": "assets/bloodline-sprites/golden-hooped-staff.png"
     },
     {
@@ -527,7 +527,7 @@
       ],
       "alpha_pixels": 57515,
       "size_bytes": 49930,
-      "repo_path": "assets/haunted-sprites/heavy-earth-tablet.webp",
+      "repo_path": "assets/bloodline-sprites-webp/heavy-earth-tablet.webp",
       "source_relative_path": "assets/bloodline-sprites/heavy-earth-tablet.png"
     },
     {
@@ -543,7 +543,7 @@
       ],
       "alpha_pixels": 85219,
       "size_bytes": 69584,
-      "repo_path": "assets/haunted-sprites/horned-serpent.webp",
+      "repo_path": "assets/bloodline-sprites-webp/horned-serpent.webp",
       "source_relative_path": "assets/bloodline-sprites/horned-serpent.png"
     },
     {
@@ -559,7 +559,7 @@
       ],
       "alpha_pixels": 98705,
       "size_bytes": 67726,
-      "repo_path": "assets/haunted-sprites/iron-scuttler.webp",
+      "repo_path": "assets/bloodline-sprites-webp/iron-scuttler.webp",
       "source_relative_path": "assets/bloodline-sprites/iron-scuttler.png"
     },
     {
@@ -575,7 +575,7 @@
       ],
       "alpha_pixels": 96879,
       "size_bytes": 83236,
-      "repo_path": "assets/haunted-sprites/monkey-cub-apex.webp",
+      "repo_path": "assets/bloodline-sprites-webp/monkey-cub-apex.webp",
       "source_relative_path": "assets/bloodline-sprites/monkey-cub-apex.png"
     },
     {
@@ -591,7 +591,7 @@
       ],
       "alpha_pixels": 85965,
       "size_bytes": 57946,
-      "repo_path": "assets/haunted-sprites/monkey-cub-t1.webp",
+      "repo_path": "assets/bloodline-sprites-webp/monkey-cub-t1.webp",
       "source_relative_path": "assets/bloodline-sprites/monkey-cub-t1.png"
     },
     {
@@ -607,7 +607,7 @@
       ],
       "alpha_pixels": 79525,
       "size_bytes": 73148,
-      "repo_path": "assets/haunted-sprites/monkey-cub-t2.webp",
+      "repo_path": "assets/bloodline-sprites-webp/monkey-cub-t2.webp",
       "source_relative_path": "assets/bloodline-sprites/monkey-cub-t2.png"
     },
     {
@@ -623,7 +623,7 @@
       ],
       "alpha_pixels": 99518,
       "size_bytes": 74518,
-      "repo_path": "assets/haunted-sprites/monkey-cub-t3.webp",
+      "repo_path": "assets/bloodline-sprites-webp/monkey-cub-t3.webp",
       "source_relative_path": "assets/bloodline-sprites/monkey-cub-t3.png"
     },
     {
@@ -639,7 +639,7 @@
       ],
       "alpha_pixels": 108598,
       "size_bytes": 126262,
-      "repo_path": "assets/haunted-sprites/phoenix-cub-apex.webp",
+      "repo_path": "assets/bloodline-sprites-webp/phoenix-cub-apex.webp",
       "source_relative_path": "assets/bloodline-sprites/phoenix-cub-apex.png"
     },
     {
@@ -655,7 +655,7 @@
       ],
       "alpha_pixels": 73934,
       "size_bytes": 48728,
-      "repo_path": "assets/haunted-sprites/phoenix-cub-t1.webp",
+      "repo_path": "assets/bloodline-sprites-webp/phoenix-cub-t1.webp",
       "source_relative_path": "assets/bloodline-sprites/phoenix-cub-t1.png"
     },
     {
@@ -671,7 +671,7 @@
       ],
       "alpha_pixels": 59267,
       "size_bytes": 71320,
-      "repo_path": "assets/haunted-sprites/phoenix-cub-t2.webp",
+      "repo_path": "assets/bloodline-sprites-webp/phoenix-cub-t2.webp",
       "source_relative_path": "assets/bloodline-sprites/phoenix-cub-t2.png"
     },
     {
@@ -687,7 +687,7 @@
       ],
       "alpha_pixels": 91246,
       "size_bytes": 96526,
-      "repo_path": "assets/haunted-sprites/phoenix-cub-t3.webp",
+      "repo_path": "assets/bloodline-sprites-webp/phoenix-cub-t3.webp",
       "source_relative_path": "assets/bloodline-sprites/phoenix-cub-t3.png"
     },
     {
@@ -703,7 +703,7 @@
       ],
       "alpha_pixels": 38231,
       "size_bytes": 68284,
-      "repo_path": "assets/haunted-sprites/phoenix-flame-tree.webp",
+      "repo_path": "assets/bloodline-sprites-webp/phoenix-flame-tree.webp",
       "source_relative_path": "assets/bloodline-sprites/phoenix-flame-tree.png"
     },
     {
@@ -719,7 +719,7 @@
       ],
       "alpha_pixels": 85805,
       "size_bytes": 78510,
-      "repo_path": "assets/haunted-sprites/primordial-blood-cub.webp",
+      "repo_path": "assets/bloodline-sprites-webp/primordial-blood-cub.webp",
       "source_relative_path": "assets/bloodline-sprites/primordial-blood-cub.png"
     },
     {
@@ -735,7 +735,7 @@
       ],
       "alpha_pixels": 73643,
       "size_bytes": 65356,
-      "repo_path": "assets/haunted-sprites/slaughter-tiger-seal.webp",
+      "repo_path": "assets/bloodline-sprites-webp/slaughter-tiger-seal.webp",
       "source_relative_path": "assets/bloodline-sprites/slaughter-tiger-seal.png"
     },
     {
@@ -751,7 +751,7 @@
       ],
       "alpha_pixels": 73242,
       "size_bytes": 60692,
-      "repo_path": "assets/haunted-sprites/spirit-peach-fodder.webp",
+      "repo_path": "assets/bloodline-sprites-webp/spirit-peach-fodder.webp",
       "source_relative_path": "assets/bloodline-sprites/spirit-peach-fodder.png"
     },
     {
@@ -767,7 +767,7 @@
       ],
       "alpha_pixels": 98665,
       "size_bytes": 103534,
-      "repo_path": "assets/haunted-sprites/tiger-cub-apex.webp",
+      "repo_path": "assets/bloodline-sprites-webp/tiger-cub-apex.webp",
       "source_relative_path": "assets/bloodline-sprites/tiger-cub-apex.png"
     },
     {
@@ -783,7 +783,7 @@
       ],
       "alpha_pixels": 88691,
       "size_bytes": 42850,
-      "repo_path": "assets/haunted-sprites/tiger-cub-t1.webp",
+      "repo_path": "assets/bloodline-sprites-webp/tiger-cub-t1.webp",
       "source_relative_path": "assets/bloodline-sprites/tiger-cub-t1.png"
     },
     {
@@ -799,7 +799,7 @@
       ],
       "alpha_pixels": 73714,
       "size_bytes": 64134,
-      "repo_path": "assets/haunted-sprites/tiger-cub-t2.webp",
+      "repo_path": "assets/bloodline-sprites-webp/tiger-cub-t2.webp",
       "source_relative_path": "assets/bloodline-sprites/tiger-cub-t2.png"
     },
     {
@@ -815,7 +815,7 @@
       ],
       "alpha_pixels": 98552,
       "size_bytes": 76546,
-      "repo_path": "assets/haunted-sprites/tiger-cub-t3.webp",
+      "repo_path": "assets/bloodline-sprites-webp/tiger-cub-t3.webp",
       "source_relative_path": "assets/bloodline-sprites/tiger-cub-t3.png"
     },
     {
@@ -831,7 +831,7 @@
       ],
       "alpha_pixels": 102675,
       "size_bytes": 88404,
-      "repo_path": "assets/haunted-sprites/xuanwu-cub-apex.webp",
+      "repo_path": "assets/bloodline-sprites-webp/xuanwu-cub-apex.webp",
       "source_relative_path": "assets/bloodline-sprites/xuanwu-cub-apex.png"
     },
     {
@@ -847,7 +847,7 @@
       ],
       "alpha_pixels": 111985,
       "size_bytes": 61366,
-      "repo_path": "assets/haunted-sprites/xuanwu-cub-t1.webp",
+      "repo_path": "assets/bloodline-sprites-webp/xuanwu-cub-t1.webp",
       "source_relative_path": "assets/bloodline-sprites/xuanwu-cub-t1.png"
     },
     {
@@ -863,7 +863,7 @@
       ],
       "alpha_pixels": 95961,
       "size_bytes": 73668,
-      "repo_path": "assets/haunted-sprites/xuanwu-cub-t2.webp",
+      "repo_path": "assets/bloodline-sprites-webp/xuanwu-cub-t2.webp",
       "source_relative_path": "assets/bloodline-sprites/xuanwu-cub-t2.png"
     },
     {
@@ -879,7 +879,7 @@
       ],
       "alpha_pixels": 119132,
       "size_bytes": 90448,
-      "repo_path": "assets/haunted-sprites/xuanwu-cub-t3.webp",
+      "repo_path": "assets/bloodline-sprites-webp/xuanwu-cub-t3.webp",
       "source_relative_path": "assets/bloodline-sprites/xuanwu-cub-t3.png"
     },
     {

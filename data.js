@@ -121,7 +121,7 @@ const RARITIES = [
   { "id": "Mythic", "color": "#f472d0", "label": "Mythic" }
 ];
 
-// --- CURRENT DRAFTABLE CARDS (retired records remain in LEGACY_CARDS for old saves) ---
+// --- CURRENT DRAFTABLE CARDS ---
 const CARDS = [
   // 1. Spirit Lotus Root
   {
@@ -202,7 +202,7 @@ const CARDS = [
   "baseAtk": 12,
   "attackInterval": 1.5,
   "max": 0,
-  "asset": "jade",
+  "asset": "cultivationBase",
   "sprite": 0,
   "icon": "劍",
   "fav": "neighbor",
@@ -224,7 +224,7 @@ const CARDS = [
     "baseAtk": 0,
     "attackInterval": 0,
     "max": 0,
-    "asset": "jade",
+    "asset": "cultivationBase",
     "sprite": 0,
     "icon": "劍",
     "fav": "neighbor",
@@ -243,7 +243,7 @@ const CARDS = [
     "baseAtk": 0,
     "attackInterval": 0,
     "max": 0,
-    "asset": "bell",
+    "asset": "hauntedRelic",
     "sprite": 0,
     "icon": "♫",
     "fav": "neighbor",
@@ -365,7 +365,7 @@ const CARDS = [
     "baseAtk": 8,
     "attackInterval": 1.3,
     "max": 0,
-    "asset": "medium",
+    "asset": "hauntedInvestigator",
     "icon": "✧",
     "fav": "neighbor",
     "tags": ["attacker", "investigator", "urban-scaling"],
@@ -495,7 +495,7 @@ const CARDS = [
     "baseAtk": 0,
     "attackInterval": 0,
     "max": 0,
-    "asset": "bell",
+    "asset": "hauntedRelic",
     "icon": "✧",
     "fav": "neighbor",
     "tags": ["relic", "urban-relic", "curfew"],
@@ -551,7 +551,7 @@ const CARDS = [
     "baseAtk": 18,
     "attackInterval": 1.1,
     "max": 0,
-    "asset": "spirit",
+    "asset": "hauntedBase",
     "icon": "✧",
     "fav": "team",
     "tags": ["attacker", "urban-lineage", "boss-slayer"],
@@ -587,7 +587,7 @@ const CARDS = [
     "baseAtk": 14,
     "attackInterval": 1.6,
     "max": 0,
-    "asset": "bell",
+    "asset": "hauntedRelic",
     "icon": "♫",
     "fav": "team",
     "tags": ["control", "urban-lineage", "sonic"],
@@ -623,7 +623,7 @@ const CARDS = [
     "baseAtk": 10,
     "attackInterval": 1.5,
     "max": 0,
-    "asset": "monk",
+    "asset": "hauntedBase",
     "icon": "✧",
     "fav": "team",
     "tags": ["attacker", "urban-lineage"],
@@ -643,7 +643,7 @@ const CARDS = [
   "baseAtk": 9,
   "attackInterval": 1.2,
   "max": 0,
-  "asset": "medium",
+  "asset": "hauntedInvestigator",
   "icon": "✧",
   "fav": "team",
   "tags": [
@@ -664,7 +664,7 @@ const CARDS = [
     "baseAtk": 11,
     "attackInterval": 1.2,
     "max": 0,
-    "asset": "spirit",
+    "asset": "hauntedBase",
     "icon": "✧",
     "fav": "team",
     "tags": ["attacker", "urban-lineage", "retribution"],
@@ -742,7 +742,7 @@ const CARDS = [
     "rarity": "Normal",
     "tags": [],
     "rules": "Grant all other deployed allies +10 percentage points of critical hit chance, and amplify their critical hit damage from 200% to 230%. When an ally strikes critically, illuminate the target runner. Multiple Sensors do not stack.",
-    "synergy": "Vector Railgun, Focused Nanites, and Asura Monk."
+    "synergy": "Vector Railgun and Focused Nanites."
   },
   {
     "id": "railgun",
@@ -881,7 +881,7 @@ const CARDS = [
     "growthRole": "engine",
     "ecosystem": "Critical strikes · defense shred",
     "rules": "Strike the leading runner. Critical hits shred runner defense by 25% for 3s. Every 6 critical hits across battles grant this card +1 permanent ATK.",
-    "synergy": "Telemetry Sensor, Singularity Core, and Asura Monk."
+    "synergy": "Telemetry Sensor and Singularity Core."
   },
   {
     "id": "core",
@@ -1208,7 +1208,7 @@ const FORMS = [
     "baseAtk": 24,
     "attackInterval": 1.1,
     "max": 0,
-    "asset": "medium",
+    "asset": "hauntedInvestigator",
     "icon": "✧",
     "fav": "neighbor",
     "tags": ["investigator", "urban-realm", "pierce"],
@@ -1226,7 +1226,7 @@ const FORMS = [
     "baseAtk": 50,
     "attackInterval": 0.85,
     "max": 0,
-    "asset": "medium",
+    "asset": "hauntedInvestigator",
     "icon": "✧",
     "fav": "neighbor",
     "tags": ["investigator", "urban-realm", "aoe"],
@@ -1244,7 +1244,7 @@ const FORMS = [
     "baseAtk": 90,
     "attackInterval": 0.65,
     "max": 0,
-    "asset": "medium",
+    "asset": "hauntedInvestigator",
     "icon": "✧",
     "fav": "neighbor",
     "tags": ["investigator", "urban-realm", "true-damage"],
@@ -1307,7 +1307,7 @@ const FORMS = [
     "baseAtk": 175,
     "attackInterval": 0.5,
     "max": 0,
-    "asset": "bell",
+    "asset": "hauntedRelic",
     "icon": "✧",
     "fav": "team",
     "tags": ["apex", "urban-apex", "curfew-master"],
@@ -1448,7 +1448,7 @@ const FORMS = [
     "baseAtk": 40,
     "attackInterval": 1.2,
     "max": 0,
-    "asset": "bell",
+    "asset": "hauntedRelic",
     "icon": "♫",
     "fav": "team",
     "tags": ["urban-form", "sonic", "stun"],
@@ -1466,7 +1466,7 @@ const FORMS = [
     "baseAtk": 165,
     "attackInterval": 0.6,
     "max": 0,
-    "asset": "bell",
+    "asset": "hauntedRelic",
     "icon": "♫",
     "fav": "team",
     "tags": ["apex", "urban-apex", "infinite-redial"],
@@ -1522,7 +1522,7 @@ const FORMS = [
     "baseAtk": 45,
     "attackInterval": 0.8,
     "max": 0,
-    "asset": "monk",
+    "asset": "hauntedBase",
     "icon": "✧",
     "fav": "team",
     "tags": ["urban-form", "berserk"],
@@ -1540,7 +1540,7 @@ const FORMS = [
   "baseAtk": 185,
   "attackInterval": 0.45,
   "max": 0,
-  "asset": "monk",
+  "asset": "hauntedBase",
   "icon": "✧",
   "fav": "team",
   "tags": [
@@ -1563,7 +1563,7 @@ const FORMS = [
     "baseAtk": 46,
     "attackInterval": 0.9,
     "max": 0,
-    "asset": "spirit",
+    "asset": "hauntedBase",
     "icon": "✧",
     "fav": "team",
     "tags": ["urban-form", "bleed", "retribution"],
@@ -1581,7 +1581,7 @@ const FORMS = [
     "baseAtk": 195,
     "attackInterval": 0.5,
     "max": 0,
-    "asset": "spirit",
+    "asset": "hauntedBase",
     "icon": "✧",
     "fav": "team",
     "tags": ["apex", "urban-apex", "crimson-deluge"],
@@ -1641,7 +1641,7 @@ const FORMS = [
   "baseAtk": 25,
   "attackInterval": 1.4,
   "rarity": "Rare",
-  "asset": "jade",
+  "asset": "cultivationBase",
   "icon": "築",
   "fav": "neighbor",
   "tags": [
@@ -1662,7 +1662,7 @@ const FORMS = [
   "baseAtk": 50,
   "attackInterval": 1.3,
   "rarity": "Epic",
-  "asset": "jade",
+  "asset": "cultivationBase",
   "icon": "丹",
   "fav": "neighbor",
   "tags": [
@@ -1683,7 +1683,7 @@ const FORMS = [
   "baseAtk": 85,
   "attackInterval": 1.2,
   "rarity": "Legendary",
-  "asset": "jade",
+  "asset": "cultivationBase",
   "icon": "魂",
   "fav": "neighbor",
   "tags": [
@@ -1724,7 +1724,7 @@ const FORMS = [
     "baseAtk": 110,
     "attackInterval": 1.0,
     "rarity": "Mythic",
-    "asset": "bell",
+    "asset": "hauntedRelic",
     "sprite": 0,
     "icon": "♫",
     "fav": "team",
@@ -1834,27 +1834,6 @@ const FORMS = [
     "synergy": "Blood-Drinking Demon Blade, Relic Resonance."
   },
   // 4 Other Earned Forms
-{
-    "id": "wraith",
-    "name": "Nine-Abyss Wraith",
-    "vn": "Cửu U Ma Linh",
-    "genre": "Haunted",
-    "baseAtk": 28,
-    "attackInterval": 0.7,
-    "max": 12,
-    "sprite": 4,
-    "icon": "幽",
-    "fav": "team",
-    "ecosystem": "Dormancy · state cycles",
-    "rarity": "Epic",
-    "tags": [],
-    "evolvedFrom": "spirit",
-    "draftable": false,
-    "asset": "spirit",
-    "growthRole": "evolved-engine",
-    "rules": "After 12 attacks, enter Dormant for 5s, grant allies +20% damage while Dormant, and slow every runner by 25% for 3s. Aura continuously radiates 30% slow. Attacks deal 50% more damage to Elites, Harbingers, and Bosses.",
-    "synergy": "Bell, Smelter, Medium, and damage finishers."
-  },
 {
   "id": "dragonCubT1",
   "name": "Horned Drake Cub",
@@ -2327,7 +2306,7 @@ const TOKENS = [
     "rarity": "Normal",
     "baseAtk": 0,
     "attackInterval": 0,
-    "asset": "medium",
+    "asset": "hauntedInvestigator",
     "tags": ["token", "dossier", "consumable"],
     "token": true,
     "draftable": false,
@@ -2375,23 +2354,6 @@ const TOKENS = [
     "rules": "An adjacent Practitioner directly absorbs this token for +5 Qi and +2 permanent ATK. A Cauldron instead consumes it for +6 Qi and +4 permanent ATK to the deployed eligible Cultivation unit with the least Qi. Cultivation Mythics absorb it for +15 Qi; every 30 gained Qi grants +2 permanent ATK, and Qi above 175 also grants +0.15 permanent ATK per Qi. Consuming the token preserves its parent root.",
     "synergy": "Qi-Refining Practitioner, Nine-Turn Alchemy Cauldron."
   },
-  {
-    "id": "petal",
-    "name": "Lotus Petal",
-    "vn": "Lotus Petal",
-    "genre": "Cultivation",
-    "rarity": "Normal",
-    "baseAtk": 0,
-    "attackInterval": 0,
-    "asset": "lotus",
-    "tags": ["token", "fodder"],
-    "token": true,
-    "draftable": false,
-    "fav": "team",
-    "ecosystem": "Tokens · predation",
-    "rules": "Temporary Spirit Lotus token.",
-    "synergy": "Alchemical Adept."
-  },
 
   {
     "id": "houndToken",
@@ -2410,143 +2372,8 @@ const TOKENS = [
     "rules": "Temporary Crimson Hound token.",
     "synergy": "Primordial Blood Cub and Crimson Broodkeeper."
   },
-  {
-    "id": "echo",
-    "name": "Spirit Echo",
-    "vn": "Spirit Echo",
-    "genre": "Haunted",
-    "rarity": "Normal",
-    "baseAtk": 0,
-    "attackInterval": 0,
-    "asset": "spirit",
-    "tags": ["token"],
-    "token": true,
-    "draftable": false,
-    "fav": "team",
-    "ecosystem": "Tokens · state cycles",
-    "rules": "Temporary echo captured by Veil Medium.",
-    "synergy": "Veil Medium and Grave Lantern."
-  },
-  {
-    "id": "lambToken",
-    "name": "Mourning Lamb Echo",
-    "vn": "Mourning Lamb Echo",
-    "genre": "Haunted",
-    "rarity": "Normal",
-    "baseAtk": 8,
-    "attackInterval": 1.5,
-    "asset": "monk",
-    "tags": ["token", "fodder"],
-    "token": true,
-    "draftable": false,
-    "fav": "team",
-    "ecosystem": "Tokens · sacrifice",
-    "rules": "Temporary Mourning Lamb token spawned by Veil Shepherd.",
-    "synergy": "Soul Harvester and Soul Well."
-  },
-{
-  "id": "scaleImp",
-  "name": "Scale Imp",
-  "vn": "Scale Imp",
-  "genre": "Bloodline",
-  "rarity": "Normal",
-  "baseAtk": 12,
-  "attackInterval": 1.2,
-  "tags": [
-    "token",
-    "fodder"
-  ],
-  "token": true,
-  "draftable": false,
-  "fav": "neighbor",
-  "species": "serpentFodder",
-  "ecosystem": "Bloodline · attacking offspring",
-  "rules": "Legacy standalone offspring token. Breeding now creates a temporary copy with the parent fodder species identity; eligible offspring can be devoured by the Primordial Blood Cub.",
-  "synergy": "Bloodline Cub and matching fodder."
-},
-{
-  "id": "carapaceToken",
-  "name": "Carapace Token",
-  "vn": "Carapace Token",
-  "genre": "Bloodline",
-  "rarity": "Normal",
-  "baseAtk": 14,
-  "attackInterval": 1.5,
-  "tags": [
-    "token",
-    "fodder"
-  ],
-  "token": true,
-  "draftable": false,
-  "fav": "neighbor",
-  "species": "scuttler",
-  "ecosystem": "Bloodline · attacking offspring",
-  "rules": "Legacy standalone offspring token. Breeding now creates a temporary copy with the parent fodder species identity; eligible offspring can be devoured by the Primordial Blood Cub.",
-  "synergy": "Bloodline Cub and matching fodder."
-},
-{
-  "id": "emberToken",
-  "name": "Ember Tadpole",
-  "vn": "Ember Tadpole",
-  "genre": "Bloodline",
-  "rarity": "Normal",
-  "baseAtk": 11,
-  "attackInterval": 1.1,
-  "tags": [
-    "token",
-    "fodder"
-  ],
-  "token": true,
-  "draftable": false,
-  "fav": "neighbor",
-  "species": "flameToad",
-  "ecosystem": "Bloodline · attacking offspring",
-  "rules": "Legacy standalone offspring token. Breeding now creates a temporary copy with the parent fodder species identity; eligible offspring can be devoured by the Primordial Blood Cub.",
-  "synergy": "Bloodline Cub and matching fodder."
-},
-{
-  "id": "peachToken",
-  "name": "Spirit Peach Token",
-  "vn": "Spirit Peach Token",
-  "genre": "Bloodline",
-  "rarity": "Normal",
-  "baseAtk": 10,
-  "attackInterval": 0.9,
-  "tags": [
-    "token",
-    "fodder"
-  ],
-  "token": true,
-  "draftable": false,
-  "fav": "neighbor",
-  "species": "peachFodder",
-  "ecosystem": "Bloodline · attacking offspring",
-  "rules": "Legacy standalone offspring token. Breeding now creates a temporary copy with the parent fodder species identity; eligible offspring can be devoured by the Primordial Blood Cub.",
-  "synergy": "Bloodline Cub and matching fodder."
-}
 ];
 
-const LEGACY_CARDS = [
-  { "id": "immortal", "name": "Jade Immortal (Retired)", "genre": "Cultivation", "baseAtk": 0, "attackInterval": 0, "rarity": "Epic", "draftable": false, "retired": true },
-  { "id": "asura", "name": "Asura Monk (Retired)", "genre": "Cultivation", "baseAtk": 0, "attackInterval": 0, "rarity": "Epic", "draftable": false, "retired": true },
-  { "id": "spirit", "name": "Restless Spirit", "genre": "Haunted", "baseAtk": 10, "attackInterval": 1.2, "rarity": "Normal", "draftable": false, "retired": true },
-  { "id": "bell", "name": "Soul-Wailing Bell", "genre": "Haunted", "baseAtk": 8, "attackInterval": 2.2, "rarity": "Normal", "draftable": false, "retired": true },
-  { "id": "lantern", "name": "Grave Lantern", "genre": "Haunted", "baseAtk": 0, "attackInterval": 0, "rarity": "Rare", "draftable": false, "retired": true },
-  { "id": "medium", "name": "Veil Medium", "genre": "Haunted", "baseAtk": 14, "attackInterval": 1.6, "rarity": "Rare", "draftable": false, "retired": true },
-  { "id": "lamb", "name": "Mourning Lamb", "genre": "Haunted", "baseAtk": 8, "attackInterval": 1.5, "rarity": "Normal", "draftable": false, "retired": true },
-  { "id": "shepherd", "name": "Veil Shepherd", "genre": "Haunted", "baseAtk": 12, "attackInterval": 1.7, "rarity": "Rare", "draftable": false, "retired": true },
-  { "id": "harvester", "name": "Soul Harvester", "genre": "Haunted", "baseAtk": 20, "attackInterval": 1.9, "rarity": "Rare", "draftable": false, "retired": true },
-  { "id": "soulwell", "name": "Soul Well", "genre": "Haunted", "baseAtk": 0, "attackInterval": 0, "rarity": "Epic", "draftable": false, "retired": true },
-  { "id": "wraith", "name": "Nine-Abyss Wraith", "genre": "Haunted", "baseAtk": 28, "attackInterval": 0.7, "rarity": "Epic", "draftable": false, "retired": true },
-
-
-  { "id": "jade", "name": "Jade Disciple (Retired)", "genre": "Cultivation", "baseAtk": 0, "attackInterval": 0, "rarity": "Rare", "draftable": false, "retired": true },
-  { "id": "herb", "name": "Spirit Herb Spring", "genre": "Cultivation", "baseAtk": 0, "attackInterval": 0, "rarity": "Normal", "draftable": false },
-  { "id": "lotus", "name": "Spirit Lotus", "genre": "Cultivation", "rarity": "Normal", "baseAtk": 0, "attackInterval": 0, "max": 18, "draftable": false },
-  { "id": "monk", "name": "Mortal Monk (Retired)", "genre": "Cultivation", "rarity": "Normal", "baseAtk": 0, "attackInterval": 0, "draftable": false, "retired": true },
-  { "id": "alchemist", "name": "Alchemical Adept", "genre": "Cultivation", "rarity": "Rare", "baseAtk": 18, "attackInterval": 1.5, "draftable": false },
-  { "id": "catalyst", "name": "Threefold Pill Blossom", "genre": "Cultivation", "rarity": "Normal", "baseAtk": 0, "attackInterval": 0, "draftable": false }
-];
 
 const NODES = {
   "battle": { "name": "Battlefield", "icon": "⚔", "desc": "Defeat the crossing runners. Earn a card draft." },
@@ -2568,7 +2395,7 @@ const RELICS = [
 ];
 
 
-// Scrapwork replaces the old draft pool; old IDs remain readable in existing saves.
+// Scrapwork is the active Post-Apocalyptic draft pool.
 
 CARDS.push(...[
   {
@@ -3660,41 +3487,6 @@ for (const [strain, id, name, rule] of [
   TOKENS.push(xenoCard(id, name, 'Normal', 0, 0, rule, { token: true, draftable: false, xenoStrain: strain }));
 }
 
-// Map SVG assets for all Xeno cards
-const XENO_ASSET_MAP = {
-  xenoSpecimen: 'assets/larva.svg',
-  bioScanner: 'assets/sensor.svg',
-  geneSplicer: 'assets/nanite.svg',
-  chitinHelix: 'assets/nanite.svg',
-  acidHelix: 'assets/herald.svg',
-  psionicHelix: 'assets/core.svg',
-  spineLurker: 'assets/railgun.svg',
-  bileSpitter: 'assets/leech.svg',
-  opticDrone: 'assets/sensor.svg',
-  impalerMorph: 'assets/nanite.svg',
-  keratinSerum: 'assets/nanite.svg',
-  impalerApex: 'assets/nanite.svg',
-  acidBrood: 'assets/herald.svg',
-  royalSerum: 'assets/herald.svg',
-  xenoQueen: 'assets/herald.svg',
-  synapseNexus: 'assets/core.svg',
-  cortexSerum: 'assets/sensor.svg',
-  hiveOvermind: 'assets/sensor.svg',
-  ravagerMorph: 'assets/eye.svg',
-  ordnanceSerum: 'assets/eye.svg',
-  causticRavager: 'assets/eye.svg',
-  stalkerMorph: 'assets/railgun.svg',
-  phaseSerum: 'assets/railgun.svg',
-  phaseStalker: 'assets/railgun.svg',
-  siphonMorph: 'assets/leech.svg',
-  metroidSerum: 'assets/leech.svg',
-  metroidLeviathan: 'assets/leech.svg'
-};
-
-for (const [cid, assetPath] of Object.entries(XENO_ASSET_MAP)) {
-  const c = [...CARDS, ...FORMS, ...TOKENS].find(x => x.id === cid);
-  if (c) c.xenoAsset = assetPath;
-}
 
 // Update existing SciFi card rules to match design proposal
 Object.assign(CARDS.find(c => c.id === 'sensor'), { rules: 'Grants all other deployed allies +10 percentage points of critical hit chance and amplifies their critical hit damage to 230%. When an ally strikes critically, illuminates the target runner with an Anatomical Weakpoint.' });
@@ -3702,8 +3494,8 @@ Object.assign(CARDS.find(c => c.id === 'nanite'), { rules: 'Strikes at 0.8s inte
 Object.assign(CARDS.find(c => c.id === 'railgun'), { rules: 'Pierces 3 runners in a line (5 with Telemetry Sensor and knocks back 1 tile), ignoring armor. Gains bonus attack damage equal to 200% of the single highest permanent ATK bonus among other allies.' });
 Object.assign(CARDS.find(c => c.id === 'core'), { rules: 'Grants all other allies +15 percentage points of critical hit chance. Gains 1 tick whenever an ally lands a critical hit. At 8 ticks, triggers Gravitational Collapse: deals 240 + 2× Team Power true damage and Warps all runners backward 2.5 tiles.' });
 
-const CARD = Object.fromEntries([...CARDS, ...FORMS, ...TOKENS, ...LEGACY_CARDS].map(c => [c.id, c]));
-if (typeof module !== 'undefined') module.exports = { GENRES, LEADERS, CARDS, CARD, NODES, RELICS, RARITIES, FORMS, TOKENS, LEGACY_CARDS };
+const CARD = Object.fromEntries([...CARDS, ...FORMS, ...TOKENS].map(c => [c.id, c]));
+if (typeof module !== 'undefined') module.exports = { GENRES, LEADERS, CARDS, CARD, NODES, RELICS, RARITIES, FORMS, TOKENS };
 
 
 

@@ -1,6 +1,6 @@
 'use strict';const G=require('../engine');const results=[];
 for(const [arm,oses] of Object.entries(G.CYBER_MATRIX))for(const [os,apex] of Object.entries(oses))for(let seed=1;seed<=6;seed++){
- const r=G.newRun('nyx',{},seed*7919);r.roster=[G.instance(r,'cyberSolo')];let first120=null,firstApex=null;const rows=[];
+ const r=G.newRun('nyx', seed*7919);r.roster=[G.instance(r,'cyberSolo')];let first120=null,firstApex=null;const rows=[];
  for(let d=0;d<16;d++){
   const add={1:arm,2:os,3:'vent',4:'accessPoint',5:'cryoPump',6:'biomonitor',7:'cyberReactor'}[d];if(add)r.roster.push(G.instance(r,add));
   r.depth=d;r.node={row:d,lane:1,type:d===15?'boss':[5,9,13].includes(d)?'elite':'battle'};r.phase='ready';const b=G.deploy(r);for(let n=0;n<6000&&!b.done;n++)G.step(b,.1);

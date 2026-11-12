@@ -1,7 +1,7 @@
 'use strict';
 const G=require('../engine');
 function run(seed,withStake,allStart=false){
- const r=G.newRun('morrow',{},seed);r.roster=['mercenary','leech'].map(id=>G.instance(r,id));
+ const r=G.newRun('morrow', seed);r.roster=['mercenary','leech'].map(id=>G.instance(r,id));
  if(allStart)for(const id of ['witchHunter','taxidermist','executioner','totem',...(withStake?['trophyStake']:[])])r.roster.push(G.instance(r,id));
  const rows=[];let first100=null,firstApex=null;
  for(let d=0;d<16;d++){

@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),G=require('../engine'),D=require('../data');
 function battle(ids,slots=ids.map((_,i)=>i)){
- const r=G.newRun('none',{},17);r.roster=ids.map(id=>G.instance(r,id));r.depth=15;r.node={row:15,lane:1,type:'boss'};r.phase='combat';
+ const r=G.newRun('none', 17);r.roster=ids.map(id=>G.instance(r,id));r.depth=15;r.node={row:15,lane:1,type:'boss'};r.phase='combat';
  const b={run:r,time:0,units:[],enemies:[],effects:[],metrics:{kills:0,leaks:0,growth:0,triggers:0,devours:0},plan:{count:1,interval:1,hp:100},spawned:1};b.units=r.roster.map((u,i)=>G.runtime(b,u,slots[i]));b.units.forEach(u=>{G.prepareHooks(b,u);G.record(b,u);u.currentCooldown=999});return b;
 }
 function enemy(b,kind='boss',p=15.99){const e={uid:b.enemies.length+1,p,hp:11000,maxHp:11000,speed:.31,leak:kind==='boss'?100:10,defense:0,boss:kind==='boss',champion:kind==='champion',maxProgress:p,bornAt:0,gone:false,slows:[],bleeds:[],burns:[],venoms:[],auras:[],ruleMarks:0};b.enemies.push(e);return e;}
@@ -87,7 +87,7 @@ test('Cultivation Qi ATK continues after Apex alongside the existing 30-Qi growt
  G.addQi(b,u,26);assert.equal(u.qi,210);assert.equal(u.permanentAtkBonus,6.5);
  assert.equal(b.run.roster[0].permanentAtkBonus,6.5);assert.equal(u.apexQi,0);
 });
-function tribulationBattle(practitionerId='cultivationNascentSoul', relicId='flyingSword', slots=[0,1]){const r=G.newRun('none',{},91);r.roster=[G.instance(r,practitionerId),G.instance(r,relicId)];r.roster[0].qi=200;r.depth=15;r.node={row:15,lane:1,type:'boss'};r.phase='combat';const b={run:r,time:0,units:[],enemies:[],effects:[],metrics:{kills:0,leaks:0,growth:0,triggers:0,devours:0},plan:{count:42,interval:1.4,hp:100,bossHp:11000},spawned:0,enemyUid:0,done:false};b.units=r.roster.map((u,i)=>G.runtime(b,u,slots[i]));b.units.forEach(u=>{G.prepareHooks(b,u);G.record(b,u)});return b;}
+function tribulationBattle(practitionerId='cultivationNascentSoul', relicId='flyingSword', slots=[0,1]){const r=G.newRun('none', 91);r.roster=[G.instance(r,practitionerId),G.instance(r,relicId)];r.roster[0].qi=200;r.depth=15;r.node={row:15,lane:1,type:'boss'};r.phase='combat';const b={run:r,time:0,units:[],enemies:[],effects:[],metrics:{kills:0,leaks:0,growth:0,triggers:0,devours:0},plan:{count:42,interval:1.4,hp:100,bossHp:11000},spawned:0,enemyUid:0,done:false};b.units=r.roster.map((u,i)=>G.runtime(b,u,slots[i]));b.units.forEach(u=>{G.prepareHooks(b,u);G.record(b,u)});return b;}
 test('Heavenly Tribulation starts on Elite or Boss with an adjacent matching relic',()=>{const b=tribulationBattle();b.run.node.type='battle';assert.equal(G.startHeavenlyTrial(b),null);b.run.node.type='elite';assert.equal(G.startHeavenlyTrial(b).apexId,'swordImmortal');const boss=tribulationBattle();assert.equal(G.startHeavenlyTrial(boss).apexId,'swordImmortal');});
 test('Cultivation trial starts mid-node when Qi reaches 200 and is blocked after a leak',()=>{const b=tribulationBattle();const soul=b.units[0];soul.qi=199;b.run.roster[0].qi=199;assert.equal(G.startHeavenlyTrial(b),null);G.addQi(b,soul,1);assert.equal(b.heavenlyTrial?.status,'active');const blocked=tribulationBattle();blocked.units[0].qi=199;blocked.run.roster[0].qi=199;blocked.metrics.leaks=1;G.addQi(blocked,blocked.units[0],1);assert.equal(blocked.heavenlyTrial,undefined);});
 test('Heavenly storm stuns the Nascent Soul for 0.5s and hits all active runners for 25',()=>{const b=tribulationBattle();G.startHeavenlyTrial(b);const soul=b.units[0],a=enemy(b,'ordinary',2),boss=enemy(b,'boss',3);a.hp=a.maxHp=1000;boss.hp=boss.maxHp=11000;b.time=4;G.tickHeavenlyTrial(b);assert.equal(soul.trialStunnedUntil,4.5);assert.equal(a.hp,975);assert.equal(boss.hp,10975);assert.equal(b.heavenlyTrial.strikes,1);});
@@ -284,7 +284,7 @@ test('Scrapwork trial fails on leak, missing module proof, or failed clear and r
 test('Cultivation base stats are updated across Practitioner realms and Mythic forms',()=>{
  const expected={practitioner:[12,1.5],cultivationFoundation:[25,1.4],cultivationGoldenCore:[50,1.3],cultivationNascentSoul:[85,1.2]};
  for(const [id,[atk,interval]] of Object.entries(expected)){const b=battle([id]);assert.equal(b.units[0].baseAtk,atk,id);assert.equal(b.units[0].attackInterval,interval,id);}
- for(const [id,atk] of [['melodicSaint',110],['landscapeSage',110],['bloodFiendMaster',150]])assert.equal(G.base(G.instance(G.newRun('none',{},2),id)),atk,id);
+ for(const [id,atk] of [['melodicSaint',110],['landscapeSage',110],['bloodFiendMaster',150]])assert.equal(G.base(G.instance(G.newRun('none', 2),id)),atk,id);
 });
 test('Cauldron and every Cultivation relic are non-attacking support cards',()=>{
  const ids=['cauldron','flyingSword','guqin','weiqiBoard','inkBrush','mountainScroll','soulBanner','demonBlade'];
@@ -314,7 +314,10 @@ test('Mountain-River Scroll gives adjacent attackers +15% ATK',()=>{
 test('Demon Blade grants adjacent attack speed and normal hits add a one-second 1%-max-HP bleed',()=>{
  const b=battle(['practitioner','demonBlade'],[0,1]),u=b.units[0],e=supportEnemy(b);assert.equal(G.speed(b,u),1.1);G.hit(b,u,e,100,true,{criticalMultiplier:1});assert.ok(e.bleeds.some(d=>d.dps===1000&&d.until===1));
 });
-test('Jade Immortal and Asura Monk evolution lines are retired',()=>{
- for(const id of ['jade','monk','immortal','asura']){const c=D.CARD[id];assert.ok(c?.retired,id);assert.equal(c.evolveTo,undefined,id);assert.equal(D.FORMS.some(f=>f.id===id),false,id);assert.equal(c.baseAtk,0,id);assert.equal(c.attackInterval,0,id);}
- assert.equal(D.FORMS.some(f=>f.id==='monkeyCubApex'),true,'Bloodline Great Sage lineage remains available');
+test('retired catalog entries and retired Haunted form are absent',()=>{
+ for(const id of ['jade','monk','immortal','asura','spirit','bell','lantern','medium','lamb','shepherd','harvester','soulwell','wraith','alchemist','catalyst'])assert.equal(D.CARD[id],undefined,id);
+ assert.equal(D.LEGACY_CARDS,undefined);
+ assert.equal(D.FORMS.some(f=>f.id==='wraith'),false);
+ assert.ok(D.CARD.lotusRoot&&D.CARD.herbGrass&&D.CARD.lotusBlossom,'current cultivation descendants remain intact');
+ assert.ok(D.CARD.mirrorClone,'current Haunted token remains intact');
 });

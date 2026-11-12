@@ -1,7 +1,7 @@
 const G=require('../engine');
 const results=[];
 for(let seed=1;seed<=100;seed++){
- const r=G.newRun('rook',{},seed);r.roster=['scrapFrame','junkScavenger'].map(id=>G.instance(r,id));let titan=null,mythic=null,smelts=0,won=false;
+ const r=G.newRun('rook', seed);r.roster=['scrapFrame','junkScavenger'].map(id=>G.instance(r,id));let titan=null,mythic=null,smelts=0,won=false;
  for(let depth=0;depth<16;depth++){
   if(depth===1)r.roster.push(G.instance(r,'smelter'));
   if(depth===2)r.roster.push(G.instance(r,'magneticCrane'));

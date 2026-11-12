@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const G = require('../engine');
 const D = require('../data');
 function battle(ids, slots = ids.map((_, i) => i)) {
- const r = G.newRun('none', {}, 17);
+ const r = G.newRun('none', 17);
  r.roster = ids.map(id => G.instance(r, id));
  r.node = {row: 5, lane: 1, type: 'battle'}; r.depth = 5; r.phase = 'combat';
  const b = {run:r, time:0, units:[], enemies:[], effects:[], metrics:{kills:0, leaks:0, growth:0, triggers:0, devours:0}, plan:{count:0, interval:1, hp:100}, spawned:0};
@@ -157,15 +157,16 @@ test('removed cards and offspring are absent from every catalog',()=>{
  for(const id of ['heir','progenitor','familiar','imp'])assert.equal(D.CARD[id],undefined);
  for(const c of Object.values(D.CARD))assert.ok(!/Blood Heir|Scarlet Familiar|Bloodline Progenitor/.test(JSON.stringify(c)),c.id);
 });
-test('only saves containing removed cards reset, account upgrades survive',()=>{
+test('pre-cleanup runs and player upgrades clear exactly once',()=>{
  const code=fs.readFileSync(require.resolve('../app'),'utf8').split('let feedbackSeen=')[0];
- for(const payload of [ {version:3,roster:[{id:'heir'}]}, {version:3,roster:[{id:'cub'}],offers:['familiar']}, {version:3,roster:[{id:'cub'}],recap:{cards:[{id:'progenitor'}]}}, {version:3,roster:[{id:'cub'}]} ]){
+ for(const payload of [{version:3,roster:[{id:'heir'}]},{version:3,roster:[{id:'cub'}]},{version:3,roster:[{id:'cultivationNascentSoul'}]}]){
   const values=new Map([['confluence-run-v3',JSON.stringify(payload)],['confluence-meta-v1',JSON.stringify({power:7,shards:50})]]);
-  const ctx={Game:G,document:{querySelector:()=>({})},localStorage:{getItem:k=>values.get(k),removeItem:k=>values.delete(k)}};
-  vm.createContext(ctx);vm.runInContext(code+';globalThis.result={run,meta,resetRemovedRun};',ctx);
-  assert.equal(ctx.result.meta.power,7);assert.equal(ctx.result.meta.shards,50);
-  const reset=JSON.stringify(payload).match(/heir|familiar|progenitor/)!==null;
-  assert.equal(ctx.result.resetRemovedRun,reset);assert.equal(ctx.result.run===null,reset);assert.equal(values.has('confluence-run-v3'),!reset);
+  const localStorage={getItem:k=>values.get(k),get length(){return values.size},key:i=>[...values.keys()][i],removeItem:k=>values.delete(k),setItem:(k,v)=>values.set(k,v)};
+  const ctx={Game:G,document:{querySelector:()=>({})},localStorage};vm.createContext(ctx);vm.runInContext(code+';globalThis.result={run,resetSavedRuns};',ctx);
+  assert.equal(ctx.result.run,null);assert.equal(ctx.result.resetSavedRuns,true);assert.equal(values.has('confluence-run-v3'),false);assert.equal(values.has('confluence-meta-v1'),false);assert.equal(values.get('confluence-save-reset-v1'),'done');
+  values.set('confluence-run-v4',JSON.stringify({version:4,leader:'none'}));
+  const ctx2={Game:G,document:{querySelector:()=>({})},localStorage};vm.createContext(ctx2);vm.runInContext(code+';globalThis.next={run,resetSavedRuns};',ctx2);
+  assert.equal(ctx2.next.resetSavedRuns,false);assert.equal(ctx2.next.run.version,4);
  }
 });
 test('new resource remainders persist across deployments, temporary pill haste does not',()=>{

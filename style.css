@@ -830,7 +830,7 @@ dialog .close {
 }
 
 /* ==================== 8. RESTORED-RULES ADAPTATION ==================== */
-/* Legacy-shard pill is a button; coin pill and shard pill sit side by side */
+/* Resource pills and currency controls */
 .hud-right{gap:6px}
 button.hud-res-pill{font:inherit;color:inherit;cursor:pointer}
 .hud-res-pill b{font-variant-numeric:tabular-nums}

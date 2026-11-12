@@ -2,7 +2,7 @@
 const pairs={magma:['pyroMage','geoMage'],tempest:['pyroMage','aeroMage'],steam:['pyroMage','hydroMage'],swamp:['hydroMage','geoMage'],blizzard:['hydroMage','aeroMage'],sand:['geoMage','aeroMage']};
 const results=[];
 for(const [name,mages] of Object.entries(pairs))for(let seed=1;seed<=8;seed++){
- const r=G.newRun('lyra',{},seed*7919);r.roster=['elementalApprentice',mages[0]].map(id=>G.instance(r,id));let first30=null,apex=null;const rows=[];
+ const r=G.newRun('lyra', seed*7919);r.roster=['elementalApprentice',mages[0]].map(id=>G.instance(r,id));let first30=null,apex=null;const rows=[];
  for(let d=0;d<16;d++){
   const id={1:mages[1],3:'elementalPrism',4:'manaBattery',5:'astralLoom'}[d];if(id)r.roster.push(G.instance(r,id));
   r.depth=d;r.node={row:d,lane:1,type:d===15?'boss':[5,9,13].includes(d)?'elite':'battle'};r.phase='ready';const b=G.deploy(r);

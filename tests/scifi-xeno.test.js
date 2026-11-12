@@ -5,7 +5,7 @@ const G = require('../engine');
 const D = require('../data');
 
 function battle(ids, slots = ids.map((_, i) => i), leader = 'orion') {
- const r = G.newRun(leader, {}, 17);
+ const r = G.newRun(leader, 17);
  r.roster = ids.map(id => G.instance(r, id));
  r.node = { row: 5, lane: 1, type: 'battle' };
  r.depth = 5;
@@ -84,7 +84,7 @@ test('SciFi Weakpoint uncapped stacking & +5 percentage points crit per stack', 
 });
 
 test('Non-SciFi units cap at 100% crit chance; SciFi units do NOT cap and convert excess 2:1 to crit damage', () => {
- const b = battle(['nanite', 'monk'], [4, 0], 'orion');
+ const b = battle(['nanite', 'practitioner'], [4, 0], 'orion');
  const scifi = b.units[0];
  const nonScifi = b.units[1];
  const e = enemy(b, 0, 1000, 1000);

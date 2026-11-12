@@ -10,8 +10,9 @@ const Game = (() => {
  function rand(r) { r.seed = (Math.imul(r.seed, 1664525) + 1013904223) >>> 0; return r.seed / 4294967296 }
  function shuffle(r, a) { a = [...a]; for (let i = a.length - 1; i > 0; i--) { let j = Math.floor(rand(r) * (i + 1)); [a[i], a[j]] = [a[j], a[i]] } return a }
  function instance(r, id) { return { uid: ++r.uid, id, permanentAtkBonus: 0, threshold: 0 } }
- function newRun(leader, meta = {}, seed = Date.now() >>> 0) {
-  const r = { version: 3, leader, seed, uid: 0, roster: [], health: 100 + (meta.vitality || 0) * 5 + (D.LEADERS.find(l => l.id === leader)?.mods?.health || 0), maxHealth: 100 + (meta.vitality || 0) * 5 + (D.LEADERS.find(l => l.id === leader)?.mods?.health || 0), legacyPower: (meta.power || 0) * .02, phase: 'draft', draftReason: 'first', coins: 0, depth: -1, lane: 1, visited: [], relics: [], breakthroughPills: 0, cleared: 0, stats: { kills: 0, leaks: 0, growth: 0 }, map: [] };
+ function newRun(leader, seed = Date.now() >>> 0) {
+  const health = 100 + (D.LEADERS.find(l => l.id === leader)?.mods?.health || 0);
+  const r = { version: 4, leader, seed, uid: 0, roster: [], health, maxHealth: health, phase: 'draft', draftReason: 'first', coins: 0, depth: -1, lane: 1, visited: [], relics: [], breakthroughPills: 0, cleared: 0, stats: { kills: 0, leaks: 0, growth: 0 }, map: [] };
   for (let row = 0; row < 16; row++) {
    r.map.push(Array.from({ length: row === 15 ? 1 : 3 }, (_, lane) => {
     let type = 'battle';
@@ -28,7 +29,7 @@ const Game = (() => {
  }
  function rewardWeights(r, first = false) { let stage = first ? 1 : Math.min(16, r.depth + 2), elite = !first && r.node?.type === 'elite'; return stage < 5 ? [72, 28, 0, 0, 0] : stage < 10 ? (elite ? [40, 40, 20, 0, 0] : [55, 35, 10, 0, 0]) : elite ? [35, 35, 24, 6, 0] : [50, 32, 15, 3, 0] }
  function offers(r, first = false, exclude = []) {
-  let weights = rewardWeights(r, first), pool = D.CARDS.filter(c => !c.retired && (!first || c.baseAtk > 0) && weights[tier(c.id)] > 0 && !exclude.includes(c.id)), out = [];
+  let weights = rewardWeights(r, first), pool = D.CARDS.filter(c => (!first || c.baseAtk > 0) && weights[tier(c.id)] > 0 && !exclude.includes(c.id)), out = [];
   while (out.length < 3 && pool.length) {
    const available = weights.map((w, i) => pool.some(c => tier(c.id) === i) ? w : 0);
    let roll = rand(r) * available.reduce((a, v) => a + v, 0), chosen = 0;
@@ -776,7 +777,7 @@ const Game = (() => {
 function resolveAnimArchetype(u) {
  if (!u) return 'lunge';
  const d = card(u.id) || {}, g = d.genre || '', id = u.id || '';
- if (['cannon', 'bellows', 'behemoth', 'railgun', 'plasma', 'nightBus', 'midnightExpress', 'phantomConductor', 'siegeTitan', 'flakBattery'].includes(id)) return 'recoil';
+ if (['railgun', 'plasma', 'nightBus', 'midnightExpress', 'phantomConductor', 'siegeTitan', 'flakBattery'].includes(id)) return 'recoil';
  if (g === 'Haunted' && !['investigator', 'occultDetective', 'anomalySpecialist', 'ruleEnforcer', 'coroner', 'decoder'].includes(id)) return 'glitch';
  if (g === 'Cyberpunk' && ['mantis', 'netrunner', 'chronoPhantom', 'glitchAssassin', 'razorPhantom'].includes(id)) return 'glitch';
  if (['Cultivation', 'Arcane', 'Lovecraft'].includes(g) && !['demonBlade', 'bloodFiendMaster', 'shoggoth', 'mass'].includes(id)) return 'cast';
@@ -878,7 +879,7 @@ function fx(b, type, u, e, text, extra = {}) {
   const interactions = Object.values(b.metrics.interactions || {}).map(({ last, ...v }) => v).sort((a, z) => z.count - a.count);
   const consumed = b.metrics.consumed || [];
   const encounter = encounterFor(b.run.node);
-  const dormant = cards.filter(c => ['jade','eye','elementalApprentice','pyroMage','hydroMage','geoMage','aeroMage'].includes(c.id) && !c.consumed && c.triggers === 0);
+  const dormant = cards.filter(c => ['eye','elementalApprentice','pyroMage','hydroMage','geoMage','aeroMage'].includes(c.id) && !c.consumed && c.triggers === 0);
   let notes = [];
   if (b.metrics.leaks) notes.push(`${b.metrics.leaks} runners escaped.`); else notes.push('No runners escaped. Formation held.');
   if(b.metrics.xenoTrial)notes.push(b.metrics.xenoTrial.status==='passed'?`Xeno Leviathan trial passed; ${card(b.metrics.xenoTrial.apexId).name} awakened and the matching Serum was consumed.`:b.metrics.xenoTrial.status==='failed'?`Xeno Leviathan trial failed: ${b.metrics.xenoTrial.reason}. Candidate and matching Serum removed.`:'Xeno Leviathan trial active: clear this Elite/Boss with zero leaks.');
@@ -1829,8 +1830,8 @@ function fx(b, type, u, e, text, extra = {}) {
    threshold: { current: u.threshold || 0, max: d.max || 0, onTrigger: null },
    state: 'active', stateRemaining: 0, removed: false, phantom, mimic: 0, scale: phantom ? .5 : 1,
    attackCount: 0, naniteCrits: u.naniteCrits || 0, critCount: u.critCount || 0, breedAt: 1, overclock: false,
-   cycle: 0, clockRemaining: 0, critGift: false, manualUntil: 0, herbSpeed: 0, emptySpeed: 0, hasteUntil: 0, lastFlip: -99,
-   ventAt: 0, herbAt: 12, sacrificeAt: 18, offeringSpeed: 0, eliteHits: 0, feedAt: d.id === 'herald' ? 12 : 6,
+   cycle: 0, clockRemaining: 0, critGift: false, manualUntil: 0, emptySpeed: 0, hasteUntil: 0,
+   ventAt: 0, offeringSpeed: 0, eliteHits: 0, feedAt: d.id === 'herald' ? 12 : 6,
    summonAt: 12, madnessAt: 8, flash: 0, spatialRole: { isCenter, isCorner, isEdge, sharesRowOrCol },
    onAdjacentAttack: null, onAdjacentStateFlip: null, onAdjacentTrigger: null,
    qi: u.qi || 0, realm: isPractitioner(u) ? practitionerRealmForUnit(u) : (isUrbanInvestigator(u) ? urbanInvestigatorRealmForDread(u.dread || 0) : (u.realm || 0)), dread: u.dread || 0, violations: u.violations || 0, blackouts: u.blackouts || 0, busSweepAt: 8, abductAt: 6, swordQi: u.swordQi || 0, souls: u.souls || 0, bladeKills: u.bladeKills || 0, demonAtkBonus: u.demonAtkBonus || 0,
@@ -1885,10 +1886,8 @@ function fx(b, type, u, e, text, extra = {}) {
   const snap = new Map(b.units.map(u => [u.uid, base(u)]));
   for (const u of b.units.filter(u => u.id === 'mass')) u.mimic = Math.max(0, ...neighbors(b, u).map(v => snap.get(v.uid) - base(u)));
   // Only cards with an explicit opening-summon rule create a token here.
-  for (const u of [...b.units].filter(v => !v.removed && !token(v) && ['shepherd'].includes(v.id))) summon(b, u);
-  for (const u of [...b.units].filter(v => !v.removed && !token(v) && ['cub', 'alchemist', 'harvester'].includes(family(v)))) devour(b, u);
+  for (const u of [...b.units].filter(v => !v.removed && !token(v) && family(v) === 'cub')) devour(b, u);
   startBloodlineTrial(b);
-  for (const u of b.units.filter(v => !v.removed && v.id === 'herb')) teamCharge(b, u, 3);
   b.units.forEach(u => bindUrbanRelic(b, u));
   if (b.units.some(u => !u.removed && u.id === 'ruleArchitect')) {
    b.architectActive = true;
@@ -1902,18 +1901,12 @@ function fx(b, type, u, e, text, extra = {}) {
   flushEvents(b);
  }
 
- function herbOffering(b, u) {
-  const recipient = allies(b, u).filter(v => v.attackInterval > 0 && !token(v) && card(v.id).genre === 'Cultivation').sort((a, z) => rawAtk(z) - rawAtk(a) || a.uid - z.uid)[0];
-  if (!recipient) return false;
-  consume(b, recipient, u, 'Offering', 10); recipient.offeringSpeed += .15; flushEvents(b); return true;
- }
 
  function rawAtk(u) { return (u.tokenAtk != null ? u.tokenAtk + (u.permanentAtkBonus || 0) : (base(u) + (u.mimic || 0))) * u.scale }
 
  function atk(b, u) {
-  let m = 1 + (b.run.relics.includes('blade') ? .12 : 0) + (b.run.legacyPower || 0);
-  if (allies(b, u).some(v => family(v) === 'spirit' && (v.state === 'dormant' || v.spiritBuffUntil > b.time))) m += .2 * mod(b.run, 'buffPower');
-  if (isMechanical(u) && neighbors(b,u).some(v=>v.id==='titanReactor')) m *= 1.2;
+  let m = 1 + (b.run.relics.includes('blade') ? .12 : 0);
+   if (isMechanical(u) && neighbors(b,u).some(v=>v.id==='titanReactor')) m *= 1.2;
   if (isApexImmortal(u) && neighbors(b, u, false).some(v => !v.removed && (isCultivationRelic(v) || isUrbanRelic(v)))) m *= 1.2;
   if (neighbors(b, u, false).some(v => v.id === 'mountainScroll')) m *= 1.15;
   if (card(u.id).genre === 'Haunted' && b.curfewUntil > b.time) m *= 1.2;
@@ -1956,10 +1949,9 @@ function fx(b, type, u, e, text, extra = {}) {
   const mannequinCritBonus = family(u) === 'mannequin' && (b.curfewUntil > b.time || allies(b, u).some(v => v.state !== 'active')) ? 1 : 0;
   return (baseCritMultiplier ?? (tigerBleedCrit ? 3 : 2)) + sensor(b, u) * .3 + mod(b.run, 'critDamage', 0) + mannequinCritBonus + (neighbors(b,u).some(v=>v.id==='chitinHelix')?.25:0) + (b.units.some(v=>!v.removed&&v.id==='hiveOvermind')?.30:0) + excessCritDamage;
  }
- function downtime(b, u, duration, state) { if (support(b, 'smelter')) duration -= 1; if (state === 'dormant' && support(b, 'medium')) duration -= 2; if (['burnout', 'overheat'].includes(state) && support(b, 'vent')) duration *= .5; return Math.max(.5, duration) }
+ function downtime(b, u, duration, state) { if (support(b, 'smelter')) duration -= 1; if (['burnout', 'overheat'].includes(state) && support(b, 'vent')) duration *= .5; return Math.max(.5, duration) }
 
  function flip(b, u, state, duration = 0) {
-  if (family(u) === 'spirit' && state === 'dormant') u.spiritBuffUntil = b.time + downtime(b, u, duration, state) * mod(b.run, 'buffDuration');
   const previous = u.state; u.state = state; u.stateRemaining = state === 'active' ? 0 : downtime(b, u, duration, state); u.overclock = false;
   for (const v of allies(b, u)) v.onAdjacentStateFlip(u);
   fx(b, 'state', u, null, state === 'active' ? 'RETURN' : state.toUpperCase());
@@ -1970,13 +1962,10 @@ function fx(b, type, u, e, text, extra = {}) {
    }
   }
   if (state !== 'active') event(b, 'shutdown', { unit: u, state });
-  if (previous === 'dormant' && state === 'active' && family(u) === 'spirit') { growth(b, u, 1); u.returns = (u.returns || 0) + 1; persist(b, u); if (u.id === 'spirit' && u.returns >= 5) evolve(b, u, 'wraith'); }
-  if (state !== 'active') 
-  if (family(u) === 'spirit' && state === 'dormant') for (const e of living(b)) status(b, e, 'slow', 3, .25, u);
  }
 
  function tick(b, u, n, source = null) {
-  if (u.removed || token(u) || !u.threshold.max || u.id === 'lotus') return;
+  if (u.removed || token(u) || !u.threshold.max) return;
 
   u.threshold.current += n * (abilityGauge(u) ? mod(b.run, 'gauge')*(pageAura(b,u,'astral')?1.2:1) : 1);
   let guard = 0;
@@ -1993,9 +1982,7 @@ function fx(b, type, u, e, text, extra = {}) {
   for (const v of allies(b, u)) { v.onAdjacentTrigger(u); }
   if(arcaneGauge(u)){elementalSpell(b,u);return;}
   switch (family(u)) {
-   case 'spirit': flip(b, u, 'dormant', 5); break;
    case 'eye': u.nextTrigger = b.time + 4; addSyllables(b,8,u,'astral',true); for (const e of living(b).slice(0, 2)) status(b, e, 'vulnerable', 4, .15, u); interact(b, u.triggerSource || u, u, 'warp', 'control gauge filled · Warp'); for (const e of living(b).slice(0, 2)) { trueHit(b, u, e, 150 + teamPower(b) * .75); warp(b, e, 4, u); fx(b, 'warp', u, e, (e.boss || e.champion) ? (e.enraged ? 'RESIST' : 'WARP −2') : 'WARP −4') } break;
-   case 'lantern': u.nextTrigger = b.time + 2; for (const e of living(b)) hit(b, u, e, 45, false); interact(b, u, u, 'echo-burst', '10 Echoes → shockwave'); break;
    case 'core': u.nextTrigger = b.time + 6; for (const e of living(b)) { trueHit(b, u, e, 240 + teamPower(b) * 2); warp(b, e, 2.5, u); } interact(b, u, u, 'singularity', '8 critical hits → collapse'); break;
   }
  }
@@ -2155,9 +2142,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (isXeno(u)) { u.attackCount++; record(b, u).attacks++; u.flash = .18; xenoAttack(b, u, target, atk(b, u)); return true; }
   u.attackCount++; record(b, u).attacks++; u.flash = .18; let power = atk(b, u);
   for (const v of allies(b, u)) {
-   if (family(v) === 'spirit' && (v.state === 'dormant' || v.spiritBuffUntil > b.time)) interact(b, v, u, 'spirit-buff', 'Dormancy → +20% team damage');
   }
-  if (u.id === 'wraith' && (target.elite || target.boss || target.champion)) power *= 1.5;
 
   if(card(u.id).genre==='Lovecraft'&&u.id!=='herald'){cosmicAttack(b,u,target,power);}
   else if(isCyber(u)){cyberAttack(b,u,target,power);}
@@ -2490,7 +2475,6 @@ function fx(b, type, u, e, text, extra = {}) {
    markNaturalBreach(b, u, target);
    grantUrbanViolation(b, u, 1, target);
   }
-  else if (u.id === 'bell') { let empowered = b.time - u.lastFlip <= 2; if (empowered) interact(b, u.lastFlipSource || u, u, 'bell', 'state change → empowered ring + stun'); for (const e of living(b)) { hit(b, u, e, power + (empowered ? 24 * mod(b.run, 'damage') : 0)); status(b, e, 'slow', 1.5, .25, u); if (empowered) status(b, e, 'stun', .75, 0, u) } }
   else if (u.id === 'railgun') { const has = sensor(b, u); if (has) interact(b, support(b, 'sensor'), u, 'railgun', 'Sensor → five-target volley + knockback'); for (const e of living(b).slice(0, has ? 5 : 3)) { hit(b, u, e, power); if (has) warp(b, e, 1, u) } fx(b, 'beam', u, target, ''); }
   else if(u.id==='executioner'){hit(b,u,target,power*(target.hp/target.maxHp<.35?4:1));}
   else if (u.id === 'matriarch') { for (const e of living(b).slice(0, 3)) { hit(b, u, e, power); dot(b, e, 'bleed', 6, 4, u); } }
@@ -2508,7 +2492,6 @@ function fx(b, type, u, e, text, extra = {}) {
   for (const v of b.units.filter(v => !v.removed && v !== u)) { v.onAdjacentAttack(u) }
   if (!token(u) && u.upgradePath === 'storm' && u.attackCount % 6 === 0) { for (const e of living(b).slice(0, 3)) trueHit(b, u, e, rawAtk(u)); interact(b, u, u, 'branch', 'Storm path → three-target burst'); }
   if(arcaneGauge(u)||u.id==='eye')tick(b,u,1);
-  if (family(u) === 'spirit') tick(b, u, 1);
   flushEvents(b); return true;
  }
 
@@ -2649,8 +2632,6 @@ function fx(b, type, u, e, text, extra = {}) {
     }
     continue;
    }
-   if (u.id === 'herb' && b.time >= u.sacrificeAt && herbOffering(b, u)) continue;
-   if (u.id === 'herb' && b.time >= u.herbAt) { u.herbAt = b.time + 12; teamCharge(b, u, 3); }
    if (u.id === 'vent' && support(b, 'vent') === u && b.time >= u.ventAt) { u.ventAt = b.time + 8; for (const e of living(b).slice(0, 2)) status(b, e, 'freeze', (e.burns || []).some(d => d.until > b.time) ? 2 : 1, 0, u); fx(b, 'pulse', u, null, 'FREEZE') }
    if (u.attackInterval > 0) { u.currentCooldown -= dt; let guard = 0; while (u.currentCooldown <= 0 && u.state === 'active' && guard++ < 5) { if (!attack(b, u)) { u.currentCooldown = .05; break } u.currentCooldown += u.attackInterval / speed(b, u) } }
   }
@@ -2668,7 +2649,7 @@ function fx(b, type, u, e, text, extra = {}) {
      b.inkPuddles = b.inkPuddles.filter(p => p.until > b.time);
      if (b.inkPuddles.some(p => p.p === Math.floor(e.p))) inkSlow = 0.25;
     }
-    let aura = b.units.some(v => !v.removed && v.id === 'wraith') ? ((e.boss || e.champion) ? .15 : .3) : 0; let slow = Math.max(aura, inkSlow, ...e.slows.map(s => s.power)), move = e.frozenUntil > b.time ? 0 : 1 - slow;
+    let slow = Math.max(inkSlow, ...e.slows.map(s => s.power)), move = e.frozenUntil > b.time ? 0 : 1 - slow;
    if (b.curfewUntil > b.time) move *= 0.75;
    const previousProgress = e.p, wasRetreating = e.retreatingUntil > b.time && !((e.boss||e.champion)&&e.enraged);
    e.p += e.speed * dt * move * (e.enraged ? 1.25 : 1) * (b.run.relics.includes('frost') ? .9 : 1);
@@ -2777,13 +2758,13 @@ function fx(b, type, u, e, text, extra = {}) {
    reward(r)
   } else r.phase = 'lost';
  }
- function favored(b, u) { return ['herald', 'alchemist', 'harvester'].includes(family(u)) ? neighbors(b, u).some(v => preyEligible(u, v)) : card(u.id).fav === 'neighbor' && neighbors(b, u).length > 0 }
+ function favored(b, u) { return card(u.id).fav === 'neighbor' && neighbors(b, u).length > 0 }
 
  const family = u => card(u.id).evolvedFrom || u.id;
  const cultivationRealmIds = ['practitioner', 'cultivationFoundation', 'cultivationGoldenCore', 'cultivationNascentSoul'];
  const isPractitioner = u => family(u) === 'practitioner' && !APEX_FORMS.includes(u.id);
  const token = u => !!(u.phantom || u.token || card(u.id)?.token);
- const abilityGauge = u => arcaneGauge(u)||['eye', 'lantern', 'core'].includes(family(u));
+ const abilityGauge = u => arcaneGauge(u)||['eye', 'core'].includes(family(u));
  function persist(b, u) {
   if (token(u)) return;
   const src = b.run.roster.find(v => v.uid === u.uid);
@@ -2801,16 +2782,11 @@ function fx(b, type, u, e, text, extra = {}) {
    while (b.events?.length) {
     if (++count > 2000) throw Error('Combat event cycle exceeded limit');
     const ev = b.events.shift();
-    if (ev.type === 'consumed' && species(ev.unit) === 'lamb') { for (const e of living(b).slice(0, 3)) trueHit(b, ev.unit, e, 80 + rawAtk(ev.unit) * 2); interact(b, ev.unit, ev.consumer, 'soulflare', 'Lamb sacrifice → three-target Soulflare'); }
     for (const u of [...b.units].filter(v => !v.removed && !token(v))) {
      if (u.id === 'herald' && ev.type === 'consumed' && ev.consumer===u) { u.madnessPower = (u.madnessPower || 0) + 100; interact(b, ev.consumer, u, 'madness-feed', 'consumption → +100 next Madness damage'); }
      if (u.id === 'broodkeeper' && support(b, 'broodkeeper') === u && ev.type === 'consumed' && BLOODLINE_FODDER.includes(species(ev.unit)) && rand(b.run) < .35) { const preySpecies = species(ev.unit), offspring = breedCopy[preySpecies] || preyToken[preySpecies]; const v = spawnToken(b, u, offspring, false, { origin: preySpecies, tokenAtk: rawAtk(ev.unit), attackInterval: ev.unit.attackInterval }); if (v) interact(b, u, v, 'recycle', `35% global recall → ${card(preySpecies).name} token; original stays deleted`); }
-     if (ev.type === 'consumed' && species(ev.unit) === 'lamb' && u === support(b, 'lantern')) { tick(b, u, 3, ev.unit); interact(b, ev.unit, u, 'soul', 'Mourning Lamb → +3 Echoes'); }
-     if (u.id === 'soulwell' && ev.type === 'consumed') { const haunted = card(species(ev.unit))?.genre === 'Haunted'; for (const e of living(b).slice(0, 3)) trueHit(b, u, e, haunted ? 300 + teamPower(b) : 80 + teamPower(b) * .5); interact(b, ev.unit, u, 'soul-payoff', haunted ? 'HAUNTED HARVEST → greater soul missiles' : 'foreign loss → soul missiles'); }
-     if (u.id === 'lantern' && (ev.type === 'kill' || ev.type === 'shutdown' && ev.unit !== u)) tick(b, u, 1, ev.source || ev.unit);
      if (u.id === 'cauldron' && support(b, 'cauldron') === u && ['consumed', 'breakthrough', 'refined'].includes(ev.type) && ev.unit !== u && b.time >= (u.elixirAt || 0)) { u.elixirs = (u.elixirs || 0) + 1; u.elixirAt = b.time + 8; for (const v of b.units.filter(v => !v.removed)) growth(b, v, 1); interact(b, u, ev.consumer || ev.unit, 'elixir', 'Elixir: +1 team ATK; 8s cooldown'); }
      if (u.id === 'altar' && support(b, 'altar') === u && (ev.type === 'consumed' || ev.type === 'kill' && ev.bleeding)) for (const v of neighbors(b, u).filter(v => !token(v))) if (grantGrowth(b, v, 1)) interact(b, u, v, 'altar', 'ritual → +1 permanent ATK');
-     if (u.id === 'medium' && !u.pendingEcho && b.time >= (u.echoAt || 0) && ev.unit !== u && !token(ev.unit || {}) && (ev.type === 'consumed' || ev.type === 'shutdown' && ev.state === 'dormant')) { u.echoUsed = true; u.echoAt = b.time + 10; u.pendingEcho = { atk: Math.max(0, rawAtk(ev.unit)), origin: family(ev.unit) }; }
     }
    }
   } finally { b.processingEvents = false }
@@ -2838,7 +2814,7 @@ function fx(b, type, u, e, text, extra = {}) {
    const branch = pair ? XENO_BRANCHES[pair] : null;
    return { current: g, max, label: `Genome ${g} / ${max}` + (branch ? ` · ${strains.join('+')} lineage · ${card(branch[1]).name} · Elite/Boss zero-leak trial` : strains.length ? ` · Strains: ${strains.join('+')}` : '') };
   }
-  switch (family(u)) { case 'slumberingIdol':return {current:u.syllables||0,max:(u.syllables||0)<25?25:(u.syllables||0)<65?65:130}; case 'cyberSolo':return {current:u.chrome||0,max:(u.chrome||0)<25?25:(u.chrome||0)<65?65:120}; case 'elementalApprentice':{const pair=bestPair(u),p=u.synthesis?.[pair]||0,t=u.arcaneTrial;return {current:p,max:p<10?10:p<20?20:30,label:isArchon(u)?'Mythic · Astral Weaving complete':p<30?`${pair} synthesis · 10 / 20 / 30 toward Astral Weaving`:`${pair} · 30/30 · adjacent Astral Loom · Elite/Boss reaction trial${t?.unitUid===u.uid?` · ${t.status}${t.featDone?' · reaction proved':''}`:''}`};} case 'mercenary':return {current:u.trophyPoints||0,max:(u.trophyPoints||0)<25?25:(u.trophyPoints||0)<60?60:100}; case 'scrapFrame': return {current:u.alloy||0,max:(u.alloy||0)<25?25:(u.alloy||0)<65?65:120};case 'cub': { const current=u.lineageStacks||0, tier=lineageTierIds[u.id]?.tier||0, relic=cubRelics[u.lineage]; return { current, max:6, label:tier>=4?'Mythic · ancestral trial complete':tier===3?`Tier 3 · Elite/Boss zero-leak trial + adjacent ${card(relic)?.name||'ancestral relic'}`:'Tier 3 at 6 matching meals · then ancestral Elite/Boss trial' }; } case 'spirit': return { current: u.returns || 0, max: 5 };
+  switch (family(u)) { case 'slumberingIdol':return {current:u.syllables||0,max:(u.syllables||0)<25?25:(u.syllables||0)<65?65:130}; case 'cyberSolo':return {current:u.chrome||0,max:(u.chrome||0)<25?25:(u.chrome||0)<65?65:120}; case 'elementalApprentice':{const pair=bestPair(u),p=u.synthesis?.[pair]||0,t=u.arcaneTrial;return {current:p,max:p<10?10:p<20?20:30,label:isArchon(u)?'Mythic · Astral Weaving complete':p<30?`${pair} synthesis · 10 / 20 / 30 toward Astral Weaving`:`${pair} · 30/30 · adjacent Astral Loom · Elite/Boss reaction trial${t?.unitUid===u.uid?` · ${t.status}${t.featDone?' · reaction proved':''}`:''}`};} case 'mercenary':return {current:u.trophyPoints||0,max:(u.trophyPoints||0)<25?25:(u.trophyPoints||0)<60?60:100}; case 'scrapFrame': return {current:u.alloy||0,max:(u.alloy||0)<25?25:(u.alloy||0)<65?65:120};case 'cub': { const current=u.lineageStacks||0, tier=lineageTierIds[u.id]?.tier||0, relic=cubRelics[u.lineage]; return { current, max:6, label:tier>=4?'Mythic · ancestral trial complete':tier===3?`Tier 3 · Elite/Boss zero-leak trial + adjacent ${card(relic)?.name||'ancestral relic'}`:'Tier 3 at 6 matching meals · then ancestral Elite/Boss trial' }; }
    case 'investigator': {
     const dread = u.dread || 0;
     if (dread >= 140) return { current: 140, max: 140, label: 'Ready for Rule Binding' };
@@ -2855,7 +2831,7 @@ function fx(b, type, u, e, text, extra = {}) {
     return { current: v, max: 15, label: 'Epic at 15 · Mythic trial at 80' };
    } default: return null } }
  const species = u => token(u) ? (u.origin || card(u.id).species) : family(u);
- function preyEligible(predator, prey) { if (prey.removed || predator === prey) return false; const diets = { cub: ['serpentFodder','hound','scuttler','flameToad','peachFodder'], herald: ['mass', 'larva'], alchemist: ['lotus', 'herb'], harvester: ['lamb'] }; return card(predator.id).genre === card(species(prey))?.genre && (diets[family(predator)] || []).includes(species(prey)); }
+ function preyEligible(predator, prey) { if (prey.removed || predator === prey) return false; const diets = { cub: ['serpentFodder','hound','scuttler','flameToad','peachFodder'], herald: ['mass', 'larva'] }; return card(predator.id).genre === card(species(prey))?.genre && (diets[family(predator)] || []).includes(species(prey)); }
  function consume(b, consumer, victim, reason = 'Devour', reward = 0) {
   if (consumer.removed || victim.removed || consumer === victim) return false;
   const isToken = token(victim); victim.removed = true;
@@ -2879,11 +2855,9 @@ function fx(b, type, u, e, text, extra = {}) {
   const mealSpecies = species(prey), mealPath = family(u) === 'cub' ? cubPathForPrey[mealSpecies] : null;
   if (family(u) === 'cub' && !u.lineage && mealPath) u.lineage = mealPath;
   const matchingMeal = family(u) === 'cub' && !!mealPath && mealPath === u.lineage;
-  const reward = u.id==='herald'?0:family(u) === 'cub' ? (matchingMeal ? 4 : 3) : u.id === 'alchemist' ? 3 : u.id === 'harvester' ? 6 : 10;
-  const reason = u.id === 'harvester' ? 'Sacrifice' : u.id === 'alchemist' ? 'Refinement' : 'Devour';
+  const reward = u.id==='herald'?0:family(u) === 'cub' ? (matchingMeal ? 4 : 3) : 10;
+  const reason = 'Devour';
   consume(b, u, prey, reason, reward);
-  if (u.id === 'alchemist') { teamCharge(b, u, 3); event(b, 'refined', { unit: u }); }
-  if (u.id === 'harvester') for (const e of living(b).slice(0, 3)) trueHit(b, u, e, rawAtk(u) * 2);
   if (family(u) === 'cub') {
    u.meals = (u.meals || 0) + 1;
    if (matchingMeal) u.lineageStacks = (u.lineageStacks || 0) + 1;
@@ -2904,7 +2878,7 @@ function fx(b, type, u, e, text, extra = {}) {
   Object.assign(v, extra); prepareHooks(b, v); b.units.push(v); record(b, v); interact(b, parent, v, 'summon', 'summoned disposable token'); return v;
  }
  const BLOODLINE_FODDER = ['serpentFodder','hound','scuttler','flameToad','peachFodder'];
- const preyToken = { lotus: 'petal', lotusRoot: 'lotusBlossom', hound: 'houndToken', serpentFodder: 'scaleImp', scuttler: 'carapaceToken', flameToad: 'emberToken', peachFodder: 'peachToken', lamb: 'lambToken' };
+ const preyToken = { lotusRoot: 'lotusBlossom', hound: 'houndToken' };
  const breedCopy = { hound: 'hound', serpentFodder: 'serpentFodder', scuttler: 'scuttler', flameToad: 'flameToad', peachFodder: 'peachFodder' };
  const cubPathForPrey = { serpentFodder:'dragon', hound:'tiger', scuttler:'xuanwu', flameToad:'phoenix', peachFodder:'monkey' };
  const cubForms = { dragon:['dragonCubT1','dragonCubT2','dragonCubT3','dragonCubApex'], tiger:['tigerCubT1','tigerCubT2','tigerCubT3','tigerCubApex'], xuanwu:['xuanwuCubT1','xuanwuCubT2','xuanwuCubT3','xuanwuCubApex'], phoenix:['phoenixCubT1','phoenixCubT2','phoenixCubT3','phoenixCubApex'], monkey:['monkeyCubT1','monkeyCubT2','monkeyCubT3','monkeyCubApex'] };
@@ -2961,7 +2935,6 @@ function fx(b, type, u, e, text, extra = {}) {
   if (token(u) || u.id === 'hound') return;
   // Explicit summon abilities keep their named token; bred Bloodline fodder uses its own card identity.
   const id = preyToken[species(u)]; if (id) return spawnToken(b, u, id, true);
-  if (u.id === 'shepherd') return spawnToken(b, u, 'lambToken', false, { origin: 'lamb', tokenAtk: card('lamb').baseAtk, attackInterval: card('lamb').attackInterval });
  }
  function breed(b, u) {
   const kind = species(u), offspring = breedCopy[kind] || preyToken[kind]; if (!offspring || b.time < (u.breedAt || 1)) return; u.breedAt = b.time + 1;
@@ -2986,7 +2959,7 @@ function fx(b, type, u, e, text, extra = {}) {
   r.recap = null; reward(r); return true;
  }
  function teamCharge(b, u, n) { for (const v of allies(b, u).filter(v => abilityGauge(v) && !token(v))) { tick(b, v, n, u); interact(b, u, v, 'charge', `+${n} ability progress`); } }
- function refine(b, u) { const v = allies(b, u).filter(v => v.attackInterval > 0 && !token(v)).sort((a, z) => a.permanentAtkBonus - z.permanentAtkBonus || a.uid - z.uid)[0]; if (!v) return false; u.refinements = (u.refinements || 0) + 1; growth(b, v, 6); teamCharge(b, u, 3); interact(b, u, v, 'refinement', 'refine → +6 permanent ATK; root survives'); u.threshold.current = 0; u.refineAt = b.time + 18; return true; }
+
  function warp(b, e, tiles, source = null) { if (e.gone || e.hp <= 0 || ((e.boss||e.champion)&&e.enraged)) return; const before = e.p; e.p = Math.max(0, e.p - ((e.boss || e.champion) ? e.enraged ? 0 : tiles * .5 : tiles)); e.retreatingUntil = Math.max(e.retreatingUntil || 0, b.time + ((e.boss||e.champion)?1.25:2.5)); e.panicUntil = Math.max(e.panicUntil || 0, e.retreatingUntil); e.panic = true; if(before>e.p){cosmicStatus(b,e,'warp',source);if(source)event(b, 'displaced', { source, tiles: before - e.p });} }
  function pulseMadness(b, u) { const stored = u.madnessPower || 0; u.madnessPower = 0; for (const e of living(b)) { const late = e.p >= 12; trueHit(b, u, e, stored); if (late) warp(b, e, 5); } u.lastMadness = b.time; u.madnessAt = b.time + 8; interact(b, u, u, 'madness', `MADNESS → +${Math.round(stored)} stored damage released`); fx(b, 'pulse', u, null, 'MADNESS'); }
  function dot(b, e, type, dps, seconds, u) { if (e.hp <= 0 || e.gone) return; cosmicStatus(b,e,type,u); const key = type === 'burn' ? 'burns' : 'bleeds'; e[key] ??= []; e[key] = e[key].filter(x => x.until > b.time); if (type === 'bleed' && card(species(u))?.genre === 'Bloodline' && support(b, 'matriarch')) seconds += b.units.filter(v => !v.removed && BLOODLINE_FODDER.includes(species(v))).length * .5; e[key].push({ until: b.time + seconds, dps: dps * mod(b.run, 'damage') * mod(b.run, priority(e) ? 'eliteDamage' : 'normalDamage'), owner: u.uid }); }
@@ -3107,17 +3080,11 @@ function fx(b, type, u, e, text, extra = {}) {
    }
   }
   if (u.resonanceLevel && b.time >= (u.resonateAt || 6)) { u.resonateAt = b.time + 6; teamCharge(b, u, u.resonanceLevel); }
-  if (u.id === 'shepherd' && b.time >= (u.pastureAt || 8)) { u.pastureAt = b.time + 8; summon(b, u); }
-  if (u.id === 'soulwell' && living(b).length && b.time >= (u.soulPulseAt || 6)) { u.soulPulseAt = b.time + 6; for (const e of living(b).slice(0, 3)) trueHit(b, u, e, 160 + teamPower(b) * .75); }
-  if (['lotus', 'lamb'].includes(u.id) && b.time >= (u.summonAt || 0)) { summon(b, u); u.summonAt = b.time + 12; }
-  if (['cub', 'herald', 'alchemist', 'harvester'].includes(family(u)) && b.time >= (u.feedAt || 6)) { devour(b, u); u.feedAt = b.time + (u.id === 'herald' ? 12 : 6); }
+  if (['cub', 'herald'].includes(family(u)) && b.time >= (u.feedAt || 6)) { devour(b, u); u.feedAt = b.time + (u.id === 'herald' ? 12 : 6); }
   if (u.lineage === 'dragon' && (lineageTierIds[u.id]?.tier || 0) >= 4 && living(b).length && b.time >= (u.dragonPulseAt || 8)) { u.dragonPulseAt=b.time+8; for(const e of living(b)) warp(b,e,2,u); }
   if (u.lineage === 'phoenix' && (lineageTierIds[u.id]?.tier || 0) >= 3 && living(b).length && b.time >= (u.phoenixPulseAt || 8)) { u.phoenixPulseAt=b.time+8; for(const e of living(b)){const total=(e.burns||[]).filter(d=>d.until>b.time).reduce((n,d)=>n+d.dps*Math.max(0,d.until-b.time),0); if(total){damage(b,e,total,u,'ability');e.burns=e.burns.filter(d=>d.until<=b.time);}} interact(b,u,u,'flare','Phoenix detonation → active Burns consumed'); }
   if (family(u) === 'cub' && (lineageTierIds[u.id]?.tier || 0) === 3) startBloodlineTrial(b);
-  if (u.id === 'lotus') { u.threshold.current = Math.min(18, u.threshold.current + dt); if (u.threshold.current >= 18) refine(b, u); }
-  if (u.id === 'medium' && living(b).length && b.time >= (u.soulAt || 6)) { u.soulAt = b.time + 6; const strongest = Math.max(rawAtk(u), ...allies(b, u).filter(v => !token(v)).map(rawAtk)); for (const e of living(b).slice(0, 2)) hit(b, u, e, 60 + strongest, false); interact(b, u, u, 'soul-volley', 'SOUL VOLLEY → strongest original ATK'); }
   if (u.id === 'core' && living(b).length && b.time >= (u.gravityAt || 2)) { u.gravityAt = b.time + 2; tick(b, u, 1, u); }
-  if (u.id === 'medium' && u.pendingEcho) { const v = spawnToken(b, u, 'echo', false, { tokenAtk: u.pendingEcho.atk, origin: u.pendingEcho.origin, attackInterval: card(u.pendingEcho.origin).attackInterval }); if (v) u.pendingEcho = null; }
   if (u.id === 'herald' && b.time >= (u.madnessAt ?? 8)) pulseMadness(b, u);
 
   // --- CULTIVATION ECOSYSTEM TICKS ---
@@ -3204,7 +3171,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (abilityGauge(u) && u.threshold.current >= u.threshold.max) tick(b, u, 0);
  }
 
- return { breakthroughPills: b => Math.max(0, Math.min(3, Math.floor(b?.run?.breakthroughPills || 0))), chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, isXenoApex, isSciFi, xenoTrialCandidate, startXenoTrial, failXenoTrial, passXenoTrial, tickXenoTrial, addWeakpoint, extractHelix, addGenome, checkXenoMetamorphosis, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, cosmicTrialCandidate, startCosmicTrial, cosmicTrialProof, failCosmicTrial, passCosmicTrial, tickCosmicTrial, updateIdol, dropPage, addSyllables, forgeGrimoire, decipherPage, cosmicPanic, cosmicStatus, cosmicReward, cosmicDeath, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, cyberTrialCandidate, startCyberTrial, cyberTrialProof, failCyberTrial, passCyberTrial, tickCyberTrial, augmented, hasAccess, ramCapacity, berserkActive, updateCyber, installChrome, addChromeAttack, addRAM, cyberPoison, uploadHack, cyberDeath, cyberZone, clearSprint, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, arcanePair, isApprentice, isArchon, isElemental, arcaneGauge, bestPair, updateApprentice, receiveEssence, startArcaneTrial, failArcaneTrial, passArcaneTrial, tickArcaneTrial, startScrapworkTrial, scrapworkTrialCandidate, markScrapworkTrialHit, failScrapworkTrial, passScrapworkTrial, tickScrapworkTrial, storeOverflow, elementalLinks, arcaneReaction, elementalSpell, arcaneZone, archonAttack, arcaneExtras, tickArcane, arcaneKill, HUNT_APEX, isSlayer, huntTrialCandidate, startHuntTrial, failHuntTrial, passHuntTrial, tickHuntTrial, isHunter, priority, trophyFamily, huntAura, executeThreshold, wallOf, huntArmor, brandQuarry, updateSlayer, trophyPoints, harvestTrophy, forgeHuntRelic, carveTrophy, huntExtras, visceral, slayerAttack, isMech, isMechanical, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, inArc, oilPool, tickOil, mechAttack, addQi, addDread, acceptsQi, acceptsDread, isCultivationApex, isUrbanAuthority, bindUrbanRelic, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, refine, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, herbOffering, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, passBloodlineTrial, tickBloodlineTrial, startUrbanContainmentTrial, failUrbanContainmentTrial, passUrbanContainmentTrial, tickUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, resolveUrbanLegendMerger, updateUrbanLegendLineage, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, processPractitionerBreakthroughs, practitionerRealmForQi, isPractitioner, isCultivationRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, breaksLegendNaturalRule, markNaturalBreach, URBAN_LEGEND_MARK_NAMES, cornerSection, resolveAnimArchetype, resolveVfxKind, triggerShowstopper };
+ return { breakthroughPills: b => Math.max(0, Math.min(3, Math.floor(b?.run?.breakthroughPills || 0))), chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, isXenoApex, isSciFi, xenoTrialCandidate, startXenoTrial, failXenoTrial, passXenoTrial, tickXenoTrial, addWeakpoint, extractHelix, addGenome, checkXenoMetamorphosis, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, cosmicTrialCandidate, startCosmicTrial, cosmicTrialProof, failCosmicTrial, passCosmicTrial, tickCosmicTrial, updateIdol, dropPage, addSyllables, forgeGrimoire, decipherPage, cosmicPanic, cosmicStatus, cosmicReward, cosmicDeath, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, cyberTrialCandidate, startCyberTrial, cyberTrialProof, failCyberTrial, passCyberTrial, tickCyberTrial, augmented, hasAccess, ramCapacity, berserkActive, updateCyber, installChrome, addChromeAttack, addRAM, cyberPoison, uploadHack, cyberDeath, cyberZone, clearSprint, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, arcanePair, isApprentice, isArchon, isElemental, arcaneGauge, bestPair, updateApprentice, receiveEssence, startArcaneTrial, failArcaneTrial, passArcaneTrial, tickArcaneTrial, startScrapworkTrial, scrapworkTrialCandidate, markScrapworkTrialHit, failScrapworkTrial, passScrapworkTrial, tickScrapworkTrial, storeOverflow, elementalLinks, arcaneReaction, elementalSpell, arcaneZone, archonAttack, arcaneExtras, tickArcane, arcaneKill, HUNT_APEX, isSlayer, huntTrialCandidate, startHuntTrial, failHuntTrial, passHuntTrial, tickHuntTrial, isHunter, priority, trophyFamily, huntAura, executeThreshold, wallOf, huntArmor, brandQuarry, updateSlayer, trophyPoints, harvestTrophy, forgeHuntRelic, carveTrophy, huntExtras, visceral, slayerAttack, isMech, isMechanical, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, inArc, oilPool, tickOil, mechAttack, addQi, addDread, acceptsQi, acceptsDread, isCultivationApex, isUrbanAuthority, bindUrbanRelic, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, passBloodlineTrial, tickBloodlineTrial, startUrbanContainmentTrial, failUrbanContainmentTrial, passUrbanContainmentTrial, tickUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, resolveUrbanLegendMerger, updateUrbanLegendLineage, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, processPractitionerBreakthroughs, practitionerRealmForQi, isPractitioner, isCultivationRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, breaksLegendNaturalRule, markNaturalBreach, URBAN_LEGEND_MARK_NAMES, cornerSection, resolveAnimArchetype, resolveVfxKind, triggerShowstopper };
 })();
 if (typeof module !== 'undefined') module.exports = Game;
 

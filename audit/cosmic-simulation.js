@@ -1,6 +1,6 @@
 'use strict';const G=require('../engine');const results=[];
 for(const withHerald of [false,true])for(let seed=1;seed<=18;seed++){
- const r=G.newRun('naal',{},seed*7919);r.roster=[G.instance(r,'slumberingIdol')];let firstRare=null,firstEpic=null,firstApex=null;const rows=[];
+ const r=G.newRun('naal', seed*7919);r.roster=[G.instance(r,'slumberingIdol')];let firstRare=null,firstEpic=null,firstApex=null;const rows=[];
  for(let d=0;d<16;d++){
   const add={1:'larva',2:'blindAstrologer',3:'archivist',4:'mass',5:'eye',...(withHerald?{9:'herald'}:{})}[d];if(add)r.roster.push(G.instance(r,add));
   r.depth=d;r.node={row:d,lane:1,type:d===15?'boss':[5,9,13].includes(d)?'elite':'battle'};r.phase='ready';const b=G.deploy(r);for(let n=0;n<6000&&!b.done;n++)G.step(b,.1);
