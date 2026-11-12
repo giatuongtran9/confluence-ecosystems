@@ -189,7 +189,7 @@ const CARDS = [
   ],
   "growthRole": "engine",
   "ecosystem": "Cultivation · Dan Dao",
-  "rules": "Does not attack. Stores up to 3 shared Breakthrough Pills while any Cauldron remains in the roster; stock persists between battles and pills can be spent only while one is deployed. Starting at 8s and every 8s, consumes adjacent Spirit Grass to brew 1 pill below cap; at cap, converts the Grass to +12 Qi for the deployed Practitioner with the most Qi. Each adjacent Lotus Blossom is independently consumed for +6 Qi/+4 permanent ATK to the eligible Cultivation unit with the least Qi; direct absorption remains +5 Qi/+2 ATK.",
+  "rules": "Does not attack. Stores up to 3 shared Breakthrough Pills while any Cauldron remains in the roster; stock persists between battles and pills can be spent only while one is deployed. Starting at 8s and every 8s, consumes adjacent Spirit Grass to brew 1 pill below cap; at cap, converts the Grass to +12 Qi for the deployed Practitioner with the most Qi. Each adjacent Lotus Blossom is independently consumed for +6 Qi/+2 permanent ATK to the eligible Cultivation unit with the least Qi; direct absorption remains +5 Qi/+1 ATK.",
   "synergy": "Spirit Lotus Root, Cloud-Mist Spirit Grass, Qi-Refining Practitioner."
 },
   // 4. Qi-Refining Practitioner
@@ -1651,7 +1651,7 @@ const FORMS = [
   ],
   "evolvedFrom": "practitioner",
   "draftable": false,
-  "rules": "Foundation realm · 30 Qi. Base 25 ATK, 1.4s interval. Attacks pierce the two leading runners. Directly absorbs adjacent Lotus Blossoms for +5 Qi/+2 permanent ATK; a Cauldron brews them for +6 Qi/+4 ATK. Qi stops at 85 until a stored Breakthrough Pill is spent by a deployed Cauldron, advancing to Golden Core. Normal attacks grant no Qi.",
+  "rules": "Foundation realm · 30 Qi. Base 25 ATK, 1.4s interval. Attacks pierce the two leading runners. Directly absorbs adjacent Lotus Blossoms for +5 Qi/+1 permanent ATK; a Cauldron brews them for +6 Qi/+2 ATK. Qi stops at 85 until a stored Breakthrough Pill is spent by a deployed Cauldron, advancing to Golden Core. Normal attacks grant no Qi.",
   "synergy": "Spirit Lotus Blossoms, Spirit Grass, and Cauldron Pills."
 },
   {
@@ -1672,7 +1672,7 @@ const FORMS = [
   ],
   "evolvedFrom": "practitioner",
   "draftable": false,
-  "rules": "Golden Core realm · 85 Qi. Base 50 ATK, 1.3s interval. Attacks the target and deal 50% splash damage nearby. Directly absorbs adjacent Lotus Blossoms for +5 Qi/+2 permanent ATK; a Cauldron brews them for +6 Qi/+4 ATK. Qi stops at 175 until a stored Breakthrough Pill is spent by a deployed Cauldron. Normal attacks grant no Qi.",
+  "rules": "Golden Core realm · 85 Qi. Base 50 ATK, 1.3s interval. Attacks the target and deal 50% splash damage nearby. Directly absorbs adjacent Lotus Blossoms for +5 Qi/+1 permanent ATK; a Cauldron brews them for +6 Qi/+2 ATK. Qi stops at 175 until a stored Breakthrough Pill is spent by a deployed Cauldron. Normal attacks grant no Qi.",
   "synergy": "Spirit Lotus Blossoms, Spirit Grass, Cauldron Pills, and Cultivation Relics."
 },
   {
@@ -1693,7 +1693,7 @@ const FORMS = [
   ],
   "evolvedFrom": "practitioner",
   "draftable": false,
-  "rules": "Nascent Soul realm · 175 Qi. Base 85 ATK, 1.2s interval. Attacks the three highest-HP runners. Directly absorbs adjacent Lotus Blossoms for +5 Qi/+2 permanent ATK; a Cauldron brews them for +6 Qi/+4 ATK. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after Mythic ascension. At 200 Qi, an adjacent eligible relic starts the Elite/Boss Heavenly Tribulation; clear with zero leaks. Normal attacks grant no Qi.",
+  "rules": "Nascent Soul realm · 175 Qi. Base 85 ATK, 1.2s interval. Attacks the three highest-HP runners. Directly absorbs adjacent Lotus Blossoms for +5 Qi/+1 permanent ATK; a Cauldron brews them for +6 Qi/+2 ATK. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after Mythic ascension. At 200 Qi, an adjacent eligible relic starts the Elite/Boss Heavenly Tribulation; clear with zero leaks. Normal attacks grant no Qi.",
   "synergy": "Cultivation Relics and the full Practitioner lineage."
 },
   // 1. Sword Immortal
@@ -2351,7 +2351,7 @@ const TOKENS = [
     "fav": "neighbor",
     "species": "lotusRoot",
     "ecosystem": "Cultivation · Dan Dao",
-    "rules": "An adjacent Practitioner directly absorbs this token for +5 Qi and +2 permanent ATK. A Cauldron instead consumes it for +6 Qi and +4 permanent ATK to the deployed eligible Cultivation unit with the least Qi. Cultivation Mythics absorb it for +15 Qi; every 30 gained Qi grants +2 permanent ATK, and Qi above 175 also grants +0.15 permanent ATK per Qi. Consuming the token preserves its parent root.",
+    "rules": "An adjacent Practitioner directly absorbs this token for +5 Qi and +1 permanent ATK. A Cauldron instead consumes it for +6 Qi and +2 permanent ATK to the deployed eligible Cultivation unit with the least Qi. Cultivation Mythics absorb it for +15 Qi; every 30 gained Qi grants +2 permanent ATK, and Qi above 175 also grants +0.15 permanent ATK per Qi. Consuming the token preserves its parent root.",
     "synergy": "Qi-Refining Practitioner, Nine-Turn Alchemy Cauldron."
   },
 
