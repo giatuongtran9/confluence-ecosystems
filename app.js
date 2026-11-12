@@ -345,9 +345,22 @@ function arcaneDetail(u){
  if(CARD[u.id].genre!=='Arcane')return '';
  const names=p=>p.split('+').join(' + ');
  let lines=[];
- if(Game.isApprentice(u)){lines.push('Synthesis: '+Object.keys(Game.ARCANE_PAIRS).map(p=>names(p)+' '+(u.synthesis?.[p]||0)).join(' · '));lines.push('Stored essences: '+((u.essences||[]).join(', ')||'none'));const prog=Game.evolutionProgress(u);lines.push(u.boundPair?'Bound pair: '+names(u.boundPair):prog.label||'Highest pair advances at 10 / 20 / 30');}
- if(u.id==='manaBattery')lines.push('Stored mana: '+(u.manaStored||0).toFixed(2)+' / 32 · discharge every 6s');
- if(u.id==='elementalPrism')lines.push('Works from any slot · orthogonal neighbors · one pulse per second');
+ if(Game.isElemental(u)&&!Game.isArchon(u)){
+  lines.push(`Mastery: ${u.mastery||0}% · Permanent ATK: +${u.permanentAtkBonus||0}`);
+ }
+ if(Game.isApprentice(u)){
+  if(u.lockedPair)lines.push(`Locked Path: ${names(u.lockedPair)} (Off-pair points convert 2:1 into ${names(u.lockedPair)})`);
+  lines.push('Synthesis: '+Object.keys(Game.ARCANE_PAIRS).map(p=>names(p)+' '+(u.synthesis?.[p]||0)).join(' · '));
+  lines.push('Stored essences: '+((u.essences||[]).join(', ')||'none'));
+  const prog=Game.evolutionProgress(u);
+  if(prog.label)lines.push(prog.label);
+ }
+ if(Game.isArchon(u)){
+  lines.push(`Archon Ultimate: ${u.archonAttacks||0}/10 attacks toward Channel${u.channeling?' · CHANNELING':''}`);
+ }
+ if(u.id==='manaBattery')lines.push('Mana Battery: pulses every 8.0s → +4 ticks to a random deployed mage');
+ if(u.id==='elementalPrism')lines.push('Elemental Prism: grants +2 ticks to all deployed elemental mages on adjacent spell cast');
+ if(u.id==='astralLoom')lines.push('Astral Loom: adjacent units gain 2 ticks per attack and +20% attack speed');
  return lines.map(t=>`<p class="hint">${t}</p>`).join('');
 }
 function huntDetail(u){
@@ -816,7 +829,13 @@ function drawSwordTorrentChannel(ctx, cx, cy, prog, size, channelType = 'sword-t
     'great-sage-staff': { text: '🐒 ĐỊNH HẢI THẦN CHÂM (1.2s)', color: '#fbbf24', glow: '#d97706', bg: '#451a03' },
     'berserker-cleave': { text: '⚔️ BERSERKER COLOSSUS CLEAVE (1.2s)', color: '#f59e0b', glow: '#d97706', bg: '#451a03' },
     'siege-bombardment': { text: '💥 SIEGE TITAN BOMBARDMENT (1.2s)', color: '#ef4444', glow: '#dc2626', bg: '#450a0a' },
-    'juggernaut-hellfire': { text: '🔥 VANGUARD OIL HELLFIRE (1.2s)', color: '#fb923c', glow: '#ea580c', bg: '#431407' }
+    'juggernaut-hellfire': { text: '🔥 VANGUARD OIL HELLFIRE (1.2s)', color: '#fb923c', glow: '#ea580c', bg: '#431407' },
+    'magmaLord': { text: '🔥 MOLTEN FISSURE (1.2s)', color: '#fb923c', glow: '#ea580c', bg: '#431407' },
+    'tempestArchon': { text: '🌪️ FIRESTORM TORNADO (1.2s)', color: '#f87171', glow: '#ef4444', bg: '#450a0a' },
+    'steamSovereign': { text: '💨 SCALDING VAPOR MIST (1.2s)', color: '#38bdf8', glow: '#0284c7', bg: '#082f49' },
+    'quagmireColossus': { text: '🌿 PRIMORDIAL QUAGMIRE (1.2s)', color: '#4ade80', glow: '#16a34a', bg: '#052e16' },
+    'blizzardArchon': { text: '❄️ GLACIAL BLIZZARD (1.2s)', color: '#67e8f9', glow: '#06b6d4', bg: '#164e63' },
+    'sandstormTitan': { text: '🏜️ SANDSTORM STRIP (10s)', color: '#facc15', glow: '#ca8a04', bg: '#422006' }
   };
   const theme = channelLabels[channelType] || channelLabels['sword-torrent'];
   ctx.save();
@@ -1591,12 +1610,23 @@ function draw() {
     }
   }
   for (const z of battle.arcaneZones || []) {
-    for (let i = z.wall * 4; i < z.wall * 4 + 4; i++) {
-      const p = Game.track(i + 0.5), q = routePoint(p.x, p.y, size);
-      ctx.fillStyle = z.type === 'magma' ? '#e8754055' : '#6c926455';
-      ctx.beginPath();
-      ctx.ellipse(q.x, q.y, 28, 18, 0, 0, Math.PI * 2);
-      ctx.fill();
+    if (z.type === 'magmaFissure16' || z.type === 'vaporMist') {
+      for (let i = 0; i < 16; i++) {
+        const p = Game.track(i + 0.5), q = routePoint(p.x, p.y, size);
+        ctx.fillStyle = z.type === 'magmaFissure16' ? '#e8754044' : '#a5f3fc44';
+        ctx.beginPath();
+        ctx.ellipse(q.x, q.y, 26, 16, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else {
+      const tiles = z.p != null ? [Math.floor(z.p) % 16] : [z.wall * 4, z.wall * 4 + 1, z.wall * 4 + 2, z.wall * 4 + 3];
+      for (const i of tiles) {
+        const p = Game.track(i + 0.5), q = routePoint(p.x, p.y, size);
+        ctx.fillStyle = z.type === 'magma' ? '#e8754055' : '#4ade8044';
+        ctx.beginPath();
+        ctx.ellipse(q.x, q.y, 28, 18, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
   }
   for (const c of battle.cyclones || []) {

@@ -208,24 +208,24 @@ test('Bloodline Tier 3 progress explains its distinct final trial gate',()=>{
 // Arcane Mythic proof: the chosen synthesis reaction must strike a priority target.
 function arcaneTrialBattle(pair='fire+water',nodeType='elite'){
  const b=battle(['elementalApprentice','astralLoom'],[0,1]);b.run.node.type=nodeType;b.run.depth=9;
- const mage=b.units[0];mage.synthesis={[pair]:30};b.run.roster[0].synthesis={...mage.synthesis};return b;
+ const mage=b.units[0];mage.synthesis={[pair]:80};mage.lockedPair=pair;b.run.roster[0].synthesis={...mage.synthesis};b.run.roster[0].lockedPair=pair;return b;
 }
 function arcaneTrialTarget(b,pair,kind='elite'){
  const e=enemy(b,kind==='boss'?'boss':kind==='champion'?'champion':'ordinary',6);
  if(kind==='elite')e.elite=true;
  const [first]=pair.split('+');e.elements={[first]:b.time+4};return e;
 }
-test('Arcane Weaving trial starts on Elite/Boss whenever 30-point Mage has adjacent Loom',()=>{
+test('Arcane Weaving trial starts on Elite/Boss whenever 80-point Mage has adjacent Loom',()=>{
  for(const nodeType of ['elite','boss']){const b=arcaneTrialBattle('fire+water',nodeType);assert.equal(G.startArcaneTrial(b)?.apexId,'steamSovereign',nodeType);assert.equal(G.startArcaneTrial(b),b.arcaneTrial,nodeType);}
  const ordinary=arcaneTrialBattle();ordinary.run.node.type='battle';assert.equal(G.startArcaneTrial(ordinary),null);
  const early=arcaneTrialBattle();early.run.depth=0;assert.equal(G.startArcaneTrial(early)?.status,'active');
- const short=arcaneTrialBattle();short.units[0].synthesis['fire+water']=29;assert.equal(G.startArcaneTrial(short),null);
+ const short=arcaneTrialBattle();short.units[0].synthesis['fire+water']=79;assert.equal(G.startArcaneTrial(short),null);
  const far=arcaneTrialBattle();far.units[1].slot=6;Object.assign(far.units[1],G.xy(6));assert.equal(G.startArcaneTrial(far),null);
 });
-test('Arcane Weaving starts as soon as the 30-point gate is reached during an eligible node',()=>{
- const b=arcaneTrialBattle('fire+water','elite'),mage=b.units[0];mage.synthesis['fire+water']=29;b.run.roster[0].synthesis={'fire+water':29};
+test('Arcane Weaving starts as soon as the 80-point gate is reached during an eligible node',()=>{
+ const b=arcaneTrialBattle('fire+water','elite'),mage=b.units[0];mage.synthesis['fire+water']=79;b.run.roster[0].synthesis={'fire+water':79};
  G.receiveEssence(b,mage,'fire');mage.essences=['water'];G.receiveEssence(b,mage,'fire');
- assert.equal(mage.synthesis['fire+water'],30);assert.equal(b.arcaneTrial?.status,'active');
+ assert.equal(mage.synthesis['fire+water'],80);assert.equal(b.arcaneTrial?.status,'active');
 });
 test('Arcane proof requires the highest chosen pair reaction to hit Elite, Harbinger, or Boss',()=>{
  for(const [pair,apex] of Object.entries(G.ARCANE_PAIRS)){
@@ -247,7 +247,7 @@ test('Arcane trial leak, failed clear, or missing priority reaction loses Mage a
  }
 });
 test('Arcane progress exposes the selected pair and exact final trial gate',()=>{
- const b=arcaneTrialBattle();G.startArcaneTrial(b);const p=G.evolutionProgress(b.units[0]);assert.equal(p.current,30);assert.match(p.label,/fire\+water/);assert.doesNotMatch(p.label,/Crossing 10\+/);assert.match(p.label,/Elite\/Boss reaction trial/);
+ const b=arcaneTrialBattle();G.startArcaneTrial(b);const p=G.evolutionProgress(b.units[0]);assert.equal(p.current,80);assert.match(p.label,/fire\+water/);assert.doesNotMatch(p.label,/Crossing 10\+/);assert.match(p.label,/Elite\/Boss reaction trial/);
 });
 
 function scrapworkTrialBattle(modules=['blade','flak'],nodeType='elite'){

@@ -216,23 +216,48 @@ const Game = (() => {
  // Arcane Loom: pair counters persist; battlefield statuses, mana and terrain do not.
  const ARCANE_PAIRS={'earth+fire':'magmaLord','fire+wind':'tempestArchon','fire+water':'steamSovereign','earth+water':'quagmireColossus','water+wind':'blizzardArchon','earth+wind':'sandstormTitan'};
  const arcanePair=(a,z)=>[a,z].sort().join('+');
- const isApprentice=u=>family(u)==='elementalApprentice';
- const isArchon=u=>Object.values(ARCANE_PAIRS).includes(u.id);
- const isElemental=u=>!!card(u.id).element||isApprentice(u);
+ const isApprentice=u=>family(u)==='elementalApprentice'||['elementalApprentice','elementalAdept','elementalMage','elementalMaster','elementalArchmage'].includes(u?.id);
+ const isArchon=u=>Object.values(ARCANE_PAIRS).includes(u?.id);
+ const isElemental=u=>!!card(u?.id)?.element||isApprentice(u);
  const arcaneGauge=u=>isElemental(u)&&!isArchon(u);
  function bestPair(u){return Object.keys(ARCANE_PAIRS).sort((a,z)=>(u.synthesis?.[z]||0)-(u.synthesis?.[a]||0))[0];}
  function updateApprentice(b,u){
   if(!isApprentice(u)||isArchon(u)||u.removed||token(u))return;
-  const pair=bestPair(u),p=u.synthesis?.[pair]||0,id=p>=20?'elementalMaster':p>=10?'elementalAdept':'elementalApprentice';
-  if(id!==u.id)evolve(b,u,id);
-  if(p>=30)startArcaneTrial(b);
+  const pair=u.lockedPair||bestPair(u),p=u.synthesis?.[pair]||0;
+  if(!u.lockedPair&&p>=25)u.lockedPair=pair;
+  const id=p>=65?'elementalArchmage':p>=45?'elementalMage':p>=25?'elementalAdept':'elementalApprentice';
+  if(id!==u.id&&u.id!=='elementalMaster')evolve(b,u,id);
+  else if(u.id==='elementalMaster'&&id!=='elementalMage')evolve(b,u,id);
+  else if(u.id==='elementalMaster'&&id==='elementalMage'){u.id='elementalMage';}
+  if(p>=80)startArcaneTrial(b);
   persist(b,u);
  }
  function receiveEssence(b,u,element){
   if(!isApprentice(u)||isArchon(u)||token(u)||u.removed)return;
   u.essences??=[];const i=u.essences.findIndex(e=>e!==element);
   if(i<0)u.essences.push(element);
-  else {const other=u.essences.splice(i,1)[0],pair=arcanePair(other,element);u.synthesis??={};u.synthesis[pair]=(u.synthesis[pair]||0)+1;interact(b,u,u,'synthesis',pair+' · +1 synthesis');updateApprentice(b,u);}
+  else {
+   const other=u.essences.splice(i,1)[0],pair=arcanePair(other,element);
+   u.synthesis??={};
+   if(u.lockedPair){
+    if(pair===u.lockedPair){
+     u.synthesis[pair]=(u.synthesis[pair]||0)+1;
+     interact(b,u,u,'synthesis',`${pair} · +1 synthesis`);
+    }else{
+     u.synthesis[u.lockedPair]=(u.synthesis[u.lockedPair]||0)+0.5;
+     interact(b,u,u,'synthesis',`${pair} (off-pair) → +0.5 to ${u.lockedPair} [2:1 conversion]`);
+    }
+   }else{
+    u.synthesis[pair]=(u.synthesis[pair]||0)+1;
+    interact(b,u,u,'synthesis',`${pair} · +1 synthesis`);
+    if(u.synthesis[pair]>=25){
+     u.lockedPair=pair;
+     interact(b,u,u,'path-lock',`PATH LOCKED to ${pair} at 25 points!`);
+     fx(b,'growth',u,null,`LOCKED: ${pair.toUpperCase()}`);
+    }
+   }
+   updateApprentice(b,u);
+  }
   persist(b,u);
  }
  function storeOverflow(b,u,amount){
@@ -243,14 +268,16 @@ const Game = (() => {
  function elementalLinks(b,u){
   const element=card(u.id).element;
   if(element)for(const v of neighbors(b,u))receiveEssence(b,v,element);
-  // Choose only one ready Prism for this spell; lock before generating charge.
   const prism=neighbors(b,u).find(v=>v.id==='elementalPrism'&&b.time>=(v.prismAt||0));
-  if(prism){prism.prismAt=b.time+1;for(const v of neighbors(b,prism).filter(v=>abilityGauge(v)))tick(b,v,2,prism);interact(b,u,prism,'refraction','PRISM · +2 adjacent gauge');}
+  if(prism){
+   prism.prismAt=b.time+1;
+   for(const v of b.units.filter(v=>!v.removed&&isElemental(v)&&abilityGauge(v)))tick(b,v,2,prism);
+   interact(b,u,prism,'refraction','PRISM · +2 ticks to all deployed elemental mages');
+  }
  }
  function arcaneReaction(b,u,e,element){
   if(e.gone||e.hp<=0)return;
   e.elements??={};const other=Object.keys(e.elements).find(k=>k!==element&&e.elements[k]>b.time);
-  // Each application is consumed by at most one reaction; reaction effects never reapply elements.
   if(!other){e.elements[element]=b.time+4;return;}
   delete e.elements[other];delete e.elements[element];const pair=arcanePair(other,element);
   if(pair==='fire+water')trueHit(b,u,e,(e.maxHp-e.hp)*.15);
@@ -276,47 +303,104 @@ const Game = (() => {
  function elementalSpell(b,u){
   const target=living(b)[0];if(!target)return;
   const element=card(u.id).element,p=rawAtk(u);
-  if(!element){const points=u.synthesis?.[bestPair(u)]||0;for(const e of living(b).slice(0,4))hit(b,u,e,120+6*p+8*points,false);}
-  else{
-   const targets=element==='water'?living(b).slice(0,4):[target];
-   for(const e of targets){
-    const n=element==='fire'?200+8*p:element==='water'?100+6*p:element==='earth'?250+10*p:100+5*p;
-    hit(b,u,e,n,false);if(e.gone)continue;
-    if(element==='fire')dot(b,e,'burn',8,4,u);
-    if(element==='water')status(b,e,'slow',3,.35,u);
-    if(element==='earth'){armorStrip(e,.4);status(b,e,'stun',1,0,u);}
-    if(element==='wind')warp(b,e,2,u);
-    arcaneReaction(b,u,e,element);
+  u.mastery=(u.mastery||0)+1;
+  u.permanentAtkBonus=(u.permanentAtkBonus||0)+1;
+  persist(b,u);
+  if(!element){
+   const points=u.synthesis?.[u.lockedPair||bestPair(u)]||0;
+   for(const e of living(b).slice(0,4))hit(b,u,e,120+6*p+8*points,false);
+  }else{
+   if(element==='fire'){
+    const burns=1+Math.floor((u.mastery||0)/10);
+    hit(b,u,target,200+8*p,false);
+    for(let i=0;i<burns;i++)dot(b,target,'burn',Math.max(1,target.maxHp*0.01),1,u);
+    arcaneReaction(b,u,target,'fire');
+   }else if(element==='water'){
+    const targets=living(b).slice(0,4);
+    const dmg=atk(b,u)*(1+(u.mastery||0)*0.005);
+    for(const e of targets){
+     hit(b,u,e,dmg,false);
+     e.drenchedUntil=b.time+3;
+     status(b,e,'slow',3,0.30,u);
+     arcaneReaction(b,u,e,'water');
+    }
+   }else if(element==='earth'){
+    const pierce=Math.min(1,0.20+Math.floor((u.mastery||0)/5)*0.01);
+    hit(b,u,target,250+10*p,false,{armorFactor:Math.max(0,1-pierce)});
+    status(b,target,'stun',1,0,u);
+    arcaneReaction(b,u,target,'earth');
+   }else if(element==='wind'){
+    const targets=living(b).slice(0,4);
+    for(const e of targets){
+     hit(b,u,e,100+5*p,false);
+     warp(b,e,2,u);
+     arcaneReaction(b,u,e,'wind');
+    }
+    for(const v of neighbors(b,u))v.arcaneHasteUntil=b.time+3;
    }
-   if(element==='wind')for(const v of neighbors(b,u).filter(isElemental))v.arcaneHasteUntil=b.time+3;
   }
   elementalLinks(b,u);
  }
  function arcaneZone(b,u,type,p,duration,dps){
-  b.arcaneZones??=[];b.arcaneZones=b.arcaneZones.filter(z=>z.owner!==u.uid);
-  b.arcaneZones.push({owner:u.uid,type,wall:wallOf({p}),until:b.time+duration,dps});
+  b.arcaneZones??=[];
+  if(type!=='swamp'&&type!=='magma')b.arcaneZones=b.arcaneZones.filter(z=>z.owner!==u.uid||z.type!==type);
+  b.arcaneZones.push({owner:u.uid,type,wall:wallOf({p}),p,until:b.time+duration,dps});
  }
  function archonAttack(b,u,target,power){
+  if(u.channeling)return;
   if(u.id==='magmaLord'){
-   for(const e of living(b).filter(e=>Math.abs(e.p-target.p)<=1)){armorStrip(e,1);hit(b,u,e,power*(priority(e)?3:1));}
-   arcaneZone(b,u,'magma',target.p,5,60);
-  }else if(u.id==='steamSovereign'){
-   hit(b,u,target,power);target.elements??={};target.elements.water=b.time+4;
-   trueHit(b,u,target,(target.maxHp-target.hp)*.2);
-   if(u.attackCount%5===0&&(target.boss||target.champion))damage(b,target,target.hp*.12,u,'ability');
-  }else if(u.id==='sandstormTitan'&&u.attackCount%3===0){for(const e of living(b).slice(0,5))hit(b,u,e,power);}
-  else{
    hit(b,u,target,power);
-   if(u.id==='quagmireColossus'&&!b.arcaneZones?.some(z=>z.owner===u.uid))arcaneZone(b,u,'swamp',target.p,Infinity,45);
-   if(u.id==='tempestArchon'&&u.attackCount%4===0){b.cyclones??=[];b.cyclones=b.cyclones.filter(c=>c.owner!==u.uid);b.cyclones.push({owner:u.uid,p:target.p,until:b.time+4,caught:[]});}
+   arcaneZone(b,u,'magma',target.p,2,60);
+  }else if(u.id==='tempestArchon'){
+   const quadStart=wallOf(target)*4;
+   for(const e of living(b).filter(e=>Math.floor(e.p)%16>=quadStart&&Math.floor(e.p)%16<quadStart+4)){
+    hit(b,u,e,power);
+    if(rand(b.run)<0.20)warp(b,e,2,u);
+   }
+  }else if(u.id==='steamSovereign'){
+   for(const e of living(b).slice(0,3)){
+    hit(b,u,e,power);
+    if((e.drenchedUntil||0)>b.time&&!e.scaldBursted){
+     e.scaldBursted=true;
+     damage(b,e,(e.maxHp-e.hp)*0.10,u,'ability',true);
+     fx(b,'impact',u,e,'10% SCALD BURST');
+    }
+   }
+  }else if(u.id==='quagmireColossus'){
+   hit(b,u,target,power);
+   const quadStart=Math.floor(rand(b.run)*4)*4;
+   arcaneZone(b,u,'swamp',quadStart,Infinity,0);
+  }else if(u.id==='blizzardArchon'){
+   for(const e of living(b).slice(0,3)){
+    hit(b,u,e,power);
+    e.drenchedUntil=b.time+3;
+    status(b,e,'slow',3,0.30,u);
+   }
+  }else if(u.id==='sandstormTitan'){
+   const targets=living(b).slice(0,5),falloffs=[1.0,0.9,0.8,0.7,0.6];
+   for(let i=0;i<targets.length;i++)hit(b,u,targets[i],power*falloffs[i]);
+  }
+  u.archonAttacks=(u.archonAttacks||0)+1;
+  if(u.archonAttacks>=10){
+   u.archonAttacks=0;
+   const isTitan=u.id==='sandstormTitan',duration=isTitan?10.0:1.2;
+   u.channeling={type:u.id,duration,remaining:duration,tickAt:isTitan?b.time+1.0:null};
+   u.currentCooldown=Math.max(u.currentCooldown||0,duration);
+   fx(b,'sword-channel',u,u,'CHANNELING '+card(u.id).name.toUpperCase());
+   interact(b,u,u,'archon-channel',`${card(u.id).name} channels 10th-attack ultimate (${duration}s)...`);
   }
  }
  function arcaneExtras(b,u){
   updateApprentice(b,u);
-  if(u.id==='manaBattery'&&b.time>=(u.batteryAt??6)){
-   u.batteryAt=b.time+6;
-   const v=b.units.filter(v=>!v.removed&&arcaneGauge(v)&&v.threshold.current<v.threshold.max).sort((a,z)=>a.threshold.current/a.threshold.max-z.threshold.current/z.threshold.max||a.uid-z.uid)[0];
-   if(v&&(u.manaStored||0)>0){const amount=Math.min(u.manaStored,v.threshold.max-v.threshold.current);u.manaStored-=amount;b.batteryDischarging=true;try{tick(b,v,amount/mod(b.run,'gauge'),u);}finally{b.batteryDischarging=false;}interact(b,u,v,'mana-surge','STORED MANA DISCHARGED');}
+  if(u.id==='manaBattery'&&b.time>=(u.batteryAt??8)){
+   u.batteryAt=b.time+8;
+   const candidates=b.units.filter(v=>!v.removed&&isElemental(v)&&abilityGauge(v));
+   if(candidates.length){
+    const target=candidates[Math.floor(rand(b.run)*candidates.length)];
+    tick(b,target,4,u);
+    interact(b,u,target,'mana-battery','Mana Battery pulse → +4 ticks to '+card(target.id).name);
+    fx(b,'spell',u,target,'+4 TICKS');
+   }
   }
   if(u.id==='blizzardArchon'&&b.time>=(u.blizzardAt??5)){
    u.blizzardAt=b.time+5;
@@ -328,14 +412,32 @@ const Game = (() => {
   }
  }
  function tickArcane(b,dt){
-  const steam=b.units.some(u=>!u.removed&&u.id==='steamSovereign');
-  for(const e of living(b)){
-   if(steam){e.speedBoostUntil=0;if(e.baseSpeed!=null)e.speed=e.baseSpeed;else if(e.swift&&!e.steamSuppressed){e.speed/=1.6;e.steamSuppressed=true;}}
-   for(const ice of e.iceShatters||[])if(!ice.done&&b.time>=ice.at){ice.done=true;const u=b.units.find(u=>!u.removed&&u.uid===ice.owner);if(u)warp(b,e,3,u);}
-   e.iceShatters=(e.iceShatters||[]).filter(i=>!i.done);
-  }
   b.arcaneZones=(b.arcaneZones||[]).filter(z=>z.until>b.time&&b.units.some(u=>!u.removed&&u.uid===z.owner));
-  for(const z of b.arcaneZones){const u=b.units.find(u=>u.uid===z.owner);for(const e of living(b).filter(e=>wallOf(e)===z.wall)){trueHit(b,u,e,z.dps*dt);if(z.type==='swamp'){let slow=e.slows.find(s=>s.swampOwner===u.uid);if(slow)slow.until=b.time+.2;else{status(b,e,'slow',.2,.6,u);slow=e.slows.find(s=>s.sourceUid===u.uid);if(slow)slow.swampOwner=u.uid;}}}}
+  for(const z of b.arcaneZones){
+   const u=b.units.find(u=>u.uid===z.owner);
+   if(!u)continue;
+   if(z.type==='magmaFissure16'){
+    z.burnTimer=(z.burnTimer||0)+dt;
+    if(z.burnTimer>=1.0){
+     z.burnTimer=0;
+     for(const e of living(b))dot(b,e,'burn',Math.max(1,e.maxHp*0.01),1,u);
+    }
+   }else if(z.type==='vaporMist'){
+    for(const e of living(b))damage(b,e,e.maxHp*0.05*dt,u,'ability',true);
+   }else if(z.type==='swamp'){
+    const quadStart=z.wall*4;
+    for(const e of living(b).filter(e=>{const t=Math.floor(e.p)%16;return t>=quadStart&&t<quadStart+4;})){
+     damage(b,e,e.maxHp*0.02*dt,u,'ability',true);
+     let slow=e.slows.find(s=>s.swampOwner===u.uid);
+     if(slow)slow.until=b.time+0.2;
+     else{status(b,e,'slow',0.2,0.45,u);slow=e.slows.find(s=>s.sourceUid===u.uid);if(slow)slow.swampOwner=u.uid;}
+    }
+   }else if(z.type==='magma'){
+    for(const e of living(b).filter(e=>Math.floor(e.p)%16===Math.floor(z.p)%16)){
+     trueHit(b,u,e,z.dps*dt);
+    }
+   }
+  }
   b.cyclones=(b.cyclones||[]).filter(c=>c.until>b.time&&b.units.some(u=>!u.removed&&u.uid===c.owner));
   for(const c of b.cyclones){const u=b.units.find(u=>u.uid===c.owner);c.p=(c.p+2*dt)%16;
    for(const e of living(b)){const dist=Math.min(Math.abs(e.p-c.p),16-Math.abs(e.p-c.p));if(dist<1&&!e.boss&&!e.champion&&!c.caught.includes(e.uid)&&c.caught.length<6)c.caught.push(e.uid);
@@ -1168,8 +1270,8 @@ function fx(b, type, u, e, text, extra = {}) {
   if(!b||!['elite','boss'].includes(b.run?.node?.type)||(b.metrics?.leaks||0)>0)return null;
   for(const unit of b.units.filter(u=>!u.removed&&!token(u)&&isApprentice(u)&&!isArchon(u))
     .sort((a,z)=>a.slot-z.slot||a.uid-z.uid)){
-   const pair=bestPair(unit),points=unit.synthesis?.[pair]||0;
-   if(points<30)continue;
+   const pair=unit.lockedPair||bestPair(unit),points=unit.synthesis?.[pair]||0;
+   if(points<80)continue;
    const loom=neighbors(b,unit,false).filter(v=>!v.removed&&!token(v)&&v.id==='astralLoom')
     .sort((a,z)=>a.slot-z.slot||a.uid-z.uid)[0];
    if(loom)return{unit,loom,pair,apexId:ARCANE_PAIRS[pair]};
@@ -2057,6 +2159,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (neighbors(b, u, false).some(v => v.id === 'mountainScroll')) m *= 1.15;
   if (neighbors(b, u, false).some(v => !v.removed && v.id === 'dragonPearl')) m *= 1.20;
   if (card(u.id).genre === 'Haunted' && b.curfewUntil > b.time) m *= 1.2;
+  if (['pyroMage', 'geoMage'].includes(u.id) && b.units.some(v => !v.removed && v.id === 'magmaLord')) m += 1.0;
   return (rawAtk(u) + (u.id === 'railgun' ? highestGrowth(b, u) * (b.units.some(v => !v.removed && v.id === 'impalerApex') ? 2.5 : 2) : 0)) * m * mod(b.run, 'damage') * mod(b.run,'basicDamage')
  }
 
@@ -2075,6 +2178,10 @@ function fx(b, type, u, e, text, extra = {}) {
   }
   if(pageAura(b,u,'flesh'))n+=.15;
   n += u.arcaneHasteUntil>b.time?.2:0;
+  if (neighbors(b, u, false).some(v => !v.removed && v.id === 'astralLoom')) n += 0.20;
+  if (u.id === 'aeroMage') n += Math.floor((u.mastery || 0) / 5) * 0.01;
+  if (['pyroMage', 'aeroMage'].includes(u.id) && b.units.some(v => !v.removed && v.id === 'tempestArchon')) n += 0.30;
+  if (['hydroMage', 'aeroMage'].includes(u.id) && b.units.some(v => !v.removed && v.id === 'blizzardArchon')) n += 0.30;
   n += (huntAura(b,u,'beast')?.2:0)+(relicAura(b,u,'beastRelic')?.25:0)+(u.huntFrenzy||0);
   return n * (isCyber(u)&&!cyberApex(u)&&u.sandyUntil>b.time?2.5:1) * (1 + (u.permanentSpeed || 0)) * (u.overclock ? 1 + 2 * mod(b.run, 'buffPower') : 1) * mod(b.run, 'speed')
  }
@@ -2310,6 +2417,7 @@ function fx(b, type, u, e, text, extra = {}) {
  }
 
  function attack(b, u) {
+  if (u.channeling) return false;
   if (isCultivationRelic(u) || u.id === 'cauldron' || isBloodlineRelic(u) || u.id === 'altar') return false;
   const target = chooseTarget(b, u); if (!target) return false;
   if (isUrbanLegend(u) && !isLegendTarget(b, u, target)) return false;
@@ -2317,12 +2425,67 @@ function fx(b, type, u, e, text, extra = {}) {
   if (u.id === 'allSeeingOverseer' && !living(b).some(e => e.swift || e.enraged || e.speedBoostUntil > b.time || e.speed > 0.40)) return false;
   if (isXeno(u)) { u.attackCount++; record(b, u).attacks++; u.flash = .18; xenoAttack(b, u, target, atk(b, u)); return true; }
   u.attackCount++; record(b, u).attacks++; u.flash = .18; let power = atk(b, u);
+  if (neighbors(b, u, false).some(v => !v.removed && v.id === 'astralLoom')) tick(b, u, 2);
   for (const v of allies(b, u)) {
   }
 
   if(card(u.id).genre==='Lovecraft'&&u.id!=='herald'){cosmicAttack(b,u,target,power);}
   else if(isCyber(u)){cyberAttack(b,u,target,power);}
   else if(isArchon(u)){archonAttack(b,u,target,power);}
+  else if(u.id==='pyroMage'){
+   hit(b,u,target,power);
+   if(b.units.some(v=>!v.removed&&v.id==='magmaLord')){
+    for(const near of living(b).filter(e=>e!==target&&Math.min(Math.abs(e.p-target.p),16-Math.abs(e.p-target.p))<=1.5))hit(b,u,near,power*0.5,false);
+   }
+   if(b.units.some(v=>!v.removed&&v.id==='tempestArchon')){
+    const next=living(b).find(e=>e!==target);
+    if(next)dot(b,next,'burn',Math.max(1,next.maxHp*0.01),1,u);
+   }
+   if(b.units.some(v=>!v.removed&&v.id==='steamSovereign')&&(target.drenchedUntil||0)>b.time&&!target.scaldBursted){
+    target.scaldBursted=true;
+    damage(b,target,(target.maxHp-target.hp)*0.10,u,'ability',true);
+    fx(b,'impact',u,target,'10% SCALD BURST');
+   }
+  }
+  else if(u.id==='hydroMage'){
+   const options=b.units.some(v=>!v.removed&&v.id==='quagmireColossus')?{armorFactor:0.70}:{};
+   hit(b,u,target,power,true,options);
+   if(b.units.some(v=>!v.removed&&v.id==='steamSovereign')&&(target.drenchedUntil||0)>b.time&&!target.scaldBursted){
+    target.scaldBursted=true;
+    damage(b,target,(target.maxHp-target.hp)*0.10,u,'ability',true);
+    fx(b,'impact',u,target,'10% SCALD BURST');
+   }
+   if(b.units.some(v=>!v.removed&&v.id==='blizzardArchon')){
+    target.frostbiteHits=(target.frostbiteHits||0)+1;
+    if(target.frostbiteHits>=2){target.frostbiteHits=0;status(b,target,'freeze',1.5,0,u);}
+   }
+  }
+  else if(u.id==='geoMage'){
+   const hasTitan=b.units.some(v=>!v.removed&&v.id==='sandstormTitan');
+   const hasQuag=b.units.some(v=>!v.removed&&v.id==='quagmireColossus');
+   const armorFactor=hasTitan?0.80:hasQuag?0.70:1.0;
+   const targets=hasTitan?living(b).slice(0,3):[target];
+   for(const e of targets)hit(b,u,e,power,true,{armorFactor});
+   if(b.units.some(v=>!v.removed&&v.id==='magmaLord')){
+    for(const near of living(b).filter(e=>e!==target&&Math.min(Math.abs(e.p-target.p),16-Math.abs(e.p-target.p))<=1.5))hit(b,u,near,power*0.5,false);
+   }
+  }
+  else if(u.id==='aeroMage'){
+   const hasTitan=b.units.some(v=>!v.removed&&v.id==='sandstormTitan');
+   const armorFactor=hasTitan?0.80:1.0;
+   const count=2+(hasTitan?2:0);
+   for(const e of living(b).slice(0,count)){
+    hit(b,u,e,power,true,{armorFactor});
+    if(b.units.some(v=>!v.removed&&v.id==='blizzardArchon')){
+     e.frostbiteHits=(e.frostbiteHits||0)+1;
+     if(e.frostbiteHits>=2){e.frostbiteHits=0;status(b,e,'freeze',1.5,0,u);}
+    }
+   }
+   if(b.units.some(v=>!v.removed&&v.id==='tempestArchon')){
+    const next=living(b).find(e=>e!==target);
+    if(next)dot(b,next,'burn',Math.max(1,next.maxHp*0.01),1,u);
+   }
+  }
   else if(isSlayer(u)){slayerAttack(b,u,target,power);}
   else if(u.id==='witchHunter'){hit(b,u,target,power*(target.shield>0?2:1));}
   else if (isMech(u)) { mechAttack(b,u,target,power); }
@@ -2786,10 +2949,64 @@ function fx(b, type, u, e, text, extra = {}) {
    if (u.channeling) {
     u.channeling.remaining -= dt;
     u.currentCooldown = Math.max(u.currentCooldown || 0, 0.1);
+    if (u.channeling.type === 'sandstormTitan') {
+     if (b.time >= (u.channeling.tickAt || 0)) {
+      u.channeling.tickAt = b.time + 1.0;
+      for (const e of living(b)) {
+       armorStrip(e, 0.10);
+       damage(b, e, atk(b, u) * 0.10 + (e.maxHp - e.hp) * 0.10, u, 'ability', true);
+      }
+      fx(b, 'spell', u, null, 'SANDSTORM PULSE');
+     }
+    }
     if (u.channeling.remaining <= 0) {
      const chType = u.channeling.type;
      const opt = u.channeling.option || 'C';
      u.channeling = null;
+     if (chType === 'magmaLord') {
+      for (const e of living(b)) {
+       hit(b, u, e, atk(b, u) * 1.5, false);
+       dot(b, e, 'burn', Math.max(1, e.maxHp * 0.01), 1, u);
+      }
+      arcaneZone(b, u, 'magmaFissure16', 0, 5, 0);
+      fx(b, 'spell', u, null, '16-TILE MOLTEN FISSURE');
+      interact(b, u, u, 'magma-channel', 'Magma Lord channel complete: 150% ATK damage + 16-tile Molten Fissure (5s)');
+     } else if (chType === 'tempestArchon') {
+      for (const e of living(b)) {
+       hit(b, u, e, atk(b, u) * 1.5, false);
+       warp(b, e, 3, u);
+       dot(b, e, 'burn', Math.max(1, e.maxHp * 0.01), 1, u);
+      }
+      fx(b, 'spell', u, null, 'COUNTER-CLOCKWISE TORNADO');
+      interact(b, u, u, 'tempest-channel', 'Firestorm Tempest channel complete: 150% ATK + 3-tile push + 1 Burn');
+     } else if (chType === 'steamSovereign') {
+      arcaneZone(b, u, 'vaporMist', 0, 5, 0);
+      fx(b, 'spell', u, null, '16-TILE VAPOR MIST');
+      interact(b, u, u, 'steam-channel', 'Scalding Vapor Sovereign channel complete: 16-tile Vapor Mist for 5s (5% max HP/s)');
+     } else if (chType === 'quagmireColossus') {
+      for (const e of living(b)) {
+       status(b, e, 'stun', 2, 0, u);
+       e.drenchedUntil = b.time + 4;
+       status(b, e, 'slow', 4, 0.30, u);
+      }
+      fx(b, 'spell', u, null, '2s STUN + 4s DRENCH');
+      interact(b, u, u, 'quagmire-channel', 'Quagmire Colossus channel complete: 2s stun and 4s Drenched on all 16 tiles');
+     } else if (chType === 'blizzardArchon') {
+      for (const e of living(b)) {
+       hit(b, u, e, atk(b, u) * 1.5, false);
+       const drenched = (e.drenchedUntil || 0) > b.time;
+       if (drenched) {
+        status(b, e, 'freeze', 3, 0, u);
+        armorStrip(e, 0.50);
+       } else {
+        status(b, e, 'freeze', 2, 0, u);
+       }
+      }
+      fx(b, 'spell', u, null, '16-TILE BLIZZARD');
+      interact(b, u, u, 'blizzard-channel', 'Glacial Typhoon channel complete: 16-tile Blizzard, 150% ATK, 2s/3s freeze');
+     } else if (chType === 'sandstormTitan') {
+      interact(b, u, u, 'sandstorm-channel', 'Sandstorm Titan 10s channel complete');
+     }
      if (chType === 'sword-torrent') {
       for (const e of living(b)) trueHit(b, u, e, rawAtk(u));
       const prio = living(b).find(e => e.boss) || living(b).find(e => e.elite || e.champion) || living(b).sort((a, z) => z.hp - a.hp)[0];
@@ -3140,7 +3357,19 @@ function fx(b, type, u, e, text, extra = {}) {
    const branch = pair ? XENO_BRANCHES[pair] : null;
    return { current: g, max, label: `Genome ${g} / ${max}` + (branch ? ` · ${strains.join('+')} lineage · ${card(branch[1]).name} · Elite/Boss zero-leak trial` : strains.length ? ` · Strains: ${strains.join('+')}` : '') };
   }
-  switch (family(u)) { case 'slumberingIdol':return {current:u.syllables||0,max:(u.syllables||0)<25?25:(u.syllables||0)<65?65:130}; case 'cyberSolo':return {current:u.chrome||0,max:(u.chrome||0)<25?25:(u.chrome||0)<65?65:120}; case 'elementalApprentice':{const pair=bestPair(u),p=u.synthesis?.[pair]||0,t=u.arcaneTrial;return {current:p,max:p<10?10:p<20?20:30,label:isArchon(u)?'Mythic · Astral Weaving complete':p<30?`${pair} synthesis · 10 / 20 / 30 toward Astral Weaving`:`${pair} · 30/30 · adjacent Astral Loom · Elite/Boss reaction trial${t?.unitUid===u.uid?` · ${t.status}${t.featDone?' · reaction proved':''}`:''}`};} case 'mercenary':return {current:u.trophyPoints||0,max:(u.trophyPoints||0)<25?25:(u.trophyPoints||0)<60?60:100}; case 'scrapFrame': return {current:u.alloy||0,max:(u.alloy||0)<25?25:(u.alloy||0)<65?65:120};case 'cub': { const current=u.lineageStacks||0, tier=lineageTierIds[u.id]?.tier||0, relic=cubRelics[u.lineage]; return { current, max:6, label:tier>=4?'Mythic · ancestral trial complete':tier===3?`Tier 3 · Elite/Boss zero-leak trial + adjacent ${card(relic)?.name||'ancestral relic'}`:'Tier 3 at 6 matching meals · then ancestral Elite/Boss trial' }; }
+  switch (family(u)) { case 'slumberingIdol':return {current:u.syllables||0,max:(u.syllables||0)<25?25:(u.syllables||0)<65?65:130}; case 'cyberSolo':return {current:u.chrome||0,max:(u.chrome||0)<25?25:(u.chrome||0)<65?65:120}; case 'elementalApprentice':{
+  const pair = u.lockedPair || bestPair(u);
+  const p = u.synthesis?.[pair] || 0;
+  const t = u.arcaneTrial;
+  const max = p < 25 ? 25 : p < 45 ? 45 : p < 65 ? 65 : 80;
+  return {
+    current: p,
+    max,
+    label: isArchon(u) ? 'Mythic · Astral Weaving complete' :
+      p < 80 ? `${pair} synthesis · ${p}/${max} · Adept(25) / Mage(45) / Archmage(65) / Mythic(80)${u.lockedPair ? ' [Path Locked · 2:1 off-pair]' : ''}` :
+      `${pair} · 80/80 · adjacent Astral Loom · Elite/Boss reaction trial${t?.unitUid===u.uid ? ` · ${t.status}${t.featDone ? ' · reaction proved' : ''}` : ''}`
+  };
+} case 'mercenary':return {current:u.trophyPoints||0,max:(u.trophyPoints||0)<25?25:(u.trophyPoints||0)<60?60:100}; case 'scrapFrame': return {current:u.alloy||0,max:(u.alloy||0)<25?25:(u.alloy||0)<65?65:120};case 'cub': { const current=u.lineageStacks||0, tier=lineageTierIds[u.id]?.tier||0, relic=cubRelics[u.lineage]; return { current, max:6, label:tier>=4?'Mythic · ancestral trial complete':tier===3?`Tier 3 · Elite/Boss zero-leak trial + adjacent ${card(relic)?.name||'ancestral relic'}`:'Tier 3 at 6 matching meals · then ancestral Elite/Boss trial' }; }
    case 'investigator': {
     const dread = u.dread || 0;
     if (dread >= 140) return { current: 140, max: 140, label: 'Ready for Rule Binding' };

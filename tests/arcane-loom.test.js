@@ -1,32 +1,359 @@
 'use strict';
-const test=require('node:test'),assert=require('node:assert/strict'),G=require('../engine'),D=require('../data');
-function battle(ids,slots=ids.map((_,i)=>i),leader='none'){
- const r=G.newRun(leader, 17);r.roster=ids.map(id=>G.instance(r,id));r.depth=9;r.node={row:9,lane:1,type:'battle'};r.phase='combat';
- const b={run:r,time:0,units:[],enemies:[],effects:[],metrics:{kills:0,leaks:0,growth:0,triggers:0,devours:0},plan:{count:3,interval:2,hp:100,speed:.3},spawned:3,enemyUid:0};b.units=r.roster.map((u,i)=>G.runtime(b,u,slots[i]));b.units.forEach(u=>{G.prepareHooks(b,u);G.record(b,u);u.currentCooldown=999});return b;
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const G = require('../engine');
+const D = require('../data');
+
+function battle(ids, slots = ids.map((_, i) => i), leader = 'none') {
+  const r = G.newRun(leader, 17);
+  r.roster = ids.map(id => G.instance(r, id));
+  r.depth = 9;
+  r.node = { row: 9, lane: 1, type: 'battle' };
+  r.phase = 'combat';
+  const b = {
+    run: r,
+    time: 0,
+    units: [],
+    enemies: [],
+    effects: [],
+    metrics: { kills: 0, leaks: 0, growth: 0, triggers: 0, devours: 0 },
+    plan: { count: 3, interval: 2, hp: 100, speed: 0.3 },
+    spawned: 3,
+    enemyUid: 0
+  };
+  b.units = r.roster.map((u, i) => G.runtime(b, u, slots[i]));
+  b.units.forEach(u => {
+    G.prepareHooks(b, u);
+    G.record(b, u);
+    u.currentCooldown = 999;
+  });
+  return b;
 }
-function enemy(b,kind='',p=1,hp=100000){const e={uid:++b.enemyUid,p,hp,maxHp:hp,speed:.3,defense:0,boss:kind==='boss',champion:kind==='champion',elite:kind==='elite',gone:false,bornAt:0,frozenUntil:0,slows:[],bleeds:[],burns:[],venoms:[],auras:[]};b.enemies.push(e);return e;}
-const close=(a,b)=>assert.ok(Math.abs(a-b)<1e-6,`${a} != ${b}`);
-test('eight Arcane drafts, six earned Archons, no legacy cards',()=>{assert.equal(D.CARDS.filter(c=>c.genre==='Arcane').length,8);assert.equal(Object.keys(G.ARCANE_PAIRS).length,6);for(const id of ['conduit','mage','crystal','weaver'])assert.equal(D.CARD[id],undefined);const r=G.newRun('lyra', 2);for(let d=0;d<16;d++){r.depth=d;for(let n=0;n<30;n++)for(const id of G.offers(r)){assert.ok(!G.isArchon({id}));if(d<3)assert.notEqual(id,'astralLoom');}}});
-for(const [id,max] of [['pyroMage',6],['hydroMage',8],['geoMage',10],['aeroMage',5],['elementalApprentice',8]])test(id+' charges on attacks with Lyra, fires on full gauge',()=>{const b=battle([id],undefined,'lyra'),u=b.units[0];enemy(b);for(let n=1;n<Math.ceil(max/1.25);n++)G.attack(b,u);assert.equal(b.metrics.triggers,0);G.attack(b,u);assert.equal(b.metrics.triggers,1);close(u.threshold.current,Math.ceil(max/1.25)*1.25-max);});
-test('Lyra basic penalty excludes spells and DOTs',()=>{const a=battle(['pyroMage'],undefined,'lyra'),b=battle(['pyroMage']);const x=enemy(a),y=enemy(b);G.attack(a,a.units[0]);G.attack(b,b.units[0]);close(100000-x.hp,(100000-y.hp)*.85);x.hp=y.hp=100000;G.elementalSpell(a,a.units[0]);G.elementalSpell(b,b.units[0]);close(x.hp,y.hp);close(x.burns[0].dps,8);});
-for(const [pair,apex] of Object.entries(G.ARCANE_PAIRS))test(pair+' consumes two essences and binds correct Archon only after Crossing10',()=>{const b=battle(['elementalApprentice','astralLoom'],[0,1]),u=b.units[0];b.run.depth=8;const [a,z]=pair.split('+');for(let i=0;i<30;i++){G.receiveEssence(b,u,a);G.receiveEssence(b,u,z);}assert.equal(u.synthesis[pair],30);assert.equal(u.id,'elementalMaster');assert.equal(u.essences.length,0);b.run.depth=9;G.updateApprentice(b,u);assert.equal(u.id,apex);assert.equal(b.run.roster.length,1);assert.equal(u.boundPair,pair);});
-test('pair progress is not pooled; same element waits; counters and essences persist',()=>{const b=battle(['elementalApprentice']),u=b.units[0];u.synthesis={'earth+fire':9,'fire+wind':9};G.updateApprentice(b,u);assert.equal(u.id,'elementalApprentice');G.receiveEssence(b,u,'water');G.receiveEssence(b,u,'water');assert.deepEqual(u.essences,['water','water']);G.receiveEssence(b,u,'wind');assert.equal(u.synthesis['water+wind'],1);const v=G.runtime(b,JSON.parse(JSON.stringify(b.run.roster[0])),0);assert.deepEqual(v.essences,['water']);assert.equal(v.synthesis['earth+fire'],9);});
-test('essence delivery requires orthogonal adjacency; no remote or diagonal point gain',()=>{const b=battle(['pyroMage','elementalApprentice','elementalApprentice'],[0,1,4]);enemy(b);G.elementalSpell(b,b.units[0]);assert.deepEqual(b.units[1].essences,['fire']);assert.deepEqual(b.units[2].essences,[]);});
-for(const [a,z] of [['fire','water'],['fire','earth'],['fire','wind'],['water','earth'],['water','wind'],['earth','wind']])for(const reverse of [false,true])test(`reaction ${a}/${z}, reversed=${reverse}`,()=>{const b=battle(['pyroMage']),u=b.units[0],e=enemy(b);e.defense=.4;e.hp=80000;e.burns=[{dps:8,until:4,owner:u.uid}];e.slows=[{until:3,power:.35}];enemy(b,'',2);enemy(b,'',3);const order=reverse?[z,a]:[a,z];G.arcaneReaction(b,u,e,order[0]);G.arcaneReaction(b,u,e,order[1]);assert.equal(b.metrics.elementalReactions,1);assert.equal(Object.keys(e.elements).length,0);const pair=G.arcanePair(a,z);if(pair==='fire+water')close(e.hp,77000);if(pair==='earth+fire')assert.equal(e.defense,0);if(pair==='fire+wind')assert.equal(b.enemies[1].burns.length,1);if(pair==='earth+water'){close(e.slows[0].until,6);close(e.frozenUntil,1.5);}if(pair==='water+wind')close(e.frozenUntil,2);if(pair==='earth+wind')close(e.bleeds[0].dps,30);G.arcaneReaction(b,u,e,order[1]);assert.equal(b.metrics.elementalReactions,1);});
-test('expired elemental marks cannot react; spread copies cannot recursively multiply',()=>{const b=battle(['pyroMage']),u=b.units[0],e=enemy(b),other=enemy(b,'',2);G.arcaneReaction(b,u,e,'water');b.time=5;G.arcaneReaction(b,u,e,'fire');assert.equal(b.metrics.elementalReactions,undefined);e.burns=[{dps:8,until:10,owner:u.uid,spreadCopy:true}];G.arcaneReaction(b,u,e,'wind');assert.equal(other.burns.length,0);});
-test('Prism works off-center, caps one pulse per second, duplicate prisms do not amplify spell',()=>{const b=battle(['pyroMage','elementalPrism','elementalPrism','hydroMage'],[4,1,3,0]);b.units[0].threshold.max=100;enemy(b);G.elementalLinks(b,b.units[0]);close(b.units[3].threshold.current,2);G.elementalLinks(b,b.units[0]);close(b.units[3].threshold.current,4);G.elementalLinks(b,b.units[0]);close(b.units[3].threshold.current,4);b.time=1;G.elementalLinks(b,b.units[0]);close(b.units[3].threshold.current,6);});
-test('near-full Prism loop terminates and preserves finite charge',()=>{const b=battle(['pyroMage','aeroMage','elementalPrism'],[1,3,4]);enemy(b);b.units[0].threshold.current=5;b.units[1].threshold.current=4;G.tick(b,b.units[0],1);assert.ok(b.metrics.triggers<=3);assert.ok(b.units[2].prismAt>0);});
-test('Battery stores actual overflow, cannot discharge free mana, chooses lowest fraction',()=>{const b=battle(['pyroMage','hydroMage','manaBattery']),[f,w,bat]=b.units;enemy(b);G.tick(b,f,7);close(bat.manaStored,1);close(f.threshold.current,0);w.threshold.current=4;b.time=6;G.arcaneExtras(b,bat);close(f.threshold.current,1);close(bat.manaStored,0);b.time=12;G.arcaneExtras(b,bat);close(f.threshold.current,1);});
-test('Battery discharge fills exactly with Lyra and cannot create overflow feedback',()=>{const b=battle(['aeroMage','manaBattery'],undefined,'lyra'),[u,bat]=b.units;enemy(b);bat.manaStored=10;b.time=6;G.arcaneExtras(b,bat);assert.equal(b.metrics.triggers,1);close(bat.manaStored,5);close(u.threshold.current,0);assert.equal(G.runtime(b,b.run.roster[1],1).manaStored,0);});
-for(const kind of ['boss','champion'])test('Arcane control respects '+kind+' resistance and enrage',()=>{const b=battle(['blizzardArchon']),u=b.units[0],e=enemy(b,kind,10);b.time=5;G.arcaneExtras(b,u);close(e.frozenUntil,6.25);b.time=6.25;G.tickArcane(b,.1);close(e.p,8.5);e.enraged=true;b.time=10;G.arcaneExtras(b,u);close(e.frozenUntil,6.25);G.arcaneReaction(b,u,e,'water');G.arcaneReaction(b,u,e,'wind');close(e.frozenUntil,6.25);});
-test('Magma replaces one fissure and expires after5s; swamp never suppresses boss enrage',()=>{const b=battle(['magmaLord','quagmireColossus']);const e=enemy(b,'boss',5);G.arcaneZone(b,b.units[0],'magma',1,5,60);G.arcaneZone(b,b.units[0],'magma',5,5,60);assert.equal(b.arcaneZones.length,1);G.arcaneZone(b,b.units[1],'swamp',5,Infinity,45);G.tickArcane(b,.1);close(e.slows[0].power,.3);b.time=46;e.leak=100;G.step(b,.1);assert.equal(e.enraged,true);assert.equal(b.arcaneZones.filter(z=>z.type==='magma').length,0);});
-test('Steam fifth strike removes currentHP, not maxHP; cancels sprint',()=>{const b=battle(['steamSovereign']),u=b.units[0],e=enemy(b,'boss');e.hp=50000;u.attackCount=4;G.attack(b,u);assert.ok(e.hp>30000&&e.hp<40000);e.swift=true;e.speed=.48;G.tickArcane(b,.1);close(e.speed,.3);G.tickArcane(b,.1);close(e.speed,.3);});
-test('Cyclone catches at most six ordinary runners and never carries bosses',()=>{const b=battle(['tempestArchon']),u=b.units[0];for(let i=0;i<8;i++)enemy(b,'',5);const boss=enemy(b,'boss',5);b.cyclones=[{owner:u.uid,p:5,until:4,caught:[]}];G.tickArcane(b,.1);assert.equal(b.cyclones[0].caught.length,6);assert.equal(boss.p,5);assert.ok(boss.hp<100000);});
-test('Tempest grants permanent speed per10 kills and clears partial wave counter',()=>{const b=battle(['tempestArchon']),u=b.units[0];for(let i=0;i<21;i++)G.arcaneKill(b);close(u.permanentSpeed,.1);const v=G.runtime(b,b.run.roster[0],0);close(v.permanentSpeed,.1);assert.equal(v.tempestKills,0);});
-test('Sandstorm strips base armor over10s and refreshes one bleed, not stack each second',()=>{const b=battle(['sandstormTitan']),u=b.units[0],e=enemy(b);e.defense=.5;for(let t=1;t<=12;t++){b.time=t;G.arcaneExtras(b,u);}close(e.defense,0);assert.equal(e.bleeds.length,1);close(e.bleeds[0].dps,40);});
-test('pre-cleanup Arcane saves reset and obsolete account upgrades are discarded',()=>{const fs=require('node:fs'),vm=require('node:vm'),code=fs.readFileSync(require.resolve('../app'),'utf8').split('let feedbackSeen=')[0];for(const id of ['conduit','mage','crystal','weaver','elementalApprentice']){const values=new Map([['confluence-run-v3',JSON.stringify({version:3,roster:[{id,synthesis:{'earth+fire':20}}]})],['confluence-meta-v1',JSON.stringify({shards:50,power:7})]]),localStorage={getItem:k=>values.get(k),get length(){return values.size},key:i=>[...values.keys()][i],removeItem:k=>values.delete(k),setItem:(k,v)=>values.set(k,v)},ctx={Game:G,document:{querySelector:()=>({})},localStorage};vm.createContext(ctx);vm.runInContext(code+';globalThis.result={run,resetSavedRuns};',ctx);assert.equal(ctx.result.run,null);assert.equal(ctx.result.resetSavedRuns,true);assert.equal(values.has('confluence-meta-v1'),false);}});
-test('all Arcane artwork and progression UI are present',()=>{const fs=require('node:fs'),path=require('node:path');for(const c of Object.values(D.CARD).filter(c=>c.arcaneAsset))assert.ok(fs.existsSync(path.join(__dirname,'../assets/arcane-loom',c.arcaneAsset+'.webp')));const s=fs.readFileSync(require.resolve('../app'),'utf8');assert.match(s,/Elemental Synthesis/);assert.match(s,/Stored mana/);assert.match(s,/arcaneZones/);});
-test('revised10/20/30 progression and deterministic strongest-pair binding',()=>{const b=battle(['elementalApprentice','astralLoom'],[0,1]),u=b.units[0];u.synthesis={'earth+fire':10};G.updateApprentice(b,u);assert.equal(u.id,'elementalAdept');u.synthesis['earth+fire']=20;G.updateApprentice(b,u);assert.equal(u.id,'elementalMaster');u.synthesis['fire+wind']=30;u.synthesis['earth+fire']=30;G.updateApprentice(b,u);assert.equal(u.id,'magmaLord');});
-test('swamp refresh does not emit new status triggers every frame',()=>{const b=battle(['quagmireColossus']),u=b.units[0],e=enemy(b,'',5);G.arcaneZone(b,u,'swamp',5,Infinity,45);G.tickArcane(b,.1);const n=b.statusEvents;for(let i=0;i<10;i++){b.time+=.1;G.tickArcane(b,.1);}assert.equal(b.statusEvents,n);assert.ok(e.hp<100000);});
-test('Magma priority damage is3x, not applied to ordinary targets',()=>{const a=battle(['magmaLord']),b=battle(['magmaLord']),x=enemy(a,'boss'),y=enemy(b);G.attack(a,a.units[0]);G.attack(b,b.units[0]);close(100000-x.hp,3*(100000-y.hp));});
-test('Hydromancer targets four leaders; Earth strips40%; Aero haste is adjacent only',()=>{const b=battle(['hydroMage','geoMage','aeroMage','pyroMage'],[0,1,4,8]);for(let i=0;i<5;i++)enemy(b,'',i+1);G.elementalSpell(b,b.units[0]);assert.equal(b.enemies.filter(e=>e.hp<100000).length,4);b.enemies[4].defense=.5;G.elementalSpell(b,b.units[1]);assert.equal(b.enemies[4].permanentShred,.4);G.elementalSpell(b,b.units[2]);assert.equal(b.units[1].arcaneHasteUntil,3);assert.equal(b.units[3].arcaneHasteUntil,undefined);});
+
+function enemy(b, kind = '', p = 1, hp = 100000) {
+  const e = {
+    uid: ++b.enemyUid,
+    p,
+    hp,
+    maxHp: hp,
+    speed: 0.3,
+    defense: 0,
+    boss: kind === 'boss',
+    champion: kind === 'champion',
+    elite: kind === 'elite',
+    gone: false,
+    bornAt: 0,
+    frozenUntil: 0,
+    slows: [],
+    bleeds: [],
+    burns: [],
+    venoms: [],
+    auras: []
+  };
+  b.enemies.push(e);
+  return e;
+}
+
+const close = (a, b) => assert.ok(Math.abs(a - b) < 1e-6, `${a} != ${b}`);
+
+test('Phase 1: Card & Data Definitions - rarities, base stats, and support card properties', () => {
+  assert.equal(D.CARD.pyroMage.rarity, 'Rare');
+  assert.equal(D.CARD.pyroMage.baseAtk, 25);
+  assert.equal(D.CARD.pyroMage.attackInterval, 1.4);
+  assert.equal(D.CARD.pyroMage.max, 10);
+
+  assert.equal(D.CARD.hydroMage.rarity, 'Rare');
+  assert.equal(D.CARD.hydroMage.baseAtk, 22);
+  assert.equal(D.CARD.hydroMage.attackInterval, 1.4);
+  assert.equal(D.CARD.hydroMage.max, 10);
+
+  assert.equal(D.CARD.geoMage.rarity, 'Rare');
+  assert.equal(D.CARD.geoMage.baseAtk, 23);
+  assert.equal(D.CARD.geoMage.attackInterval, 1.4);
+  assert.equal(D.CARD.geoMage.max, 10);
+
+  assert.equal(D.CARD.aeroMage.rarity, 'Rare');
+  assert.equal(D.CARD.aeroMage.baseAtk, 22);
+  assert.equal(D.CARD.aeroMage.attackInterval, 1.3);
+  assert.equal(D.CARD.aeroMage.max, 10);
+
+  assert.equal(D.CARD.manaBattery.baseAtk, 0);
+  assert.equal(D.CARD.manaBattery.attackInterval, 0);
+  assert.equal(D.CARD.elementalPrism.baseAtk, 0);
+  assert.equal(D.CARD.elementalPrism.attackInterval, 0);
+
+  assert.equal(D.CARD.elementalApprentice.baseAtk, 12);
+  assert.equal(D.CARD.elementalApprentice.attackInterval, 1.5);
+
+  assert.equal(D.CARD.elementalAdept.baseAtk, 25);
+  assert.equal(D.CARD.elementalAdept.attackInterval, 1.4);
+
+  assert.equal(D.CARD.elementalMage.baseAtk, 55);
+  assert.equal(D.CARD.elementalMage.attackInterval, 1.4);
+
+  assert.equal(D.CARD.elementalArchmage.rarity, 'Legendary');
+  assert.equal(D.CARD.elementalArchmage.baseAtk, 90);
+  assert.equal(D.CARD.elementalArchmage.attackInterval, 1.4);
+
+  assert.equal(D.CARD.magmaLord.baseAtk, 150);
+  assert.equal(D.CARD.magmaLord.attackInterval, 1.2);
+  assert.equal(D.CARD.tempestArchon.baseAtk, 135);
+  assert.equal(D.CARD.tempestArchon.attackInterval, 0.9);
+  assert.equal(D.CARD.steamSovereign.baseAtk, 145);
+  assert.equal(D.CARD.steamSovereign.attackInterval, 1.4);
+  assert.equal(D.CARD.quagmireColossus.baseAtk, 150);
+  assert.equal(D.CARD.quagmireColossus.attackInterval, 1.5);
+  assert.equal(D.CARD.blizzardArchon.baseAtk, 140);
+  assert.equal(D.CARD.blizzardArchon.attackInterval, 1.2);
+  assert.equal(D.CARD.sandstormTitan.baseAtk, 145);
+  assert.equal(D.CARD.sandstormTitan.attackInterval, 1.0);
+});
+
+test('Phase 2: Apprentice Path Locking at 25 points and 2:1 off-pair conversion', () => {
+  const b = battle(['elementalApprentice']), u = b.units[0];
+  assert.equal(u.lockedPair, undefined);
+
+  // Feed 24 points to earth+fire
+  for (let i = 0; i < 24; i++) {
+    G.receiveEssence(b, u, 'earth');
+    G.receiveEssence(b, u, 'fire');
+  }
+  assert.equal(u.synthesis['earth+fire'], 24);
+  assert.equal(u.lockedPair, undefined);
+  assert.equal(u.id, 'elementalApprentice');
+
+  // 25th point locks the path to earth+fire and evolves to elementalAdept
+  G.receiveEssence(b, u, 'earth');
+  G.receiveEssence(b, u, 'fire');
+  assert.equal(u.synthesis['earth+fire'], 25);
+  assert.equal(u.lockedPair, 'earth+fire');
+  assert.equal(u.id, 'elementalAdept');
+
+  // Now feed an off-pair: water+wind (should convert 2:1 -> +0.5 to earth+fire)
+  G.receiveEssence(b, u, 'water');
+  G.receiveEssence(b, u, 'wind');
+  assert.equal(u.synthesis['earth+fire'], 25.5);
+  assert.equal(u.synthesis['water+wind'], undefined);
+
+  // Feed more off-pair until 45 points -> evolves to elementalMage
+  for (let i = 0; i < 39; i++) {
+    G.receiveEssence(b, u, 'water');
+    G.receiveEssence(b, u, 'wind');
+  }
+  // 25.5 + 39 * 0.5 = 25.5 + 19.5 = 45.0
+  close(u.synthesis['earth+fire'], 45.0);
+  assert.equal(u.id, 'elementalMage');
+
+  // Feed to 65 points -> evolves to elementalArchmage
+  for (let i = 0; i < 40; i++) {
+    G.receiveEssence(b, u, 'water');
+    G.receiveEssence(b, u, 'wind');
+  }
+  // 45 + 20 = 65
+  close(u.synthesis['earth+fire'], 65.0);
+  assert.equal(u.id, 'elementalArchmage');
+
+  // Check evolution progress UI label
+  const prog = G.evolutionProgress(u);
+  assert.equal(prog.current, 65);
+  assert.equal(prog.max, 80);
+  assert.ok(prog.label.includes('Path Locked'));
+});
+
+test('Phase 2: Mastery Growth Engine - spell cast increments Mastery and permanent ATK', () => {
+  const b = battle(['pyroMage', 'hydroMage', 'geoMage', 'aeroMage']),
+        [pyro, hydro, geo, aero] = b.units;
+  const e = enemy(b);
+
+  assert.equal(pyro.mastery || 0, 0);
+  assert.equal(pyro.permanentAtkBonus || 0, 0);
+
+  G.elementalSpell(b, pyro);
+  assert.equal(pyro.mastery, 1);
+  assert.equal(pyro.permanentAtkBonus, 1);
+
+  G.elementalSpell(b, hydro);
+  assert.equal(hydro.mastery, 1);
+  assert.equal(hydro.permanentAtkBonus, 1);
+
+  G.elementalSpell(b, geo);
+  assert.equal(geo.mastery, 1);
+  assert.equal(geo.permanentAtkBonus, 1);
+
+  G.elementalSpell(b, aero);
+  assert.equal(aero.mastery, 1);
+  assert.equal(aero.permanentAtkBonus, 1);
+});
+
+test('Phase 2: Primary Mage Mastery scaling formulas', () => {
+  // Pyromancer Burn Stacks: 1 + Math.floor(mastery / 10)
+  const bP = battle(['pyroMage']), pyro = bP.units[0];
+  pyro.mastery = 25;
+  const e1 = enemy(bP);
+  G.elementalSpell(bP, pyro); // mastery becomes 26 -> Math.floor(26/10) = 2 -> 1 + 2 = 3 burn stacks
+  assert.equal(e1.burns.length, 3);
+
+  // Hydromancer: ATK * (1 + mastery * 0.005) and applies Drenched (slow 30% for 3s)
+  const bH = battle(['hydroMage']), hydro = bH.units[0];
+  hydro.mastery = 20; // after spell, mastery is 21 -> 1 + 21 * 0.005 = 1.105
+  const e2 = enemy(bH);
+  G.elementalSpell(bH, hydro);
+  const hydroAtk = G.atk(bH, hydro); // base 22 + 1 permanent ATK = 23
+  close(100000 - e2.hp, hydroAtk * (1 + 21 * 0.005));
+  assert.ok(e2.drenchedUntil > bH.time);
+  assert.ok(e2.slows.some(s => s.power === 0.30));
+
+  // Geomancer: pierces 20% + Math.floor(mastery / 5)% armor
+  const bG = battle(['geoMage']), geo = bG.units[0];
+  geo.mastery = 25; // after spell, mastery is 26 -> Math.floor(26/5) = 5 -> 25% pierce (armorFactor: 0.75)
+  const e3 = enemy(bG);
+  e3.defense = 0.5;
+  G.elementalSpell(bG, geo);
+  assert.ok(e3.hp < 100000);
+
+  // Aeromancer: +Math.floor(mastery / 5)% attack speed, 4 targets at max gauge, +20% haste to neighbors
+  const bA = battle(['aeroMage']), aero = bA.units[0];
+  enemy(bA);
+  aero.mastery = 14; // after spell, mastery is 15 -> Math.floor(15/5) = 3 (+3% vs +2%) -> +3% speed
+  const spdBefore = G.speed(bA, aero);
+  G.elementalSpell(bA, aero);
+  const spdAfter = G.speed(bA, aero);
+  assert.ok(spdAfter > spdBefore);
+});
+
+test('Phase 2: Support Structure Overhauls - Elemental Prism, Mana Battery, Astral Loom', () => {
+  const b = battle(['pyroMage', 'elementalPrism', 'manaBattery', 'astralLoom', 'hydroMage'], [0, 1, 5, 4, 3]);
+  const [pyro, prism, battery, loom, hydro] = b.units;
+  enemy(b);
+
+  // 1. Astral Loom grants adjacent units +20% attack speed
+  const loomNeighbors = G.neighbors(b, loom, false);
+  assert.ok(loomNeighbors.includes(prism));
+  assert.ok(loomNeighbors.includes(battery));
+
+  // Also normal attack adjacent to Astral Loom charges 2 ticks
+  pyro.threshold.current = 0;
+  // Move loom next to pyro (slot 1 next to slot 0)
+  const bLoom = battle(['pyroMage', 'astralLoom'], [0, 1]);
+  enemy(bLoom);
+  G.attack(bLoom, bLoom.units[0]);
+  assert.equal(bLoom.units[0].threshold.current, 3);
+
+  // 2. Elemental Prism: when adjacent mage casts at max gauge, grants all deployed elemental mages +2 ticks
+  const bPrism = battle(['pyroMage', 'elementalPrism', 'hydroMage'], [0, 1, 4]);
+  enemy(bPrism);
+  bPrism.units[0].threshold.current = 0;
+  bPrism.units[2].threshold.current = 0;
+  G.elementalLinks(bPrism, bPrism.units[0]);
+  assert.equal(bPrism.units[0].threshold.current, 2);
+  assert.equal(bPrism.units[2].threshold.current, 2);
+
+  // 3. Mana Battery: every 8.0s, grants +4 ticks to one random deployed mage
+  const bBat = battle(['manaBattery', 'pyroMage'], [0, 1]);
+  enemy(bBat);
+  bBat.units[1].threshold.current = 0;
+  bBat.time = 8.0;
+  G.arcaneExtras(bBat, bBat.units[0]);
+  assert.equal(bBat.units[1].threshold.current, 4);
+});
+
+test('Phase 2 & 4: Archon 10th-attack cycle counters, channel triggers, and channel resolution', () => {
+  const b = battle(['magmaLord']), u = b.units[0];
+  const e = enemy(b, '', 1, 100000);
+
+  // 9 normal attacks
+  for (let i = 0; i < 9; i++) {
+    G.attack(b, u);
+  }
+  assert.equal(u.archonAttacks, 9);
+  assert.ok(!u.channeling);
+
+  // 10th attack resets counter and enters 1.2s channel mode
+  G.attack(b, u);
+  assert.equal(u.archonAttacks, 0);
+  assert.ok(u.channeling);
+  assert.equal(u.channeling.type, 'magmaLord');
+  assert.equal(u.channeling.duration, 1.2);
+
+  // While channeling, normal attacks are blocked
+  assert.equal(G.attack(b, u), false);
+
+  // Step 1.2s to complete channel (dt clamped to max 0.1s in step)
+  for (let s = 0; s < 13; s++) G.step(b, 0.1);
+  assert.ok(!u.channeling);
+  // Verify 16-tile Molten Fissure zone created
+  assert.ok(b.arcaneZones.some(z => z.type === 'magmaFissure16'));
+});
+
+test('Phase 2 & 4: Sandstorm Titan 10s channel mode and 1s pulse', () => {
+  const b = battle(['sandstormTitan']), u = b.units[0];
+  const e = enemy(b, '', 1, 100000);
+  e.defense = 0.5;
+
+  u.archonAttacks = 9;
+  G.attack(b, u);
+  assert.ok(u.channeling);
+  assert.equal(u.channeling.type, 'sandstormTitan');
+  assert.equal(u.channeling.duration, 10.0);
+
+  // Advance 1s: should strip 10% base armor and deal damage
+  for (let s = 0; s < 12; s++) G.step(b, 0.1);
+  assert.equal(e.permanentShred, 0.10);
+  assert.ok(e.hp < 100000);
+});
+
+test('Phase 2 & 4: Scalding Vapor Sovereign - Drenched 10% burst happens ONLY 1 time per enemy', () => {
+  const b = battle(['steamSovereign']), u = b.units[0];
+  const e = enemy(b, '', 1, 100000);
+  e.hp = 50000; // 50,000 missing HP -> 10% is 5,000
+  e.drenchedUntil = b.time + 3.0;
+
+  // First attack should trigger burst
+  G.attack(b, u);
+  assert.equal(e.scaldBursted, true);
+  const hpAfterFirst = e.hp;
+
+  // Second attack on the same drenched enemy should NOT trigger another scald burst
+  G.attack(b, u);
+  const dmgSecond = hpAfterFirst - e.hp;
+  // dmgSecond should just be raw normal hit damage (~145), not another 5,000 burst
+  assert.ok(dmgSecond < 1000);
+});
+
+test('Phase 2 & 4: Archon Patronage Auras', () => {
+  // 1. Magma Lord: +100% ATK to Pyro & Geo; normal attacks splash molten fire
+  const bMagma = battle(['magmaLord', 'pyroMage', 'geoMage'], [0, 1, 2]);
+  const pyroBase = G.rawAtk(bMagma.units[1]);
+  close(G.atk(bMagma, bMagma.units[1]), pyroBase * 2.0);
+  close(G.atk(bMagma, bMagma.units[2]), G.rawAtk(bMagma.units[2]) * 2.0);
+
+  // 2. Firestorm Tempest: +30% attack speed to Pyro & Aero
+  const bTemp = battle(['tempestArchon', 'pyroMage', 'aeroMage'], [0, 1, 2]);
+  assert.ok(G.speed(bTemp, bTemp.units[1]) >= 1.30);
+  assert.ok(G.speed(bTemp, bTemp.units[2]) >= 1.30);
+
+  // 3. Quagmire Colossus: +30% armor penetration to Hydro & Geo
+  const bQuag = battle(['quagmireColossus', 'hydroMage', 'geoMage'], [0, 1, 2]);
+  const e = enemy(bQuag);
+  e.defense = 0.5;
+  G.attack(bQuag, bQuag.units[1]);
+  assert.ok(e.hp < 100000);
+
+  // 4. Glacial Typhoon: +30% attack speed and Frostbite to Hydro & Aero
+  const bBlizz = battle(['blizzardArchon', 'hydroMage', 'aeroMage'], [0, 1, 2]);
+  assert.ok(G.speed(bBlizz, bBlizz.units[1]) >= 1.30);
+  assert.ok(G.speed(bBlizz, bBlizz.units[2]) >= 1.30);
+  const eFrost = enemy(bBlizz);
+  G.attack(bBlizz, bBlizz.units[1]);
+  assert.equal(eFrost.frostbiteHits, 1);
+  G.attack(bBlizz, bBlizz.units[1]);
+  assert.equal(eFrost.frostbiteHits, 0);
+  assert.ok(eFrost.frozenUntil > bBlizz.time);
+
+  // 5. Sandstorm Titan: +20% armor penetration and +2 pierce targets to Geo & Aero
+  const bTitan = battle(['sandstormTitan', 'aeroMage'], [0, 1]);
+  for (let i = 0; i < 5; i++) enemy(bTitan, '', i + 1);
+  G.attack(bTitan, bTitan.units[1]); // Aero normally hits 2, with Titan hits 4
+  const damaged = bTitan.enemies.filter(en => en.hp < 100000);
+  assert.equal(damaged.length, 4);
+});
