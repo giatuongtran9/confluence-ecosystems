@@ -715,8 +715,8 @@ const CARDS = [
   "name": "Junkyard Smelter",
   "genre": "PostApoc",
   "rarity": "Rare",
-  "baseAtk": 10,
-  "attackInterval": 1.8,
+  "baseAtk": 0,
+  "attackInterval": 0,
   "max": 0,
   "icon": "⚙",
   "fav": "neighbor",
@@ -724,7 +724,7 @@ const CARDS = [
     "mechanical"
   ],
   "ecosystem": "Scrapwork · salvage and forging",
-  "rules": "Shortens ally shutdown by 1s (minimum 0.5s). Accepts adjacent scrap one piece at a time into a two-piece intake. Stored pieces persist between battles. With a deployed Mech, two stored pieces forge a module whenever the 4s forge cooldown is ready. A single adjacent working slot is enough; a full board still blocks new scrap. Sword+Sword: Colossal Scrap Blade (highest HP, 50% permanent armor removal, triple damage below 35% HP). Gun+Gun: Twin Flak Battery (six-tile arc, 25% permanent armor removal). Mixed: Vanguard Gunblade (alternating armor-piercing round and four-tile oil sweep). Installs on the nearest Mech with an empty weapon slot. Every smelt awards +3 Alloy to all deployed Mechs; surplus modules recycle into Alloy only.",
+  "rules": "Does not attack. Accepts adjacent scrap one piece at a time into a two-piece intake (stored pieces persist between battles). With a deployed Mech, two stored pieces forge a weapon whenever ready (4s cooldown). Sword+Sword: Colossal Scrap Blade (+50 ATK). Gun+Gun: Twin Flak Battery (+45 ATK). Sword+Gun: Vanguard Gunblade (+48 ATK). Installs on the nearest Mech accepting that weapon type (Mechs accept matching weapons up to 2, or one Blade + one Flak for a Vanguard Juggernaut). If all Mechs are armed, banks up to 2 forged weapons (persisting between battles). Excess forged weapons recycle into +5 Alloy for all deployed Mechs.",
   "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
   "scrapworkAsset": "smelter"
 },
@@ -2403,8 +2403,8 @@ CARDS.push(...[
     "name": "Scavenged Frame",
     "genre": "PostApoc",
     "rarity": "Normal",
-    "baseAtk": 10,
-    "attackInterval": 1.4,
+    "baseAtk": 15,
+    "attackInterval": 1.8,
     "max": 0,
     "icon": "⚙",
     "fav": "neighbor",
@@ -2412,7 +2412,7 @@ CARDS.push(...[
       "mechanical"
     ],
     "ecosystem": "Scrapwork · salvage and forging",
-    "rules": "Locks its first two forged modules; both fire each attack at 65% individual power when dual-equipped. Gains +1 Alloy per 3 attacks, +5 per deployed battle clear, and +3 per smelt. At 25/65 Alloy becomes Reinforced/Heavy Walker. At 120 unlocks a two-adjacent-slot Titan, waiting for space if blocked. Every 15 Alloy beyond 120 grants +2 permanent ATK.",
+    "rules": "Scavenged Frame. Holds up to 2 forged weapons of matching type (adds weapon ATK). Gains +1 Alloy per 3 attacks, +5 per deployed battle clear, and +3 per smelt. At 25/65 Alloy becomes Reinforced/Industrial Heavy Walker. At 120 unlocks a two-adjacent-slot Titan Core. Every 15 Alloy beyond 120 grants +2 permanent ATK.",
     "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
     "scrapworkAsset": "scrapFrame"
   },
@@ -2422,7 +2422,7 @@ CARDS.push(...[
     "genre": "PostApoc",
     "rarity": "Normal",
     "baseAtk": 12,
-    "attackInterval": 1.3,
+    "attackInterval": 1.5,
     "max": 0,
     "icon": "⚙",
     "fav": "neighbor",
@@ -2457,8 +2457,8 @@ CARDS.push(...[
     "name": "Hydraulic Riveter",
     "genre": "PostApoc",
     "rarity": "Normal",
-    "baseAtk": 12,
-    "attackInterval": 1.4,
+    "baseAtk": 14,
+    "attackInterval": 2.0,
     "max": 0,
     "icon": "⚙",
     "fav": "neighbor",
@@ -2466,7 +2466,7 @@ CARDS.push(...[
       "mechanical"
     ],
     "ecosystem": "Scrapwork · salvage and forging",
-    "rules": "Hits permanently remove 25% of original runner armor; repeated hits do not stack. Every 6s, welds +3 permanent ATK onto the weakest adjacent original Mech. Can weld from either side of a two-slot Titan.",
+    "rules": "Normal attack targets the track segment (0-4, 4-8, 8-12, or 12-16) with the highest enemy density, reducing runners' armor by 15% for 2s. Every 6s, welds +3 permanent ATK onto the weakest adjacent original Mech.",
     "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
     "scrapworkAsset": "hydraulicRiveter"
   },
@@ -2484,7 +2484,7 @@ CARDS.push(...[
       "mechanical"
     ],
     "ecosystem": "Scrapwork · salvage and forging",
-    "rules": "Adjacent mechanical allies deal +20% damage; duplicate reactors do not stack. On an Elite/Boss, an adjacent two-slot Titan with 120 Alloy and two locked modules starts a field test. Each module must hit a priority enemy; then clear with zero leaks to consume this Core and awaken a Mythic. Failure removes the Titan and Core. Blade+Blade: Berserker. Flak+Flak: Siege. Every other pair: Vanguard.",
+    "rules": "Does not attack. Adjacent units gain +20% ATK and +20% attack speed. On an Elite/Boss, an adjacent two-slot Titan with 120 Alloy and two matching weapons starts a field test. Each module must hit a priority enemy; then clear with zero leaks to consume this Core and awaken a Mythic Titan.",
     "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
     "scrapworkAsset": "titanReactor"
   }
@@ -2495,8 +2495,8 @@ FORMS.push(...[
     "name": "Reinforced Walker",
     "genre": "PostApoc",
     "rarity": "Rare",
-    "baseAtk": 24,
-    "attackInterval": 1.4,
+    "baseAtk": 30,
+    "attackInterval": 1.7,
     "max": 0,
     "icon": "⚙",
     "fav": "neighbor",
@@ -2504,14 +2504,14 @@ FORMS.push(...[
       "mechanical"
     ],
     "ecosystem": "Scrapwork · salvage and forging",
-    "rules": "Locks its first two forged modules; both fire each attack at 65% individual power when dual-equipped. Gains +1 Alloy per 3 attacks, +5 per deployed battle clear, and +3 per smelt. At 25/65 Alloy becomes Reinforced/Heavy Walker. At 120 unlocks a two-adjacent-slot Titan, waiting for space if blocked. Every 15 Alloy beyond 120 grants +2 permanent ATK.",
+    "rules": "Reinforced Walker (T1). Holds up to 2 forged weapons of matching type (adds weapon ATK). Gains Alloy from attacks and smelts. At 65 Alloy becomes Industrial Heavy Walker.",
     "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
     "scrapworkAsset": "reinforcedWalker",
     "evolvedFrom": "scrapFrame"
   },
   {
     "id": "heavyWalker",
-    "name": "Heavy Walker",
+    "name": "Industrial Heavy Walker",
     "genre": "PostApoc",
     "rarity": "Epic",
     "baseAtk": 50,
@@ -2523,18 +2523,18 @@ FORMS.push(...[
       "mechanical"
     ],
     "ecosystem": "Scrapwork · salvage and forging",
-    "rules": "Locks its first two forged modules; both fire each attack at 65% individual power when dual-equipped. Gains +1 Alloy per 3 attacks, +5 per deployed battle clear, and +3 per smelt. At 25/65 Alloy becomes Reinforced/Heavy Walker. At 120 unlocks a two-adjacent-slot Titan, waiting for space if blocked. Every 15 Alloy beyond 120 grants +2 permanent ATK.",
+    "rules": "Industrial Heavy Walker (T2). Holds up to 2 forged weapons of matching type (adds weapon ATK). Gains Alloy from attacks and smelts. At 120 Alloy unlocks The Titan Core.",
     "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
     "scrapworkAsset": "heavyWalker",
     "evolvedFrom": "scrapFrame"
   },
   {
     "id": "titanFrame",
-    "name": "Titan Core",
+    "name": "The Titan Core",
     "genre": "PostApoc",
     "rarity": "Legendary",
-    "baseAtk": 95,
-    "attackInterval": 1.8,
+    "baseAtk": 90,
+    "attackInterval": 1.5,
     "max": 0,
     "icon": "⚙",
     "fav": "neighbor",
@@ -2542,7 +2542,7 @@ FORMS.push(...[
       "mechanical"
     ],
     "ecosystem": "Scrapwork · salvage and forging",
-    "rules": "Locks its first two forged modules; both fire each attack at 65% individual power when dual-equipped. Gains +1 Alloy per 3 attacks, +5 per deployed battle clear, and +3 per smelt. At 25/65 Alloy becomes Reinforced/Heavy Walker. At 120 unlocks a two-adjacent-slot Titan, waiting for space if blocked. Every 15 Alloy beyond 120 grants +2 permanent ATK.",
+    "rules": "The Titan Core (T3). Two-slot frame holding up to 2 forged weapons of matching type. Every 15 Alloy beyond 120 grants +2 permanent ATK. Field test with adjacent Titan Reactor Core on Elite/Boss nodes awakens a Mythic Colossus.",
     "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
     "scrapworkAsset": "titanFrame",
     "evolvedFrom": "scrapFrame"
@@ -2552,8 +2552,8 @@ FORMS.push(...[
     "name": "Berserker Greatsword Colossus",
     "genre": "PostApoc",
     "rarity": "Mythic",
-    "baseAtk": 260,
-    "attackInterval": 1.8,
+    "baseAtk": 280,
+    "attackInterval": 1.5,
     "max": 0,
     "icon": "⚙",
     "fav": "neighbor",
@@ -2561,7 +2561,7 @@ FORMS.push(...[
       "mechanical"
     ],
     "ecosystem": "Scrapwork · salvage and forging",
-    "rules": "Two-slot Titan from Blade+Blade. Strikes the highest-current-HP runner, ignoring armor, and permanently removes 50% original armor. Executes ordinary runners below 30% HP (never bosses or Harbingers). Every third attack cleaves 15% current HP from each deployed boss/Harbinger. Continues earning Alloy; each 15 beyond 120 grants +2 permanent ATK.",
+    "rules": "Two-slot Titan forged from 2 Colossal Scrap Blades (base 180 + 50 + 50 ATK). Normal attack hits all enemies in the tile of the highest-HP runner. Every 10th attack, channels for 1.2s, then cleaves the densest track segment for 200% ATK damage. Continues earning Alloy.",
     "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
     "scrapworkAsset": "berserkerColossus",
     "evolvedFrom": "scrapFrame"
@@ -2571,8 +2571,8 @@ FORMS.push(...[
     "name": "Siege Fortress Dreadnought",
     "genre": "PostApoc",
     "rarity": "Mythic",
-    "baseAtk": 165,
-    "attackInterval": 1.8,
+    "baseAtk": 260,
+    "attackInterval": 1.2,
     "max": 0,
     "icon": "⚙",
     "fav": "neighbor",
@@ -2580,7 +2580,7 @@ FORMS.push(...[
       "mechanical"
     ],
     "ecosystem": "Scrapwork · salvage and forging",
-    "rules": "Two-slot Titan from Flak+Flak. Bombards an eight-tile perimeter arc centered on the leading runner, hitting every runner in it. Breaks shields and permanently removes 50% original armor, without repeated stacking. Continues earning Alloy and permanent growth beyond 120.",
+    "rules": "Two-slot Titan forged from 2 Twin Flak Batteries (base 170 + 45 + 45 ATK). Normal attack targets all enemies in the densest track segment for 80% ATK damage. Every 10th attack, channels for 1.2s, then targets all 16 tiles for 200% ATK damage and reduces 50% armor for 5s. Continues earning Alloy.",
     "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
     "scrapworkAsset": "siegeDreadnought",
     "evolvedFrom": "scrapFrame"
@@ -2590,8 +2590,8 @@ FORMS.push(...[
     "name": "Vanguard Gunblade Juggernaut",
     "genre": "PostApoc",
     "rarity": "Mythic",
-    "baseAtk": 185,
-    "attackInterval": 1.7,
+    "baseAtk": 250,
+    "attackInterval": 1.4,
     "max": 0,
     "icon": "⚙",
     "fav": "neighbor",
@@ -2599,7 +2599,7 @@ FORMS.push(...[
       "mechanical"
     ],
     "ecosystem": "Scrapwork · salvage and forging",
-    "rules": "Two-slot Titan from any mixed pair or pair containing Gunblade. Each attack fires one armor-ignoring round for full ATK and cleaves a four-tile arc for 45% ATK. Leaves burning oil for 4s: 35 true DPS to runners on those tiles. Same-owner overlapping oil refreshes without stacking. Continues earning Alloy and permanent growth beyond 120.",
+    "rules": "Two-slot Titan forged from one Colossal Scrap Blade and one Twin Flak Battery (base 155 + 50 + 45 ATK). Normal attack alternates between a long-range armor-piercing shot (30% armor pierce) on the 3 leading runners and a wide sweeping cleave applying stacking Oil Burn on the densest track segment for 5s (1 burn stack/s; if that segment already has oil burn, fires the AP shot instead). Every 10th attack, channels for 1.2s, then applies stacking oil burn pool to all 16 tiles (1 burn stack/s) for 5s and slows 45% for 5s. Continues earning Alloy.",
     "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
     "scrapworkAsset": "vanguardJuggernaut",
     "evolvedFrom": "scrapFrame"

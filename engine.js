@@ -584,16 +584,55 @@ const Game = (() => {
   const module=u.scrapIntake.every(id=>id==='rustSword')?'blade':u.scrapIntake.every(id=>id==='rustGun')?'flak':'gunblade';
   u.scrapIntake=[];persist(b,u);
   const distance=v=>Math.min(...occupiedSlots(v).map(s=>Math.abs(xy(s).x-u.x)+Math.abs(xy(s).y-u.y)));
-  const recipient=mechs.filter(v=>(v.modules||[]).length<2).sort((a,z)=>distance(a)-distance(z)||a.uid-z.uid)[0];
-  if(recipient){recipient.modules=[...(recipient.modules||[]),module];persist(b,recipient);interact(b,u,recipient,'module',`${module.toUpperCase()} installed · ${recipient.modules.length}/2 locked`);startScrapworkTrial(b);}
-  for(const mech of mechs)addAlloy(b,mech,3);
-  b.metrics.smelts=(b.metrics.smelts||0)+1;
-  interact(b,u,recipient||u,'smelt',recipient?'+3 Alloy to deployed Mechs':'Modules recycled · +3 Alloy to deployed Mechs');
+  const eligible=v=>{const a=v.modules||[];const mixedVanguard=a.length===1&&((a[0]==='blade'&&module==='flak')||(a[0]==='flak'&&module==='blade'));return !MECH_APEX.includes(v.id)&&a.length<2&&(a.length===0||a[0]===module||mixedVanguard);};
+  const recipient=mechs.filter(eligible).sort((a,z)=>distance(a)-distance(z)||a.uid-z.uid)[0];
+  if(recipient){
+   recipient.modules=[...(recipient.modules||[]),module];
+   persist(b,recipient);
+   interact(b,u,recipient,'module',`${module.toUpperCase()} installed · ${recipient.modules.length}/2 locked`);
+   startScrapworkTrial(b);
+   for(const mech of mechs)addAlloy(b,mech,3);
+   b.metrics.smelts=(b.metrics.smelts||0)+1;
+   interact(b,u,recipient,'smelt','+3 Alloy to deployed Mechs');
+  } else {
+   u.savedWeapons = u.savedWeapons || [];
+   if(u.savedWeapons.length < 2) {
+    u.savedWeapons.push(module);
+    persist(b, u);
+    interact(b,u,u,'module',`${module.toUpperCase()} stored in Smelter inventory · ${u.savedWeapons.length}/2 saved`);
+   } else {
+    for(const mech of mechs)addAlloy(b,mech,5);
+    interact(b,u,u,'smelt','Smelter storage full · +5 Alloy to deployed Mechs');
+   }
+   for(const mech of mechs)addAlloy(b,mech,3);
+   b.metrics.smelts=(b.metrics.smelts||0)+1;
+  }
  }
  function scrapworkExtras(b,u) {
   if(token(u))return;
   if(isMech(u))updateMech(b,u);
-  if(u.id==='smelter')forge(b,u);
+  if(u.id==='smelter') {
+   forge(b,u);
+   if((u.savedWeapons||[]).length) {
+    const mechs=b.units.filter(v=>!v.removed&&!token(v)&&isMech(v)&&!MECH_APEX.includes(v.id));
+    const distance=v=>Math.min(...occupiedSlots(v).map(s=>Math.abs(xy(s).x-u.x)+Math.abs(xy(s).y-u.y)));
+    const bankOrder=[...u.savedWeapons.keys()].sort((i,j)=>{const mods=mechs.flatMap(v=>v.modules||[]);const wantsMixed=mods.includes('blade')&&!mods.includes('flak')?'flak':mods.includes('flak')&&!mods.includes('blade')?'blade':null;return (u.savedWeapons[i]===wantsMixed?-1:0)-(u.savedWeapons[j]===wantsMixed?-1:0)||i-j;});
+    for(const i of bankOrder) {
+     const w=u.savedWeapons[i];
+     const eligible=mechs.filter(v=>{const a=v.modules||[];const mixedVanguard=a.length===1&&((a[0]==='blade'&&w==='flak')||(a[0]==='flak'&&w==='blade'));return a.length<2&&(a.length===0||a[0]===w||mixedVanguard);});
+     if(eligible.length) {
+      const rec=eligible.sort((a,z)=>distance(a)-distance(z)||a.uid-z.uid)[0];
+      rec.modules=[...(rec.modules||[]),w];
+      u.savedWeapons.splice(i, 1);
+      persist(b,rec);
+      persist(b,u);
+      interact(b,u,rec,'module',`Banked ${w.toUpperCase()} installed · ${rec.modules.length}/2 locked`);
+      startScrapworkTrial(b);
+      break;
+     }
+    }
+   }
+  }
   if(u.id==='magneticCrane'&&b.time>=(u.craneAt||4)){
    u.craneAt=b.time+4;
    const smelters=b.units.filter(v=>!v.removed&&v.id==='smelter');
@@ -618,50 +657,145 @@ const Game = (() => {
  }
  const arcTiles=(p,width)=>Array.from({length:width},(_,i)=>(Math.floor(p)-Math.floor((width-1)/2)+i+16)%16);
  const inArc=(e,tiles)=>tiles.includes(((Math.floor(e.p)%16)+16)%16);
- function oilPool(b,u,p,width,dps) {
-  const tiles=arcTiles(p,width);b.oilPools??=[];
-  // Refresh this owner's existing tiles; overlapping pools never multiply its DPS.
-  for(const tile of tiles){const old=b.oilPools.find(o=>o.owner===u.uid&&o.tile===tile);if(old){old.until=b.time+4;old.dps=Math.max(old.dps,dps);}else b.oilPools.push({owner:u.uid,tile,dps,until:b.time+4});}
+ const TRACK_SEGMENTS = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15]];
+ function densestTrackSegment(b) {
+  const counts = [0, 1, 2, 3].map(q => living(b).filter(e => Math.floor(e.p / 4) % 4 === q).length);
+  let maxQ = 0, maxCount = -1;
+  counts.forEach((c, idx) => { if (c > maxCount) { maxCount = c; maxQ = idx; } });
+  return { quadrant: maxQ, tiles: TRACK_SEGMENTS[maxQ], label: `${maxQ * 4}-${(maxQ + 1) * 4}` };
+ }
+ function oilPool(b,u,p,width,burnStacks=1,duration=5) {
+  const tiles = (typeof p === 'number' && width === 1) ? [Math.floor(p) % 16] : arcTiles(p, width);
+  b.oilPools ??= [];
+  for (const tile of tiles) {
+   const old = b.oilPools.find(o => o.owner === u.uid && o.tile === tile);
+   if (old) {
+    old.until = Math.max(old.until, b.time + duration);
+    old.burnStacks = Math.max(old.burnStacks || 1, burnStacks);
+   } else {
+    b.oilPools.push({ owner: u.uid, tile, burnStacks, until: b.time + duration });
+   }
+  }
  }
  function tickOil(b,dt) {
-  b.oilPools=(b.oilPools||[]).filter(o=>o.until>b.time);
-  for(const e of living(b))for(const pool of b.oilPools.filter(o=>o.tile===Math.floor(e.p))){
-   const u=b.units.find(v=>v.uid===pool.owner&&!v.removed);
-   if(u)damage(b,e,pool.dps*dt*mod(b.run,'damage'),u,'dot');
+  b.oilPools = (b.oilPools || []).filter(o => o.until > b.time);
+  for (const e of living(b)) {
+   const tile = Math.floor(e.p) % 16;
+   for (const pool of b.oilPools.filter(o => o.tile === tile)) {
+    const u = b.units.find(v => v.uid === pool.owner && !v.removed);
+    if (u) {
+     const burnDps = Math.max(1, e.maxHp * 0.01) * (pool.burnStacks || 1);
+     damage(b, e, burnDps * dt * mod(b.run, 'damage'), u, 'dot');
+    }
+   }
   }
  }
  function mechAttack(b,u,target,power) {
   u.alloyAttacks=(u.alloyAttacks||0)+1;
   if(u.alloyAttacks>=3){u.alloyAttacks-=3;addAlloy(b,u,1);}else persist(b,u);
   const strongest=()=>living(b).sort((a,z)=>z.hp-a.hp||a.uid-z.uid)[0];
+
   if(u.id==='berserkerColossus'){
-   const e=strongest();if(!e)return;
-   armorStrip(e,.5);damage(b,e,power,u,'direct');
-   if(e.hp>0&&!e.boss&&!e.champion&&e.hp/e.maxHp<executeThreshold(b))damage(b,e,e.hp,u,'ability');
-   if(u.attackCount%3===0)for(const boss of living(b).filter(e=>e.boss||e.champion))damage(b,boss,boss.hp*.15,u,'ability');
-   fx(b,'beam',u,e,'SEISMIC');return;
+   if(u.attackCount%10===0){
+    u.channeling={type:'berserker-cleave',duration:1.2,remaining:1.2};
+    u.currentCooldown=Math.max(u.currentCooldown||0,1.2);
+    fx(b,'sword-channel',u,u,'CHANNELING BERSERKER CLEAVE');
+    interact(b,u,u,'berserker-cleave','Berserker Greatsword Colossus channels Colossus Cleave (1.2s)...');
+    return;
+   }
+   const prio=strongest();
+   const targetTile=prio?Math.floor(prio.p)%16:0;
+   const inTile=living(b).filter(e=>Math.floor(e.p)%16===targetTile);
+   for(const e of inTile){
+    hit(b,u,e,power);
+   }
+   fx(b,'slash',u,prio||u,'GREATSWORD TILE SLICE');
+   return;
   }
+
   if(u.id==='siegeDreadnought'){
-   const tiles=arcTiles(target.p,8);for(const e of living(b).filter(e=>inArc(e,tiles))){e.shield=0;armorStrip(e,.5);hit(b,u,e,power);}
-   fx(b,'pulse',u,target,'BOMBARDMENT');return;
+   if(u.attackCount%10===0){
+    u.channeling={type:'siege-bombardment',duration:1.2,remaining:1.2};
+    u.currentCooldown=Math.max(u.currentCooldown||0,1.2);
+    fx(b,'sword-channel',u,u,'CHANNELING SIEGE BOMBARDMENT');
+    interact(b,u,u,'siege-bombardment','Siege Fortress Dreadnought channels Titan Bombardment (1.2s)...');
+    return;
+   }
+   const seg=densestTrackSegment(b);
+   for(const e of living(b).filter(e=>seg.tiles.includes(Math.floor(e.p)%16))){
+    hit(b,u,e,power*0.80);
+   }
+   fx(b,'pulse',u,target,'FLAK QUADRANT BARRAGE');
+   return;
   }
+
   if(u.id==='vanguardJuggernaut'){
-   damage(b,target,power,u,'direct');
-   const tiles=arcTiles(target.p,4);for(const e of living(b).filter(e=>inArc(e,tiles)))hit(b,u,e,power*.45);
-   oilPool(b,u,target.p,4,35);return;
+   if(u.attackCount%10===0){
+    u.channeling={type:'juggernaut-hellfire',duration:1.2,remaining:1.2};
+    u.currentCooldown=Math.max(u.currentCooldown||0,1.2);
+    fx(b,'sword-channel',u,u,'CHANNELING JUGGERNAUT HELLFIRE');
+    interact(b,u,u,'juggernaut-hellfire','Vanguard Gunblade Juggernaut channels Stacking Hellfire (1.2s)...');
+    return;
+   }
+   const seg=densestTrackSegment(b);
+   const hasOil=(b.oilPools||[]).some(o=>o.until>b.time&&seg.tiles.includes(o.tile));
+   const useAP=hasOil||(u.attackCount%2===1);
+   if(useAP){
+    const runners=living(b).slice(0,3);
+    for(const e of runners){
+     hit(b,u,e,power,true,{armorFactor:0.70});
+    }
+    fx(b,'beam',u,target,'AP TRACK ROUND (3 RUNNERS)');
+   }else{
+    for(const e of living(b).filter(e=>seg.tiles.includes(Math.floor(e.p)%16))){
+     hit(b,u,e,power);
+    }
+    for(const t of seg.tiles){
+     oilPool(b,u,t,1,1,5);
+    }
+    fx(b,'slash',u,target,'SWEEPING OIL BURN');
+   }
+   return;
   }
+
   const modules=u.modules||[];
   if(!modules.length){hit(b,u,target,power);return;}
-  const scale=modules.length===2?.65:1;
-  modules.forEach((module,moduleIndex)=>{
-   const lead=living(b)[0];if(!lead)return;
-   if(module==='blade'){
-    const e=strongest();armorStrip(e,.5);hit(b,u,e,power*scale*(e.hp/e.maxHp<.35?3:1));markScrapworkTrialHit(b,u,module,moduleIndex,e);
-   }else if(module==='flak'){
-    const tiles=arcTiles(lead.p,6);for(const e of living(b).filter(e=>inArc(e,tiles))){armorStrip(e,.25);hit(b,u,e,power*scale*.65);markScrapworkTrialHit(b,u,module,moduleIndex,e);}
-   }else if(u.attackCount%2){damage(b,lead,power*scale,u,'direct');markScrapworkTrialHit(b,u,module,moduleIndex,lead);}
-   else{const tiles=arcTiles(lead.p,4);for(const e of living(b).filter(e=>inArc(e,tiles))){hit(b,u,e,power*scale*.65);markScrapworkTrialHit(b,u,module,moduleIndex,e);}oilPool(b,u,lead.p,4,10*scale);}
-  });
+  u.attackCount=(u.attackCount||0)+1;
+  const modType=modules[0];
+  if(modType==='blade'){
+   hit(b,u,target,power*1.50);
+   markScrapworkTrialHit(b,u,'blade',0,target);
+   if(modules.length>1)markScrapworkTrialHit(b,u,'blade',1,target);
+   fx(b,'slash',u,target,'SCRAP BLADE (150%)');
+  }else if(modType==='flak'){
+   const behind=living(b).filter(e=>e!==target&&e.p<=target.p).sort((a,z)=>z.p-a.p);
+   hit(b,u,target,power);
+   markScrapworkTrialHit(b,u,'flak',0,target);
+   if(modules.length>1)markScrapworkTrialHit(b,u,'flak',1,target);
+   behind.slice(0,3).forEach(e=>hit(b,u,e,power,true,{secondary:true}));
+   fx(b,'pulse',u,target,'FLAK CLEAVE (4)');
+  }else if(modType==='gunblade'){
+   markScrapworkTrialHit(b,u,'gunblade',0,target);
+   if(modules.length>1)markScrapworkTrialHit(b,u,'gunblade',1,target);
+   if(u.attackCount%2===1){
+    const runners=living(b).slice(0,3);
+    for(const e of runners){
+     hit(b,u,e,power,true,{armorFactor:0.70});
+    }
+    fx(b,'beam',u,target,'AP SHOT (3 RUNNERS)');
+   }else{
+    const seg=densestTrackSegment(b);
+    for(const e of living(b).filter(e=>seg.tiles.includes(Math.floor(e.p)%16))){
+     hit(b,u,e,power);
+    }
+    for(const t of seg.tiles){
+     oilPool(b,u,t,1,1,5);
+    }
+    fx(b,'slash',u,target,'OIL BURN CLEAVE (1 STACK/S)');
+   }
+  }else{
+   hit(b,u,target,power);
+  }
  }
 
  const ring = [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [4, 1], [4, 2], [4, 3], [4, 4], [3, 4], [2, 4], [1, 4], [0, 4], [0, 3], [0, 2], [0, 1]];
@@ -1827,7 +1961,7 @@ function fx(b, type, u, e, text, extra = {}) {
    else { baseAtk = 85; attackInterval = 1.2; }
   }
   return {
-   ...u, ...pos, scripts:[...(u.scripts||[])], pageRecipe:[...(u.pageRecipe||[])], arm:u.arm||d.cyberArm||null, os:u.os||d.cyberOS||null, heat:20, ram:0, ramAttacks:0, sandyCharge:0, sandyUntil:0, cyberSandyProof:0, cyberBerserkProof:0, cyberShortProof:false, cyberContagionProof:false, synthesis:{...(u.synthesis||{})}, essences:[...(u.essences||[])], manaStored:0, tempestKills:0, carvings: {...(u.carvings||{})}, mountedHead:null, huntFrenzy:0, huntWall:null, carveAt:6, modules: [...(u.modules || [])], scrapIntake: [...(u.scrapIntake || [])], extraSlot: undefined, apexQi: u.apexQi ?? u.swordQi ?? 0, apexDread: u.apexDread || 0, slot, name: d.name, genre: d.genre, lineage: u.lineage || d.lineage, lineageTier: u.lineageTier || d.lineageTier, baseAtk, attackInterval,
+   ...u, ...pos, scripts:[...(u.scripts||[])], pageRecipe:[...(u.pageRecipe||[])], arm:u.arm||d.cyberArm||null, os:u.os||d.cyberOS||null, heat:20, ram:0, ramAttacks:0, sandyCharge:0, sandyUntil:0, cyberSandyProof:0, cyberBerserkProof:0, cyberShortProof:false, cyberContagionProof:false, synthesis:{...(u.synthesis||{})}, essences:[...(u.essences||[])], manaStored:0, tempestKills:0, carvings: {...(u.carvings||{})}, mountedHead:null, huntFrenzy:0, huntWall:null, carveAt:6, modules: [...(u.modules || [])], scrapIntake: [...(u.scrapIntake || [])], savedWeapons: [...(u.savedWeapons || [])], extraSlot: undefined, apexQi: u.apexQi ?? u.swordQi ?? 0, apexDread: u.apexDread || 0, slot, name: d.name, genre: d.genre, lineage: u.lineage || d.lineage, lineageTier: u.lineageTier || d.lineageTier, baseAtk, attackInterval,
    currentCooldown: .15 + rand(b.run) * .25,
    threshold: { current: u.threshold || 0, max: d.max || 0, onTrigger: null },
    state: 'active', stateRemaining: 0, removed: false, phantom, mimic: 0, scale: phantom ? .5 : 1,
@@ -1904,11 +2038,21 @@ function fx(b, type, u, e, text, extra = {}) {
  }
 
 
- function rawAtk(u) { return (u.tokenAtk != null ? u.tokenAtk + (u.permanentAtkBonus || 0) : (base(u) + (u.mimic || 0))) * u.scale }
+ function rawAtk(u) {
+  let moduleAtk = 0;
+  if (isMech(u) && !MECH_APEX.includes(u.id)) {
+   for (const m of (u.modules || [])) {
+    if (m === 'blade') moduleAtk += 50;
+    else if (m === 'flak') moduleAtk += 45;
+    else if (m === 'gunblade') moduleAtk += 48;
+   }
+  }
+  return (u.tokenAtk != null ? u.tokenAtk + (u.permanentAtkBonus || 0) : (base(u) + moduleAtk + (u.mimic || 0))) * u.scale;
+ }
 
  function atk(b, u) {
   let m = 1 + (b.run.relics.includes('blade') ? .12 : 0);
-   if (isMechanical(u) && neighbors(b,u).some(v=>v.id==='titanReactor')) m *= 1.2;
+   if (neighbors(b, u, false).some(v => !v.removed && v.id === 'titanReactor')) m *= 1.2;
   if (isApexImmortal(u) && neighbors(b, u, false).some(v => !v.removed && (isCultivationRelic(v) || isUrbanRelic(v)))) m *= 1.2;
   if (neighbors(b, u, false).some(v => v.id === 'mountainScroll')) m *= 1.15;
   if (neighbors(b, u, false).some(v => !v.removed && v.id === 'dragonPearl')) m *= 1.20;
@@ -1919,6 +2063,7 @@ function fx(b, type, u, e, text, extra = {}) {
  function speed(b, u) {
   let n = 1 + (b.run.relics.includes('clock') ? .1 : 0) + (u.emptySpeed + (u.offeringSpeed || 0) + (u.hasteUntil > b.time ? .15 : 0) + (u.manualUntil > b.time ? .25 : 0) + (u.pillSpeedUntil > b.time ? .15 : 0) + (u.hotlineUntil > b.time ? .20 : 0) + (u.harmonyChordUntil > b.time ? .50 : 0)) * mod(b.run, 'buffPower');
   if (neighbors(b, u, false).some(v => !v.removed && v.id === 'goldenStaff')) n += .30 * mod(b.run, 'buffPower');
+  if (neighbors(b, u, false).some(v => !v.removed && v.id === 'titanReactor')) n += .20 * mod(b.run, 'buffPower');
   if (neighbors(b, u, false).some(v => !v.removed && v.id === 'matriarch')) n += .35 * mod(b.run, 'buffPower');
   if (neighbors(b, u, false).some(v => v.id === 'guqin')) n += .20;
   if (neighbors(b, u, false).some(v => v.id === 'demonBlade')) n += .10;
@@ -1954,7 +2099,7 @@ function fx(b, type, u, e, text, extra = {}) {
   const mannequinCritBonus = family(u) === 'mannequin' && (b.curfewUntil > b.time || allies(b, u).some(v => v.state !== 'active')) ? 1 : 0;
   return (baseCritMultiplier ?? (tigerBleedCrit ? 3 : 2)) + sensor(b, u) * .3 + mod(b.run, 'critDamage', 0) + mannequinCritBonus + (neighbors(b,u).some(v=>v.id==='chitinHelix')?.25:0) + (b.units.some(v=>!v.removed&&v.id==='hiveOvermind')?.30:0) + excessCritDamage;
  }
- function downtime(b, u, duration, state) { if (support(b, 'smelter')) duration -= 1; if (['burnout', 'overheat'].includes(state) && support(b, 'vent')) duration *= .5; return Math.max(.5, duration) }
+ function downtime(b, u, duration, state) { if (['burnout', 'overheat'].includes(state) && support(b, 'vent')) duration *= .5; return Math.max(.5, duration) }
 
  function flip(b, u, state, duration = 0) {
   const previous = u.state; u.state = state; u.stateRemaining = state === 'active' ? 0 : downtime(b, u, duration, state); u.overclock = false;
@@ -1963,7 +2108,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (state !== 'active') {
    for (const v of allies(b, u)) {
     if (v.id === 'vent' && ['burnout', 'overheat'].includes(state)) interact(b, v, u, 'coolant', `downtime shortened to ${u.stateRemaining.toFixed(1)}s`);
-    if (v.id === 'smelter') interact(b, v, u, 'downtime', `downtime shortened to ${u.stateRemaining.toFixed(1)}s`);
+    
    }
   }
   if (state !== 'active') event(b, 'shutdown', { unit: u, state });
@@ -2128,6 +2273,7 @@ function fx(b, type, u, e, text, extra = {}) {
    }
   }
   let defense = (options.ignoreArmor || u.id === 'railgun' ? 0 : e.defense) * (e.nanoUntil > b.time ? .75 : 1);
+  if (e.shredUntil > b.time) defense *= (1 - (e.shredAmount || 0));
   defense *= options.armorFactor??1;
   if (neighbors(b, u, false).some(v => v.id === 'flyingSword')) defense *= .5;
   if(pageAura(b,u,'astral'))defense*=.7;
@@ -2180,7 +2326,15 @@ function fx(b, type, u, e, text, extra = {}) {
   else if(isSlayer(u)){slayerAttack(b,u,target,power);}
   else if(u.id==='witchHunter'){hit(b,u,target,power*(target.shield>0?2:1));}
   else if (isMech(u)) { mechAttack(b,u,target,power); }
-  else if(u.id==='hydraulicRiveter'){armorStrip(target,.25);hit(b,u,target,power);}
+  else if (u.id === 'hydraulicRiveter') {
+   const seg = densestTrackSegment(b);
+   for (const e of living(b).filter(e => seg.tiles.includes(Math.floor(e.p) % 16))) {
+    e.shredUntil = Math.max(e.shredUntil || 0, b.time + 2);
+    e.shredAmount = Math.max(e.shredAmount || 0, 0.15);
+    hit(b, u, e, power);
+   }
+   fx(b, 'impact', u, target, 'RIVETER HYDRAULIC SWEEP');
+  }
   else if (u.id === 'matriarch') {
    const targets = living(b).slice(0, 3);
    for (const e of targets) {
@@ -2741,6 +2895,33 @@ function fx(b, type, u, e, text, extra = {}) {
       fx(b, 'slash', u, null, `STAFF STRIKE (TILES ${maxQ * 4}-${(maxQ + 1) * 4})`);
       interact(b, u, u, 'great-sage-staff', `Great Sage strikes staff down tiles ${maxQ * 4}-${(maxQ + 1) * 4} for 200% ATK damage`);
      }
+     else if (chType === 'berserker-cleave') {
+      const seg = densestTrackSegment(b);
+      for (const e of living(b).filter(e => seg.tiles.includes(Math.floor(e.p) % 16))) {
+       damage(b, e, rawAtk(u) * 2.0, u, 'ability');
+      }
+      fx(b, 'slash', u, null, 'BERSERKER COLOSSUS CLEAVE');
+      interact(b, u, u, 'berserker-cleave', `Berserker Greatsword Colossus: 200% ATK cleave across track segment [${seg.label}]`);
+     }
+     else if (chType === 'siege-bombardment') {
+      for (const e of living(b)) {
+       damage(b, e, rawAtk(u) * 2.0, u, 'ability');
+       e.shredUntil = Math.max(e.shredUntil || 0, b.time + 5);
+       e.shredAmount = Math.max(e.shredAmount || 0, 0.50);
+      }
+      fx(b, 'pulse', u, null, 'SIEGE TITAN BOMBARDMENT');
+      interact(b, u, u, 'siege-bombardment', 'Siege Fortress Dreadnought: 200% ATK on all 16 tiles + 50% armor shred for 5s');
+     }
+     else if (chType === 'juggernaut-hellfire') {
+      for (let t = 0; t < 16; t++) {
+       oilPool(b, u, t, 1, 1, 5);
+      }
+      for (const e of living(b)) {
+       status(b, e, 'slow', 5, 0.45, u);
+      }
+      fx(b, 'beam', u, null, 'JUGGERNAUT OIL HELLFIRE');
+      interact(b, u, u, 'juggernaut-hellfire', 'Vanguard Gunblade Juggernaut: Stacking oil burn on all 16 tiles (1 stack/s for 5s) + 45% slow for 5s');
+     }
     }
     continue;
    }
@@ -2895,7 +3076,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (token(u)) return;
   const src = b.run.roster.find(v => v.uid === u.uid);
   if (src) {
-   for (const k of ['id', 'syllables', 'scripts', 'pageRecipe', 'brainAbsorbed', 'arm', 'os', 'chrome', 'chromeAttackCharge', 'synthesis', 'essences', 'boundPair', 'trophyPoints', 'carvings', 'scrapIntake', 'qiAttackCharge', 'alloy', 'alloyAttacks', 'modules', 'titanUnlocked', 'permanentAtkBonus', 'permanentSpeed', 'upgradePath', 'lineage', 'lineageStacks', 'meals', 'qiGrowth', 'returns', 'witnesses', 'qi', 'realm', 'swordQi', 'apexQi', 'apexDread', 'souls', 'bladeKills', 'demonAtkBonus', 'dread', 'violations', 'blackouts', 'mirrorQueenBonusGranted', 'genome', 'strains', 'serumForged']) {
+   for (const k of ['id', 'syllables', 'scripts', 'pageRecipe', 'brainAbsorbed', 'arm', 'os', 'chrome', 'chromeAttackCharge', 'synthesis', 'essences', 'boundPair', 'trophyPoints', 'carvings', 'scrapIntake', 'savedWeapons', 'qiAttackCharge', 'alloy', 'alloyAttacks', 'modules', 'titanUnlocked', 'permanentAtkBonus', 'permanentSpeed', 'upgradePath', 'lineage', 'lineageStacks', 'meals', 'qiGrowth', 'returns', 'witnesses', 'qi', 'realm', 'swordQi', 'apexQi', 'apexDread', 'souls', 'bladeKills', 'demonAtkBonus', 'dread', 'violations', 'blackouts', 'mirrorQueenBonusGranted', 'genome', 'strains', 'serumForged']) {
     if (u[k] !== undefined) src[k] = u[k];
    }
   }
