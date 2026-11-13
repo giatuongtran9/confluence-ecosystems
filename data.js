@@ -202,7 +202,7 @@ const CARDS = [
     "scaling"
   ],
   "ecosystem": "Cultivation · Ascension",
-  "rules": "Base 12 ATK, 1.5s interval. Gains Qi from Spirit Grass, Lotus Blossoms, and Cauldron brewing, never from normal attacks. Breakthrough Pills advance at 30/85/175 Qi to Foundation (25 ATK, 1.4s), Golden Core (50 ATK, 1.3s), and Nascent Soul (85 ATK, 1.2s); a deployed Cauldron is required to spend pills. Above 175 Qi, each Qi grants +0.15 uncapped permanent ATK, including after Mythic ascension. At 200 Qi with an adjacent eligible relic on an Elite/Boss node, begin Heavenly Tribulation. Every 4s during the trial, the storm stuns the Nascent Soul for 0.5s and deals 25 damage to active enemies. Clear with zero leaks to consume the relic and awaken its Mythic; any leak or failed node removes both cards.",
+  "rules": "Base 12 ATK, 1.5s interval. Gains Qi from Spirit Grass, Lotus Blossoms, and Cauldron brewing, never from normal attacks. Breakthrough Pills advance at 30/85/175 Qi to Foundation (25 ATK, 1.4s), Golden Core (50 ATK, 1.3s), and Nascent Soul (85 ATK, 1.2s); a deployed Cauldron is required to spend pills. Qi stops at 200 until ascension; after Mythic ascension each Qi gained above 175 grants +0.15 uncapped permanent ATK. At 200 Qi with an adjacent eligible relic on an Elite/Boss node, begin Heavenly Tribulation. Every 4s during the trial, the storm stuns the Nascent Soul for 0.5s and deals 25 damage to active enemies. Clear with zero leaks to consume the relic and awaken its Mythic; any leak or failed node removes both cards.",
   "synergy": "Lotus Blossoms, Spirit Grass, Cauldron Pills, and Relics."
 },
   // 5. Ancient Flying Sword
@@ -642,7 +642,7 @@ const CARDS = [
     "contagion"
   ],
   "ecosystem": "Quái Đàm · Folklore Contagion",
-  "rules": "Attacks infect runners with Folklore Rumors. Each infected runner can spread once by contact to an uninfected runner within 0.45 track tiles. On death it can infect another within 1.5 tiles. A contact spread or infected death grants all deployed original Urban Legends +1 evolution progress; newly infected recipients take 20 true damage. Ordinary attacks grant no evolution progress. Each real contact spread and infected death grants 0.1 evolution progress to deployed Urban Legends; ordinary attacks grant none.",
+  "rules": "Attacks infect runners with Folklore Rumors. Each infected runner can spread once by contact to an uninfected runner within 0.45 track tiles. On death it can infect another within 1.5 tiles. Newly infected recipients take 20 true damage. Each real contact spread and infected death grants 0.1 evolution progress to deployed original Urban Legends; ordinary attacks grant none.",
   "synergy": "All 5 Autonomous Urban Legends."
 },
   // 17. Red Raincoat Specter
@@ -1657,7 +1657,7 @@ const FORMS = [
     "scaling"
   ],
   "evolvedFrom": "practitioner",
-  "rules": "Nascent Soul realm · 175 Qi. Base 85 ATK, 1.2s interval. Attacks the three highest-HP runners. Directly absorbs adjacent Lotus Blossoms for +5 Qi/+1 permanent ATK; a Cauldron brews them for +6 Qi/+2 ATK. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after Mythic ascension. At 200 Qi, an adjacent eligible relic starts the Elite/Boss Heavenly Tribulation; clear with zero leaks. Normal attacks grant no Qi.",
+  "rules": "Nascent Soul realm · 175 Qi. Base 85 ATK, 1.2s interval. Attacks the three highest-HP runners. Directly absorbs adjacent Lotus Blossoms for +5 Qi/+1 permanent ATK; a Cauldron brews them for +6 Qi/+2 ATK. Qi stops at 200 until ascension; after Mythic ascension each Qi gained above 175 grants +0.15 uncapped permanent ATK. At 200 Qi, an adjacent eligible relic starts the Elite/Boss Heavenly Tribulation; clear with zero leaks. Normal attacks grant no Qi.",
   "synergy": "Cultivation Relics and the full Practitioner lineage."
 },
   // 1. Sword Immortal

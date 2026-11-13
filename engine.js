@@ -872,18 +872,18 @@ const Game = (() => {
   if(modType==='blade'){
    hit(b,u,target,power*1.50);
    markScrapworkTrialHit(b,u,'blade',0,target);
-   if(modules.length>1)markScrapworkTrialHit(b,u,'blade',1,target);
+   if(modules.length>1)markScrapworkTrialHit(b,u,modules[1],1,target);
    fx(b,'slash',u,target,'SCRAP BLADE (150%)');
   }else if(modType==='flak'){
    const behind=living(b).filter(e=>e!==target&&e.p<=target.p).sort((a,z)=>z.p-a.p);
    hit(b,u,target,power);
    markScrapworkTrialHit(b,u,'flak',0,target);
-   if(modules.length>1)markScrapworkTrialHit(b,u,'flak',1,target);
+   if(modules.length>1)markScrapworkTrialHit(b,u,modules[1],1,target);
    behind.slice(0,3).forEach(e=>hit(b,u,e,power,true,{secondary:true}));
    fx(b,'pulse',u,target,'FLAK CLEAVE (4)');
   }else if(modType==='gunblade'){
    markScrapworkTrialHit(b,u,'gunblade',0,target);
-   if(modules.length>1)markScrapworkTrialHit(b,u,'gunblade',1,target);
+   if(modules.length>1)markScrapworkTrialHit(b,u,modules[1],1,target);
    if(u.attackCount%2===1){
     const runners=living(b).slice(0,3);
     for(const e of runners){
@@ -2818,6 +2818,11 @@ function fx(b, type, u, e, text, extra = {}) {
   const target = living(b).find(e => e !== source && !e.rumorInfected && Math.min(Math.abs(e.p - source.p), 16 - Math.abs(e.p - source.p)) <= (onDeath ? 1.5 : .45));
   if (!onDeath && !target) return;
   if (!onDeath) source.rumorContactSpread = true;
+  for (const legend of b.units.filter(v => !v.removed && !token(v) && isUrbanLegend(v))) {
+   legend.violations = Math.round(((legend.violations || 0) + 0.10) * 10000) / 10000;
+   updateUrbanLegendLineage(b, legend);
+   persist(b, legend);
+  }
   if (target) {
    target.rumorInfected = true;
    target.rumorOwner = source.rumorOwner;
