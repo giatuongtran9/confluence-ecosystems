@@ -1761,7 +1761,7 @@ function fx(b, type, u, e, text, extra = {}) {
   const freeSlot = [0, 1, 2, 3, 4, 5, 6, 7, 8].find(s => !slotOccupied(b, s) && adjacent(u, xy(s)));
   if (freeSlot == null) return;
   const helixId = ['chitinHelix', 'acidHelix', 'psionicHelix'][Math.floor(rand(b.run) * 3)];
-  spawnToken(b, u, helixId, freeSlot);
+  spawnToken(b, u, helixId, true);
  }
  function addGenome(b, u, n, strain = null) {
   if (!isXenoSpecimen(u) || isXenoApex(u)) return;
@@ -3095,6 +3095,7 @@ function fx(b, type, u, e, text, extra = {}) {
   tickArcane(b,dt);
   tickCyber(b,dt);
   tickCosmic(b,dt);
+  tickXeno(b,dt);
   for (const e of living(b)) {
    if ((e.boss || e.champion) && !e.enraged && b.time - e.bornAt >= 45) { e.enraged = true; e.frozenUntil = 0;  }
    e.bleeds = e.bleeds.filter(z => z.until > b.time); e.burns = (e.burns || []).filter(z => z.until > b.time); e.venoms = (e.venoms || []).filter(z => z.until > b.time); for (const dot of [...e.bleeds, ...e.burns, ...e.venoms]) damage(b, e, dot.dps * dt * (e.vulnerableUntil > b.time ? 1 + e.vulnerability : 1), b.units.find(u => u.uid === dot.owner) || null, 'dot'); if (e.gone) continue;
@@ -3474,6 +3475,7 @@ function fx(b, type, u, e, text, extra = {}) {
   arcaneExtras(b,u);
   cyberExtras(b,u,dt);
   cosmicExtras(b,u);
+  xenoExtras(b,u,dt);
   bindUrbanRelic(b, u);
   if (family(u) === 'nightBus' && b.time >= u.busSweepAt && living(b).length) {
    u.busSweepAt = b.time + 8;
