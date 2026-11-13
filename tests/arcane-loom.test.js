@@ -237,7 +237,7 @@ test('Phase 2: Support Structure Overhauls - Elemental Prism, Mana Battery, Astr
   const bLoom = battle(['pyroMage', 'astralLoom'], [0, 1]);
   enemy(bLoom);
   G.attack(bLoom, bLoom.units[0]);
-  assert.equal(bLoom.units[0].threshold.current, 3);
+  assert.equal(bLoom.units[0].threshold.current, 2);
 
   // 2. Elemental Prism: when adjacent mage casts at max gauge, grants all deployed elemental mages +2 ticks
   const bPrism = battle(['pyroMage', 'elementalPrism', 'hydroMage'], [0, 1, 4]);

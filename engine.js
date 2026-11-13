@@ -288,13 +288,25 @@ const Game = (() => {
   if(pair==='fire+water')trueHit(b,u,e,(e.maxHp-e.hp)*.15);
   if(pair==='earth+fire')armorStrip(e,1);
   if(pair==='fire+wind'){
-   const burns=(e.burns||[]).filter(d=>d.until>b.time&&!d.spreadCopy);
-   const distance=v=>Math.min(Math.abs(v.p-e.p),16-Math.abs(v.p-e.p));
-   for(const v of living(b).filter(v=>v!==e).sort((a,z)=>distance(a)-distance(z)).slice(0,2))v.burns.push(...burns.map(d=>({...d,spreadCopy:true})));
+   const burns=(e.burns||[]).filter(d=>d.until>b.time);
+   if(burns.length){
+    const behind=living(b).filter(other=>other!==e&&other.p<=e.p).sort((a,z)=>z.p-a.p).slice(0,2);
+    for(const v of behind){
+     for(const brn of burns){
+      dot(b,v,'burn',brn.dps,Math.max(1,brn.until-b.time),u);
+     }
+    }
+   }
   }
-  if(pair==='earth+water'){for(const slow of e.slows)if(slow.until>b.time)slow.until=b.time+Math.min(6,(slow.until-b.time)*2);status(b,e,'freeze',1.5,0,u);}
+  if(pair==='earth+water'){
+   e.drenchedUntil=b.time+3;
+   status(b,e,'slow',3,.30,u);
+   e.shredUntil=Math.max(e.shredUntil||0,b.time+3);
+   e.shredAmount=Math.max(e.shredAmount||0,0.20);
+   fx(b,'state',u,e,'DRENCHED · -20% ARMOR');
+  }
   if(pair==='water+wind')status(b,e,'freeze',2,0,u);
-  if(pair==='earth+wind')dot(b,e,'bleed',30,4,u);
+  if(pair==='earth+wind')dot(b,e,'bleed',Math.max(1,e.maxHp*.01),3,u);
   b.metrics.elementalReactions=(b.metrics.elementalReactions||0)+1;
   const trial=b.arcaneTrial;
   if(trial?.status==='active'&&trial.pair===pair&&(e.elite||e.champion||e.boss)&&!trial.featDone){
@@ -901,7 +913,7 @@ const Game = (() => {
  const STAIR_TRAP_CORNERS = [0, 4, 8, 12];
  function triggerWeiqiCorner(b, e, fromP, toP) {
   if (e.weiqiCornerStunned || toP <= fromP) return;
-  const crossed = [4, 8, 12].some(corner => fromP < corner && toP >= corner) || (fromP < 16 && toP >= 16);
+  const crossed = [4, 8, 12].some(corner => fromP < corner && toP >= corner);
   if (!crossed) return;
   const board = b.units.find(u => !u.removed && u.id === 'weiqiBoard');
   if (!board) return;
@@ -1253,8 +1265,9 @@ function fx(b, type, u, e, text, extra = {}) {
   } else if (isPractitioner(u)) {
    u.qi = previousQi + amount;
    processPractitionerBreakthroughs(b);
-   const excessQi = Math.max(0, (u.qi || 0) - Math.max(175, previousQi));
-   if (excessQi > 0) growth(b, u, excessQi * 0.15);
+   const realm = practitionerRealmForUnit(u);
+   const gate = realm < 3 ? practitionerThresholds[realm] : 200;
+   if ((u.qi || 0) > gate) u.qi = gate;
   } else {
    u.qi = previousQi + amount;
   }
@@ -1651,7 +1664,7 @@ function fx(b, type, u, e, text, extra = {}) {
   }
   for (const unit of b.units.filter(v => !v.removed && !token(v) && isPractitioner(v))) {
    const realm = practitionerRealmForUnit(unit); unit.realm = realm;
-   const gate = realm < 3 ? practitionerThresholds[realm] : Infinity;
+   const gate = realm < 3 ? practitionerThresholds[realm] : 200;
    if ((unit.qi || 0) > gate) unit.qi = gate;
    persist(b, unit);
   }
@@ -2182,7 +2195,7 @@ function fx(b, type, u, e, text, extra = {}) {
  function crit(b, u, e = null) {
   if(u.id==='razorPhantom')return 1;
   const lt = lineageTierIds[u.id]?.tier || 0;
-  const lineageCrit = u.lineage === 'tiger' ? (lt >= 4 ? .65 : lt >= 3 ? .40 : lt >= 1 ? .15 : 0) : u.lineage === 'monkey' && lt >= 1 ? .10 : 0;
+  const lineageCrit = u.lineage === 'tiger' ? (lt >= 4 ? .65 : lt >= 3 ? .40 : lt >= 1 ? .15 : 0) : 0;
   if (u.id === 'livingTaboo' && b.curfewUntil > b.time) return 1.0;
   if (family(u) === 'mannequin' && allies(b, u).some(v => v.state !== 'active')) return 1.0;
   if (u.critGift) return 1.0;
@@ -2280,7 +2293,8 @@ function fx(b, type, u, e, text, extra = {}) {
     else failUrbanContainmentTrial(b, `Subject Zero defeated with only ${e.ruleMarks || 0}/5 Violation Marks`);
    }
    salvage(b);
-   if (e.burns && e.burns.length > 0) {
+   const hasPhoenixSpread = b.units.some(v => !v.removed && (v.id === 'phoenixCubT3' || v.id === 'phoenixCubApex'));
+   if (hasPhoenixSpread && e.burns && e.burns.length > 0) {
     const behind = living(b).filter(other => other !== e && other.p <= e.p).sort((a, z) => z.p - a.p)[0];
     if (behind) {
      for (const brn of e.burns) {
@@ -2306,16 +2320,7 @@ function fx(b, type, u, e, text, extra = {}) {
    }
    startHeavenlyTrial(b);
 
-   // Soul-Reaping Heavenly Demon perimeter detonation
-   const demon = b.units.find(v => !v.removed && v.id === 'soulReapingDemon');
-   if (demon) {
-    const kp = track(e.p);
-    for (const other of living(b)) {
-     if (Math.hypot(track(other.p).x - kp.x, track(other.p).y - kp.y) <= 1.5) {
-      damage(b, other, 160 * mod(b.run, 'damage'), demon, 'ability');
-     }
-    }
-   }
+
 
   }
   if(e.hp>0)visceral(b,e);
@@ -2417,7 +2422,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (u.id === 'allSeeingOverseer' && !living(b).some(e => e.swift || e.enraged || e.speedBoostUntil > b.time || e.speed > 0.40)) return false;
   if (isXeno(u)) { u.attackCount++; record(b, u).attacks++; u.flash = .18; xenoAttack(b, u, target, atk(b, u)); return true; }
   u.attackCount++; record(b, u).attacks++; u.flash = .18; let power = atk(b, u);
-  if (neighbors(b, u, false).some(v => !v.removed && v.id === 'astralLoom')) tick(b, u, 2);
+  if (neighbors(b, u, false).some(v => !v.removed && v.id === 'astralLoom')) tick(b, u, 1);
   for (const v of allies(b, u)) {
   }
 
@@ -2813,14 +2818,12 @@ function fx(b, type, u, e, text, extra = {}) {
   }
   else if (u.id === 'railgun') { const has = sensor(b, u); if (has) interact(b, support(b, 'sensor'), u, 'railgun', 'Sensor → five-target volley + knockback'); for (const e of living(b).slice(0, has ? 5 : 3)) { hit(b, u, e, power); if (has) warp(b, e, 1, u) } fx(b, 'beam', u, target, ''); }
   else if(u.id==='executioner'){hit(b,u,target,power*(target.hp/target.maxHp<.35?4:1));}
-  else if (u.id === 'matriarch') { for (const e of living(b).slice(0, 3)) { hit(b, u, e, power); dot(b, e, 'bleed', 6, 4, u); } }
   else {
    if (species(u) === 'hound' && target.hp / target.maxHp < .3) power *= 2;
    if (u.id === 'executioner') { if (target.hp / target.maxHp < .25) power *= 4; else if ((target.permanentShred || 0) > 0 || target.nanoUntil > b.time || [...(target.bleeds || []), ...(target.burns || [])].some(d => d.until > b.time)) power *= 2; }
    if(u.id==='leech'&&((target.bleeds||[]).some(d=>d.until>b.time)||neighbors(b,u).some(trophyFamily)))power*=2.5;
    if (species(u) === 'larva' && u.attackCount % 5 === 0) power *= 2;
    hit(b, u, target, power);
-   if (u.id === 'matriarch') dot(b, target, 'bleed', 6, 4, u);
    if (species(u) === 'larva') status(b, target, 'slow', 3, .2, u);
    if (species(u) === 'mass') status(b, target, 'slow', 2, .2, u);
   }
@@ -3251,7 +3254,7 @@ function fx(b, type, u, e, text, extra = {}) {
     const ev = b.events.shift();
     for (const u of [...b.units].filter(v => !v.removed && !token(v))) {
      if (u.id === 'herald' && ev.type === 'consumed' && ev.consumer===u) { u.madnessPower = (u.madnessPower || 0) + 100; interact(b, ev.consumer, u, 'madness-feed', 'consumption → +100 next Madness damage'); }
-     if (u.id === 'broodkeeper' && support(b, 'broodkeeper') === u && ev.type === 'consumed' && BLOODLINE_FODDER.includes(species(ev.unit))) {
+     if (u.id === 'broodkeeper' && ev.type === 'consumed' && BLOODLINE_FODDER.includes(species(ev.unit))) {
       const preySpecies = species(ev.unit);
       const cub = b.units.find(v => !v.removed && family(v) === 'cub');
       const spawnParent = cub || u;
@@ -3272,7 +3275,7 @@ function fx(b, type, u, e, text, extra = {}) {
       }
      }
      if (u.id === 'cauldron' && support(b, 'cauldron') === u && ['consumed', 'breakthrough', 'refined'].includes(ev.type) && ev.unit !== u && b.time >= (u.elixirAt || 0)) { u.elixirs = (u.elixirs || 0) + 1; u.elixirAt = b.time + 8; for (const v of b.units.filter(v => !v.removed)) growth(b, v, 1); interact(b, u, ev.consumer || ev.unit, 'elixir', 'Elixir: +1 team ATK; 8s cooldown'); }
-     if (u.id === 'altar' && support(b, 'altar') === u && (ev.type === 'consumed' || ev.type === 'kill' && ev.bleeding)) for (const v of neighbors(b, u).filter(v => !token(v))) if (grantGrowth(b, v, 2)) interact(b, u, v, 'altar', 'ritual → +2 permanent ATK');
+     if (u.id === 'altar' && (ev.type === 'consumed' || ev.type === 'kill' && ev.bleeding)) for (const v of neighbors(b, u).filter(v => !token(v))) if (grantGrowth(b, v, 2)) interact(b, u, v, 'altar', 'ritual → +2 permanent ATK');
     }
    }
   } finally { b.processingEvents = false }
@@ -3669,7 +3672,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (abilityGauge(u) && u.threshold.current >= u.threshold.max) tick(b, u, 0);
  }
 
- return { breakthroughPills: b => Math.max(0, Math.min(3, Math.floor(b?.run?.breakthroughPills || 0))), chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, isXenoApex, isSciFi, xenoTrialCandidate, startXenoTrial, failXenoTrial, passXenoTrial, tickXenoTrial, addWeakpoint, extractHelix, addGenome, checkXenoMetamorphosis, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, cosmicTrialCandidate, startCosmicTrial, cosmicTrialProof, failCosmicTrial, passCosmicTrial, tickCosmicTrial, updateIdol, dropPage, addSyllables, forgeGrimoire, decipherPage, cosmicPanic, cosmicStatus, cosmicReward, cosmicDeath, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, cyberTrialCandidate, startCyberTrial, cyberTrialProof, failCyberTrial, passCyberTrial, tickCyberTrial, augmented, hasAccess, ramCapacity, berserkActive, updateCyber, installChrome, addChromeAttack, addRAM, cyberPoison, uploadHack, cyberDeath, cyberZone, clearSprint, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, arcanePair, isApprentice, isArchon, isElemental, arcaneGauge, bestPair, updateApprentice, receiveEssence, startArcaneTrial, failArcaneTrial, passArcaneTrial, tickArcaneTrial, startScrapworkTrial, scrapworkTrialCandidate, markScrapworkTrialHit, failScrapworkTrial, passScrapworkTrial, tickScrapworkTrial, storeOverflow, elementalLinks, arcaneReaction, elementalSpell, arcaneZone, archonAttack, arcaneExtras, tickArcane, arcaneKill, HUNT_APEX, isSlayer, huntTrialCandidate, startHuntTrial, failHuntTrial, passHuntTrial, tickHuntTrial, isHunter, priority, trophyFamily, huntAura, executeThreshold, wallOf, huntArmor, brandQuarry, updateSlayer, trophyPoints, harvestTrophy, forgeHuntRelic, carveTrophy, huntExtras, visceral, slayerAttack, isMech, isMechanical, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, inArc, oilPool, tickOil, mechAttack, addQi, addDread, acceptsQi, acceptsDread, isCultivationApex, isUrbanAuthority, bindUrbanRelic, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, passBloodlineTrial, tickBloodlineTrial, startUrbanContainmentTrial, failUrbanContainmentTrial, passUrbanContainmentTrial, tickUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, resolveUrbanLegendMerger, updateUrbanLegendLineage, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, processPractitionerBreakthroughs, practitionerRealmForQi, isPractitioner, isCultivationRelic, isBloodlineRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, breaksLegendNaturalRule, markNaturalBreach, URBAN_LEGEND_MARK_NAMES, cornerSection, resolveAnimArchetype, resolveVfxKind, triggerShowstopper };
+ return { breakthroughPills: b => Math.max(0, Math.min(3, Math.floor(b?.run?.breakthroughPills || 0))), chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, isXenoApex, isSciFi, xenoTrialCandidate, startXenoTrial, failXenoTrial, passXenoTrial, tickXenoTrial, addWeakpoint, extractHelix, addGenome, checkXenoMetamorphosis, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, cosmicTrialCandidate, startCosmicTrial, cosmicTrialProof, failCosmicTrial, passCosmicTrial, tickCosmicTrial, updateIdol, dropPage, addSyllables, forgeGrimoire, decipherPage, cosmicPanic, cosmicStatus, cosmicReward, cosmicDeath, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, cyberTrialCandidate, startCyberTrial, cyberTrialProof, failCyberTrial, passCyberTrial, tickCyberTrial, augmented, hasAccess, ramCapacity, berserkActive, updateCyber, installChrome, addChromeAttack, addRAM, cyberPoison, uploadHack, cyberDeath, cyberZone, clearSprint, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, arcanePair, isApprentice, isArchon, isElemental, arcaneGauge, bestPair, updateApprentice, receiveEssence, startArcaneTrial, failArcaneTrial, passArcaneTrial, tickArcaneTrial, startScrapworkTrial, scrapworkTrialCandidate, markScrapworkTrialHit, failScrapworkTrial, passScrapworkTrial, tickScrapworkTrial, storeOverflow, elementalLinks, arcaneReaction, elementalSpell, arcaneZone, archonAttack, arcaneExtras, tickArcane, arcaneKill, HUNT_APEX, isSlayer, huntTrialCandidate, startHuntTrial, failHuntTrial, passHuntTrial, tickHuntTrial, isHunter, priority, trophyFamily, huntAura, executeThreshold, wallOf, huntArmor, brandQuarry, updateSlayer, trophyPoints, harvestTrophy, forgeHuntRelic, carveTrophy, huntExtras, visceral, slayerAttack, isMech, isMechanical, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, inArc, oilPool, tickOil, mechAttack, addQi, addDread, acceptsQi, acceptsDread, isCultivationApex, isUrbanAuthority, bindUrbanRelic, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, abilityGauge, persist, event, flushEvents, evolve, evolutionProgress, preyEligible, consume, devour, spawnToken, summon, teamCharge, dot, warp, extras, growth, grantGrowth, teamPower, highestGrowth, mod, tier, rewardWeights, allies, support, trialFor, encounterFor, ENCOUNTERS, interact, record, report, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, flank, living, tick, trigger, status, flip, attack, damage, hit, downtime, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, passBloodlineTrial, tickBloodlineTrial, startUrbanContainmentTrial, failUrbanContainmentTrial, passUrbanContainmentTrial, tickUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, resolveUrbanLegendMerger, updateUrbanLegendLineage, wavePlan, spawn, favored, rand, shuffle, finish, updatePractitionerRealm, processPractitionerBreakthroughs, practitionerRealmForQi, isPractitioner, isCultivationRelic, isBloodlineRelic, isUrbanRelic, isUrbanInvestigator, isUrbanLegend, urbanInvestigatorRealmForDread, addRuleMark, triggerBlackout, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, breaksLegendNaturalRule, markNaturalBreach, URBAN_LEGEND_MARK_NAMES, cornerSection, resolveAnimArchetype, resolveVfxKind, triggerShowstopper, triggerWeiqiCorner };
 })();
 if (typeof module !== 'undefined') module.exports = Game;
 

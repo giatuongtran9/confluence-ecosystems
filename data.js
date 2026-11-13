@@ -2900,7 +2900,7 @@ FORMS.push({
     "elemental"
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
-  "rules": "Normal attack creates a 2s molten fissure on the hit tile, inflicting 1 Burn stack per second on enemies running across it. Every 10th attack: channels 1.2s to deal 150% ATK across all 16 tiles, inflict 1 Burn stack, and create a 16-tile Molten Fissure for 5s (1 burn/s). Patronage: When this Archon is deployed, Pyromancer and Geomancer max-gauge spells gain only each other's base effect, without Mastery (Pyromancer inflicts 1 Burn stack; Geomancer pierces 20% armor).",
+  "rules": "Normal attack creates a 2s molten fissure on the hit tile, inflicting 1 Burn stack per second on enemies running across it. Every 10th attack: channels 1.2s to deal 150% ATK across all 16 tiles, inflict 1 Burn stack, and create a 16-tile Molten Fissure for 5s (1 burn/s). Reaction (Earth + Fire): Completely shreds target armor (100% strip). Patronage: When this Archon is deployed, Pyromancer and Geomancer max-gauge spells gain both elemental effects (Pyromancer inflicts 1 Burn stack and pierces 20% armor; Geomancer pierces 20% armor and inflicts 1 Burn stack).",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "magmaLord",
   "evolvedFrom": "elementalApprentice",
@@ -2920,7 +2920,7 @@ FORMS.push({
     "elemental"
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
-  "rules": "Normal attack hits 1 quadrant (4 tiles) with 20% chance of 2-tile warp back. Every 10th attack: channels 1.2s to summon a counter-clockwise tornado across all 16 tiles dealing 150% ATK, pushing enemies 3 tiles back, and inflicting 1 Burn stack. Patronage: When this Archon is deployed, Pyromancer and Aeromancer max-gauge spells gain only each other's base effect, without Mastery (Pyromancer inflicts 1 Burn stack; Aeromancer hits 4 targets and grants adjacent allies +20% haste for 3s).",
+  "rules": "Normal attack hits 1 quadrant (4 tiles) with 20% chance of 2-tile warp back. Every 10th attack: channels 1.2s to summon a counter-clockwise tornado across all 16 tiles dealing 150% ATK, pushing enemies 3 tiles back, and inflicting 1 Burn stack. Reaction (Fire + Wind): Spreads all target Burn stacks to up to 2 runners behind it. Patronage: When this Archon is deployed, Pyromancer and Aeromancer max-gauge spells gain both elemental effects (Pyromancer inflicts 1 Burn stack, hits 4 targets, and grants adjacent allies +20% haste for 3s; Aeromancer hits 4 targets, grants adjacent allies +20% haste for 3s, and inflicts 1 Burn stack).",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "tempestArchon",
   "evolvedFrom": "elementalApprentice",
@@ -2940,7 +2940,7 @@ FORMS.push({
     "elemental"
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
-  "rules": "Normal attack hits 3 enemies; if Drenched, bursts 10% missing HP (once per enemy). Every 10th attack: channels 1.2s to coat all 16 tiles in Vapor Mist for 5s (5% max HP/s true damage). Patronage: When this Archon is deployed, Pyromancer and Hydromancer max-gauge spells gain only each other's base effect, without Mastery (Pyromancer applies Drenched [30% slow for 3s]; Hydromancer inflicts 1 Burn stack).",
+  "rules": "Normal attack hits 3 enemies; if Drenched, bursts 10% missing HP (once per enemy). Every 10th attack: channels 1.2s to coat all 16 tiles in Vapor Mist for 5s (5% max HP/s true damage). Reaction (Fire + Water): Deals 15% missing HP true damage. Patronage: When this Archon is deployed, Pyromancer and Hydromancer max-gauge spells gain both elemental effects (Pyromancer applies Drenched [30% slow for 3s] and inflicts 1 Burn stack; Hydromancer inflicts 1 Burn stack and applies Drenched [30% slow for 3s]).",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "steamSovereign",
   "evolvedFrom": "elementalApprentice",
@@ -2960,7 +2960,7 @@ FORMS.push({
     "elemental"
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
-  "rules": "Normal attack converts one random 4-tile quadrant into Primordial Swamp for the battle (2% max HP/s + 45% slow). Every 10th attack: channels 1.2s to stun for 2s and drench for 4s across all 16 tiles. Patronage: When this Archon is deployed, Hydromancer and Geomancer max-gauge spells gain only each other's base effect, without Mastery (Hydromancer pierces 20% armor; Geomancer applies Drenched [30% slow for 3s]).",
+  "rules": "Normal attack converts one random 4-tile quadrant into Primordial Swamp for the battle (2% max HP/s + 45% slow). Every 10th attack: channels 1.2s to stun for 2s and drench for 4s across all 16 tiles. Reaction (Earth + Water): Target is Drenched (30% slow) and has armor reduced by 20% for 3s. Patronage: When this Archon is deployed, Hydromancer and Geomancer max-gauge spells gain both elemental effects (Hydromancer pierces 20% armor and applies Drenched [30% slow for 3s]; Geomancer applies Drenched [30% slow for 3s] and pierces 20% armor).",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "quagmireColossus",
   "evolvedFrom": "elementalApprentice",
@@ -2980,7 +2980,7 @@ FORMS.push({
     "elemental"
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
-  "rules": "Normal attack hits 3 targets and applies Drenched (30% slow for 3s). Every 10th attack: channels 1.2s to unleash a 16-tile Blizzard for 150% ATK and 2s freeze (3s freeze + 50% armor shred if Drenched). Patronage: When this Archon is deployed, Hydromancer and Aeromancer max-gauge spells gain only each other's base effect, without Mastery (Hydromancer hits 4 targets and grants adjacent allies +20% haste for 3s; Aeromancer applies Drenched [30% slow for 3s]).",
+  "rules": "Normal attack hits 3 targets and applies Drenched (30% slow for 3s). Every 10th attack: channels 1.2s to unleash a 16-tile Blizzard for 150% ATK and 2s freeze (3s freeze + 50% armor shred if Drenched). Reaction (Water + Wind): Freezes target for 2s. Patronage: When this Archon is deployed, Hydromancer and Aeromancer max-gauge spells gain both elemental effects (Hydromancer hits 4 targets, grants adjacent allies +20% haste for 3s, and applies Drenched [30% slow for 3s]; Aeromancer applies Drenched [30% slow for 3s], hits 4 targets, and grants adjacent allies +20% haste for 3s).",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "blizzardArchon",
   "evolvedFrom": "elementalApprentice",
@@ -3000,7 +3000,7 @@ FORMS.push({
     "elemental"
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
-  "rules": "Normal attack pierces 5 targets with 10% falloff per hit (100%/90%/80%/70%/60%). Every 10th attack: enters a 10s channel mode (disabling normal attacks), stripping 10% base armor/s and dealing 10% ATK + 10% missing HP every second across all 16 tiles. Patronage: When this Archon is deployed, Geomancer and Aeromancer max-gauge spells gain only each other's base effect, without Mastery (Geomancer hits 4 targets and grants adjacent allies +20% haste for 3s; Aeromancer pierces 20% armor).",
+  "rules": "Normal attack pierces 5 targets with 10% falloff per hit (100%/90%/80%/70%/60%). Every 10th attack: enters a 10s channel mode (disabling normal attacks), stripping 10% base armor/s and dealing 10% ATK + 10% missing HP every second across all 16 tiles. Reaction (Earth + Wind): Inflicts 1 Bleed stack (1% enemy HP/s for 3s). Patronage: When this Archon is deployed, Geomancer and Aeromancer max-gauge spells gain both elemental effects (Geomancer hits 4 targets, grants adjacent allies +20% haste for 3s, and pierces 20% armor; Aeromancer pierces 20% armor, hits 4 targets, and grants adjacent allies +20% haste for 3s).",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "sandstormTitan",
   "evolvedFrom": "elementalApprentice",
