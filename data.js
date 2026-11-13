@@ -361,7 +361,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["attacker", "investigator", "urban-scaling"],
     "ecosystem": "Quái Đàm · Anomaly Log",
-    "rules": "Attacks add 1 Violation Mark to surviving targets, up to 5 per runner. Each newly applied team mark grants +1 Dread . Advances at 25/70/140 Dread. Rule Enforcer binds an adjacent Cursed Containment Relic immediately, including during battle. After ascension, every 30 newly earned Dread grants +2 permanent ATK; old Dread is not reused.",
+    "rules": "Attacks add 1 Violation Mark to surviving targets, up to 5 per runner. Each newly applied team mark grants +1 Dread . Advances at 25/70/140 Dread. At Rule Enforcer rank, an adjacent Cursed Containment Relic becomes the focus of the Subject Zero trial on an Elite/Boss node. After ascension, every 30 newly earned Dread grants +2 permanent ATK; old Dread is not reused.",
     "synergy": "Incident Dossiers, Forensic Coroner, and Cursed Containment Relics."
   },
   // 2. Security Monitor (Architecture A Producer)
