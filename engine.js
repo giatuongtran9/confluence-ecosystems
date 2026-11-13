@@ -268,11 +268,16 @@ const Game = (() => {
  function elementalLinks(b,u){
   const element=card(u.id).element;
   if(element)for(const v of neighbors(b,u))receiveEssence(b,v,element);
-  const prism=neighbors(b,u).find(v=>v.id==='elementalPrism'&&b.time>=(v.prismAt||0));
-  if(prism){
-   prism.prismAt=b.time+1;
-   for(const v of b.units.filter(v=>!v.removed&&isElemental(v)&&abilityGauge(v)))tick(b,v,2,prism);
-   interact(b,u,prism,'refraction','PRISM · +2 ticks to all deployed elemental mages');
+  const prisms=neighbors(b,u).filter(v=>v.id==='elementalPrism');
+  // No time-based cooldown. Prevent only recursive Prism-created casts from feeding themselves forever.
+  if(prisms.length&&!b.prismPulseDepth){
+   b.prismPulseDepth=1;
+   try{
+    for(const prism of prisms){
+     for(const v of b.units.filter(v=>!v.removed&&isElemental(v)&&abilityGauge(v)))tick(b,v,2,prism);
+     interact(b,u,prism,'refraction','PRISM · +2 ticks to all deployed elemental mages');
+    }
+   }finally{b.prismPulseDepth=0;}
   }
  }
  function arcaneReaction(b,u,e,element){
@@ -301,42 +306,41 @@ const Game = (() => {
   fx(b,'spell',u,e,pair.toUpperCase());
  }
  function elementalSpell(b,u){
-  const target=living(b)[0];if(!target)return;
-  const element=card(u.id).element,p=rawAtk(u);
+  const first=living(b)[0];if(!first)return;
+  const element=card(u.id).element;
   u.mastery=(u.mastery||0)+1;
   u.permanentAtkBonus=(u.permanentAtkBonus||0)+1;
   persist(b,u);
   if(!element){
    const points=u.synthesis?.[u.lockedPair||bestPair(u)]||0;
-   for(const e of living(b).slice(0,4))hit(b,u,e,120+6*p+8*points,false);
+   const count=Math.min(5,1+Math.floor(points/20));
+   for(const e of living(b).slice(0,count))hit(b,u,e,atk(b,u),false);
   }else{
-   if(element==='fire'){
-    const burns=1+Math.floor((u.mastery||0)/10);
-    hit(b,u,target,200+8*p,false);
-    for(let i=0;i<burns;i++)dot(b,target,'burn',Math.max(1,target.maxHp*0.01),1,u);
-    arcaneReaction(b,u,target,'fire');
-   }else if(element==='water'){
-    const targets=living(b).slice(0,4);
-    const dmg=atk(b,u)*(1+(u.mastery||0)*0.005);
-    for(const e of targets){
-     hit(b,u,e,dmg,false);
-     e.drenchedUntil=b.time+3;
-     status(b,e,'slow',3,0.30,u);
-     arcaneReaction(b,u,e,'water');
+   const mastered=u.mastery||0;
+   const sharedElements=Object.keys(ARCANE_PAIRS).filter(pair=>{
+    const [a,z]=pair.split('+');
+    return [a,z].includes(element)&&b.units.some(v=>!v.removed&&v.id===ARCANE_PAIRS[pair]);
+   }).map(pair=>pair.split('+').find(e=>e!==element));
+   let targets=element==='water'||element==='wind'?living(b).slice(0,4):[first];
+   if(sharedElements.includes('wind')&&['fire','water','earth'].includes(element))targets=living(b).slice(0,4);
+   for(const e of targets){
+    const multiplier=element==='water'?1+mastered*.005:1;
+    hit(b,u,e,atk(b,u)*multiplier,false);
+    if(element==='fire'){
+     const stacks=1+Math.floor(mastered/10);
+     for(let i=0;i<stacks;i++)dot(b,e,'burn',Math.max(1,e.maxHp*.01),1,u);
     }
-   }else if(element==='earth'){
-    const pierce=Math.min(1,0.20+Math.floor((u.mastery||0)/5)*0.01);
-    hit(b,u,target,250+10*p,false,{armorFactor:Math.max(0,1-pierce)});
-    status(b,target,'stun',1,0,u);
-    arcaneReaction(b,u,target,'earth');
-   }else if(element==='wind'){
-    const targets=living(b).slice(0,4);
-    for(const e of targets){
-     hit(b,u,e,100+5*p,false);
-     warp(b,e,2,u);
-     arcaneReaction(b,u,e,'wind');
+    if(element==='water'){e.drenchedUntil=b.time+3;status(b,e,'slow',3,.30,u);}
+    if(element==='earth')armorStrip(e,Math.min(1,.20+Math.floor(mastered/5)*.01));
+    if(element==='wind')for(const v of neighbors(b,u))v.arcaneHasteUntil=b.time+3;
+    // Archon Patronage copies only the other element's base spell effect, not its Mastery scaling.
+    for(const sharedElement of sharedElements){
+     if(sharedElement==='fire')dot(b,e,'burn',Math.max(1,e.maxHp*.01),1,u);
+     if(sharedElement==='water'){e.drenchedUntil=b.time+3;status(b,e,'slow',3,.30,u);}
+     if(sharedElement==='earth')armorStrip(e,.20);
+     if(sharedElement==='wind')for(const v of neighbors(b,u))v.arcaneHasteUntil=b.time+3;
     }
-    for(const v of neighbors(b,u))v.arcaneHasteUntil=b.time+3;
+    arcaneReaction(b,u,e,element);
    }
   }
   elementalLinks(b,u);
@@ -350,7 +354,8 @@ const Game = (() => {
   if(u.channeling)return;
   if(u.id==='magmaLord'){
    hit(b,u,target,power);
-   arcaneZone(b,u,'magma',target.p,2,60);
+   arcaneZone(b,u,'magma',target.p,2,0);
+   b.arcaneZones.at(-1).nextBurnAt=b.time+1;
   }else if(u.id==='tempestArchon'){
    const quadStart=wallOf(target)*4;
    for(const e of living(b).filter(e=>Math.floor(e.p)%16>=quadStart&&Math.floor(e.p)%16<quadStart+4)){
@@ -402,52 +407,42 @@ const Game = (() => {
     fx(b,'spell',u,target,'+4 TICKS');
    }
   }
-  if(u.id==='blizzardArchon'&&b.time>=(u.blizzardAt??5)){
-   u.blizzardAt=b.time+5;
-   for(const e of living(b)){if((e.boss||e.champion)&&e.enraged)continue;status(b,e,'freeze',2.5,0,u);e.iceShatters??=[];e.iceShatters.push({owner:u.uid,at:b.time+((e.boss||e.champion)?1.25:2.5)});}
-  }
-  if(u.id==='sandstormTitan'&&b.time>=(u.sandAt??1)){
-   u.sandAt=b.time+1;
-   for(const e of living(b)){armorStrip(e,Math.min(1,(e.permanentShred||0)+.1));if(e.defense<=1e-9){e.bleeds=e.bleeds.filter(d=>d.sandOwner!==u.uid);dot(b,e,'bleed',40,4,u);e.bleeds.at(-1).sandOwner=u.uid;}}
-  }
  }
  function tickArcane(b,dt){
   b.arcaneZones=(b.arcaneZones||[]).filter(z=>z.until>b.time&&b.units.some(u=>!u.removed&&u.uid===z.owner));
   for(const z of b.arcaneZones){
-   const u=b.units.find(u=>u.uid===z.owner);
-   if(!u)continue;
+   const u=b.units.find(u=>u.uid===z.owner);if(!u)continue;
    if(z.type==='magmaFissure16'){
-    z.burnTimer=(z.burnTimer||0)+dt;
-    if(z.burnTimer>=1.0){
-     z.burnTimer=0;
-     for(const e of living(b))dot(b,e,'burn',Math.max(1,e.maxHp*0.01),1,u);
+    if(b.time>=(z.nextBurnAt??Infinity)){
+     for(const e of living(b))dot(b,e,'burn',Math.max(1,e.maxHp*.01),1,u);
+     z.nextBurnAt=b.time+1;
     }
    }else if(z.type==='vaporMist'){
-    for(const e of living(b))damage(b,e,e.maxHp*0.05*dt,u,'ability',true);
+    for(const e of living(b))damage(b,e,e.maxHp*.05*dt,u,'ability',true);
    }else if(z.type==='swamp'){
     const quadStart=z.wall*4;
     for(const e of living(b).filter(e=>{const t=Math.floor(e.p)%16;return t>=quadStart&&t<quadStart+4;})){
-     damage(b,e,e.maxHp*0.02*dt,u,'ability',true);
+     damage(b,e,e.maxHp*.02*dt,u,'ability',true);
      let slow=e.slows.find(s=>s.swampOwner===u.uid);
-     if(slow)slow.until=b.time+0.2;
-     else{status(b,e,'slow',0.2,0.45,u);slow=e.slows.find(s=>s.sourceUid===u.uid);if(slow)slow.swampOwner=u.uid;}
+     if(slow)slow.until=b.time+.2;
+     else{status(b,e,'slow',.2,.45,u);slow=e.slows.find(s=>s.sourceUid===u.uid);if(slow)slow.swampOwner=u.uid;}
     }
    }else if(z.type==='magma'){
-    for(const e of living(b).filter(e=>Math.floor(e.p)%16===Math.floor(z.p)%16)){
-     trueHit(b,u,e,z.dps*dt);
+    if(b.time>=(z.nextBurnAt??Infinity)){
+     for(const e of living(b).filter(e=>Math.floor(e.p)%16===Math.floor(z.p)%16))dot(b,e,'burn',Math.max(1,e.maxHp*.01),1,u);
+     z.nextBurnAt=b.time+1;
     }
    }
   }
   b.cyclones=(b.cyclones||[]).filter(c=>c.until>b.time&&b.units.some(u=>!u.removed&&u.uid===c.owner));
   for(const c of b.cyclones){const u=b.units.find(u=>u.uid===c.owner);c.p=(c.p+2*dt)%16;
    for(const e of living(b)){const dist=Math.min(Math.abs(e.p-c.p),16-Math.abs(e.p-c.p));if(dist<1&&!e.boss&&!e.champion&&!c.caught.includes(e.uid)&&c.caught.length<6)c.caught.push(e.uid);
-    if(c.caught.includes(e.uid)){// Carry never wraps a runner past the exit or moves a boss.
-     e.p=Math.min(15.95,e.p+2*dt);trueHit(b,u,e,35*dt);
-    }else if(dist<1)trueHit(b,u,e,35*dt);
+    if(c.caught.includes(e.uid)){e.p=Math.min(15.95,e.p+2*dt);trueHit(b,u,e,35*dt);}
+    else if(dist<1)trueHit(b,u,e,35*dt);
    }
   }
  }
- function arcaneKill(b){for(const u of b.units.filter(u=>!u.removed&&u.id==='tempestArchon')){u.tempestKills=(u.tempestKills||0)+1;if(u.tempestKills%10===0){u.permanentSpeed=(u.permanentSpeed||0)+.05;persist(b,u);}}}
+ function arcaneKill(b){}
 
  // Eclipse Hunt: trophies occupy real cells; only forged relics survive battles.
  const HUNT_APEX=['dragonSlayer','witcherGrandmaster','bloodDrunkHunter'];
@@ -2159,7 +2154,6 @@ function fx(b, type, u, e, text, extra = {}) {
   if (neighbors(b, u, false).some(v => v.id === 'mountainScroll')) m *= 1.15;
   if (neighbors(b, u, false).some(v => !v.removed && v.id === 'dragonPearl')) m *= 1.20;
   if (card(u.id).genre === 'Haunted' && b.curfewUntil > b.time) m *= 1.2;
-  if (['pyroMage', 'geoMage'].includes(u.id) && b.units.some(v => !v.removed && v.id === 'magmaLord')) m += 1.0;
   return (rawAtk(u) + (u.id === 'railgun' ? highestGrowth(b, u) * (b.units.some(v => !v.removed && v.id === 'impalerApex') ? 2.5 : 2) : 0)) * m * mod(b.run, 'damage') * mod(b.run,'basicDamage')
  }
 
@@ -2180,8 +2174,6 @@ function fx(b, type, u, e, text, extra = {}) {
   n += u.arcaneHasteUntil>b.time?.2:0;
   if (neighbors(b, u, false).some(v => !v.removed && v.id === 'astralLoom')) n += 0.20;
   if (u.id === 'aeroMage') n += Math.floor((u.mastery || 0) / 5) * 0.01;
-  if (['pyroMage', 'aeroMage'].includes(u.id) && b.units.some(v => !v.removed && v.id === 'tempestArchon')) n += 0.30;
-  if (['hydroMage', 'aeroMage'].includes(u.id) && b.units.some(v => !v.removed && v.id === 'blizzardArchon')) n += 0.30;
   n += (huntAura(b,u,'beast')?.2:0)+(relicAura(b,u,'beastRelic')?.25:0)+(u.huntFrenzy||0);
   return n * (isCyber(u)&&!cyberApex(u)&&u.sandyUntil>b.time?2.5:1) * (1 + (u.permanentSpeed || 0)) * (u.overclock ? 1 + 2 * mod(b.run, 'buffPower') : 1) * mod(b.run, 'speed')
  }
@@ -2432,60 +2424,10 @@ function fx(b, type, u, e, text, extra = {}) {
   if(card(u.id).genre==='Lovecraft'&&u.id!=='herald'){cosmicAttack(b,u,target,power);}
   else if(isCyber(u)){cyberAttack(b,u,target,power);}
   else if(isArchon(u)){archonAttack(b,u,target,power);}
-  else if(u.id==='pyroMage'){
-   hit(b,u,target,power);
-   if(b.units.some(v=>!v.removed&&v.id==='magmaLord')){
-    for(const near of living(b).filter(e=>e!==target&&Math.min(Math.abs(e.p-target.p),16-Math.abs(e.p-target.p))<=1.5))hit(b,u,near,power*0.5,false);
-   }
-   if(b.units.some(v=>!v.removed&&v.id==='tempestArchon')){
-    const next=living(b).find(e=>e!==target);
-    if(next)dot(b,next,'burn',Math.max(1,next.maxHp*0.01),1,u);
-   }
-   if(b.units.some(v=>!v.removed&&v.id==='steamSovereign')&&(target.drenchedUntil||0)>b.time&&!target.scaldBursted){
-    target.scaldBursted=true;
-    damage(b,target,(target.maxHp-target.hp)*0.10,u,'ability',true);
-    fx(b,'impact',u,target,'10% SCALD BURST');
-   }
-  }
-  else if(u.id==='hydroMage'){
-   const options=b.units.some(v=>!v.removed&&v.id==='quagmireColossus')?{armorFactor:0.70}:{};
-   hit(b,u,target,power,true,options);
-   if(b.units.some(v=>!v.removed&&v.id==='steamSovereign')&&(target.drenchedUntil||0)>b.time&&!target.scaldBursted){
-    target.scaldBursted=true;
-    damage(b,target,(target.maxHp-target.hp)*0.10,u,'ability',true);
-    fx(b,'impact',u,target,'10% SCALD BURST');
-   }
-   if(b.units.some(v=>!v.removed&&v.id==='blizzardArchon')){
-    target.frostbiteHits=(target.frostbiteHits||0)+1;
-    if(target.frostbiteHits>=2){target.frostbiteHits=0;status(b,target,'freeze',1.5,0,u);}
-   }
-  }
-  else if(u.id==='geoMage'){
-   const hasTitan=b.units.some(v=>!v.removed&&v.id==='sandstormTitan');
-   const hasQuag=b.units.some(v=>!v.removed&&v.id==='quagmireColossus');
-   const armorFactor=hasTitan?0.80:hasQuag?0.70:1.0;
-   const targets=hasTitan?living(b).slice(0,3):[target];
-   for(const e of targets)hit(b,u,e,power,true,{armorFactor});
-   if(b.units.some(v=>!v.removed&&v.id==='magmaLord')){
-    for(const near of living(b).filter(e=>e!==target&&Math.min(Math.abs(e.p-target.p),16-Math.abs(e.p-target.p))<=1.5))hit(b,u,near,power*0.5,false);
-   }
-  }
   else if(u.id==='aeroMage'){
-   const hasTitan=b.units.some(v=>!v.removed&&v.id==='sandstormTitan');
-   const armorFactor=hasTitan?0.80:1.0;
-   const count=2+(hasTitan?2:0);
-   for(const e of living(b).slice(0,count)){
-    hit(b,u,e,power,true,{armorFactor});
-    if(b.units.some(v=>!v.removed&&v.id==='blizzardArchon')){
-     e.frostbiteHits=(e.frostbiteHits||0)+1;
-     if(e.frostbiteHits>=2){e.frostbiteHits=0;status(b,e,'freeze',1.5,0,u);}
-    }
-   }
-   if(b.units.some(v=>!v.removed&&v.id==='tempestArchon')){
-    const next=living(b).find(e=>e!==target);
-    if(next)dot(b,next,'burn',Math.max(1,next.maxHp*0.01),1,u);
-   }
+   for(const e of living(b).slice(0,2))hit(b,u,e,power);
   }
+  else if(['pyroMage','hydroMage','geoMage'].includes(u.id))hit(b,u,target,power);
   else if(isSlayer(u)){slayerAttack(b,u,target,power);}
   else if(u.id==='witchHunter'){hit(b,u,target,power*(target.shield>0?2:1));}
   else if (isMech(u)) { mechAttack(b,u,target,power); }
@@ -2953,7 +2895,7 @@ function fx(b, type, u, e, text, extra = {}) {
      if (b.time >= (u.channeling.tickAt || 0)) {
       u.channeling.tickAt = b.time + 1.0;
       for (const e of living(b)) {
-       armorStrip(e, 0.10);
+       armorStrip(e, Math.min(1, (e.permanentShred || 0) + 0.10));
        damage(b, e, atk(b, u) * 0.10 + (e.maxHp - e.hp) * 0.10, u, 'ability', true);
       }
       fx(b, 'spell', u, null, 'SANDSTORM PULSE');
@@ -2969,6 +2911,7 @@ function fx(b, type, u, e, text, extra = {}) {
        dot(b, e, 'burn', Math.max(1, e.maxHp * 0.01), 1, u);
       }
       arcaneZone(b, u, 'magmaFissure16', 0, 5, 0);
+      b.arcaneZones.at(-1).nextBurnAt=b.time+1;
       fx(b, 'spell', u, null, '16-TILE MOLTEN FISSURE');
       interact(b, u, u, 'magma-channel', 'Magma Lord channel complete: 150% ATK damage + 16-tile Molten Fissure (5s)');
      } else if (chType === 'tempestArchon') {

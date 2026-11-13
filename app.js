@@ -359,7 +359,7 @@ function arcaneDetail(u){
   lines.push(`Archon Ultimate: ${u.archonAttacks||0}/10 attacks toward Channel${u.channeling?' · CHANNELING':''}`);
  }
  if(u.id==='manaBattery')lines.push('Mana Battery: pulses every 8.0s → +4 ticks to a random deployed mage');
- if(u.id==='elementalPrism')lines.push('Elemental Prism: grants +2 ticks to all deployed elemental mages on adjacent spell cast');
+ if(u.id==='elementalPrism')lines.push('Elemental Prism: when an adjacent mage casts at max gauge (10 ticks), grants +2 ticks to all deployed elemental mages; no cooldown');
  if(u.id==='astralLoom')lines.push('Astral Loom: adjacent units gain 2 ticks per attack and +20% attack speed');
  return lines.map(t=>`<p class="hint">${t}</p>`).join('');
 }

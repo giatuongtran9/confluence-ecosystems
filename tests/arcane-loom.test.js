@@ -320,40 +320,86 @@ test('Phase 2 & 4: Scalding Vapor Sovereign - Drenched 10% burst happens ONLY 1 
   assert.ok(dmgSecond < 1000);
 });
 
-test('Phase 2 & 4: Archon Patronage Auras', () => {
-  // 1. Magma Lord: +100% ATK to Pyro & Geo; normal attacks splash molten fire
-  const bMagma = battle(['magmaLord', 'pyroMage', 'geoMage'], [0, 1, 2]);
-  const pyroBase = G.rawAtk(bMagma.units[1]);
-  close(G.atk(bMagma, bMagma.units[1]), pyroBase * 2.0);
-  close(G.atk(bMagma, bMagma.units[2]), G.rawAtk(bMagma.units[2]) * 2.0);
+test('Patronage shares only the co-element base max-gauge spell effect, without Mastery scaling', () => {
+  // Magma Lord (Fire + Earth): Pyromancer pierces base 20%; Geomancer adds exactly one base Burn.
+  const bM = battle(['magmaLord', 'pyroMage', 'geoMage'], [0, 1, 2]);
+  const eM = enemy(bM); eM.defense = 0.5;
+  G.elementalSpell(bM, bM.units[1]);
+  assert.equal(eM.permanentShred, 0.2);
+  const eM2 = enemy(bM, '', 2);
+  G.elementalSpell(bM, bM.units[2]);
+  assert.equal(eM2.burns.length, 1);
+  assert.equal(eM2.burns[0].dps, 1000);
 
-  // 2. Firestorm Tempest: +30% attack speed to Pyro & Aero
-  const bTemp = battle(['tempestArchon', 'pyroMage', 'aeroMage'], [0, 1, 2]);
-  assert.ok(G.speed(bTemp, bTemp.units[1]) >= 1.30);
-  assert.ok(G.speed(bTemp, bTemp.units[2]) >= 1.30);
+  // Firestorm Tempest (Fire + Wind): Pyro gains 4-target Wind effect + haste; Aero gains base Burn.
+  const bT = battle(['tempestArchon', 'pyroMage', 'aeroMage'], [0, 1, 2]);
+  for (let i = 0; i < 5; i++) enemy(bT, '', i + 1);
+  G.elementalSpell(bT, bT.units[1]);
+  assert.equal(bT.enemies.filter(e => e.hp < 100000).length, 4);
+  assert.ok(bT.units[2].arcaneHasteUntil > bT.time);
+  const bT2 = battle(['tempestArchon', 'aeroMage']); const eT2 = enemy(bT2);
+  G.elementalSpell(bT2, bT2.units[1]);
+  assert.equal(eT2.burns.length, 1);
 
-  // 3. Quagmire Colossus: +30% armor penetration to Hydro & Geo
-  const bQuag = battle(['quagmireColossus', 'hydroMage', 'geoMage'], [0, 1, 2]);
-  const e = enemy(bQuag);
-  e.defense = 0.5;
-  G.attack(bQuag, bQuag.units[1]);
-  assert.ok(e.hp < 100000);
+  // Vapor Sovereign (Fire + Water): Pyro gains Drenched; Hydro gains one unscaled Burn.
+  const bV = battle(['steamSovereign', 'pyroMage', 'hydroMage'], [0, 1, 2]);
+  const eV = enemy(bV); G.elementalSpell(bV, bV.units[1]);
+  assert.ok(eV.drenchedUntil > bV.time);
+  const bV2 = battle(['steamSovereign', 'hydroMage']); const eV2 = enemy(bV2);
+  G.elementalSpell(bV2, bV2.units[1]);
+  assert.equal(eV2.burns.length, 1);
 
-  // 4. Glacial Typhoon: +30% attack speed and Frostbite to Hydro & Aero
-  const bBlizz = battle(['blizzardArchon', 'hydroMage', 'aeroMage'], [0, 1, 2]);
-  assert.ok(G.speed(bBlizz, bBlizz.units[1]) >= 1.30);
-  assert.ok(G.speed(bBlizz, bBlizz.units[2]) >= 1.30);
-  const eFrost = enemy(bBlizz);
-  G.attack(bBlizz, bBlizz.units[1]);
-  assert.equal(eFrost.frostbiteHits, 1);
-  G.attack(bBlizz, bBlizz.units[1]);
-  assert.equal(eFrost.frostbiteHits, 0);
-  assert.ok(eFrost.frozenUntil > bBlizz.time);
+  // Quagmire (Water + Earth): Hydro gains base 20% armor pierce; Geo gains Drenched.
+  const bQ = battle(['quagmireColossus', 'hydroMage', 'geoMage'], [0, 1, 2]);
+  const eQ = enemy(bQ); eQ.defense = 0.5;
+  G.elementalSpell(bQ, bQ.units[1]); assert.equal(eQ.permanentShred, 0.2);
+  const eQ2 = enemy(bQ, '', 2); G.elementalSpell(bQ, bQ.units[2]);
+  assert.ok(eQ2.drenchedUntil > bQ.time);
 
-  // 5. Sandstorm Titan: +20% armor penetration and +2 pierce targets to Geo & Aero
-  const bTitan = battle(['sandstormTitan', 'aeroMage'], [0, 1]);
-  for (let i = 0; i < 5; i++) enemy(bTitan, '', i + 1);
-  G.attack(bTitan, bTitan.units[1]); // Aero normally hits 2, with Titan hits 4
-  const damaged = bTitan.enemies.filter(en => en.hp < 100000);
-  assert.equal(damaged.length, 4);
+  // Glacial Typhoon (Water + Wind): Hydro gains 4 targets + haste; Aero gains Drenched.
+  const bG = battle(['blizzardArchon', 'hydroMage', 'aeroMage'], [0, 1, 2]);
+  for (let i = 0; i < 5; i++) enemy(bG, '', i + 1);
+  G.elementalSpell(bG, bG.units[1]);
+  assert.equal(bG.enemies.filter(e => e.hp < 100000).length, 4);
+  assert.ok(bG.units[2].arcaneHasteUntil > bG.time);
+  const bG2 = battle(['blizzardArchon', 'aeroMage']); const eG2 = enemy(bG2);
+  G.elementalSpell(bG2, bG2.units[1]); assert.ok(eG2.drenchedUntil > bG2.time);
+
+  // Sandstorm Titan (Earth + Wind): Geo gains 4 targets + haste; Aero gains base 20% pierce.
+  const bS = battle(['sandstormTitan', 'geoMage', 'aeroMage'], [0, 1, 2]);
+  for (let i = 0; i < 5; i++) enemy(bS, '', i + 1);
+  G.elementalSpell(bS, bS.units[1]);
+  assert.equal(bS.enemies.filter(e => e.hp < 100000).length, 4);
+  assert.ok(bS.units[2].arcaneHasteUntil > bS.time);
+  const bS2 = battle(['sandstormTitan', 'aeroMage']); const eS2 = enemy(bS2); eS2.defense = 0.5;
+  G.elementalSpell(bS2, bS2.units[1]); assert.equal(eS2.permanentShred, 0.2);
+});
+
+test('Magma Lord normal fissure applies only Burn while enemies remain on the tile', () => {
+  const b = battle(['magmaLord']), u = b.units[0], e = enemy(b, '', 1, 100000);
+  const hp = e.hp;
+  G.attack(b, u);
+  assert.equal(e.hp, hp - G.atk(b, u));
+  assert.ok(b.arcaneZones.some(z => z.type === 'magma' && z.until === 2));
+  for (let i = 0; i < 12; i++) { b.time += 0.1; G.tickArcane(b, 0.1); }
+  assert.equal(e.burns.length, 1);
+  assert.equal(e.burns[0].dps, 1000);
+  // The fissure doesn't inflict flat 60 DPS; only the normal hit and Burn stack apply.
+  assert.ok(e.hp >= hp - G.atk(b, u));
+  e.p = 2; const count = e.burns.length;
+  for (let i = 0; i < 12; i++) { b.time += 0.1; G.tickArcane(b, 0.1); }
+  assert.equal(e.burns.length, count);
+});
+
+test('Elemental Prism has no one-second throttle but blocks recursive Prism chains', () => {
+  const b = battle(['pyroMage', 'elementalPrism', 'hydroMage'], [0, 1, 4]);
+  enemy(b);
+  G.elementalLinks(b, b.units[0]);
+  assert.equal(b.units[0].threshold.current, 2);
+  assert.equal(b.units[2].threshold.current, 2);
+  b.time = 0.1;
+  G.elementalLinks(b, b.units[0]);
+  assert.equal(b.units[0].threshold.current, 4);
+  assert.equal(b.units[2].threshold.current, 4);
+  assert.equal(b.units[1].prismAt, undefined);
 });
