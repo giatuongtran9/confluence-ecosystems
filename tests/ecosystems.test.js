@@ -170,14 +170,14 @@ test('removed cards and offspring are absent from every catalog',()=>{
 });
 test('pre-cleanup runs and player upgrades clear exactly once',()=>{
  const code=fs.readFileSync(require.resolve('../app'),'utf8').split('let feedbackSeen=')[0];
- for(const payload of [{version:3,roster:[{id:'heir'}]},{version:3,roster:[{id:'cub'}]},{version:3,roster:[{id:'cultivationNascentSoul'}]}]){
+ for(const payload of [{version:4,roster:[{id:'practitioner'}]},{version:3,roster:[{id:'heir'}]},{version:3,roster:[{id:'cub'}]},{version:3,roster:[{id:'cultivationNascentSoul'}]}]){
   const values=new Map([['confluence-run-v3',JSON.stringify(payload)],['confluence-meta-v1',JSON.stringify({power:7,shards:50})]]);
   const localStorage={getItem:k=>values.get(k),get length(){return values.size},key:i=>[...values.keys()][i],removeItem:k=>values.delete(k),setItem:(k,v)=>values.set(k,v)};
   const ctx={Game:G,document:{querySelector:()=>({})},localStorage};vm.createContext(ctx);vm.runInContext(code+';globalThis.result={run,resetSavedRuns};',ctx);
-  assert.equal(ctx.result.run,null);assert.equal(ctx.result.resetSavedRuns,true);assert.equal(values.has('confluence-run-v3'),false);assert.equal(values.has('confluence-meta-v1'),false);assert.equal(values.get('confluence-save-reset-v1'),'done');
-  values.set('confluence-run-v4',JSON.stringify({version:4,leader:'none'}));
+  assert.equal(ctx.result.run,null);assert.equal(ctx.result.resetSavedRuns,true);assert.equal(values.has('confluence-run-v3'),false);assert.equal(values.has('confluence-meta-v1'),false);
+  values.set('confluence-run-v5',JSON.stringify({version:5,leader:'none'}));
   const ctx2={Game:G,document:{querySelector:()=>({})},localStorage};vm.createContext(ctx2);vm.runInContext(code+';globalThis.next={run,resetSavedRuns};',ctx2);
-  assert.equal(ctx2.next.resetSavedRuns,false);assert.equal(ctx2.next.run.version,4);
+  assert.equal(ctx2.next.resetSavedRuns,false);assert.equal(ctx2.next.run.version,5);
  }
 });
 test('new resource remainders persist across deployments, temporary pill haste does not',()=>{

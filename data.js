@@ -113,14 +113,6 @@ const LEADERS = [
   }
 ];
 
-const RARITIES = [
-  { "id": "Normal", "color": "#cbd5e1", "label": "Normal" },
-  { "id": "Rare", "color": "#67e8f9", "label": "Rare" },
-  { "id": "Epic", "color": "#c084fc", "label": "Epic" },
-  { "id": "Legendary", "color": "#facc15", "label": "Legendary" },
-  { "id": "Mythic", "color": "#f472d0", "label": "Mythic" }
-];
-
 // --- CURRENT DRAFTABLE CARDS ---
 const CARDS = [
   // 1. Spirit Lotus Root
@@ -187,7 +179,6 @@ const CARDS = [
     "alchemy",
     "refiner"
   ],
-  "growthRole": "engine",
   "ecosystem": "Cultivation · Dan Dao",
   "rules": "Does not attack. Stores up to 3 shared Breakthrough Pills while any Cauldron remains in the roster; stock persists between battles and pills can be spent only while one is deployed. Starting at 8s and every 8s, consumes adjacent Spirit Grass to brew 1 pill below cap; at cap, converts the Grass to +12 Qi for the deployed Practitioner with the most Qi. Each adjacent Lotus Blossom is independently consumed for +6 Qi/+2 permanent ATK to the eligible Cultivation unit with the least Qi; direct absorption remains +5 Qi/+1 ATK.",
   "synergy": "Spirit Lotus Root, Cloud-Mist Spirit Grass, Qi-Refining Practitioner."
@@ -856,7 +847,6 @@ const CARDS = [
     "tags": [],
     "fav": "neighbor",
     "icon": "✧",
-    "growthRole": "engine",
     "ecosystem": "Sacrifice · neighborhood growth",
     "rules": "Cannot attack. Whenever an ally is consumed anywhere or an enemy dies while bleeding, grants all orthogonally adjacent original allies +2 permanent ATK.",
     "synergy": "Primordial Blood Cub and all five Bloodline fodders."
@@ -878,7 +868,6 @@ const CARDS = [
     "tags": [],
     "fav": "team",
     "icon": "✧",
-    "growthRole": "engine",
     "ecosystem": "Critical strikes · defense shred",
     "rules": "Strike the leading runner. Critical hits shred runner defense by 25% for 3s. Every 6 critical hits across battles grant this card +1 permanent ATK.",
     "synergy": "Telemetry Sensor and Singularity Core."
@@ -1213,7 +1202,6 @@ const FORMS = [
     "fav": "neighbor",
     "tags": ["investigator", "urban-realm", "pierce"],
     "evolvedFrom": "investigator",
-    "draftable": false,
     "rules": "Occult rank · 25 Dread. Attacks pierce the 2 leading runners and inflict 1 Violation Mark on hit. Records +1 Dread per violation . Advances to Anomaly Specialist at 70 Dread.",
     "synergy": "All Urban Legends and Rule Violations."
   },
@@ -1231,7 +1219,6 @@ const FORMS = [
     "fav": "neighbor",
     "tags": ["investigator", "urban-realm", "aoe"],
     "evolvedFrom": "investigator",
-    "draftable": false,
     "rules": "Anomaly rank · 70 Dread. Attacks release an anomaly shockwave hitting 3 violators for double damage. Records +1 Dread per violation . Advances to Rule Enforcer at 140 Dread.",
     "synergy": "All Urban Legends and Rule Violations."
   },
@@ -1249,7 +1236,6 @@ const FORMS = [
     "fav": "neighbor",
     "tags": ["investigator", "urban-realm", "true-damage"],
     "evolvedFrom": "investigator",
-    "draftable": false,
     "rules": "Enforcer rank · 140 Dread. Attacks the 3 highest-HP runners for full true damage and adds permanent Violation Marks. An adjacent Cursed Containment Relic is a trial focus, not an automatic Mythic. On an Elite or Boss node, Subject Zero appears at wave start. Apply 5 Violation Marks and defeat it before it escapes to consume the Relic and awaken its mapped Mythic Authority. If Subject Zero escapes or is defeated below 5 marks, the Rule Enforcer and Relic are permanently removed from the run roster.",
     "synergy": "The 5 Cursed Containment Relics and all Urban Legends."
   },
@@ -1274,7 +1260,6 @@ const FORMS = [
     "taboo-master"
   ],
   "evolvedFrom": "investigator",
-  "draftable": false,
   "rules": "Rule 0: Existence Is a Violation. All runners spawn with 2 Violation Marks (+16% damage). Attacks deal 2.5× true damage to violators. Once per battle, traps a leaking runner in Room 404, preventing the leak. Triggers Rule Resonance when adjacent to another Urban Legend or Relic (+20% damage, +25% speed). Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK. Room 404 prevents an ordinary runner leak only; bosses and Harbingers must be defeated through damage.",
   "synergy": "Cursed Noticeboard and Rule Resonance."
 },
@@ -1293,7 +1278,6 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "urban-apex", "panopticon"],
     "evolvedFrom": "investigator",
-    "draftable": false,
     "rules": "Rule: 'No Blind Spots.' Attacks pierce all 16 track tiles simultaneously. Whenever any runner attempts to speed up, sprint, or enrage, freezes them in stasis for 2.0s and strips their speed boosts. Triggers Rule Resonance when adjacent to another Urban Legend or Relic. Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
     "synergy": "Panopticon Monitor and Rule Resonance."
   },
@@ -1312,7 +1296,6 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "urban-apex", "curfew-master"],
     "evolvedFrom": "investigator",
-    "draftable": false,
     "rules": "Rule: 'Indefinite Curfew.' Establishes permanent containment protocol: all Haunted allies gain +60% attack speed. Attacks deal double damage to violators. Every 6s, locks down the marked runner with the most Violation Marks for 1s at 1–2 marks, 2s at 3–4, or 3s at 5; prioritizes Subject Zero. Works without Blackout. Triggers Rule Resonance when adjacent to another Urban Legend or Relic. Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
     "synergy": "Red Hotline and Rule Resonance."
   },
@@ -1331,7 +1314,6 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "urban-apex", "dissection"],
     "evolvedFrom": "investigator",
-    "draftable": false,
     "rules": "Rule: 'Living Autopsy.' Attacks against marked runners inflict true necrosis (50 DPS Bleed ignoring armor). Every 4th attack strips 12% max HP from Elites, Harbingers, and Bosses. Triggers Rule Resonance when adjacent to another Urban Legend or Relic. Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
     "synergy": "Coroner's Bone Saw and Rule Resonance."
   },
@@ -1350,7 +1332,6 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "urban-apex", "liminal-space"],
     "evolvedFrom": "investigator",
-    "draftable": false,
     "rules": "Rule: 'Floor Does Not Exist.' Attacks pierce 3 runners. Every 6s, banishes the 3 leading runners into non-Euclidean elevator shafts for 4.0s (taking 150 DPS) and dropping them 6 tiles backward on return. Triggers Rule Resonance when adjacent to another Urban Legend or Relic. Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
     "synergy": "Liminal Keycard and Rule Resonance."
   },
@@ -1371,7 +1352,6 @@ const FORMS = [
     "fav": "team",
     "tags": ["urban-form", "cleave", "bleed"],
     "evolvedFrom": "kuchisake",
-    "draftable": false,
     "rules": "Cleaves 2 runners. Attacks against bleeding or marked runners deal triple critical damage. Remains Epic after 45 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent Slit-Mouthed Woman lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. Mythic evolution requires clearing the node with zero runner leaks; any leak fails and removes this devourer from the roster.",
     "synergy": "Bleed, Violations, and Slit-Mouthed Sovereign."
   },
@@ -1393,7 +1373,6 @@ const FORMS = [
     "boss-slayer"
   ],
   "evolvedFrom": "kuchisake",
-  "draftable": false,
   "rules": "'Am I Pretty?' Reacts to fast, marked, panicked, or retreating runners and ignores ordinary runners. Strikes against marked violators critically hit for 3.5× damage and apply 35 DPS Bleed. Instantly executes ordinary runners below 30% HP. Every 6th attack shreds 15% current HP from Bosses and Harbingers. Triggers Rule Resonance when adjacent to another Urban Legend. Harbingers are also immune to execution.",
   "synergy": "Bosses, Harbingers, and Rule Resonance."
 },
@@ -1416,7 +1395,6 @@ const FORMS = [
     "warp"
   ],
   "evolvedFrom": "nightBus",
-  "draftable": false,
   "rules": "Pierces 3 violators and pulls marked runners toward the leading runner. Remains Epic after 45 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent Midnight Bus 44 lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. Mythic evolution requires clearing the node with zero runner leaks; any leak fails and removes this devourer from the roster.",
   "synergy": "Crowded tracks and Terminus Bus 44."
 },
@@ -1434,7 +1412,6 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "urban-apex", "abduction"],
     "evolvedFrom": "nightBus",
-    "draftable": false,
     "rules": "Reacts only to marked, panicked, fleeing, or unnaturally fast runners; it does not attack ordinary runners. Its attack pierces 4 violators and adds 1 Violation Mark to surviving targets. Every 8s, sweeps the leading runner's 4-tile edge, warping runners with 2+ marks back 5 tiles. Every 6s, applies 140 DPS Bleed for 3s (modified by buff duration) to the 2 leading runners and warps them back 5 tiles. Triggers Relic Resonance beside a relic.",
     "synergy": "Track control, Warps, and Rule Resonance."
   },
@@ -1453,7 +1430,6 @@ const FORMS = [
     "fav": "team",
     "tags": ["urban-form", "sonic", "stun"],
     "evolvedFrom": "payphone",
-    "draftable": false,
     "rules": "Every third attack rings across all tiles, deals 1.5× damage, and stuns violators. Remains Epic after 45 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent Midnight Caller lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. Mythic evolution requires clearing the node with zero runner leaks; any leak fails and removes this devourer from the roster.",
     "synergy": "Blackout triggers and The Midnight Operator."
   },
@@ -1471,7 +1447,6 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "urban-apex", "infinite-redial"],
     "evolvedFrom": "payphone",
-    "draftable": false,
     "rules": "'Infinite Redial.' Reacts only to taboo-breaking runners; it does not attack ordinary runners. Every 2nd triggered attack rings all 16 perimeter tiles for 150% ATK damage, stunning marked runners for 1.2s and extending active Blackout by 1.5s. Triggers Rule Resonance when adjacent to another Urban Legend.",
     "synergy": "16 tiles, Blackout extension, and Rule Resonance."
   },
@@ -1490,7 +1465,6 @@ const FORMS = [
     "fav": "neighbor",
     "tags": ["urban-form", "mirror", "reflection"],
     "evolvedFrom": "morgueMirror",
-    "draftable": false,
     "rules": "Reflects 50% of adjacent allies' ATK and summons two temporary reflections during Blackout. Remains Epic after 45 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent Morgue Mirror lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. Mythic evolution requires clearing the node with zero runner leaks; any leak fails and removes this devourer from the roster.",
     "synergy": "High-ATK neighbors and Queen in the Morgue Mirror."
   },
@@ -1508,7 +1482,6 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "urban-apex", "mirror-realm"],
     "evolvedFrom": "morgueMirror",
-    "draftable": false,
     "rules": "'Glass Domain.' Reacts to taboo-breaking runners and those approaching its reflective angle; it ignores ordinary runners. Permanently adds 100% of the highest ally raw ATK on the grid to her own. During Blackout, fills available adjacent orthogonal slots with 100%-ATK Mirror Clones for 4s × buffDuration. Triggers Rule Resonance when adjacent to another Urban Legend.",
     "synergy": "All allies, Mirror Clones, and Rule Resonance."
   },
@@ -1527,7 +1500,6 @@ const FORMS = [
     "fav": "team",
     "tags": ["urban-form", "berserk"],
     "evolvedFrom": "mannequin",
-    "draftable": false,
     "rules": "Punishes taboo-breakers with increased attack speed and critical damage during Blackout or when an ally is inactive. Remains Epic after 45 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent Window Mannequin lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. Mythic evolution requires clearing the node with zero runner leaks; any leak fails and removes this devourer from the roster.",
     "synergy": "Blackout triggers and The Living Taboo."
   },
@@ -1549,7 +1521,6 @@ const FORMS = [
     "berserk"
   ],
   "evolvedFrom": "mannequin",
-  "draftable": false,
   "rules": "The apex manifestation of taboo. Reacts only to taboo-breaking runners; it does not attack ordinary runners. During Blackout, attacks at 3.0× speed with 100% critical chance. Once per battle, if an ordinary runner reaches tile 15, instantly ambushes and executes it before it can leak. Triggers Rule Resonance when adjacent to another Urban Legend. Bosses and Harbingers cannot be executed.",
   "synergy": "Blackouts and Rule Resonance."
 },
@@ -1568,7 +1539,6 @@ const FORMS = [
     "fav": "team",
     "tags": ["urban-form", "bleed", "retribution"],
     "evolvedFrom": "redRaincoat",
-    "draftable": false,
     "rules": "Reactive blood-pool trap: slashes runners who retreat, turn back, warp, or are slowed. Remains Epic after 45 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent Red Raincoat Specter lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. Mythic evolution requires clearing the node with zero runner leaks; any leak fails and removes this devourer from the roster.",
     "synergy": "Bleed, Retribution, and Harbinger of the Crimson Rain."
   },
@@ -1586,7 +1556,6 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "urban-apex", "crimson-deluge"],
     "evolvedFrom": "redRaincoat",
-    "draftable": false,
     "rules": "'The Crimson Deluge.' Reactive slashes critically hit for 3.0× damage. During Blackout, sudden turns or running within 2 tiles of another runner triggers lethal dismemberment; fleeing or panicked victims take triple damage and unleash a crimson mist slowing nearby runners by 60%. Triggers Rule Resonance when adjacent to another Urban Legend.",
     "synergy": "Bleed, Panic, and Rule Resonance."
   },
@@ -1605,7 +1574,6 @@ const FORMS = [
     "fav": "neighbor",
     "tags": ["urban-form", "trap", "vertigo"],
     "evolvedFrom": "stair13",
-    "draftable": false,
     "rules": "Every 4 steps during Blackout, banishes repeat violators into its trapdoor. Remains Epic after 45 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent 13th Step lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. Mythic evolution requires clearing the node with zero runner leaks; any leak fails and removes this devourer from the roster.",
     "synergy": "Traps, Vertigo, and The Penrose Labyrinth."
   },
@@ -1627,7 +1595,6 @@ const FORMS = [
     "endless-drop"
   ],
   "evolvedFrom": "stair13",
-  "draftable": false,
   "rules": "'The Endless Drop.' Corner and step traps inflict severe Vertigo and warp violators back 4 tiles. During Blackout, every 4th step triggers Penrose Trapdoor: victims vanish for 2.0s taking continuous crushing void damage; panicked or fleeing victims suffer Terminal Descent execution. Triggers Rule Resonance when adjacent to another Urban Legend. Executions and direct trapdoor position resets exclude bosses and Harbingers.",
   "synergy": "Warps, Panicked runners, and Rule Resonance."
 },
@@ -1650,7 +1617,6 @@ const FORMS = [
     "scaling"
   ],
   "evolvedFrom": "practitioner",
-  "draftable": false,
   "rules": "Foundation realm · 30 Qi. Base 25 ATK, 1.4s interval. Attacks pierce the two leading runners. Directly absorbs adjacent Lotus Blossoms for +5 Qi/+1 permanent ATK; a Cauldron brews them for +6 Qi/+2 ATK. Qi stops at 85 until a stored Breakthrough Pill is spent by a deployed Cauldron, advancing to Golden Core. Normal attacks grant no Qi.",
   "synergy": "Spirit Lotus Blossoms, Spirit Grass, and Cauldron Pills."
 },
@@ -1671,7 +1637,6 @@ const FORMS = [
     "scaling"
   ],
   "evolvedFrom": "practitioner",
-  "draftable": false,
   "rules": "Golden Core realm · 85 Qi. Base 50 ATK, 1.3s interval. Attacks the target and deal 50% splash damage nearby. Directly absorbs adjacent Lotus Blossoms for +5 Qi/+1 permanent ATK; a Cauldron brews them for +6 Qi/+2 ATK. Qi stops at 175 until a stored Breakthrough Pill is spent by a deployed Cauldron. Normal attacks grant no Qi.",
   "synergy": "Spirit Lotus Blossoms, Spirit Grass, Cauldron Pills, and Cultivation Relics."
 },
@@ -1692,7 +1657,6 @@ const FORMS = [
     "scaling"
   ],
   "evolvedFrom": "practitioner",
-  "draftable": false,
   "rules": "Nascent Soul realm · 175 Qi. Base 85 ATK, 1.2s interval. Attacks the three highest-HP runners. Directly absorbs adjacent Lotus Blossoms for +5 Qi/+1 permanent ATK; a Cauldron brews them for +6 Qi/+2 ATK. Each Qi gained above 175 grants +0.15 uncapped permanent ATK, including after Mythic ascension. At 200 Qi, an adjacent eligible relic starts the Elite/Boss Heavenly Tribulation; clear with zero leaks. Normal attacks grant no Qi.",
   "synergy": "Cultivation Relics and the full Practitioner lineage."
 },
@@ -1711,7 +1675,6 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "pierce", "boss-slayer"],
     "evolvedFrom": "practitioner",
-    "draftable": false,
     "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks pierce 50% DEF and hit the target plus up to 3 enemies behind (100%→70% damage). Every 10th attack, channels for 1.2s to release a Ten-Thousand Sword Torrent dealing 100% ATK to all tiles and dropping a Colossal Sword onto the highest-threat enemy for 100% ATK + 10% enemy current HP. Triggers Relic Resonance when adjacent to another Cultivation relic (+20% Mythic damage).",
     "synergy": "Ancient Flying Sword, Relic Resonance."
   },
@@ -1730,7 +1693,6 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "control", "detonate"],
     "evolvedFrom": "practitioner",
-    "draftable": false,
     "rules": "Base 110 ATK. Attacks alternate between Harmony Chord (+50% attack speed to all allies for 2s) and Dissonance Chord (deals 50% ATK damage and applies 45% slow to all enemies for 2s). Every 10th attack, channels for 1.2s to release Celestial Resonance dealing 200% ATK to all enemies and stunning them for 1.5s. Gains +2 permanent ATK per 30 post-ascension Qi.",
     "synergy": "Celestial Guqin, Relic Resonance."
   },
@@ -1749,7 +1711,6 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "trap", "stasis"],
     "evolvedFrom": "practitioner",
-    "draftable": false,
     "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks alternate between Black Stone (deals 120% ATK) and White Stone (deals 80% ATK and slows target 30% for 2s). Every 10th attack, channels for 1.2s to activate Star-River Weiqi Board: warps all enemies backward 2 tiles and deals 150% ATK (300% on corner tiles 0, 4, 8, 12). Triggers Relic Resonance when adjacent to another Cultivation relic (+20% Mythic damage).",
     "synergy": "Star-River Weiqi Board, Relic Resonance."
   },
@@ -1772,7 +1733,6 @@ const FORMS = [
     "amp"
   ],
   "evolvedFrom": "practitioner",
-  "draftable": false,
   "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks deal 100% ATK, apply +50% Vulnerable for 3s, and execute non-boss/non-champion runners below 10% HP. Every 10th attack, channels for 1.2s to inscribe Imperial Ink Decree: deals 250% ATK board-wide, executes non-bosses below 15% HP, and applies +50% Vulnerable for 3s to survivors. Triggers Relic Resonance when adjacent to another Cultivation relic (+20% Mythic damage).",
     "synergy": "Dragon-Tail Ink Brush, Relic Resonance."
 },
@@ -1791,7 +1751,6 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "banish"],
     "evolvedFrom": "practitioner",
-    "draftable": false,
     "rules": "Base 110 ATK. Attacks deal 100% ATK and leave an ink puddle on the track slowing passing runners 25% for 2s. Every 10th attack, channels for 1.2s to summon Mountain-River Ink Dragon: sweeps counter-clockwise across the perimeter dealing 200% ATK, stuns all runners for 2s, and warps Boss/Elite/Champion runners backward 3 tiles. Gains +2 permanent ATK per 30 post-ascension Qi.",
     "synergy": "Mountain-River Scroll, Relic Resonance."
   },
@@ -1810,7 +1769,6 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "demonic", "chain"],
     "evolvedFrom": "practitioner",
-    "draftable": false,
     "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks fire a volley hitting up to 5 targets for 50% ATK each. Every enemy death adds +1 permanent Soul to the banner. Every 10th attack, channels for 1.2s to detonate Ten-Thousand Soul Banner: deals (150% + floor(Souls / 2)%) ATK to all enemies. Triggers Relic Resonance when adjacent to another Cultivation relic (+20% Mythic damage).",
     "synergy": "Ten-Thousand Soul Banner, Relic Resonance."
   },
@@ -1829,7 +1787,6 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "demonic", "cleave"],
     "evolvedFrom": "practitioner",
-    "draftable": false,
     "rules": "Base 150 ATK. Attacks deal 100% ATK and apply 1 bleed stack (1% target max HP/sec for 3s). Every 10th attack, channels for 1.2s to trigger Boiling Blood Domain: deals 150% ATK to all enemies, detonates existing bleed stacks for instant true damage, and applies 20 bleed stacks (1% max HP/sec for 20s). Gains +2 permanent ATK per 30 post-ascension Qi.",
     "synergy": "Blood-Drinking Demon Blade, Relic Resonance."
   },
@@ -1851,7 +1808,6 @@ const FORMS = [
     "lineage-dragon"
   ],
   "evolvedFrom": "cub",
-  "draftable": false,
   "lineage": "dragon",
   "lineageTier": 1,
   "rules": "Normal attack targets 2 enemies dealing 80% ATK damage each.",
@@ -1874,7 +1830,6 @@ const FORMS = [
     "lineage-dragon"
   ],
   "evolvedFrom": "cub",
-  "draftable": false,
   "lineage": "dragon",
   "lineageTier": 2,
   "rules": "Normal attack targets 2 enemies dealing 90% ATK damage each.",
@@ -1897,7 +1852,6 @@ const FORMS = [
     "lineage-dragon"
   ],
   "evolvedFrom": "cub",
-  "draftable": false,
   "lineage": "dragon",
   "lineageTier": 3,
   "rules": "Normal attack targets 3 enemies dealing 100% ATK damage each.",
@@ -1920,7 +1874,6 @@ const FORMS = [
     "lineage-dragon"
   ],
   "evolvedFrom": "cub",
-  "draftable": false,
   "lineage": "dragon",
   "lineageTier": 4,
   "rules": "Normal attack targets 4 enemies dealing 100% ATK damage each. Every 10th attack, channels for 1.2s to release Primordial Wrath: targets all active enemies dealing 200% ATK damage and stuns them for 1s.",
@@ -1943,7 +1896,6 @@ const FORMS = [
     "lineage-tiger"
   ],
   "evolvedFrom": "cub",
-  "draftable": false,
   "lineage": "tiger",
   "lineageTier": 1,
   "rules": "Normal attack deals 100% ATK damage. Passively gains +15% extra crit chance (base 25%).",
@@ -1966,7 +1918,6 @@ const FORMS = [
     "lineage-tiger"
   ],
   "evolvedFrom": "cub",
-  "draftable": false,
   "lineage": "tiger",
   "lineageTier": 2,
   "rules": "Normal attack deals 100% ATK damage and applies 1 Bleed stack (1% enemy max HP for 1s). Inherits +15% extra crit chance (base 25%).",
@@ -1989,7 +1940,6 @@ const FORMS = [
     "lineage-tiger"
   ],
   "evolvedFrom": "cub",
-  "draftable": false,
   "lineage": "tiger",
   "lineageTier": 3,
   "rules": "Normal attack deals 100% ATK damage and applies 1 Bleed stack (1% enemy max HP for 1s). Gains +25% extra crit chance (base is now 50%).",
@@ -2012,7 +1962,6 @@ const FORMS = [
     "lineage-tiger"
   ],
   "evolvedFrom": "cub",
-  "draftable": false,
   "lineage": "tiger",
   "lineageTier": 4,
   "rules": "Normal attack deals 100% ATK damage and applies 1 Bleed stack (1% enemy max HP for 1s). Gains +25% extra crit chance (base is now 75%). Every 10th attack, channels for 1.2s to roar and inflict Terror board-wide: all enemies run backward for 3s, then are slowed by 45% for 3s.",
@@ -2035,7 +1984,6 @@ const FORMS = [
     "lineage-xuanwu"
   ],
   "evolvedFrom": "cub",
-  "draftable": false,
   "lineage": "xuanwu",
   "lineageTier": 1,
   "rules": "Normal attack deals 100% ATK damage and applies 1 Poison stack (1% enemy max HP for 1s).",
@@ -2058,7 +2006,6 @@ const FORMS = [
     "lineage-xuanwu"
   ],
   "evolvedFrom": "cub",
-  "draftable": false,
   "lineage": "xuanwu",
   "lineageTier": 2,
   "rules": "Normal attack deals 100% ATK damage to 2 enemies and applies 1 Poison stack (1% enemy max HP for 1s).",
@@ -2081,7 +2028,6 @@ const FORMS = [
     "lineage-xuanwu"
   ],
   "evolvedFrom": "cub",
-  "draftable": false,
   "lineage": "xuanwu",
   "lineageTier": 3,
   "rules": "Normal attack deals 100% ATK damage to 3 enemies and applies 1 Poison stack (1% enemy max HP for 1s).",
@@ -2104,7 +2050,6 @@ const FORMS = [
     "lineage-xuanwu"
   ],
   "evolvedFrom": "cub",
-  "draftable": false,
   "lineage": "xuanwu",
   "lineageTier": 4,
   "rules": "Normal attack deals 100% ATK damage to 3 enemies and applies 1 Poison stack (1% enemy max HP for 1s). Every 10th attack, channels for 1.2s to release a toxic pool onto the track quadrant (0-4, 4-8, 8-12, 12-16) with the highest enemy density for 5s: enemies on the toxin take 1 Poison stack every second and are slowed by 30%.",
@@ -2127,7 +2072,6 @@ const FORMS = [
     "lineage-phoenix"
   ],
   "evolvedFrom": "cub",
-  "draftable": false,
   "lineage": "phoenix",
   "lineageTier": 1,
   "rules": "Normal attack deals 100% ATK damage and applies 1 Burn stack (1% enemy max HP for 1s).",
@@ -2150,7 +2094,6 @@ const FORMS = [
     "lineage-phoenix"
   ],
   "evolvedFrom": "cub",
-  "draftable": false,
   "lineage": "phoenix",
   "lineageTier": 2,
   "rules": "Normal attack deals 100% ATK damage and applies 1 Burn stack (1% enemy max HP for 1s), spreading 1 Burn stack to 1 runner behind.",
@@ -2173,7 +2116,6 @@ const FORMS = [
     "lineage-phoenix"
   ],
   "evolvedFrom": "cub",
-  "draftable": false,
   "lineage": "phoenix",
   "lineageTier": 3,
   "rules": "Normal attack deals 100% ATK damage and applies 1 Burn stack (1% enemy max HP for 1s), spreading 1 Burn stack to 2 runners behind. If a burning runner dies, all its Burn stacks spread to the runner behind.",
@@ -2196,7 +2138,6 @@ const FORMS = [
     "lineage-phoenix"
   ],
   "evolvedFrom": "cub",
-  "draftable": false,
   "lineage": "phoenix",
   "lineageTier": 4,
   "rules": "Normal attack deals 100% ATK damage and applies 1 Burn stack (1% enemy max HP for 1s), spreading 1 Burn stack to 3 runners behind. Burning deaths spread stacks behind. Once per run, if player health drops to 0, revives with 15 HP.",
@@ -2219,7 +2160,6 @@ const FORMS = [
     "lineage-monkey"
   ],
   "evolvedFrom": "cub",
-  "draftable": false,
   "lineage": "monkey",
   "lineageTier": 1,
   "rules": "Normal attack deals 100% ATK damage. Passively gains +15% ATK (base 25 → 29 ATK).",
@@ -2242,7 +2182,6 @@ const FORMS = [
     "lineage-monkey"
   ],
   "evolvedFrom": "cub",
-  "draftable": false,
   "lineage": "monkey",
   "lineageTier": 2,
   "rules": "Normal attack deals 100% ATK damage. Passively gains +20% ATK (base 45 → 54 ATK). Every 4th attack summons a clone with 75% ATK into an empty slot (clones perform normal attacks only).",
@@ -2265,7 +2204,6 @@ const FORMS = [
     "lineage-monkey"
   ],
   "evolvedFrom": "cub",
-  "draftable": false,
   "lineage": "monkey",
   "lineageTier": 3,
   "rules": "Normal attack deals 100% ATK damage and cleaves up to 3 runners behind. Passively gains +30% ATK (base 85 → 111 ATK). Every 4th attack summons a clone with 75% ATK into an empty slot (clones also cleave 3 runners behind).",
@@ -2288,7 +2226,6 @@ const FORMS = [
     "lineage-monkey"
   ],
   "evolvedFrom": "cub",
-  "draftable": false,
   "lineage": "monkey",
   "lineageTier": 4,
   "rules": "Normal attack deals 100% ATK damage and cleaves up to 3 runners behind. Passively gains +30% ATK (base 130 → 169 ATK). Every 4th attack summons a clone with 75% ATK into an empty slot. Every 10th attack, channels for 1.2s: strikes staff down the track quadrant with the highest enemy density for 200% ATK damage board-wide in that quadrant.",
@@ -2309,7 +2246,6 @@ const TOKENS = [
     "asset": "hauntedInvestigator",
     "tags": ["token", "dossier", "consumable"],
     "token": true,
-    "draftable": false,
     "fav": "neighbor",
     "species": "securityCam",
     "ecosystem": "Quái Đàm · Incident Evidence",
@@ -2328,7 +2264,6 @@ const TOKENS = [
     "asset": "lantern",
     "tags": ["token", "urban-legend"],
     "token": true,
-    "draftable": false,
     "fav": "neighbor",
     "species": "morgueMirror",
     "ecosystem": "Quái Đàm · Reflections",
@@ -2347,7 +2282,6 @@ const TOKENS = [
     "asset": "lotus",
     "tags": ["token", "consumable", "fodder"],
     "token": true,
-    "draftable": false,
     "fav": "neighbor",
     "species": "lotusRoot",
     "ecosystem": "Cultivation · Dan Dao",
@@ -2366,7 +2300,6 @@ const TOKENS = [
     "asset": "hound",
     "tags": ["token", "fodder"],
     "token": true,
-    "draftable": false,
     "fav": "center",
     "ecosystem": "Tokens · predation",
     "rules": "Temporary Crimson Hound token.",
@@ -2623,8 +2556,7 @@ TOKENS.push(...[
     "rules": "Temporary bladed scrap. Two Swords forge a Blade; Sword+Gun forges a Gunblade. Consumed by an adjacent Smelter; cannot breed.",
     "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
     "scrapworkAsset": "rustSword",
-    "token": true,
-    "draftable": false
+    "token": true
   },
   {
     "id": "rustGun",
@@ -2643,16 +2575,15 @@ TOKENS.push(...[
     "rules": "Temporary ballistic scrap. Two Guns forge Flak; Gun+Sword forges a Gunblade. Consumed by an adjacent Smelter; cannot breed.",
     "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
     "scrapworkAsset": "rustGun",
-    "token": true,
-    "draftable": false
+    "token": true
   }
 ]);
 
 // Urban Legend progression is described on each card form; do not append shared or Blackout-based Mythic shortcuts.
 
 CARDS.push({"id": "mercenary", "name": "Cursed Mercenary", "genre": "Grimdark", "rarity": "Normal", "baseAtk": 10, "attackInterval": 1.4, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Attacks the leading runner, inflicting 3 DPS Bleed for 4s. Gains 3 Trophy Points per slain quarry/elite/boss and 10 per carving while deployed. Evolves at 25/60/100 points. At 100 Trophy Points, an adjacent Hunt Relic starts an Elite/Boss Eclipse Hunt trial. Clear with zero leaks to awaken its mapped Mythic and consume the relic; any leak or failed clear removes the Slayer and relic.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "mercenary"},{"id": "witchHunter", "name": "Witch Hunter", "genre": "Grimdark", "rarity": "Rare", "baseAtk": 18, "attackInterval": 1.2, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Once per team per battle, after three runners spawn, brands the healthiest living ordinary runner Alpha Quarry. It qualifies for Morrow’s bonus and a trophy. Deals double damage to shielded runners.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "witchHunter"},{"id": "trophyStake", "name": "Trophy Stake", "genre": "Grimdark", "rarity": "Normal", "baseAtk": 0, "attackInterval": 0, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["support"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Mounts one adjacent loose trophy, freeing its slot and projecting its aura to orthogonal neighbors. Adjacent Taxidermists can carve the mounted head. Mounted heads expire after battle.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "trophyStake"},{"id": "taxidermist", "name": "Beast Taxidermist", "genre": "Grimdark", "rarity": "Rare", "baseAtk": 10, "attackInterval": 1.5, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Every 6s carves an adjacent loose or mounted head: +3 permanent ATK to adjacent hunters; +10 Trophy Points to deployed core slayers. Skull: +3 permanent ATK to lowest-ATK ally. Horn: -10% base armor to priority enemies, run-wide, capped 30%. Eye: ordinary-runner execution thresholds of 30% become 35%. Two same-family carvings forge a permanent undraftable relic into an empty slot. One unbound copy per family; excess counters persist.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "taxidermist"});
-FORMS.push({"id": "oathboundHunter", "name": "Oathbound Hunter", "genre": "Grimdark", "rarity": "Epic", "baseAtk": 24, "attackInterval": 1.3, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Inflicts 3 DPS Bleed for 4s. Gains 3 Trophy Points per slain quarry/elite/boss and 10 per carving while deployed. Evolves at 25/60/100 points. At 100 Trophy Points, an adjacent Hunt Relic starts an Elite/Boss Eclipse Hunt trial. Clear with zero leaks to awaken its mapped Mythic and consume the relic; any leak or failed clear removes the Slayer and relic.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "oathboundHunter", "evolvedFrom": "mercenary", "draftable": false},{"id": "blackIronSlayer", "name": "Black-Iron Slayer", "genre": "Grimdark", "rarity": "Epic", "baseAtk": 55, "attackInterval": 1.2, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Inflicts 3 DPS Bleed for 4s. Gains 3 Trophy Points per slain quarry/elite/boss and 10 per carving while deployed. Evolves at 25/60/100 points. At 100 Trophy Points, an adjacent Hunt Relic starts an Elite/Boss Eclipse Hunt trial. Clear with zero leaks to awaken its mapped Mythic and consume the relic; any leak or failed clear removes the Slayer and relic.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "blackIronSlayer", "evolvedFrom": "mercenary", "draftable": false},{"id": "brandedBerserker", "name": "Branded Berserker", "genre": "Grimdark", "rarity": "Epic", "baseAtk": 95, "attackInterval": 1.1, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Inflicts 3 DPS Bleed for 4s. Gains 3 Trophy Points per slain quarry/elite/boss and 10 per carving while deployed. Evolves at 25/60/100 points. At 100 Trophy Points, an adjacent Hunt Relic starts an Elite/Boss Eclipse Hunt trial. Clear with zero leaks to awaken its mapped Mythic and consume the relic; any leak or failed clear removes the Slayer and relic.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "brandedBerserker", "evolvedFrom": "mercenary", "draftable": false},{"id": "dragonSlayer", "name": "Dragon Slayer Berserker", "genre": "Grimdark", "rarity": "Mythic", "baseAtk": 250, "attackInterval": 1.6, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Sweeps the target’s entire 4-tile wall, ignoring armor, breaking shields and cancelling sprint boosts. Every third swing strips 15% current HP from bosses and Harbingers. Kills on its attacked wall grant +5% battle attack speed, capped +50%.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "dragonSlayer", "evolvedFrom": "mercenary", "draftable": false},{"id": "witcherGrandmaster", "name": "Grandmaster Witcher", "genre": "Grimdark", "rarity": "Mythic", "baseAtk": 210, "attackInterval": 1.1, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Alternates three Silver attacks and three Sign attacks. Silver guarantees criticals: 3× TOTAL damage against priority enemies, 2× against ordinary runners. Signs blast the target’s 4-tile wall, knock runners back 3 tiles (boss resistance applies), and strip 50% armor.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "witcherGrandmaster", "evolvedFrom": "mercenary", "draftable": false},{"id": "bloodDrunkHunter", "name": "Blood-Drunk Abyssal Hunter", "genre": "Grimdark", "rarity": "Mythic", "baseAtk": 195, "attackInterval": 0.75, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Inflicts stacking Arterial Hemorrhage: 40 true DPS for 4s. A hemorrhaging ordinary runner below 30% HP (35% after Eye carving) is executed once, exploding for 400 true damage across its 4-tile wall. Bosses and Harbingers cannot be executed.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "bloodDrunkHunter", "evolvedFrom": "mercenary", "draftable": false},{"id": "beastRelic", "name": "Feral Beast Heart", "genre": "Grimdark", "rarity": "Epic", "baseAtk": 0, "attackInterval": 0, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["support"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Forged only from two beast carvings. Permanent roster card; orthogonal allies gain +25% attack speed. On an Elite/Boss, this relic starts an Eclipse Hunt trial for an adjacent 100-point Branded Berserker. A zero-leak clear awakens its mapped Mythic and consumes the relic; any leak or failed clear removes both.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "beastRelic", "draftable": false, "huntRelic": true},{"id": "fiendRelic", "name": "Demon-Forged Brand", "genre": "Grimdark", "rarity": "Epic", "baseAtk": 0, "attackInterval": 0, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["support"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Forged only from two fiend carvings. Permanent roster card; orthogonal allies gain 30% armor penetration. On an Elite/Boss, this relic starts an Eclipse Hunt trial for an adjacent 100-point Branded Berserker. A zero-leak clear awakens its mapped Mythic and consumes the relic; any leak or failed clear removes both.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "fiendRelic", "draftable": false, "huntRelic": true},{"id": "witchRelic", "name": "Clairvoyant Iris", "genre": "Grimdark", "rarity": "Epic", "baseAtk": 0, "attackInterval": 0, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["support"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Forged only from two witch carvings. Permanent roster card; orthogonal allies gain +20% critical chance. On an Elite/Boss, this relic starts an Eclipse Hunt trial for an adjacent 100-point Branded Berserker. A zero-leak clear awakens its mapped Mythic and consumes the relic; any leak or failed clear removes both.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "witchRelic", "draftable": false, "huntRelic": true});
-TOKENS.push({"id": "beastSkull", "name": "Feral Beast Skull", "genre": "Grimdark", "rarity": "Normal", "baseAtk": 0, "attackInterval": 0, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["support"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "One-battle trophy. Orthogonal allies gain +20% attack speed and attacks inflict 6 DPS stacking Bleed for 4s. Duplicate family auras do not stack. May be mounted or carved.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "beastSkull", "token": true, "draftable": false, "trophyFamily": "beast"},{"id": "fiendHorn", "name": "Armored Demon Horn", "genre": "Grimdark", "rarity": "Normal", "baseAtk": 0, "attackInterval": 0, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["support"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "One-battle trophy. Orthogonal allies gain 40% armor penetration and one 50% second-target cleave per attack. Duplicate family auras do not stack. May be mounted or carved.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "fiendHorn", "token": true, "draftable": false, "trophyFamily": "fiend"},{"id": "witchEye", "name": "Specter Witch Eye", "genre": "Grimdark", "rarity": "Normal", "baseAtk": 0, "attackInterval": 0, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["support"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "One-battle trophy. Orthogonal allies gain +25% critical chance and double attack damage against runners below 35% HP. Duplicate family auras do not stack. May be mounted or carved.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "witchEye", "token": true, "draftable": false, "trophyFamily": "witch"});
+FORMS.push({"id": "oathboundHunter", "name": "Oathbound Hunter", "genre": "Grimdark", "rarity": "Epic", "baseAtk": 24, "attackInterval": 1.3, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Inflicts 3 DPS Bleed for 4s. Gains 3 Trophy Points per slain quarry/elite/boss and 10 per carving while deployed. Evolves at 25/60/100 points. At 100 Trophy Points, an adjacent Hunt Relic starts an Elite/Boss Eclipse Hunt trial. Clear with zero leaks to awaken its mapped Mythic and consume the relic; any leak or failed clear removes the Slayer and relic.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "oathboundHunter", "evolvedFrom": "mercenary"},{"id": "blackIronSlayer", "name": "Black-Iron Slayer", "genre": "Grimdark", "rarity": "Epic", "baseAtk": 55, "attackInterval": 1.2, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Inflicts 3 DPS Bleed for 4s. Gains 3 Trophy Points per slain quarry/elite/boss and 10 per carving while deployed. Evolves at 25/60/100 points. At 100 Trophy Points, an adjacent Hunt Relic starts an Elite/Boss Eclipse Hunt trial. Clear with zero leaks to awaken its mapped Mythic and consume the relic; any leak or failed clear removes the Slayer and relic.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "blackIronSlayer", "evolvedFrom": "mercenary"},{"id": "brandedBerserker", "name": "Branded Berserker", "genre": "Grimdark", "rarity": "Epic", "baseAtk": 95, "attackInterval": 1.1, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Inflicts 3 DPS Bleed for 4s. Gains 3 Trophy Points per slain quarry/elite/boss and 10 per carving while deployed. Evolves at 25/60/100 points. At 100 Trophy Points, an adjacent Hunt Relic starts an Elite/Boss Eclipse Hunt trial. Clear with zero leaks to awaken its mapped Mythic and consume the relic; any leak or failed clear removes the Slayer and relic.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "brandedBerserker", "evolvedFrom": "mercenary"},{"id": "dragonSlayer", "name": "Dragon Slayer Berserker", "genre": "Grimdark", "rarity": "Mythic", "baseAtk": 250, "attackInterval": 1.6, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Sweeps the target’s entire 4-tile wall, ignoring armor, breaking shields and cancelling sprint boosts. Every third swing strips 15% current HP from bosses and Harbingers. Kills on its attacked wall grant +5% battle attack speed, capped +50%.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "dragonSlayer", "evolvedFrom": "mercenary"},{"id": "witcherGrandmaster", "name": "Grandmaster Witcher", "genre": "Grimdark", "rarity": "Mythic", "baseAtk": 210, "attackInterval": 1.1, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Alternates three Silver attacks and three Sign attacks. Silver guarantees criticals: 3× TOTAL damage against priority enemies, 2× against ordinary runners. Signs blast the target’s 4-tile wall, knock runners back 3 tiles (boss resistance applies), and strip 50% armor.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "witcherGrandmaster", "evolvedFrom": "mercenary"},{"id": "bloodDrunkHunter", "name": "Blood-Drunk Abyssal Hunter", "genre": "Grimdark", "rarity": "Mythic", "baseAtk": 195, "attackInterval": 0.75, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["hunter"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Inflicts stacking Arterial Hemorrhage: 40 true DPS for 4s. A hemorrhaging ordinary runner below 30% HP (35% after Eye carving) is executed once, exploding for 400 true damage across its 4-tile wall. Bosses and Harbingers cannot be executed.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "bloodDrunkHunter", "evolvedFrom": "mercenary"},{"id": "beastRelic", "name": "Feral Beast Heart", "genre": "Grimdark", "rarity": "Epic", "baseAtk": 0, "attackInterval": 0, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["support"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Forged only from two beast carvings. Permanent roster card; orthogonal allies gain +25% attack speed. On an Elite/Boss, this relic starts an Eclipse Hunt trial for an adjacent 100-point Branded Berserker. A zero-leak clear awakens its mapped Mythic and consumes the relic; any leak or failed clear removes both.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "beastRelic"},{"id": "fiendRelic", "name": "Demon-Forged Brand", "genre": "Grimdark", "rarity": "Epic", "baseAtk": 0, "attackInterval": 0, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["support"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Forged only from two fiend carvings. Permanent roster card; orthogonal allies gain 30% armor penetration. On an Elite/Boss, this relic starts an Eclipse Hunt trial for an adjacent 100-point Branded Berserker. A zero-leak clear awakens its mapped Mythic and consumes the relic; any leak or failed clear removes both.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "fiendRelic"},{"id": "witchRelic", "name": "Clairvoyant Iris", "genre": "Grimdark", "rarity": "Epic", "baseAtk": 0, "attackInterval": 0, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["support"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "Forged only from two witch carvings. Permanent roster card; orthogonal allies gain +20% critical chance. On an Elite/Boss, this relic starts an Eclipse Hunt trial for an adjacent 100-point Branded Berserker. A zero-leak clear awakens its mapped Mythic and consumes the relic; any leak or failed clear removes both.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "witchRelic"});
+TOKENS.push({"id": "beastSkull", "name": "Feral Beast Skull", "genre": "Grimdark", "rarity": "Normal", "baseAtk": 0, "attackInterval": 0, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["support"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "One-battle trophy. Orthogonal allies gain +20% attack speed and attacks inflict 6 DPS stacking Bleed for 4s. Duplicate family auras do not stack. May be mounted or carved.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "beastSkull", "token": true, "trophyFamily": "beast"},{"id": "fiendHorn", "name": "Armored Demon Horn", "genre": "Grimdark", "rarity": "Normal", "baseAtk": 0, "attackInterval": 0, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["support"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "One-battle trophy. Orthogonal allies gain 40% armor penetration and one 50% second-target cleave per attack. Duplicate family auras do not stack. May be mounted or carved.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "fiendHorn", "token": true, "trophyFamily": "fiend"},{"id": "witchEye", "name": "Specter Witch Eye", "genre": "Grimdark", "rarity": "Normal", "baseAtk": 0, "attackInterval": 0, "max": 0, "icon": "⚔", "fav": "neighbor", "tags": ["support"], "ecosystem": "Eclipse Hunt · trophies and relic forging", "rules": "One-battle trophy. Orthogonal allies gain +25% critical chance and double attack damage against runners below 35% HP. Duplicate family auras do not stack. May be mounted or carved.", "synergy": "Witch Hunter marks one quarry; leave room beside hunters for heads. Stake mounts heads; Taxidermist carves adjacent heads every 6s. Two matching carvings forge a permanent relic.", "huntAsset": "witchEye", "token": true, "trophyFamily": "witch"});
 Object.assign(CARDS.find(c=>c.id==='executioner'),{rules:'Prioritizes Alpha Quarry, Elites, Harbingers and Bosses. Deals 4× damage to targets below 35% HP.',huntAsset:'executioner',tags:['hunter']});
 Object.assign(CARDS.find(c=>c.id==='leech'),{name:'Grave Leech',rules:'Deals 2.5× damage against bleeding runners or while adjacent to a loose or mounted trophy.',huntAsset:'leech'});
 Object.assign(CARDS.find(c=>c.id==='totem'),{huntAsset:'totem'});
@@ -2823,8 +2754,7 @@ FORMS.push({
   "rules": "Earned at 25 points in locked pair. Essence volley hits 1 + Math.floor(points / 20) enemies for 100% ATK damage; off-pair points convert 2:1 into the locked pair. At 80 points, adjacent Astral Loom starts an Elite/Boss trial to awaken the Mythic Archon.",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "elementalAdept",
-  "evolvedFrom": "elementalApprentice",
-  "draftable": false
+  "evolvedFrom": "elementalApprentice"
 },
 {
   "id": "elementalMage",
@@ -2843,8 +2773,7 @@ FORMS.push({
   "rules": "Earned at 45 points in locked pair. Essence volley hits 1 + Math.floor(points / 20) enemies for 100% ATK damage; off-pair points convert 2:1 into the locked pair. At 80 points, adjacent Astral Loom starts an Elite/Boss trial to awaken the Mythic Archon.",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "elementalMaster",
-  "evolvedFrom": "elementalApprentice",
-  "draftable": false
+  "evolvedFrom": "elementalApprentice"
 },
 {
   "id": "elementalMaster",
@@ -2863,8 +2792,7 @@ FORMS.push({
   "rules": "Earned at 45 points in locked pair. Essence volley hits 1 + Math.floor(points / 20) enemies for 100% ATK damage; off-pair points convert 2:1 into the locked pair. At 80 points, adjacent Astral Loom starts an Elite/Boss trial to awaken the Mythic Archon.",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "elementalMaster",
-  "evolvedFrom": "elementalApprentice",
-  "draftable": false
+  "evolvedFrom": "elementalApprentice"
 },
 {
   "id": "elementalArchmage",
@@ -2883,8 +2811,7 @@ FORMS.push({
   "rules": "Earned at 65 points in locked pair. Legendary tier. Essence volley hits 1 + Math.floor(points / 20) enemies for 100% ATK damage. At 80 points, adjacent Astral Loom starts an Elite/Boss Astral Weaving trial: prove the chosen reaction on an Elite, Harbinger, or Boss and clear with zero leaks to awaken the Mythic Archon.",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "elementalArchmage",
-  "evolvedFrom": "elementalApprentice",
-  "draftable": false
+  "evolvedFrom": "elementalApprentice"
 },
 {
   "id": "magmaLord",
@@ -2903,8 +2830,7 @@ FORMS.push({
   "rules": "Normal attack creates a 2s molten fissure on the hit tile, inflicting 1 Burn stack per second on enemies running across it. Every 10th attack: channels 1.2s to deal 150% ATK across all 16 tiles, inflict 1 Burn stack, and create a 16-tile Molten Fissure for 5s (1 burn/s). Reaction (Earth + Fire): Completely shreds target armor (100% strip). Patronage: When this Archon is deployed, Pyromancer and Geomancer max-gauge spells gain both elemental effects (Pyromancer inflicts 1 Burn stack and pierces 20% armor; Geomancer pierces 20% armor and inflicts 1 Burn stack).",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "magmaLord",
-  "evolvedFrom": "elementalApprentice",
-  "draftable": false
+  "evolvedFrom": "elementalApprentice"
 },
 {
   "id": "tempestArchon",
@@ -2923,8 +2849,7 @@ FORMS.push({
   "rules": "Normal attack hits 1 quadrant (4 tiles) with 20% chance of 2-tile warp back. Every 10th attack: channels 1.2s to summon a counter-clockwise tornado across all 16 tiles dealing 150% ATK, pushing enemies 3 tiles back, and inflicting 1 Burn stack. Reaction (Fire + Wind): Spreads all target Burn stacks to up to 2 runners behind it. Patronage: When this Archon is deployed, Pyromancer and Aeromancer max-gauge spells gain both elemental effects (Pyromancer inflicts 1 Burn stack, hits 4 targets, and grants adjacent allies +20% haste for 3s; Aeromancer hits 4 targets, grants adjacent allies +20% haste for 3s, and inflicts 1 Burn stack).",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "tempestArchon",
-  "evolvedFrom": "elementalApprentice",
-  "draftable": false
+  "evolvedFrom": "elementalApprentice"
 },
 {
   "id": "steamSovereign",
@@ -2943,8 +2868,7 @@ FORMS.push({
   "rules": "Normal attack hits 3 enemies; if Drenched, bursts 10% missing HP (once per enemy). Every 10th attack: channels 1.2s to coat all 16 tiles in Vapor Mist for 5s (5% max HP/s true damage). Reaction (Fire + Water): Deals 15% missing HP true damage. Patronage: When this Archon is deployed, Pyromancer and Hydromancer max-gauge spells gain both elemental effects (Pyromancer applies Drenched [30% slow for 3s] and inflicts 1 Burn stack; Hydromancer inflicts 1 Burn stack and applies Drenched [30% slow for 3s]).",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "steamSovereign",
-  "evolvedFrom": "elementalApprentice",
-  "draftable": false
+  "evolvedFrom": "elementalApprentice"
 },
 {
   "id": "quagmireColossus",
@@ -2963,8 +2887,7 @@ FORMS.push({
   "rules": "Normal attack converts one random 4-tile quadrant into Primordial Swamp for the battle (2% max HP/s + 45% slow). Every 10th attack: channels 1.2s to stun for 2s and drench for 4s across all 16 tiles. Reaction (Earth + Water): Target is Drenched (30% slow) and has armor reduced by 20% for 3s. Patronage: When this Archon is deployed, Hydromancer and Geomancer max-gauge spells gain both elemental effects (Hydromancer pierces 20% armor and applies Drenched [30% slow for 3s]; Geomancer applies Drenched [30% slow for 3s] and pierces 20% armor).",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "quagmireColossus",
-  "evolvedFrom": "elementalApprentice",
-  "draftable": false
+  "evolvedFrom": "elementalApprentice"
 },
 {
   "id": "blizzardArchon",
@@ -2983,8 +2906,7 @@ FORMS.push({
   "rules": "Normal attack hits 3 targets and applies Drenched (30% slow for 3s). Every 10th attack: channels 1.2s to unleash a 16-tile Blizzard for 150% ATK and 2s freeze (3s freeze + 50% armor shred if Drenched). Reaction (Water + Wind): Freezes target for 2s. Patronage: When this Archon is deployed, Hydromancer and Aeromancer max-gauge spells gain both elemental effects (Hydromancer hits 4 targets, grants adjacent allies +20% haste for 3s, and applies Drenched [30% slow for 3s]; Aeromancer applies Drenched [30% slow for 3s], hits 4 targets, and grants adjacent allies +20% haste for 3s).",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "blizzardArchon",
-  "evolvedFrom": "elementalApprentice",
-  "draftable": false
+  "evolvedFrom": "elementalApprentice"
 },
 {
   "id": "sandstormTitan",
@@ -3003,8 +2925,7 @@ FORMS.push({
   "rules": "Normal attack pierces 5 targets with 10% falloff per hit (100%/90%/80%/70%/60%). Every 10th attack: enters a 10s channel mode (disabling normal attacks), stripping 10% base armor/s and dealing 10% ATK + 10% missing HP every second across all 16 tiles. Reaction (Earth + Wind): Inflicts 1 Bleed stack (1% enemy HP/s for 3s). Patronage: When this Archon is deployed, Geomancer and Aeromancer max-gauge spells gain both elemental effects (Geomancer hits 4 targets, grants adjacent allies +20% haste for 3s, and pierces 20% armor; Aeromancer pierces 20% armor, hits 4 targets, and grants adjacent allies +20% haste for 3s).",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "sandstormTitan",
-  "evolvedFrom": "elementalApprentice",
-  "draftable": false
+  "evolvedFrom": "elementalApprentice"
 });
 CARDS.push({
   "id": "cyberSolo",
@@ -3227,8 +3148,7 @@ FORMS.push({
   "rules": "Earned at25 Chrome. Retains installed modules. Four attacks earn1 Chrome. Heat and socket rules remain.",
   "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "chromedSolo",
-  "evolvedFrom": "cyberSolo",
-  "draftable": false
+  "evolvedFrom": "cyberSolo"
 },
 {
   "id": "eliteSolo",
@@ -3247,8 +3167,7 @@ FORMS.push({
   "rules": "Earned at65 Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic.",
   "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "eliteSolo",
-  "evolvedFrom": "cyberSolo",
-  "draftable": false
+  "evolvedFrom": "cyberSolo"
 },
 {
   "id": "chronoPhantom",
@@ -3268,7 +3187,6 @@ FORMS.push({
   "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "chronoPhantom",
   "evolvedFrom": "cyberSolo",
-  "draftable": false,
   "cyberArm": "mantisImplant",
   "cyberOS": "sandyOS"
 },
@@ -3290,7 +3208,6 @@ FORMS.push({
   "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "thermalRipper",
   "evolvedFrom": "cyberSolo",
-  "draftable": false,
   "cyberArm": "mantisImplant",
   "cyberOS": "berserkOS"
 },
@@ -3312,7 +3229,6 @@ FORMS.push({
   "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "glitchAssassin",
   "evolvedFrom": "cyberSolo",
-  "draftable": false,
   "cyberArm": "mantisImplant",
   "cyberOS": "cyberdeckOS"
 },
@@ -3334,7 +3250,6 @@ FORMS.push({
   "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "gravitonColossus",
   "evolvedFrom": "cyberSolo",
-  "draftable": false,
   "cyberArm": "gorillaImplant",
   "cyberOS": "sandyOS"
 },
@@ -3356,7 +3271,6 @@ FORMS.push({
   "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "juggernautSmasher",
   "evolvedFrom": "cyberSolo",
-  "draftable": false,
   "cyberArm": "gorillaImplant",
   "cyberOS": "berserkOS"
 },
@@ -3378,7 +3292,6 @@ FORMS.push({
   "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "empBreaker",
   "evolvedFrom": "cyberSolo",
-  "draftable": false,
   "cyberArm": "gorillaImplant",
   "cyberOS": "cyberdeckOS"
 },
@@ -3400,7 +3313,6 @@ FORMS.push({
   "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "razorPhantom",
   "evolvedFrom": "cyberSolo",
-  "draftable": false,
   "cyberArm": "monowireImplant",
   "cyberOS": "sandyOS"
 },
@@ -3422,7 +3334,6 @@ FORMS.push({
   "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "plasmaTempest",
   "evolvedFrom": "cyberSolo",
-  "draftable": false,
   "cyberArm": "monowireImplant",
   "cyberOS": "berserkOS"
 },
@@ -3444,7 +3355,6 @@ FORMS.push({
   "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
   "cyberAsset": "networkReaper",
   "evolvedFrom": "cyberSolo",
-  "draftable": false,
   "cyberArm": "monowireImplant",
   "cyberOS": "cyberdeckOS"
 });
@@ -3463,10 +3373,10 @@ const COSMIC_BRANCH_DATA=[
  ['abyss+flesh','brainHerald','Herald of the Brain Harvest',52,.9,'brainGrimoire',"Revelations of Gla’aki",'elderBrain','Yuggoth Elder Brain',170,.55,'Infects attacked runners for4s; once per second each infected runner pulses50% ATK damage within2.5 tiles.','Once at awakening permanently absorbs50% of every other deployed Cosmic ally’s ATK. Every5s hijacks the highest-HP runner for4s, halting it and pulsing200% ATK each second within2.5 tiles. Boss halt duration is halved and enraged bosses are immune to halting.'],
  ['astral+flesh','chaosHerald','Herald of the Crawling Chaos',56,.85,'chaosGrimoire','Pnakotic Manuscripts','azathoth','Azathoth, The Daemon Sultan',235,.5,'Prioritizes Elites, Harbingers and Bosses; strips40% armor and deals double damage to them.','Each attack bombards up to six runners with true damage. Every fourth attack additionally strips exactly15% current HP from Bosses and Harbingers and warps them back3 tiles. Boss resistance and enrage remain active.']
 ];
-for(const [script,id,name,atk,interval] of [['abyss','drownedIdol','Idol of the Drowned Dreamer',22,1.3],['astral','keyIdol','Idol of the Shifting Key',20,1.2],['flesh','wombIdol','Idol of the Protoplasmic Womb',24,1.1]])FORMS.push(cosmicCard(id,name,'Rare',atk,interval,script==='abyss'?'Pierces two runners; every sixth attack reverses the target for1.2s.':script==='astral'?'Ignores armor; every fifth attack warps the leading runner back2.5 tiles.':'Adds30% of the highest adjacent base ATK for this battle; attacks apply8 bleed DPS for4s.',{evolvedFrom:'slumberingIdol',draftable:false,cosmicScript:script}));
-for(const [pair,id,name,atk,interval,relic,relicName,apex,apexName,apexAtk,apexInterval,rule,apexRule] of COSMIC_BRANCH_DATA){FORMS.push(cosmicCard(id,name,'Epic',atk,interval,rule,{evolvedFrom:'slumberingIdol',draftable:false,cosmicPair:pair}),cosmicCard(relic,relicName,'Epic',0,0,'Forged from '+pair.replace('+',' + ')+' pages. Permanent undraftable relic; consumed only when its adjacent Herald completes the 154-Syllable Elite/Boss Forbidden Recitation with each script effect proved on a priority target and zero leaks. Failure removes the Herald and Grimoire.',{draftable:false,cosmicRelic:true,cosmicPair:pair}),cosmicCard(apex,apexName,'Mythic',apexAtk,apexInterval,apexRule,{evolvedFrom:'slumberingIdol',draftable:false,cosmicPair:pair}));}
-for(const [script,id,name,rule] of [['abyss','abyssPage','Sunken Page','Adjacent attacks apply20% slow and +10% spell damage taken for3s. Decipher:12 Syllables and reverse two leading runners for1.5s.'],['astral','astralPage','Star-Chart Page','Adjacent allies gain20% gauge charge and ignore30% armor. Decipher:12 Syllables and warp two leading runners back3 tiles.'],['flesh','fleshPage','Skin-Bound Page','Adjacent allies gain15% speed and apply6 parasite DPS for4s. Decipher:12 Syllables and +3 permanent ATK to the lowest-ATK adjacent original.']])TOKENS.push(cosmicCard(id,name,'Normal',0,0,rule,{token:true,draftable:false,cosmicScript:script}));
-TOKENS.push(cosmicCard('mindLarvaToken','Mind Larva Spawn','Normal',11,1,'Temporary larva:20% slow; every fifth attack double damage. Tokens do not chant.',{token:true,draftable:false,evolvedFrom:'larva'}),cosmicCard('darkYoung','Dark Young','Normal',0,.5,'Temporary spawn:75% summoner ATK,20% slow and25% armor shred.',{token:true,draftable:false}));
+for(const [script,id,name,atk,interval] of [['abyss','drownedIdol','Idol of the Drowned Dreamer',22,1.3],['astral','keyIdol','Idol of the Shifting Key',20,1.2],['flesh','wombIdol','Idol of the Protoplasmic Womb',24,1.1]])FORMS.push(cosmicCard(id,name,'Rare',atk,interval,script==='abyss'?'Pierces two runners; every sixth attack reverses the target for1.2s.':script==='astral'?'Ignores armor; every fifth attack warps the leading runner back2.5 tiles.':'Adds30% of the highest adjacent base ATK for this battle; attacks apply8 bleed DPS for4s.',{evolvedFrom:'slumberingIdol',cosmicScript:script}));
+for(const [pair,id,name,atk,interval,relic,relicName,apex,apexName,apexAtk,apexInterval,rule,apexRule] of COSMIC_BRANCH_DATA){FORMS.push(cosmicCard(id,name,'Epic',atk,interval,rule,{evolvedFrom:'slumberingIdol',cosmicPair:pair}),cosmicCard(relic,relicName,'Epic',0,0,'Forged from '+pair.replace('+',' + ')+' pages. Permanent undraftable relic; consumed only when its adjacent Herald completes the 154-Syllable Elite/Boss Forbidden Recitation with each script effect proved on a priority target and zero leaks. Failure removes the Herald and Grimoire.',{cosmicPair:pair}),cosmicCard(apex,apexName,'Mythic',apexAtk,apexInterval,apexRule,{evolvedFrom:'slumberingIdol',cosmicPair:pair}));}
+for(const [script,id,name,rule] of [['abyss','abyssPage','Sunken Page','Adjacent attacks apply20% slow and +10% spell damage taken for3s. Decipher:12 Syllables and reverse two leading runners for1.5s.'],['astral','astralPage','Star-Chart Page','Adjacent allies gain20% gauge charge and ignore30% armor. Decipher:12 Syllables and warp two leading runners back3 tiles.'],['flesh','fleshPage','Skin-Bound Page','Adjacent allies gain15% speed and apply6 parasite DPS for4s. Decipher:12 Syllables and +3 permanent ATK to the lowest-ATK adjacent original.']])TOKENS.push(cosmicCard(id,name,'Normal',0,0,rule,{token:true,cosmicScript:script}));
+TOKENS.push(cosmicCard('mindLarvaToken','Mind Larva Spawn','Normal',11,1,'Temporary larva:20% slow; every fifth attack double damage. Tokens do not chant.',{token:true,evolvedFrom:'larva'}),cosmicCard('darkYoung','Dark Young','Normal',0,.5,'Temporary spawn:75% summoner ATK,20% slow and25% armor shred.',{token:true}));
 for(const [id,atk,interval,max,rules] of [
  ['larva',11,1,0,'Strikes and slows20% for3s. Every fifth attack deals double damage and chants3 Syllables. Pages generated by its chants use Flesh script.'],
  ['mass',15,1.4,0,'Copies highest adjacent base ATK at battle start. Uses oldest deployed Idol’s primary script: Abyss35% slow; Astral warp2 every fourth attack; Flesh cleaves three and spawns a temporary Mind Larva on kill.'],
@@ -3506,15 +3416,15 @@ for (const [strain, id, name, atk, interval] of [
     strain === 'chitin' ? 'Fires high-velocity bone needles that pierce 2 runners and always critically strike targets with 2+ Weakpoints.' :
     strain === 'acid' ? 'Critical hits splash corrosive bile across 2 adjacent runners, melting 35% of their armor and applying 12 DPS acid burn.' :
     'Every 3rd attack scans the leading runner with 2 Weakpoint stacks and arcs bio-electric lightning to a second target.',
-    { evolvedFrom: 'xenoSpecimen', draftable: false, xenoStrain: strain }
+    { evolvedFrom: 'xenoSpecimen' }
   ));
 }
 
 for (const [pair, id, name, atk, interval, serum, serumName, apex, apexName, apexAtk, apexInterval, rule, apexRule] of XENO_BRANCH_DATA) {
   FORMS.push(
-    xenoCard(id, name, 'Epic', atk, interval, rule, { evolvedFrom: 'xenoSpecimen', draftable: false, xenoPair: pair }),
-    xenoCard(serum, serumName, 'Epic', 0, 0, 'Forged from ' + pair.replace('+', ' + ') + ' Helices. Permanent undraftable serum; its adjacent matching 130-Genome chrysalis must clear an Elite/Boss trial with zero leaks to consume this Serum and awaken ' + apexName + '.', { draftable: false, xenoSerum: true, xenoPair: pair }),
-    xenoCard(apex, apexName, 'Mythic', apexAtk, apexInterval, apexRule, { evolvedFrom: 'xenoSpecimen', draftable: false, xenoPair: pair })
+    xenoCard(id, name, 'Epic', atk, interval, rule, { evolvedFrom: 'xenoSpecimen', xenoPair: pair }),
+    xenoCard(serum, serumName, 'Epic', 0, 0, 'Forged from ' + pair.replace('+', ' + ') + ' Helices. Permanent undraftable serum; its adjacent matching 130-Genome chrysalis must clear an Elite/Boss trial with zero leaks to consume this Serum and awaken ' + apexName + '.', { xenoPair: pair }),
+    xenoCard(apex, apexName, 'Mythic', apexAtk, apexInterval, apexRule, { evolvedFrom: 'xenoSpecimen', xenoPair: pair })
   );
 }
 
@@ -3523,7 +3433,7 @@ for (const [strain, id, name, rule] of [
   ['acid', 'acidHelix', 'Beta-Acid Helix', 'Adjacent allies critical hits apply Molecular Corrosion (shreds 30% armor and deals 10 true DPS for 4s). Pulse: Grants +12 Genome and +3 permanent ATK to Specimen, and sprays a 3-tile acid pool.'],
   ['psionic', 'psionicHelix', 'Gamma-Synapse Helix', 'Adjacent allies gain +15% Critical Hit Chance and charge Singularity Core by +1 extra tick on crit. Pulse: Grants +12 Genome and +3 permanent ATK to Specimen, and stuns all Weakpoint runners for 1.0s.']
 ]) {
-  TOKENS.push(xenoCard(id, name, 'Normal', 0, 0, rule, { token: true, draftable: false, xenoStrain: strain }));
+  TOKENS.push(xenoCard(id, name, 'Normal', 0, 0, rule, { token: true }));
 }
 
 
@@ -3534,7 +3444,7 @@ Object.assign(CARDS.find(c => c.id === 'railgun'), { rules: 'Pierces 3 runners i
 Object.assign(CARDS.find(c => c.id === 'core'), { rules: 'Grants all other allies +15 percentage points of critical hit chance. Gains 1 tick whenever an ally lands a critical hit. At 8 ticks, triggers Gravitational Collapse: deals 240 + 2× Team Power true damage and Warps all runners backward 2.5 tiles.' });
 
 const CARD = Object.fromEntries([...CARDS, ...FORMS, ...TOKENS].map(c => [c.id, c]));
-if (typeof module !== 'undefined') module.exports = { GENRES, LEADERS, CARDS, CARD, NODES, RELICS, RARITIES, FORMS, TOKENS };
+if (typeof module !== 'undefined') module.exports = { GENRES, LEADERS, CARDS, CARD, NODES, RELICS, FORMS, TOKENS };
 
 
 
