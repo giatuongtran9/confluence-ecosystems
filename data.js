@@ -2140,7 +2140,7 @@ const FORMS = [
   "evolvedFrom": "cub",
   "lineage": "phoenix",
   "lineageTier": 4,
-  "rules": "Normal attack deals 100% ATK damage and applies 1 Burn stack (1% enemy max HP for 1s), spreading 1 Burn stack to 3 runners behind. Burning deaths spread stacks behind. Once per run, if player health drops to 0, revives with 15 HP.",
+  "rules": "Normal attack deals 100% ATK damage and applies 1 Burn stack (1% enemy max HP for 1s), spreading 1 Burn stack to 3 runners behind. Burning deaths spread stacks behind. Every 10th attack, channels for 1.2s to release Rebirth Inferno: all 16 tiles burn for 5s, and runners on them take 1 Burn stack every second. Once per run, if player health drops to 0, revives with 15 HP.",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
@@ -2884,7 +2884,7 @@ FORMS.push({
     "elemental"
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
-  "rules": "Normal attack converts one random 4-tile quadrant into Primordial Swamp for the battle (2% max HP/s + 45% slow). Every 10th attack: channels 1.2s to stun for 2s and drench for 4s across all 16 tiles. Reaction (Earth + Water): Target is Drenched (30% slow) and has armor reduced by 20% for 3s. Patronage: When this Archon is deployed, Hydromancer and Geomancer max-gauge spells gain both elemental effects (Hydromancer pierces 20% armor and applies Drenched [30% slow for 3s]; Geomancer applies Drenched [30% slow for 3s] and pierces 20% armor).",
+  "rules": "Normal attack deals 100% ATK. Its first attack each battle converts one random 4-tile quadrant into Primordial Swamp for the rest of the battle (2% max HP/s + 45% slow). Every 10th attack: channels 1.2s to stun for 2s and drench for 4s across all 16 tiles. Reaction (Earth + Water): Target is Drenched (30% slow) and has armor reduced by 20% for 3s. Patronage: When this Archon is deployed, Hydromancer and Geomancer max-gauge spells gain both elemental effects (Hydromancer pierces 20% armor and applies Drenched [30% slow for 3s]; Geomancer applies Drenched [30% slow for 3s] and pierces 20% armor).",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "quagmireColossus",
   "evolvedFrom": "elementalApprentice"

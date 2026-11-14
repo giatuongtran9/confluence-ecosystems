@@ -286,7 +286,7 @@ test('Immortal Vermilion Phoenix: 10th attack channels Rebirth Inferno; burning 
   assert.strictEqual(phoenix.channeling, null);
   assert.strictEqual(b.phoenixFlames.length, 1, 'All 16 tiles set burning');
 
-  // Tile 5 ignites 0.15 + (16 - 5) / 20 = 0.7s after release and burns for 5s: one Burn stack each second.
+  // All 16 tiles ignite together 0.6s after release and burn for 5s: one Burn stack each second.
   let stacks = 0, last = e1.phoenixBurnAt || 0;
   for (let i = 0; i < 70; i++) {
     phoenix.currentCooldown = 99;

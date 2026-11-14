@@ -392,9 +392,11 @@ const Game = (() => {
    shared('steam-jets',0.5,jets);
   }else if(u.id==='quagmireColossus'){
    hit(b,u,target,power,true,{fx:{type:'mud-boulder',kind:'mud-boulder',ttl:0.55}});
-   const quadStart=Math.floor(rand(b.run)*4)*4;
-   arcaneZone(b,u,'swamp',quadStart,Infinity,0);
-   b.arcaneZones.at(-1).at=b.time;
+   if(!u.swampPlaced){                       // only the first attack of the battle converts a quadrant to swamp
+    u.swampPlaced=true;
+    const quadStart=Math.floor(rand(b.run)*4)*4;
+    arcaneZone(b,u,'swamp',quadStart,Infinity,0);
+   }
   }else if(u.id==='blizzardArchon'){
    const shards=living(b).slice(0,3);
    for(const e of shards){
@@ -2949,6 +2951,9 @@ function fx(b, type, u, e, text, extra = {}) {
     if (u.channeling.remaining <= 0) {
      const chType = u.channeling.type;
      u.channeling = null;
+     // The cooldown doesn't tick while channelling, so the wait set when the channel started would otherwise
+     // repeat after it (10s for Sandstorm, 1.2s for the rest). Resume after one normal attack interval instead.
+     if (u.attackInterval > 0) u.currentCooldown = Math.min(u.currentCooldown || 0, u.attackInterval / speed(b, u));
      // Arcane ultimates land per enemy as their visual reaches it (b.pendingHits); effects and totals are unchanged.
      const ox = u.x + 1, oy = u.y + 1, t0 = b.time, power = atk(b, u);
      const radial = (start, speed) => living(b).map(e => { const p = track(e.p); return { e, uid: e.uid, at: start + Math.hypot(p.x - ox, p.y - oy) / speed }; });
@@ -3216,8 +3221,9 @@ function fx(b, type, u, e, text, extra = {}) {
       // igniting each tile as it passes; a tile burns for 5s from ignition. Runners on a burning tile take
       // 1 Burn stack (1% max HP for 1s) every second (tickPhoenixFlames).
       b.phoenixFlames ??= [];
-      b.phoenixFlames.push({ owner: u.uid, unit: u, start: b.time + 0.15, speed: 20, dur: 5 });
-      fx(b, 'phoenix-inferno', u, null, 'REBIRTH INFERNO', { ttl: 1.3, schedule: { start: 0.15, speed: 20 } });
+      // The phoenix soars up and bursts at 0.6s: all 16 tiles ignite at that same moment (speed Infinity).
+      b.phoenixFlames.push({ owner: u.uid, unit: u, start: b.time + 0.6, speed: Infinity, dur: 5 });
+      fx(b, 'phoenix-inferno', u, null, 'REBIRTH INFERNO', { ttl: 1.6, schedule: { burstAt: 0.6 } });
       interact(b, u, u, 'phoenix-inferno', 'Rebirth Inferno: all 16 tiles burn for 5s (1 Burn stack per second)');
      }
      else if (chType === 'berserker-cleave') {

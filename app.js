@@ -2201,6 +2201,9 @@ function drawInkWash(ctx, size, cx, cy, alpha) {
   dimFocus(ctx, size, cx, cy, 0.35 * alpha, '10, 10, 12');
 }
 // pts run tail → head; W scales body thickness. reveal 0..1 paints from the tail; the head appears at the end.
+const INK_PAL = { ink: INK, halo: 'rgba(55, 55, 60, 0.22)', belly: 'rgba(120, 120, 126, 0.55)', streak: 'rgba(160, 160, 166, 0.35)', scale: 'rgba(205, 205, 212, 0.5)', eye: '110, 231, 183' };
+const AZURE_PAL = { ink: '#0c4a6e', halo: 'rgba(56, 189, 248, 0.35)', belly: 'rgba(186, 230, 253, 0.75)', streak: 'rgba(224, 242, 254, 0.5)', scale: 'rgba(224, 242, 254, 0.8)', eye: '255, 255, 255' };
+let DRAGON_PAL = INK_PAL;   // drawInkDragon colours; swapped for the Azure Dragon spirit
 function drawInkDragon(ctx, pts, reveal, alpha, time, W = 1) {
   if (alpha <= 0 || pts.length < 3) return;
   const N = pts.length, n = Math.max(2, Math.floor(N * reveal));
@@ -2211,7 +2214,7 @@ function drawInkDragon(ctx, pts, reveal, alpha, time, W = 1) {
   ctx.globalAlpha = Math.min(1, alpha);
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   const seg = (i, w, style, dx = 0) => { const a = off(i - 1, dx), b = off(i, dx); ctx.strokeStyle = style; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); };
-  for (let i = 1; i < n; i++) seg(i, width(i / (N - 1)) + 16, 'rgba(55, 55, 60, 0.22)');           // wash halo
+  for (let i = 1; i < n; i++) seg(i, width(i / (N - 1)) + 16, DRAGON_PAL.halo);           // wash halo
   // Legs (behind the body): front pair near the head, back pair mid-body; they paddle while flying
   for (const [u, ph] of [[0.42, 0], [0.47, 1.4], [0.8, 0.7], [0.85, 2.1]]) {
     const i = Math.floor(u * (N - 1));
@@ -2219,13 +2222,13 @@ function drawInkDragon(ctx, pts, reveal, alpha, time, W = 1) {
     const m = nrm(i), w = width(u), swing = Math.sin(time * 7 + ph) * 0.5;
     const hip = off(i, w * 0.35), knee = { x: hip.x + (m.x * 0.9 - m.tx * (0.4 + swing)) * 16 * W, y: hip.y + (m.y * 0.9 - m.ty * (0.4 + swing)) * 16 * W };
     const foot = { x: knee.x + (m.x * 0.5 + m.tx * 0.7) * 13 * W, y: knee.y + (m.y * 0.5 + m.ty * 0.7) * 13 * W };
-    ctx.strokeStyle = INK; ctx.lineWidth = 5 * W;
+    ctx.strokeStyle = DRAGON_PAL.ink; ctx.lineWidth = 5 * W;
     ctx.beginPath(); ctx.moveTo(hip.x, hip.y); ctx.lineTo(knee.x, knee.y); ctx.lineTo(foot.x, foot.y); ctx.stroke();
     ctx.lineWidth = 1.6 * W;                                                  // three claws
     for (let c = -1; c <= 1; c++) { ctx.beginPath(); ctx.moveTo(foot.x, foot.y); ctx.lineTo(foot.x + (m.tx + c * m.x * 0.6) * 7 * W, foot.y + (m.ty + c * m.y * 0.6) * 7 * W); ctx.stroke(); }
   }
   // Dorsal mane: flame-like spikes along the back
-  ctx.fillStyle = INK;
+  ctx.fillStyle = DRAGON_PAL.ink;
   for (let i = 4; i < n - 3; i += 3) {
     const u = i / (N - 1), m = nrm(i), w = width(u), base = off(i, -w * 0.45), len = (6 + w * 0.5) * (0.8 + 0.4 * Math.sin(time * 4 + i));
     ctx.beginPath();
@@ -2234,19 +2237,19 @@ function drawInkDragon(ctx, pts, reveal, alpha, time, W = 1) {
     ctx.lineTo(base.x + m.tx * 4 * W, base.y + m.ty * 4 * W);
     ctx.fill();
   }
-  for (let i = 1; i < n; i++) seg(i, width(i / (N - 1)), INK);                                       // body
-  for (let i = 2; i < n; i++) seg(i, width(i / (N - 1)) * 0.32, 'rgba(120, 120, 126, 0.55)', width(i / (N - 1)) * 0.28);   // belly band
+  for (let i = 1; i < n; i++) seg(i, width(i / (N - 1)), DRAGON_PAL.ink);                                       // body
+  for (let i = 2; i < n; i++) seg(i, width(i / (N - 1)) * 0.32, DRAGON_PAL.belly, width(i / (N - 1)) * 0.28);   // belly band
   ctx.setLineDash([7, 5]);                                                                           // dry-brush streaks
-  for (let i = 2; i < n; i += 2) for (const k of [-0.25, 0.05]) seg(i, 1, 'rgba(160, 160, 166, 0.35)', width(i / (N - 1)) * k);
+  for (let i = 2; i < n; i += 2) for (const k of [-0.25, 0.05]) seg(i, 1, DRAGON_PAL.streak, width(i / (N - 1)) * k);
   ctx.setLineDash([]);
-  ctx.strokeStyle = 'rgba(205, 205, 212, 0.5)'; ctx.lineWidth = 1;                                 // scale rows
+  ctx.strokeStyle = DRAGON_PAL.scale; ctx.lineWidth = 1;                                 // scale rows
   for (let i = 3; i < n - 2; i += 2) {
     const u = i / (N - 1), m = nrm(i), w = width(u), ang = Math.atan2(m.ty, m.tx);
     for (const k of [-0.18, 0.1]) { const p = off(i, w * k); ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(2, w * 0.16), ang + Math.PI * 0.55, ang + Math.PI * 1.45); ctx.stroke(); }
   }
   if (reveal > 0.05) {                                                                              // brushy tail fin
     const m = nrm(0), t0 = pts[0];
-    ctx.strokeStyle = INK; ctx.lineWidth = 2 * W;
+    ctx.strokeStyle = DRAGON_PAL.ink; ctx.lineWidth = 2 * W;
     for (let k = -2; k <= 2; k++) {
       const sp = k * 0.35 + Math.sin(time * 5 + k) * 0.08;
       ctx.beginPath(); ctx.moveTo(t0.x, t0.y);
@@ -2258,12 +2261,12 @@ function drawInkDragon(ctx, pts, reveal, alpha, time, W = 1) {
     const h = pts[N - 1], m = nrm(N - 1), ang = Math.atan2(m.ty, m.tx), sw = Math.sin(time * 8);
     ctx.save();
     ctx.translate(h.x, h.y); ctx.rotate(ang); ctx.scale(W, W);
-    ctx.strokeStyle = INK; ctx.lineCap = 'round';
+    ctx.strokeStyle = DRAGON_PAL.ink; ctx.lineCap = 'round';
     for (let k = 0; k < 6; k++) {                                // mane streaming back from the head
       ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(-4, -4 + k * 1.5);
       ctx.quadraticCurveTo(-18, -14 + k * 4 + Math.sin(time * 6 + k) * 3, -34 - k * 2, -10 + k * 5 + Math.sin(time * 6 + k) * 5); ctx.stroke();
     }
-    ctx.fillStyle = INK;
+    ctx.fillStyle = DRAGON_PAL.ink;
     ctx.beginPath(); ctx.ellipse(2, 0, 15, 10, 0, 0, Math.PI * 2); ctx.fill();         // skull
     ctx.beginPath(); ctx.moveTo(8, -7); ctx.quadraticCurveTo(24, -7, 30, -2); ctx.lineTo(22, 0); ctx.lineTo(8, 2); ctx.fill();   // upper snout
     ctx.beginPath(); ctx.moveTo(8, 4); ctx.quadraticCurveTo(20, 8 + sw, 27, 7 + sw * 2); ctx.lineTo(10, 8); ctx.fill();          // open lower jaw
@@ -2279,7 +2282,7 @@ function drawInkDragon(ctx, pts, reveal, alpha, time, W = 1) {
     ctx.beginPath(); ctx.moveTo(24, 4); ctx.bezierCurveTo(36, 14 - sw * 4, 48, 4 - sw * 6, 58, 14 - sw * 5); ctx.stroke();
     ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.ellipse(8, -4, 3.2, 2, -0.2, 0, Math.PI * 2); ctx.fill();   // eye
     ctx.restore();
-    additiveGlow(ctx, h.x + Math.cos(ang) * 8 * W + Math.sin(ang) * 4 * W, h.y + Math.sin(ang) * 8 * W - Math.cos(ang) * 4 * W, 7 * W, '110, 231, 183', 1);
+    additiveGlow(ctx, h.x + Math.cos(ang) * 8 * W + Math.sin(ang) * 4 * W, h.y + Math.sin(ang) * 8 * W - Math.cos(ang) * 4 * W, 7 * W, DRAGON_PAL.eye, 1);
   }
   ctx.restore();
 }
@@ -2899,7 +2902,12 @@ function drawAzureGather(ctx, cx, cy, prog, size) {
 function drawAzureWrath(ctx, f, size) {
   const t = fxTime(f), o = routePoint(f.x, f.y, size), time = battle.time, sch = f.schedule || { hits: [] };
   dimFocus(ctx, size, o.x, o.y, 0.5 * Math.max(0, 1 - Math.max(0, t - 1.0) / 0.5), '2, 6, 20');
-  if (t < 1.1) drawGlowPath(ctx, lightningDragonPts(o.x, Math.max(50, o.y - 110), 300, 34, time * 6), AZURE, Math.min(1, t / 0.15) * (t > 0.8 ? 1 - (t - 0.8) / 0.3 : 1), 5);
+  if (t < 1.1) {                                                     // a full azure dragon spirit, lit by its own lightning
+    const a = Math.min(1, t / 0.15) * (t > 0.8 ? 1 - (t - 0.8) / 0.3 : 1), pts = lightningDragonPts(o.x, Math.max(70, o.y - 125), 360, 30, time * 3);
+    additiveGlow(ctx, o.x, Math.max(70, o.y - 125), 200, AZURE, 0.35 * a);
+    DRAGON_PAL = AZURE_PAL; drawInkDragon(ctx, pts, 1, a, time, 1.45); DRAGON_PAL = INK_PAL;
+    drawGlowPath(ctx, pts, AZURE, 0.45 * a, 2);
+  }
   if (t > 0.08 && t < 0.5) { const k = (t - 0.08) / 0.42; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = `rgba(${AZURE}, ${0.8 * (1 - k)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(o.x, o.y, 30 + k * 260, 12 + k * 110, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore(); }   // the roar
   for (const h of sch.hits) {
     if (t < h.at) continue;
@@ -2955,7 +2963,7 @@ function drawTigerHead(ctx, x, y, s, alpha, roar) {
 function drawTigerRoar(ctx, f, size) {
   const t = fxTime(f), o = routePoint(f.x, f.y, size), sch = f.schedule || { hits: [] };
   dimFocus(ctx, size, o.x, o.y, 0.45 * Math.max(0, 1 - Math.max(0, t - 0.9) / 0.5), '8, 8, 10');
-  if (t < 1.0) { const pop = t < 0.15 ? 0.6 + 0.4 * (t / 0.15) : 1; drawTigerHead(ctx, o.x, Math.max(70, o.y - 100), 1.05 * pop, Math.min(1, t / 0.1) * (t > 0.7 ? 1 - (t - 0.7) / 0.3 : 1), Math.min(1, Math.max(0, (t - 0.15) / 0.12))); }
+  if (t < 1.0) { const pop = t < 0.15 ? 0.6 + 0.4 * (t / 0.15) : 1; drawTigerHead(ctx, o.x, Math.max(95, o.y - 125), 1.55 * pop, Math.min(1, t / 0.1) * (t > 0.7 ? 1 - (t - 0.7) / 0.3 : 1), Math.min(1, Math.max(0, (t - 0.15) / 0.12))); }
   const R = Math.max(0, (t - 0.25) * 6);
   if (R > 0 && R < 5) waveRing(ctx, size, f.x, f.y, R, (x, y, rx, ry) => {
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
@@ -2983,6 +2991,7 @@ function drawHex(ctx, x, y, r) { ctx.beginPath(); for (let i = 0; i <= 6; i++) {
 function drawXuanwuGather(ctx, cx, cy, prog, size) {
   const time = battle.time, a = Math.min(1, prog / 0.3);
   dimFocus(ctx, size, cx, cy, 0.45 * Math.min(1, prog / 0.25), '2, 12, 8');
+  drawSpiritTortoise(ctx, cx, Math.max(70, cy - 110), 1.35, Math.min(1, prog / 0.4), time);
   ctx.save(); ctx.globalCompositeOperation = 'lighter';                // tortoise-shell hex barrier
   const R = 22;
   const cells = [[0, 0], ...Array.from({ length: 6 }, (_, i) => [Math.cos(i * Math.PI / 3) * R * 1.73, Math.sin(i * Math.PI / 3) * R * 1.73])];
@@ -3003,6 +3012,7 @@ function drawXuanwuGather(ctx, cx, cy, prog, size) {
 }
 function drawXuanwuLob(ctx, f, size) {
   const t = fxTime(f), sch = f.schedule || { quadrant: 0, landAt: 0.5 }, o = routePoint(f.x, f.y, size), q = trackPoint(sch.quadrant * 4 + 2, size);
+  if (t < 0.6) drawSpiritTortoise(ctx, o.x, Math.max(70, o.y - 110), 1.35, 1 - t / 0.6, battle.time);
   if (t < sch.landAt) {
     const k = t / sch.landAt, p = quadPt(o.x, o.y - 20, (o.x + q.x) / 2, Math.min(o.y, q.y) - 140, q.x, q.y, k);
     additiveGlow(ctx, p.x, p.y, 26, VENOM, 0.9);
@@ -3070,18 +3080,6 @@ function drawPhoenixGather(ctx, cx, cy, prog, size) {
   if (Math.random() < 0.6) emitParticle(0, cx + (Math.random() - 0.5) * 60, cy, (Math.random() - 0.5) * 20, -60 - Math.random() * 60, 0.6, 1.4, Math.random() < 0.5 ? '#fdba74' : '#fde047');
   channelLabel(ctx, cx, cy + 150, '🔥 BẤT DIỆT HỎA PHƯỢNG', prog, '#fdba74', '#431407');
 }
-function drawPhoenixInferno(ctx, f, size) {
-  const t = fxTime(f), sch = f.schedule || { start: 0.15, speed: 20 }, head = 16 - Math.max(0, t - sch.start) * sch.speed;
-  if (t < sch.start || head < -1) return;
-  const hp = Math.max(0, head), q = trackPoint(hp, size), n = trackPoint(Math.max(0, hp - 0.2), size), ang = Math.atan2(n.y - q.y, n.x - q.x);
-  const tail = [];                                                       // flame tail streaming behind along the track
-  for (let p = Math.min(15.999, hp + 2.5); p >= hp; p -= 0.15) { const c = trackPoint(p, size); tail.push({ x: c.x, y: c.y - 22 }); }
-  drawFlameLine(ctx, tail, 1, head < 0 ? Math.max(0, 1 + head) : 1);
-  additiveGlow(ctx, q.x, q.y - 26, 46, FLAME, 0.9);
-  ctx.save(); ctx.translate(q.x, q.y - 26); ctx.rotate(ang); drawPhoenixWings(ctx, 0, 0, 46, 1, Math.sin(battle.time * 18)); ctx.restore();
-  additiveGlow(ctx, q.x + Math.cos(ang) * 10, q.y - 26 + Math.sin(ang) * 10, 10, '254, 240, 138', 1);
-}
-
 // ==== Great Sage Equal to Heaven (Tề Thiên) — golden staff and clouds ====
 const GOLDEN = '250, 204, 21';
 function drawStaff(ctx, x0, y0, x1, y1, w, alpha) {
@@ -3127,8 +3125,8 @@ function drawSageStaff(ctx, f, size) {
   if (t >= I) tip = Q.y + 6; else if (t > I - 0.15) { const k = (t - (I - 0.15)) / 0.15; tip = high + (Q.y + 6 - high) * k * k * k; }
   const a = Math.min(1, Math.max(0, (t - 0.1) / 0.1)) * (t > 1.15 ? Math.max(0, 1 - (t - 1.15) / 0.35) : 1);
   if (t < I) { ctx.save(); ctx.fillStyle = `rgba(0, 0, 0, ${0.2 + 0.35 * a})`; ctx.beginPath(); ctx.ellipse(Q.x, Q.y + 6, 30, 10, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
-  drawStaff(ctx, Q.x, tip - 300, Q.x, tip, 16, a);
-  additiveGlow(ctx, Q.x, tip - 150, 70, GOLDEN, 0.35 * a);
+  drawStaff(ctx, Q.x, tip - 380, Q.x, tip, 24, a);
+  additiveGlow(ctx, Q.x, tip - 190, 95, GOLDEN, 0.4 * a);
   if (t >= I) {
     onceEach(f, 'impact', () => { burstImpact(Q.x, Q.y + 6, 26, 14, 30, 1.4); burstColors(Q.x, Q.y, 20, ['#fde68a', '#facc15', '#ffffff'], 1.5, 0.5); });
     const since = t - I;
@@ -3187,21 +3185,11 @@ function drawMagmaEruption(ctx, f, size) {
     if (R < d) continue;
     const since = (R - d) / sch.speed, c = ringTile(i, size);
     onceEach(f, 't' + i, () => { for (let k = 0; k < 6; k++) emitParticle(2, c.x, c.y, (Math.random() - 0.5) * 60, -180 - Math.random() * 150, 0.6, 1.8 + Math.random() * 1.6, Math.random() < 0.5 ? '#f97316' : '#fde047'); });
-    if (since < 0.45) { const h = 70 * Math.sin(Math.min(1, since / 0.45) * Math.PI); ctx.save(); ctx.globalCompositeOperation = 'lighter'; const gg = ctx.createLinearGradient(c.x, c.y - h, c.x, c.y); gg.addColorStop(0, 'rgba(253, 224, 71, 0)'); gg.addColorStop(0.4, 'rgba(249, 115, 22, 0.8)'); gg.addColorStop(1, 'rgba(220, 38, 38, 0.9)'); ctx.fillStyle = gg; ctx.fillRect(c.x - 6, c.y - h, 12, h); ctx.restore(); }
+    if (since < 0.45) { const h = 120 * Math.sin(Math.min(1, since / 0.45) * Math.PI); ctx.save(); ctx.globalCompositeOperation = 'lighter'; const gg = ctx.createLinearGradient(c.x, c.y - h, c.x, c.y); gg.addColorStop(0, 'rgba(253, 224, 71, 0)'); gg.addColorStop(0.4, 'rgba(249, 115, 22, 0.8)'); gg.addColorStop(1, 'rgba(220, 38, 38, 0.9)'); ctx.fillStyle = gg; ctx.fillRect(c.x - 9, c.y - h, 18, h); ctx.restore(); }
   }
 }
 
 // ==== Firestorm Tempest — fire and wind ====
-function drawFireGust(ctx, f, size) {
-  const prog = fxProg(f), q0 = f.schedule?.quad ?? 0, head = q0 + 4 * Math.min(1, prog / 0.6), fade = prog < 0.6 ? 1 : 1 - (prog - 0.6) / 0.4;
-  const pts = [];
-  for (let p = Math.max(q0, head - 2); p <= head; p += 0.12) { const c = trackPoint(Math.min(15.999, p), size); pts.push({ x: c.x, y: c.y - 10 + Math.sin(p * 9 + battle.time * 20) * 5 }); }
-  drawFlameLine(ctx, pts, 1, fade);
-  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = `rgba(254, 243, 199, ${0.35 * fade})`; ctx.lineWidth = 1.2;   // wind streaks riding the gust
-  pts.forEach((p, i) => { if (i % 4) return; ctx.beginPath(); ctx.moveTo(p.x - 12, p.y - 10); ctx.lineTo(p.x + 12, p.y - 13); ctx.stroke(); });
-  ctx.restore();
-  chainPts(f, size).forEach((p, i) => onceEach(f, 'h' + i, () => burstColors(p.x, p.y - 8, 6, ['#fb923c', '#fde047'], 0.8, 0.3)));
-}
 function drawTempestGather(ctx, cx, cy, prog, size) {
   const time = battle.time;
   dimFocus(ctx, size, cx, cy, 0.45 * Math.min(1, prog / 0.25), '20, 8, 2');
@@ -3216,7 +3204,7 @@ function drawTornado(ctx, x, y, h, alpha, time) {
   if (alpha <= 0) return;
   ctx.save();
   for (let i = 0; i < 9; i++) {
-    const k = i / 8, yy = y - k * h, w = 10 + k * 34, off = Math.sin(time * 9 + i * 0.8) * 6 * k;
+    const k = i / 8, yy = y - k * h, w = 14 + k * 48, off = Math.sin(time * 9 + i * 0.8) * 6 * k;
     ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = `rgba(41, 37, 36, ${0.35 * alpha * (1 - k * 0.5)})`; ctx.beginPath(); ctx.ellipse(x + off, yy, w, w * 0.3, 0, 0, Math.PI * 2); ctx.fill();
     ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = `rgba(${LAVA}, ${0.75 * alpha})`; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.ellipse(x + off, yy, w, w * 0.3, 0, time * 12 + i, time * 12 + i + 3.6); ctx.stroke();
   }
@@ -3230,7 +3218,7 @@ function drawFireTornado(ctx, f, size) {
   const trail = [];
   for (let p = Math.min(15.999, Math.max(0, head) + 2); p >= Math.max(0, head); p -= 0.15) { const c = trackPoint(p, size); trail.push({ x: c.x, y: c.y - 4 }); }
   drawFlameLine(ctx, trail, 1, 0.6 * a);
-  drawTornado(ctx, q.x, q.y + 8, 110, a, battle.time);
+  drawTornado(ctx, q.x, q.y + 8, 170, a, battle.time);
   if (a > 0 && Math.random() < 0.8) emitParticle(2, q.x + (Math.random() - 0.5) * 30, q.y - Math.random() * 60, (Math.random() - 0.5) * 160, -40, 0.5, 1.6, Math.random() < 0.5 ? '#57534e' : '#fb923c');
 }
 
@@ -3262,7 +3250,7 @@ function drawSteamGather(ctx, cx, cy, prog, size) {
 }
 function drawSteamEruption(ctx, f, size) {
   const t = fxTime(f), o = routePoint(f.x, f.y, size);
-  if (t < 0.7) { const h = 200 * Math.sin(Math.min(1, t / 0.7) * Math.PI); ctx.save(); const g = ctx.createLinearGradient(o.x, o.y - h, o.x, o.y); g.addColorStop(0, 'rgba(241, 245, 249, 0)'); g.addColorStop(1, 'rgba(241, 245, 249, 0.75)'); ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(o.x - 12, o.y); ctx.lineTo(o.x - 34, o.y - h); ctx.lineTo(o.x + 34, o.y - h); ctx.lineTo(o.x + 12, o.y); ctx.fill(); ctx.restore(); }
+  if (t < 0.7) { const h = 280 * Math.sin(Math.min(1, t / 0.7) * Math.PI); ctx.save(); const g = ctx.createLinearGradient(o.x, o.y - h, o.x, o.y); g.addColorStop(0, 'rgba(241, 245, 249, 0)'); g.addColorStop(1, 'rgba(241, 245, 249, 0.75)'); ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(o.x - 12, o.y); ctx.lineTo(o.x - 34, o.y - h); ctx.lineTo(o.x + 34, o.y - h); ctx.lineTo(o.x + 12, o.y); ctx.fill(); ctx.restore(); }
   const R = Math.min(3.4, t * 4), px = tilePx(size);                        // steam rolls outward
   for (let i = 0; i < 18; i++) { const a = i / 18 * 6.28; softPuff(ctx, o.x + Math.cos(a) * R * px.x, o.y + Math.sin(a) * R * px.y, 26 + R * 6, STEAM, 0.35 * Math.max(0, 1 - t / 1.4)); }
 }
@@ -3478,6 +3466,204 @@ const ELEMENT_FX = {
 };
 // Ultimate effects whose engine text label is replaced by the visual itself.
 const ELEMENT_ULTS = ['azure-wrath', 'tiger-roar', 'xuanwu-lob', 'sage-staff', 'phoenix-inferno', 'magma-eruption', 'fire-tornado', 'steam-eruption', 'mud-wave', 'blizzard'];
+
+
+// ==== Realism layer for the Bloodline + Arcane Mythic channels and ultimates ====
+// Environment: the whole board reacts (storm, wind, toxin, fire, gold light, steam, mud, frost).
+// Impact: renderer camera shake, flashes, debris, smoke, and ground decals (scorch, cracks, frost, mud, toxin).
+const VFX_SHAKE = { ttl: 0, max: 0.25, mag: 0, x: null, y: null };
+function vfxShake(mag, gx = null, gy = null, ttl = 0.22) { if (mag >= VFX_SHAKE.mag * (VFX_SHAKE.ttl / (VFX_SHAKE.max || 1))) { VFX_SHAKE.ttl = ttl; VFX_SHAKE.max = ttl; VFX_SHAKE.mag = mag; VFX_SHAKE.x = gx; VFX_SHAKE.y = gy; } }
+function smoke(x, y, n, rgb = '68, 64, 60', scale = 1) {
+  for (let i = 0; i < n; i++) emitParticle(1, x + (Math.random() - 0.5) * 16 * scale, y, (Math.random() - 0.5) * 30, -30 - Math.random() * 40, 0.9 + Math.random() * 0.6, (8 + Math.random() * 8) * scale, `rgb(${rgb})`);
+}
+// Ground decals: drawn in the ground pass under the runners and faded out over their life.
+const DECALS = [];
+function addDecal(kind, x, y, s = 1, life = 3) { if (DECALS.length > 80) DECALS.shift(); DECALS.push({ kind, x, y, s, life, born: battle.time, owner: battle, seed: Math.random() * 100 }); }
+function drawDecals(ctx, size) {
+  const time = battle.time;
+  for (let i = DECALS.length - 1; i >= 0; i--) { const d = DECALS[i]; if (d.owner !== battle || time - d.born > d.life || time < d.born) DECALS.splice(i, 1); }
+  for (const d of DECALS) {
+    const age = time - d.born, a = Math.min(1, age / 0.08) * Math.min(1, (d.life - age) / Math.min(1, d.life * 0.4)), s = d.s;
+    ctx.save();
+    if (d.kind === 'flash') { ctx.restore(); additiveGlow(ctx, d.x, d.y, 60 * s, d.rgb || '255, 255, 255', 0.8 * (1 - age / d.life)); continue; }
+    if (d.kind === 'scorch') {
+      const g = ctx.createRadialGradient(d.x, d.y, 0, d.x, d.y, 26 * s); g.addColorStop(0, `rgba(20, 12, 8, ${0.6 * a})`); g.addColorStop(1, 'rgba(20, 12, 8, 0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(d.x, d.y, 26 * s, 11 * s, 0, 0, Math.PI * 2); ctx.fill();
+      if (age < 1.2) { ctx.restore(); additiveGlow(ctx, d.x, d.y, 16 * s, '249, 115, 22', 0.5 * a * (1 - age / 1.2)); continue; }
+    } else if (d.kind === 'crack' || d.kind === 'gold') {
+      ctx.strokeStyle = `rgba(28, 25, 23, ${0.75 * a})`; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+      for (let k = 0; k < 6; k++) { let ang = hash01(d.seed + k) * 6.28, px = d.x, py = d.y; ctx.beginPath(); ctx.moveTo(px, py); for (let j = 0; j < 3; j++) { ang += (hash01(d.seed + k * 5 + j) - 0.5); px += Math.cos(ang) * 9 * s; py += Math.sin(ang) * 3.5 * s; ctx.lineTo(px, py); } ctx.stroke(); }
+      if (d.kind === 'gold' && age < 1) { ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = `rgba(250, 204, 21, ${0.6 * (1 - age)})`; ctx.lineWidth = 1; ctx.stroke(); }
+    } else if (d.kind === 'frost') {
+      ctx.fillStyle = `rgba(224, 242, 254, ${0.35 * a})`; ctx.beginPath(); ctx.ellipse(d.x, d.y, 24 * s, 9 * s, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = `rgba(255, 255, 255, ${0.6 * a})`; ctx.lineWidth = 1;
+      for (let k = 0; k < 6; k++) { const ang = k / 6 * 6.28 + d.seed; ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(d.x + Math.cos(ang) * 20 * s, d.y + Math.sin(ang) * 7 * s); ctx.stroke(); }
+    } else if (d.kind === 'icespike') {
+      const rise = Math.min(1, age / 0.1);
+      for (let k = 0; k < 5; k++) {
+        const ox = (k - 2) * 7 * s, h = (22 + hash01(d.seed + k) * 22) * s * rise, lean = (k - 2) * 0.12;
+        ctx.fillStyle = `rgba(186, 230, 253, ${0.8 * a})`; ctx.strokeStyle = `rgba(255, 255, 255, ${0.9 * a})`; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(d.x + ox - 4 * s, d.y + 4); ctx.lineTo(d.x + ox + lean * h, d.y + 4 - h); ctx.lineTo(d.x + ox + 4 * s, d.y + 4); ctx.closePath(); ctx.fill(); ctx.stroke();
+      }
+    } else if (d.kind === 'mud') {
+      ctx.fillStyle = `rgba(74, 50, 24, ${0.6 * a})`;
+      for (let k = 0; k < 5; k++) { const ang = hash01(d.seed + k) * 6.28, r = 8 + hash01(d.seed + k * 3) * 10; ctx.beginPath(); ctx.ellipse(d.x + Math.cos(ang) * r * s, d.y + Math.sin(ang) * r * 0.4 * s, 9 * s, 4 * s, 0, 0, Math.PI * 2); ctx.fill(); }
+    } else if (d.kind === 'toxic') {
+      ctx.fillStyle = `rgba(20, 83, 45, ${0.45 * a})`; ctx.beginPath(); ctx.ellipse(d.x, d.y, 28 * s, 11 * s, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+// Environment overlays. a = 0..1 envelope.
+function drawEnvironment(ctx, size, kind, a) {
+  if (!kind || a <= 0) return;
+  const time = battle.time;
+  ctx.save();
+  if (kind === 'storm') {
+    ctx.fillStyle = `rgba(8, 20, 45, ${0.32 * a})`; ctx.fillRect(0, 0, size, size);
+    ctx.strokeStyle = `rgba(191, 219, 254, ${0.35 * a})`; ctx.lineWidth = 1; ctx.lineCap = 'round';
+    for (let i = 0; i < 90; i++) { const x = (hash01(i) * (size + 80) + time * 140) % (size + 80) - 40, y = (hash01(i * 3.7) * size + time * 700) % size; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 5, y + 18); ctx.stroke(); }
+    if (hash01(Math.floor(time * 3)) > 0.82) { ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = `rgba(191, 219, 254, ${0.14 * a})`; ctx.fillRect(0, 0, size, size); }
+  } else if (kind === 'wind') {
+    ctx.fillStyle = `rgba(203, 213, 225, ${0.1 * a})`; ctx.fillRect(0, 0, size, size);
+    ctx.strokeStyle = `rgba(241, 245, 249, ${0.35 * a})`; ctx.lineWidth = 1.2; ctx.lineCap = 'round';
+    for (let i = 0; i < 40; i++) { const y = hash01(i * 2.3) * size, x = (hash01(i) * (size + 200) + time * (500 + hash01(i) * 300)) % (size + 200) - 100; ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 30, y - 4, x + 60, y); ctx.stroke(); }
+  } else if (kind === 'toxic') {
+    const g = ctx.createLinearGradient(0, size, 0, 0); g.addColorStop(0, `rgba(20, 83, 45, ${0.35 * a})`); g.addColorStop(1, `rgba(20, 83, 45, ${0.08 * a})`);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, size, size);
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 24; i++) { const ph = (time * 0.15 + hash01(i)) % 1; ctx.fillStyle = `rgba(134, 239, 172, ${0.35 * a * Math.sin(ph * Math.PI)})`; ctx.beginPath(); ctx.arc(hash01(i * 5) * size, size - ph * size, 2 + hash01(i * 7) * 2, 0, Math.PI * 2); ctx.fill(); }
+  } else if (kind === 'fire') {
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = `rgba(234, 88, 12, ${(0.09 + 0.03 * Math.sin(time * 17)) * a})`; ctx.fillRect(0, 0, size, size);
+    ctx.globalCompositeOperation = 'source-over';
+    const g = ctx.createLinearGradient(0, 0, 0, size * 0.4); g.addColorStop(0, `rgba(28, 25, 23, ${0.35 * a})`); g.addColorStop(1, 'rgba(28, 25, 23, 0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, size, size * 0.4);
+    if (Math.random() < 0.8 * a) emitParticle(0, Math.random() * size, size * (0.6 + Math.random() * 0.4), (Math.random() - 0.5) * 20, -60 - Math.random() * 60, 1.2, 1.2, Math.random() < 0.5 ? '#fdba74' : '#fde047');
+  } else if (kind === 'golden') {
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 5; i++) {
+      const x = size * (0.1 + i * 0.2) + Math.sin(time * 0.5 + i) * 20, g = ctx.createLinearGradient(x, 0, x + 120, size);
+      g.addColorStop(0, `rgba(253, 230, 138, ${0.14 * a})`); g.addColorStop(1, 'rgba(253, 230, 138, 0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + 40, 0); ctx.lineTo(x + 200, size); ctx.lineTo(x + 110, size); ctx.closePath(); ctx.fill();
+    }
+  } else if (kind === 'steam') {
+    for (let i = 0; i < 7; i++) softPuff(ctx, (hash01(i) * size + time * 25) % (size + 160) - 80, hash01(i * 3) * size, 120, '226, 232, 240', 0.22 * a);
+  } else if (kind === 'mud') {
+    ctx.fillStyle = `rgba(66, 46, 20, ${0.16 * a})`; ctx.fillRect(0, 0, size, size);
+    for (let i = 0; i < 6; i++) { const ph = (time * 0.7 + hash01(i)) % 1, c = ringTile(Math.floor(hash01(i * 9 + Math.floor(time * 0.7 + hash01(i))) * 16), size); ctx.strokeStyle = `rgba(190, 242, 100, ${0.3 * a * (1 - ph)})`; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.ellipse(c.x, c.y + 8, 6 + ph * 26, 2 + ph * 9, 0, 0, Math.PI * 2); ctx.stroke(); }
+  } else if (kind === 'frost') {
+    ctx.fillStyle = `rgba(186, 230, 253, ${0.12 * a})`; ctx.fillRect(0, 0, size, size);
+    const g = ctx.createRadialGradient(size / 2, size / 2, size * 0.3, size / 2, size / 2, size * 0.72); g.addColorStop(0, 'rgba(240, 249, 255, 0)'); g.addColorStop(1, `rgba(240, 249, 255, ${0.45 * a})`);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = `rgba(255, 255, 255, ${0.7 * a})`;
+    for (let i = 0; i < 70; i++) { const x = (hash01(i) * size + time * 40 + Math.sin(time + i) * 10) % size, y = (hash01(i * 6.1) * size + time * 70) % size; ctx.beginPath(); ctx.arc(x, y, 1 + hash01(i * 2) * 1.4, 0, Math.PI * 2); ctx.fill(); }
+  }
+  ctx.restore();
+}
+const CHANNEL_ENV = { 'azure-dragon': 'storm', 'white-tiger': 'wind', 'xuanwu-toxin': 'toxic', 'phoenix-inferno': 'fire', 'great-sage-staff': 'golden', magmaLord: 'fire', tempestArchon: 'fire', steamSovereign: 'steam', quagmireColossus: 'mud', blizzardArchon: 'frost' };
+const ULT_ENV = { 'azure-wrath': 'storm', 'tiger-roar': 'wind', 'xuanwu-lob': 'toxic', 'phoenix-inferno': 'fire', 'sage-staff': 'golden', 'magma-eruption': 'fire', 'fire-tornado': 'fire', 'steam-eruption': 'steam', 'mud-wave': 'mud', 'blizzard': 'frost' };
+// Per-hit impact profile for each staggered ultimate.
+const ULT_IMPACT = {
+  'azure-wrath': { shake: 4, flash: '191, 219, 254', decal: 'scorch', s: 0.8 },
+  'tiger-roar': { shake: 1.5 },
+  'magma-eruption': { shake: 3, flash: '253, 186, 116', decal: 'scorch', smoke: '41, 37, 36', s: 1 },
+  'fire-tornado': { shake: 2, decal: 'scorch', smoke: '68, 64, 60', s: 0.8 },
+  'mud-wave': { shake: 2, decal: 'mud', s: 1 },
+  'blizzard': { shake: 2.5, flash: '224, 242, 254', decal: 'frost', spikes: true, s: 1 },
+  'sage-staff': { shake: 0, decal: 'gold', s: 0.9 }
+};
+// Environment envelope and per-hit impacts for an ultimate effect; called by draw() before its drawer.
+function drawUltRealism(ctx, f, size) {
+  const t = fxTime(f), env = ULT_ENV[f.type];
+  if (env) drawEnvironment(ctx, size, env, Math.min(1, t / 0.15) * Math.min(1, f.ttl / 0.5));
+  const prof = ULT_IMPACT[f.type], sch = f.schedule || {};
+  if (prof && sch.hits) for (const h of sch.hits) {
+    if (t < h.at) continue;
+    onceEach(f, 'real' + h.uid, () => {
+      const p = enemyPt(f, h.uid, size); if (!p) return;
+      if (prof.shake) vfxShake(prof.shake);
+      if (prof.flash) { addDecal('flash', p.x, p.y - 10, 0.8, 0.25); DECALS[DECALS.length - 1].rgb = prof.flash; }
+      if (prof.decal) addDecal(prof.decal, p.x, p.y + 8, prof.s || 1, 3);
+      if (prof.spikes) addDecal('icespike', p.x, p.y + 8, 1, 1.4);
+      if (prof.smoke) smoke(p.x, p.y, 4, prof.smoke, 1);
+      if (f.type !== 'tiger-roar') burstImpact(p.x, p.y + 6, 0, 2, 5, 0.8);
+    });
+  }
+  if (f.type === 'sage-staff' && t >= (sch.impactAt || 0.55)) onceEach(f, 'realStaff', () => { vfxShake(8); for (let i = 0; i < 4; i++) { const c = ringTile(sch.quadrant * 4 + i, size); addDecal('gold', c.x, c.y + 8, 1.2, 3.5); smoke(c.x, c.y, 3, '120, 113, 108', 1.2); } });
+  if (f.type === 'xuanwu-lob' && t >= (sch.landAt || 0.5)) onceEach(f, 'realLob', () => { vfxShake(3); for (let i = 0; i < 4; i++) { const c = ringTile(sch.quadrant * 4 + i, size); addDecal('toxic', c.x, c.y + 8, 1, 5.5); } });
+  if (f.type === 'steam-eruption') onceEach(f, 'realSteam', () => vfxShake(3));
+}
+
+// ==== Bigger set pieces ====
+// Spectral black tortoise with its serpent, for Xuanwu's channel and toxin lob.
+function drawSpiritTortoise(ctx, x, y, s, alpha, time) {
+  if (alpha <= 0) return;
+  additiveGlow(ctx, x, y, 90 * s, '45, 212, 191', 0.3 * alpha);
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.globalAlpha = Math.min(1, alpha);
+  ctx.fillStyle = 'rgba(15, 50, 40, 0.85)';
+  for (const [lx, ly] of [[-34, 14], [34, 14], [-26, 26], [26, 26]]) { ctx.beginPath(); ctx.ellipse(lx, ly, 9, 6, 0, 0, Math.PI * 2); ctx.fill(); }   // legs
+  ctx.beginPath(); ctx.ellipse(48, 4 + Math.sin(time * 2) * 2, 12, 9, 0.2, 0, Math.PI * 2); ctx.fill();                                            // head
+  const g = ctx.createRadialGradient(-8, -14, 4, 0, 0, 46); g.addColorStop(0, 'rgba(45, 212, 191, 0.9)'); g.addColorStop(1, 'rgba(6, 40, 30, 0.95)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, 0, 44, 30, 0, Math.PI, 0); ctx.lineTo(44, 6); ctx.quadraticCurveTo(0, 16, -44, 6); ctx.closePath(); ctx.fill();   // shell
+  ctx.strokeStyle = 'rgba(167, 243, 208, 0.75)'; ctx.lineWidth = 1.4;
+  drawHex(ctx, 0, -12, 12); ctx.stroke(); drawHex(ctx, -22, -4, 10); ctx.stroke(); drawHex(ctx, 22, -4, 10); ctx.stroke();
+  ctx.strokeStyle = 'rgba(74, 222, 128, 0.95)'; ctx.lineWidth = 5; ctx.lineCap = 'round';                                                       // serpent coiling over the shell
+  ctx.beginPath(); for (let i = 0; i <= 28; i++) { const u = i / 28, ang = Math.PI * (0.1 + 1.6 * u) + time * 1.5; const px = Math.cos(ang) * (40 - u * 6), py = -10 + Math.sin(ang) * 22; if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py); } ctx.stroke();
+  ctx.restore();
+}
+// Rebirth Inferno: the phoenix soars to the top of the board, bursts at schedule.burstAt, and fire rains on all
+// 16 tiles at once (the tiles ignite together in the engine).
+function drawPhoenixInferno(ctx, f, size) {
+  const t = fxTime(f), burst = f.schedule?.burstAt ?? 0.6, o = routePoint(f.x, f.y, size), top = { x: size / 2, y: size * 0.22 };
+  if (t < burst) {
+    const k = easeOut(t / burst), x = o.x + (top.x - o.x) * k, y = o.y - 30 + (top.y - (o.y - 30)) * k;
+    for (let i = 1; i <= 8; i++) { const kk = Math.max(0, k - i * 0.05), tx = o.x + (top.x - o.x) * kk, ty = o.y - 30 + (top.y - (o.y - 30)) * kk; additiveGlow(ctx, tx, ty + i * 4, 26 - i * 2, FLAME, 0.5 - i * 0.05); }   // fire trail
+    additiveGlow(ctx, x, y, 90 * (0.6 + k * 0.6), FLAME, 0.7);
+    drawPhoenixWings(ctx, x, y, 70 + 70 * k, 1, Math.sin(battle.time * 10));
+    additiveGlow(ctx, x, y, 14, '254, 240, 138', 1);
+    return;
+  }
+  const since = t - burst;
+  onceEach(f, 'burst', () => {
+    vfxShake(7); burstColors(top.x, top.y, 40, ['#fde047', '#fb923c', '#ffffff', '#dc2626'], 2.2, 0.7);
+    for (let i = 0; i < 16; i++) { const c = trackPoint(i + 0.5, size); addDecal('scorch', c.x, c.y + 8, 1.1, 5.6); smoke(c.x, c.y, 2, '68, 64, 60', 1); }
+  });
+  if (since < 0.25) additiveGlow(ctx, top.x, top.y, 260 * (0.6 + since), '254, 240, 138', 0.9 * (1 - since / 0.25));
+  if (since < 0.5) {                                                         // shockwave ring and fire raining onto every tile
+    const k = since / 0.5;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = `rgba(253, 186, 116, ${0.8 * (1 - k)})`; ctx.lineWidth = 5 * (1 - k); ctx.beginPath(); ctx.ellipse(top.x, top.y, 40 + k * 320, 20 + k * 160, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    for (let i = 0; i < 16; i++) { const c = trackPoint(i + 0.5, size), q = Math.min(1, since / 0.18), x = top.x + (c.x - top.x) * q, y = top.y + (c.y - top.y) * q; drawFlameLine(ctx, [{ x: top.x + (c.x - top.x) * Math.max(0, q - 0.35), y: top.y + (c.y - top.y) * Math.max(0, q - 0.35) }, { x, y }], 1, 1 - k); }
+  }
+}
+// Firestorm Tempest normal attack: three crescent blades of fire-wrapped wind sweep along the quadrant,
+// cutting through each enemy; enemies pushed back are blown away with a gust.
+function drawFireGust(ctx, f, size) {
+  const prog = fxProg(f), q0 = f.schedule?.quad ?? 0, time = battle.time;
+  for (let b = 0; b < 3; b++) {
+    const k = Math.min(1, Math.max(0, (prog - b * 0.1) / 0.55)), fade = prog < 0.75 ? 1 : 1 - (prog - 0.75) / 0.25;
+    if (k <= 0 || k >= 1) continue;
+    const p = q0 + 4 * k, c = trackPoint(Math.min(15.999, p), size), n = trackPoint(Math.min(15.999, p + 0.1), size), ang = Math.atan2(n.y - c.y, n.x - c.x);
+    ctx.save(); ctx.translate(c.x, c.y - 12 - b * 3); ctx.rotate(ang); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+    for (const [w, col] of [[11, `rgba(220, 38, 38, ${0.35 * fade})`], [5, `rgba(${FLAME}, ${0.85 * fade})`], [1.6, `rgba(254, 243, 199, ${fade})`]]) { ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath(); ctx.arc(-14, 0, 22 + b * 3, -1.15, 1.15); ctx.stroke(); }
+    ctx.strokeStyle = `rgba(241, 245, 249, ${0.5 * fade})`; ctx.lineWidth = 1;            // wind trailing behind the blade
+    for (let s = -1; s <= 1; s++) { ctx.beginPath(); ctx.moveTo(-30, s * 9); ctx.lineTo(-60 - Math.random() * 10, s * 9 + 2); ctx.stroke(); }
+    ctx.restore();
+    if (Math.random() < 0.6) emitParticle(0, c.x, c.y - 12, (Math.random() - 0.5) * 40, -40 - Math.random() * 40, 0.4, 1.2, Math.random() < 0.5 ? '#fb923c' : '#fde047');
+  }
+  for (const pt of chainPts(f, size)) {
+    const e = battle.enemies.find(v => v.uid === pt.uid), cut = Math.min(1, prog / 0.55) * 4 + q0 >= (e ? visualTrackP(e) : 99);
+    if (!cut) continue;
+    onceEach(f, 'cut' + pt.uid, () => { burstColors(pt.x, pt.y - 10, 8, ['#fb923c', '#fde047', '#ffffff'], 1, 0.3); vfxShake(1.2); });
+    if (e?.warpFx && time - e.warpFx.at < 0.5) {                               // pushed back: a gust blows the runner away
+      const a = 1 - (time - e.warpFx.at) / 0.5;
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = `rgba(241, 245, 249, ${0.6 * a})`; ctx.lineWidth = 1.4;
+      for (let s = 0; s < 4; s++) { ctx.beginPath(); ctx.moveTo(pt.x - 26, pt.y - 20 + s * 6); ctx.quadraticCurveTo(pt.x, pt.y - 24 + s * 6, pt.x + 26, pt.y - 20 + s * 6); ctx.stroke(); }
+      ctx.restore();
+    }
+  }
+}
 
 
 function drawCultivationSword(ctx, x0, y0, tx, ty, curve, prog, pal) {
@@ -3886,8 +4072,10 @@ function draw() {
 
   // Impact camera: 4% punch-in toward the impact point and a mostly vertical, downward-first shake
   ctx.save();
-  if (battle.shake && battle.shake.ttl > 0) {
-    const sh = battle.shake, k = Math.min(1, sh.ttl / 0.25), m = sh.mag * k, z = 1 + 0.04 * k;
+  if (VFX_SHAKE.ttl > 0) VFX_SHAKE.ttl = Math.max(0, VFX_SHAKE.ttl - vfxDt * simSpeed());   // renderer-only shake from ability impacts
+  const shakeSrc = battle.shake && battle.shake.ttl > 0 ? battle.shake : VFX_SHAKE.ttl > 0 ? VFX_SHAKE : null;
+  if (shakeSrc) {
+    const sh = shakeSrc, k = Math.min(1, sh.ttl / (sh.max || 0.25)), m = sh.mag * k, z = 1 + Math.min(0.04, 0.006 * sh.mag) * k;
     const fp = sh.x != null ? routePoint(sh.x, sh.y, size) : { x: size / 2, y: size / 2 };
     ctx.translate(fp.x, fp.y);
     ctx.scale(z, z);
@@ -3905,6 +4093,7 @@ function draw() {
 
   drawInkPuddles(ctx, size);
   drawBloodGround(ctx, size);
+  drawDecals(ctx, size);                                  // scorch, cracks, frost, mud and toxin left by impacts
 
   // Ecosystem grounds
   for (const oil of battle.oilPools || []) {
@@ -4105,7 +4294,7 @@ function draw() {
       else if (u.channeling.type === 'landscape-dragon') drawLandscapeGather(ctx, pt.x, pt.y, chProg, size);
       else if (u.channeling.type === 'soul-reap-detonation') drawSoulGather(ctx, pt.x, pt.y, chProg, size, u);
       else if (u.channeling.type === 'blood-domain') drawBloodGather(ctx, pt.x, pt.y, chProg, size);
-      else if (ELEMENT_GATHER[u.channeling.type]) ELEMENT_GATHER[u.channeling.type](ctx, pt.x, pt.y, chProg, size, u);
+      else if (ELEMENT_GATHER[u.channeling.type]) { drawEnvironment(ctx, size, CHANNEL_ENV[u.channeling.type], Math.min(1, chProg / 0.3)); ELEMENT_GATHER[u.channeling.type](ctx, pt.x, pt.y, chProg, size, u); }
       else drawSwordTorrentChannel(ctx, pt.x, pt.y, chProg, size, u.channeling.type);
     }
   }
@@ -4138,6 +4327,7 @@ function draw() {
     } else if (f.type === 'blood-domain') {
       drawBloodDomain(ctx, f, size);
     } else if (ELEMENT_FX[f.type] || ELEMENT_FX[kind]) {
+      if (ULT_ENV[f.type] || ULT_IMPACT[f.type]) drawUltRealism(ctx, f, size);
       (ELEMENT_FX[f.type] || ELEMENT_FX[kind])(ctx, f, size, x, y, tx, ty, prog);
     } else if (kind === 'sword-pierce') {
       drawSwordPierce(ctx, f, size);

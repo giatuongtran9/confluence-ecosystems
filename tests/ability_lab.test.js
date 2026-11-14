@@ -34,3 +34,23 @@ test('Ability Lab sandbox: every card and evolved form runs without throwing', (
     assert.equal(b.done, false, c.id);
   }
 });
+
+test('Channel cooldown: a unit resumes attacking one interval after its channel ends (Sandstorm Titan 10s storm)', () => {
+  const b = labBattle('sandstormTitan');
+  const u = b.units[0];
+  u.archonAttacks = 9; u.currentCooldown = 0;
+  for (let i = 0; i < 40 && !u.channeling; i++) G.step(b, 0.1);
+  assert.ok(u.channeling, 'storm started');
+  for (let i = 0; i < 120 && u.channeling; i++) G.step(b, 0.1);
+  assert.equal(u.channeling, null, 'storm ended');
+  const before = u.archonAttacks || 0;
+  for (let i = 0; i < Math.ceil(u.attackInterval * 10) + 3; i++) G.step(b, 0.1);
+  assert.ok((u.archonAttacks || 0) > before, 'attacked again within about one interval');
+});
+
+test('Quagmire Colossus converts a quadrant to swamp only once per battle', () => {
+  const b = labBattle('quagmireColossus');
+  for (let t = 0; t < 12; t += 0.1) G.step(b, 0.1);
+  const swamps = (b.arcaneZones || []).filter(z => z.type === 'swamp');
+  assert.equal(swamps.length, 1);
+});
