@@ -3423,7 +3423,7 @@ for (const [strain, id, name, atk, interval] of [
 for (const [pair, id, name, atk, interval, serum, serumName, apex, apexName, apexAtk, apexInterval, rule, apexRule] of XENO_BRANCH_DATA) {
   FORMS.push(
     xenoCard(id, name, 'Epic', atk, interval, rule, { evolvedFrom: 'xenoSpecimen', xenoPair: pair }),
-    xenoCard(serum, serumName, 'Epic', 0, 0, 'Forged from ' + pair.replace('+', ' + ') + ' Helices. Permanent undraftable serum; its adjacent matching 130-Genome chrysalis must clear an Elite/Boss trial with zero leaks to consume this Serum and awaken ' + apexName + '.', { xenoPair: pair }),
+    // Serums were removed in the strain redesign; the tuple still names them but no card is made.
     xenoCard(apex, apexName, 'Mythic', apexAtk, apexInterval, apexRule, { evolvedFrom: 'xenoSpecimen', xenoPair: pair })
   );
 }
@@ -3442,6 +3442,25 @@ Object.assign(CARDS.find(c => c.id === 'sensor'), { rules: 'Grants all other dep
 Object.assign(CARDS.find(c => c.id === 'nanite'), { rules: 'Strikes at 0.8s interval. Critical hits shred runner defense by 25% for 3s. Every 6 critical hits across battles grant +1 permanent ATK and extract a random Genetic Helix Token onto an empty adjacent slot.' });
 Object.assign(CARDS.find(c => c.id === 'railgun'), { rules: 'Pierces 3 runners in a line (5 with Telemetry Sensor and knocks back 1 tile), ignoring armor. Gains bonus attack damage equal to 200% of the single highest permanent ATK bonus among other allies.' });
 Object.assign(CARDS.find(c => c.id === 'core'), { rules: 'Grants all other allies +15 percentage points of critical hit chance. Gains 1 tick whenever an ally lands a critical hit. At 8 ticks, triggers Gravitational Collapse: deals 240 + 2× Team Power true damage and Warps all runners backward 2.5 tiles.' });
+
+// Sci-Fi redesign: strains are earned by how the team fights; Biomass feeds the Specimen; Metamorphosis hatches mid-battle.
+const XENO_LAB_SYNERGY = 'Crits feed Chitin, armour shred and acid feed Acid, stuns, slows and ability boosts feed Psionic. Kills fill the Biomass pool the Specimen eats. At 130 Genome on an Elite/Boss node, the chrysalis cocoons for 15s and hatches into its Mythic if no runner leaks.';
+for (const c of [...CARDS, ...FORMS].filter(c => c.genre === 'SciFi')) c.synergy = XENO_LAB_SYNERGY;
+CARDS.push(xenoCard('alphaSpecimen', 'Alpha Specimen', 'Legendary', 88, 1.2, "A wild adult xeno. Each hit adds +1 to your Specimen's current top strain and +1 Biomass. Critical hits on Weakpointed runners stun them for 0.5s."));
+for (const [id, fields] of Object.entries({
+  xenoSpecimen: { baseAtk: 12, attackInterval: 1.5, rules: 'The core. Strikes the leading runner. Tracks three strain scores across the run — Chitin (team crits), Acid (armour shred and acid) and Psionic (stuns, slows and ability boosts) — and eats 4 Biomass every 5s for +3 Genome and +1 permanent ATK. At 25 Genome becomes the larva of its top strain; at 65 the chrysalis of its top two strains (pure if the top is at least double the second). At 130 Genome on an Elite/Boss node it cocoons for 15s: no leaks and it hatches into its Mythic mid-battle.' },
+  bioScanner: { baseAtk: 0, attackInterval: 0, rules: 'Support · does not attack. Every 3s, scans the first 3 runners for 1 Weakpoint each (max 5 per runner; +5% crit chance against that runner per stack). Adjacent ally: every 2s.' },
+  geneSplicer: { baseAtk: 0, attackInterval: 0, rules: 'Support · does not attack. The Specimen eats twice as fast: 8 Biomass every 5s for +6 Genome. Adjacent to the Specimen: +2 permanent ATK per meal instead of +1.' },
+  sensor: { rules: 'Support. All other allies gain +10% critical chance (+15% if adjacent). Sci-Fi critical damage from all sources is capped at 250%.' },
+  nanite: { baseAtk: 20, attackInterval: 1.1, rules: 'Critical hits shred runner defense by 25% for 3s (feeds Acid). Every 6 critical hits across battles grant +1 permanent ATK.' },
+  railgun: { baseAtk: 60, attackInterval: 1.6, rules: 'Pierces 3 runners in a line (5 with Telemetry Sensor and knocks back 1 tile), ignoring armor. Gains bonus attack damage equal to 100% of the single highest permanent ATK bonus among other allies.' },
+  impalerApex: { baseAtk: 150, attackInterval: 1.3, rules: 'Chitin + Chitin. Pierces the 4 leading runners, ignoring armor. Critical hits ricochet to 2 more runners for 50% of the hit. Every 10th attack channels 1.2s: Relativistic Volley — every runner takes 300% ATK ignoring armor and gains 2 Weakpoints.' },
+  xenoQueen: { baseAtk: 130, attackInterval: 1.0, rules: 'Acid + Acid. Critical hits strip 50% armor and leave a 3-tile acid pool (30% ATK true per second for 3s). Every 10th attack channels 1.2s: Hive Swarm — acid on all 4 walls for 5s (40% ATK per second) and 14% current HP off every Elite, Champion and Boss.' },
+  hiveOvermind: { baseAtk: 130, attackInterval: 1.0, rules: 'Psionic + Psionic. All allies gain +20% critical chance. When an ally crits, fires a psychic ray for 40% ATK (at most once per 0.5s). Every 10th attack channels 1.2s: Synaptic Storm — every ally\'s next 3 attacks crit, and a psionic lance hits every runner for 120% ATK.' },
+  causticRavager: { baseAtk: 140, attackInterval: 1.2, rules: 'Chitin + Acid. Targets the densest cluster; critical hits strip 50% armor and bleed runners within 2.5 tiles. Every 10th attack channels 1.2s: Acid Barrage — pods hit every runner for 150% ATK and strip 50% armor.' },
+  phaseStalker: { baseAtk: 160, attackInterval: 1.4, rules: 'Chitin + Psionic. Targets Elites and Bosses first. Critical hits deal double damage to targets below 35% HP, and ordinary runners below 35% HP are executed. Every 10th attack channels 1.2s: Phase Execution — blinks to the strongest Elite or Boss for 400% ATK true damage and a 1.5s stun; ordinary runners below 35% on that wall are executed.' },
+  metroidLeviathan: { baseAtk: 145, attackInterval: 1.2, rules: 'Acid + Psionic. Every 4th hit, all allies move 1 attack closer to their 10th attack. Every 10th attack channels 1.2s: Singularity Feast — drains 10% max HP from every ordinary runner and 4% from Elites, Champions and Bosses, and moves all allies 2 attacks closer to their 10th attack.' }
+})) Object.assign([...CARDS, ...FORMS].find(c => c.id === id), fields);
 
 const CARD = Object.fromEntries([...CARDS, ...FORMS, ...TOKENS].map(c => [c.id, c]));
 if (typeof module !== 'undefined') module.exports = { GENRES, LEADERS, CARDS, CARD, NODES, RELICS, FORMS, TOKENS };
