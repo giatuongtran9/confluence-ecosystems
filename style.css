@@ -1214,3 +1214,14 @@ body.has-dock .shell{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))
 .in-combat .board .field-card.channeling-landscape{transform:translateY(-7px);filter:drop-shadow(0 0 8px #0c0c0e) drop-shadow(0 0 18px #6ee7b799) brightness(1.1)}
 .in-combat .board .field-card.channeling-soul{transform:translateY(-7px);filter:drop-shadow(0 0 10px #4ade80) drop-shadow(0 0 22px #16a34a99) brightness(1.15)}
 .in-combat .board .field-card.channeling-blood{transform:translateY(-7px);filter:drop-shadow(0 0 10px #ef4444) drop-shadow(0 0 22px #991b1b99) brightness(1.15)}
+.in-combat .board .field-card.channeling-azure{transform:translateY(-7px);filter:drop-shadow(0 0 10px #7dd3fc) drop-shadow(0 0 22px #0284c799) brightness(1.18)}
+.in-combat .board .field-card.channeling-tiger{transform:translateY(-7px);filter:drop-shadow(0 0 10px #f1f5f9) drop-shadow(0 0 22px #94a3b899) brightness(1.18)}
+.in-combat .board .field-card.channeling-xuanwu{transform:translateY(-7px);filter:drop-shadow(0 0 10px #4ade80) drop-shadow(0 0 22px #14532d99) brightness(1.15)}
+.in-combat .board .field-card.channeling-phoenix{transform:translateY(-7px);filter:drop-shadow(0 0 10px #fb923c) drop-shadow(0 0 22px #dc262699) brightness(1.18)}
+.in-combat .board .field-card.channeling-sage{transform:translateY(-7px);filter:drop-shadow(0 0 10px #facc15) drop-shadow(0 0 22px #ca8a0499) brightness(1.18)}
+.in-combat .board .field-card.channeling-magma{transform:translateY(-7px);filter:drop-shadow(0 0 10px #f97316) drop-shadow(0 0 22px #7c2d1299) brightness(1.15)}
+.in-combat .board .field-card.channeling-tempest{transform:translateY(-7px);filter:drop-shadow(0 0 10px #fdba74) drop-shadow(0 0 22px #ea580c99) brightness(1.18)}
+.in-combat .board .field-card.channeling-steam{transform:translateY(-7px);filter:drop-shadow(0 0 10px #e0f2fe) drop-shadow(0 0 22px #38bdf899) brightness(1.15)}
+.in-combat .board .field-card.channeling-quagmire{transform:translateY(-7px);filter:drop-shadow(0 0 10px #a3e635) drop-shadow(0 0 22px #78532d99) brightness(1.12)}
+.in-combat .board .field-card.channeling-blizzard{transform:translateY(-7px);filter:drop-shadow(0 0 10px #bae6fd) drop-shadow(0 0 22px #0ea5e999) brightness(1.18)}
+.in-combat .board .field-card.channeling-sandstorm{transform:translateY(-7px);filter:drop-shadow(0 0 10px #fde68a) drop-shadow(0 0 22px #b4530999) brightness(1.15)}

@@ -360,42 +360,53 @@ const Game = (() => {
  function arcaneZone(b,u,type,p,duration,dps){
   b.arcaneZones??=[];
   if(type!=='swamp'&&type!=='magma')b.arcaneZones=b.arcaneZones.filter(z=>z.owner!==u.uid||z.type!==type);
-  b.arcaneZones.push({owner:u.uid,type,wall:wallOf({p}),p,until:b.time+duration,dps});
+  b.arcaneZones.push({owner:u.uid,type,wall:wallOf({p}),p,until:b.time+duration,dps,at:b.time});
  }
  function archonAttack(b,u,target,power){
   if(u.channeling)return;
+  // Each Archon draws one shared effect per attack (renderer: app.js elemental attack effects).
+  const shared=(type,ttl,list,extra={})=>{if(list.length)fx(b,type,u,list[0],'',{vfxKind:type,ttl,attackAnim:true,schedule:{chain:list.map(e=>e.uid),...extra}});};
   if(u.id==='magmaLord'){
-   hit(b,u,target,power);
+   hit(b,u,target,power,true,{fx:{type:'magma-rock',kind:'magma-rock',ttl:0.55}});
    arcaneZone(b,u,'magma',target.p,2,0);
    b.arcaneZones.at(-1).nextBurnAt=b.time+1;
+   b.arcaneZones.at(-1).at=b.time;
   }else if(u.id==='tempestArchon'){
    const quadStart=wallOf(target)*4;
-   for(const e of living(b).filter(e=>Math.floor(e.p)%16>=quadStart&&Math.floor(e.p)%16<quadStart+4)){
-    hit(b,u,e,power);
-    if(rand(b.run)<0.20)warp(b,e,2,u);
+   const inQuad=living(b).filter(e=>Math.floor(e.p)%16>=quadStart&&Math.floor(e.p)%16<quadStart+4);
+   for(const e of inQuad){
+    hit(b,u,e,power,true,{noFx:true});
+    if(rand(b.run)<0.20){const from=e.p;warp(b,e,2,u);if(e.p<from)e.warpFx={from,to:e.p,at:b.time,corner:false};}
    }
+   shared('fire-gust',0.55,inQuad.length?inQuad:[target],{quad:quadStart});
   }else if(u.id==='steamSovereign'){
-   for(const e of living(b).slice(0,3)){
-    hit(b,u,e,power);
+   const jets=living(b).slice(0,3);
+   for(const e of jets){
+    hit(b,u,e,power,true,{noFx:true});
     if((e.drenchedUntil||0)>b.time&&!e.scaldBursted){
      e.scaldBursted=true;
      damage(b,e,(e.maxHp-e.hp)*0.10,u,'ability',true);
-     fx(b,'impact',u,e,'10% SCALD BURST');
+     fx(b,'scald-pop',u,e,'10% SCALD BURST',{vfxKind:'scald-pop',ttl:0.6});
     }
    }
+   shared('steam-jets',0.5,jets);
   }else if(u.id==='quagmireColossus'){
-   hit(b,u,target,power);
+   hit(b,u,target,power,true,{fx:{type:'mud-boulder',kind:'mud-boulder',ttl:0.55}});
    const quadStart=Math.floor(rand(b.run)*4)*4;
    arcaneZone(b,u,'swamp',quadStart,Infinity,0);
+   b.arcaneZones.at(-1).at=b.time;
   }else if(u.id==='blizzardArchon'){
-   for(const e of living(b).slice(0,3)){
-    hit(b,u,e,power);
+   const shards=living(b).slice(0,3);
+   for(const e of shards){
+    hit(b,u,e,power,true,{noFx:true});
     e.drenchedUntil=b.time+3;
     status(b,e,'slow',3,0.30,u);
    }
+   shared('ice-shards',0.5,shards);
   }else if(u.id==='sandstormTitan'){
    const targets=living(b).slice(0,5),falloffs=[1.0,0.9,0.8,0.7,0.6];
-   for(let i=0;i<targets.length;i++)hit(b,u,targets[i],power*falloffs[i]);
+   for(let i=0;i<targets.length;i++)hit(b,u,targets[i],power*falloffs[i],true,{noFx:true});
+   shared('sand-lance',0.5,targets);
   }
   u.archonAttacks=(u.archonAttacks||0)+1;
   if(u.archonAttacks>=10){
@@ -2445,7 +2456,9 @@ function fx(b, type, u, e, text, extra = {}) {
    if (path === 'dragon') {
     const count = tier >= 4 ? 4 : tier >= 3 ? 3 : 2;
     const mult = tier >= 3 ? 1.0 : tier >= 2 ? 0.9 : 0.8;
-    for (const e of living(b).slice(0, count)) hit(b, u, e, power * mult);
+    const bolted = living(b).slice(0, count);
+    for (const e of bolted) hit(b, u, e, power * mult, true, { noFx: true });
+    if (bolted.length) fx(b, 'azure-bolts', u, bolted[0], '', { vfxKind: 'azure-bolts', ttl: 0.45, attackAnim: true, schedule: { chain: bolted.map(e => e.uid) } });
     if (tier >= 4 && u.attackCount % 10 === 0) {
      u.channeling = { type: 'azure-dragon', duration: 1.2, remaining: 1.2 };
      u.currentCooldown = Math.max(u.currentCooldown || 0, 1.2);
@@ -2454,7 +2467,7 @@ function fx(b, type, u, e, text, extra = {}) {
     }
    }
    else if (path === 'tiger') {
-    hit(b, u, target, power);
+    hit(b, u, target, power, true, { fx: { type: 'tiger-claw', kind: 'tiger-claw', ttl: 0.4 } });
     if (tier >= 2) dot(b, target, 'bleed', Math.max(1, target.maxHp * 0.01), 1, u);
     if (tier >= 4 && u.attackCount % 10 === 0) {
      u.channeling = { type: 'white-tiger', duration: 1.2, remaining: 1.2 };
@@ -2465,10 +2478,12 @@ function fx(b, type, u, e, text, extra = {}) {
    }
    else if (path === 'xuanwu') {
     const count = tier >= 2 ? (tier >= 3 ? 3 : 2) : 1;
-    for (const e of living(b).slice(0, count)) {
-     hit(b, u, e, power);
+    const struck = living(b).slice(0, count);
+    for (const e of struck) {
+     hit(b, u, e, power, true, { noFx: true });
      venom(b, e, Math.max(1, e.maxHp * 0.01), 1, u);
     }
+    if (struck.length) fx(b, 'venom-strike', u, struck[0], '', { vfxKind: 'venom-strike', ttl: 0.5, attackAnim: true, schedule: { chain: struck.map(e => e.uid) } });
     if (tier >= 4 && u.attackCount % 10 === 0) {
      u.channeling = { type: 'xuanwu-toxin', duration: 1.2, remaining: 1.2 };
      u.currentCooldown = Math.max(u.currentCooldown || 0, 1.2);
@@ -2477,24 +2492,34 @@ function fx(b, type, u, e, text, extra = {}) {
     }
    }
    else if (path === 'phoenix') {
-    hit(b, u, target, power);
+    hit(b, u, target, power, true, { fx: { type: 'phoenix-feather', kind: 'phoenix-feather', ttl: 0.5 } });
     dot(b, target, 'burn', Math.max(1, target.maxHp * 0.01), 1, u);
     const spreadCount = tier >= 4 ? 3 : tier >= 3 ? 2 : tier >= 2 ? 1 : 0;
     if (spreadCount > 0) {
      const behind = living(b).filter(e => e !== target && e.p <= target.p).sort((a, z) => z.p - a.p).slice(0, spreadCount);
      for (const e of behind) dot(b, e, 'burn', Math.max(1, e.maxHp * 0.01), 1, u);
+     if (behind.length) fx(b, 'flame-spread', u, target, '', { vfxKind: 'flame-spread', ttl: 0.6, schedule: { chain: [target, ...behind].map(e => e.uid) } });
+    }
+    // Mythic: every 10th attack channels Rebirth Inferno (all 16 tiles burn for 5s)
+    if (tier >= 4 && u.attackCount % 10 === 0) {
+     u.channeling = { type: 'phoenix-inferno', duration: 1.2, remaining: 1.2 };
+     u.currentCooldown = Math.max(u.currentCooldown || 0, 1.2);
+     fx(b, 'sword-channel', u, u, 'CHANNELING REBIRTH INFERNO');
+     interact(b, u, u, 'phoenix-inferno', 'Immortal Vermilion Phoenix channels Rebirth Inferno (1.2s)...');
     }
    }
    else if (path === 'monkey') {
     const cleaveCount = tier >= 3 ? 3 : 0;
-    hit(b, u, target, power);
+    hit(b, u, target, power, true, { noFx: true });
+    let cleaved = [];
     if (cleaveCount > 0) {
-     const behind = living(b).filter(e => e !== target && e.p <= target.p).sort((a, z) => z.p - a.p).slice(0, cleaveCount);
-     for (const e of behind) hit(b, u, e, power, true, { secondary: true });
+     cleaved = living(b).filter(e => e !== target && e.p <= target.p).sort((a, z) => z.p - a.p).slice(0, cleaveCount);
+     for (const e of cleaved) hit(b, u, e, power, true, { secondary: true, noFx: true });
     }
+    fx(b, 'staff-strike', u, target, '', { vfxKind: 'staff-strike', ttl: 0.45, attackAnim: true, schedule: { chain: [target, ...cleaved].map(e => e.uid) } });
     if (tier >= 2 && !token(u) && u.attackCount % 4 === 0) {
      const clone = spawnToken(b, u, u.id, false, { lineage: path, lineageTier: tier, tokenAtk: rawAtk(u) * 0.75, attackInterval: u.attackInterval });
-     if (clone) interact(b, u, clone, 'clone', '4th strike → 75%-ATK temporary clone');
+     if (clone) { interact(b, u, clone, 'clone', '4th strike → 75%-ATK temporary clone'); fx(b, 'clone-cloud', clone, null, '', { vfxKind: 'clone-cloud', ttl: 0.7 }); }
     }
     if (tier >= 4 && !token(u) && u.attackCount % 10 === 0) {
      u.channeling = { type: 'great-sage-staff', duration: 1.2, remaining: 1.2 };
@@ -2868,6 +2893,19 @@ function fx(b, type, u, e, text, extra = {}) {
   for (const h of due.sort((a, z) => a.at - z.at)) h.fn(b);
  }
 
+ // Rebirth Inferno ground: a tile at track position p ignites when the phoenix passes it
+ // (start + (16 - p) / speed) and burns for dur seconds; runners on burning ground get 1 Burn stack per second.
+ function tickPhoenixFlames(b) {
+  if (!b.phoenixFlames?.length) return;
+  b.phoenixFlames = b.phoenixFlames.filter(z => b.time < z.start + 16 / z.speed + z.dur);
+  for (const z of b.phoenixFlames) for (const e of living(b)) {
+   const ignite = z.start + (16 - e.p) / z.speed;
+   if (b.time < ignite || b.time > ignite + z.dur || (e.phoenixBurnAt || 0) > b.time) continue;
+   e.phoenixBurnAt = b.time + 1;
+   dot(b, e, 'burn', Math.max(1, e.maxHp * 0.01), 1, z.unit);
+  }
+ }
+
  function step(b, dt) {
   if (b.done) return; dt = Math.min(.1, dt);
   if (b.showstopper) { b.showstopper.ttl -= dt; if (b.showstopper.ttl <= 0) b.showstopper = null; }
@@ -2876,6 +2914,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (b.slowMo) { const scale = b.slowMo.scale; b.slowMo.ttl -= dt; if (b.slowMo.ttl <= 0) b.slowMo = null; dt *= scale; }
   b.time += dt;
   tickPendingHits(b);
+  tickPhoenixFlames(b);
   tickHeavenlyTrial(b);
   tickBloodlineTrial(b);
   tickUrbanContainmentTrial(b);
@@ -2899,57 +2938,71 @@ function fx(b, type, u, e, text, extra = {}) {
     if (u.channeling.type === 'sandstormTitan') {
      if (b.time >= (u.channeling.tickAt || 0)) {
       u.channeling.tickAt = b.time + 1.0;
-      for (const e of living(b)) {
+      const struck = living(b);
+      for (const e of struck) {
        armorStrip(e, Math.min(1, (e.permanentShred || 0) + 0.10));
        damage(b, e, atk(b, u) * 0.10 + (e.maxHp - e.hp) * 0.10, u, 'ability', true);
       }
-      fx(b, 'spell', u, null, 'SANDSTORM PULSE');
+      fx(b, 'sand-pulse', u, null, '', { vfxKind: 'sand-pulse', ttl: 0.6, schedule: { hits: struck.map(e => e.uid) } });
      }
     }
     if (u.channeling.remaining <= 0) {
      const chType = u.channeling.type;
      u.channeling = null;
+     // Arcane ultimates land per enemy as their visual reaches it (b.pendingHits); effects and totals are unchanged.
+     const ox = u.x + 1, oy = u.y + 1, t0 = b.time, power = atk(b, u);
+     const radial = (start, speed) => living(b).map(e => { const p = track(e.p); return { e, uid: e.uid, at: start + Math.hypot(p.x - ox, p.y - oy) / speed }; });
+     const queue = (hits, fn) => { b.pendingHits ??= []; for (const h of hits) b.pendingHits.push({ at: t0 + h.at, fn: bb => { if (h.e.hp > 0 && !h.e.gone) fn(bb, h.e); } }); return hits.map(h => ({ uid: h.uid, at: h.at })); };
+     const number = (bb, e, hp0) => { const dealt = hp0 - Math.max(0, e.hp); if (dealt > 0) fx(bb, 'impact', u, e, String(Math.round(dealt)), { vfxKind: 'impact', ttl: 0.5 }); };
      if (chType === 'magmaLord') {
-      for (const e of living(b)) {
-       hit(b, u, e, atk(b, u) * 1.5, false);
-       dot(b, e, 'burn', Math.max(1, e.maxHp * 0.01), 1, u);
-      }
+      // Lava erupts outward from the Magma Lord at 5 tiles/s; the 16-tile fissure starts now as before.
+      const hits = queue(radial(0.15, 5), (bb, e) => { const hp0 = e.hp; hit(bb, u, e, power * 1.5, false, { noFx: true }); dot(bb, e, 'burn', Math.max(1, e.maxHp * 0.01), 1, u); number(bb, e, hp0); });
       arcaneZone(b, u, 'magmaFissure16', 0, 5, 0);
       b.arcaneZones.at(-1).nextBurnAt=b.time+1;
-      fx(b, 'spell', u, null, '16-TILE MOLTEN FISSURE');
+      fx(b, 'magma-eruption', u, null, '16-TILE MOLTEN FISSURE', { ttl: 1.6, schedule: { hits, start: 0.15, speed: 5 } });
       interact(b, u, u, 'magma-channel', 'Magma Lord channel complete: 150% ATK damage + 16-tile Molten Fissure (5s)');
      } else if (chType === 'tempestArchon') {
-      for (const e of living(b)) {
-       hit(b, u, e, atk(b, u) * 1.5, false);
-       warp(b, e, 3, u);
-       dot(b, e, 'burn', Math.max(1, e.maxHp * 0.01), 1, u);
-      }
-      fx(b, 'spell', u, null, 'COUNTER-CLOCKWISE TORNADO');
+      // A fire tornado sweeps counter-clockwise from the exit (tile 16) at 20 tiles/s after 0.15s.
+      const hits = queue(living(b).map(e => ({ e, uid: e.uid, at: 0.15 + (16 - e.p) / 20 })), (bb, e) => {
+       const hp0 = e.hp, from = e.p;
+       hit(bb, u, e, power * 1.5, false, { noFx: true });
+       warp(bb, e, 3, u);
+       if (e.p < from) e.warpFx = { from, to: e.p, at: bb.time, corner: false };
+       dot(bb, e, 'burn', Math.max(1, e.maxHp * 0.01), 1, u);
+       number(bb, e, hp0);
+      });
+      fx(b, 'fire-tornado', u, null, 'COUNTER-CLOCKWISE TORNADO', { ttl: 1.4, schedule: { hits, start: 0.15, speed: 20 } });
       interact(b, u, u, 'tempest-channel', 'Firestorm Tempest channel complete: 150% ATK + 3-tile push + 1 Burn');
      } else if (chType === 'steamSovereign') {
       arcaneZone(b, u, 'vaporMist', 0, 5, 0);
-      fx(b, 'spell', u, null, '16-TILE VAPOR MIST');
+      fx(b, 'steam-eruption', u, null, '16-TILE VAPOR MIST', { ttl: 1.4 });
       interact(b, u, u, 'steam-channel', 'Scalding Vapor Sovereign channel complete: 16-tile Vapor Mist for 5s (5% max HP/s)');
      } else if (chType === 'quagmireColossus') {
-      for (const e of living(b)) {
-       status(b, e, 'stun', 2, 0, u);
-       e.drenchedUntil = b.time + 4;
-       status(b, e, 'slow', 4, 0.30, u);
-      }
-      fx(b, 'spell', u, null, '2s STUN + 4s DRENCH');
+      // A mud wave rolls out from the Colossus at 5 tiles/s; enemies sink (stun) and are Drenched as it reaches them.
+      const hits = queue(radial(0.15, 5), (bb, e) => {
+       status(bb, e, 'stun', 2, 0, u);
+       e.drenchedUntil = bb.time + 4;
+       e.mudSinkUntil = bb.time + 2;
+       status(bb, e, 'slow', 4, 0.30, u);
+      });
+      fx(b, 'mud-wave', u, null, '2s STUN + 4s DRENCH', { ttl: 1.6, schedule: { hits, start: 0.15, speed: 5 } });
       interact(b, u, u, 'quagmire-channel', 'Quagmire Colossus channel complete: 2s stun and 4s Drenched on all 16 tiles');
      } else if (chType === 'blizzardArchon') {
-      for (const e of living(b)) {
-       hit(b, u, e, atk(b, u) * 1.5, false);
-       const drenched = (e.drenchedUntil || 0) > b.time;
+      // The blizzard rolls outward at 5 tiles/s; each enemy is hit and frozen in ice as it reaches them.
+      const hits = queue(radial(0.15, 5), (bb, e) => {
+       const hp0 = e.hp;
+       hit(bb, u, e, power * 1.5, false, { noFx: true });
+       const drenched = (e.drenchedUntil || 0) > bb.time;
        if (drenched) {
-        status(b, e, 'freeze', 3, 0, u);
+        status(bb, e, 'freeze', 3, 0, u);
         armorStrip(e, 0.50);
        } else {
-        status(b, e, 'freeze', 2, 0, u);
+        status(bb, e, 'freeze', 2, 0, u);
        }
-      }
-      fx(b, 'spell', u, null, '16-TILE BLIZZARD');
+       e.iceBlockUntil = bb.time + (drenched ? 3 : 2);
+       number(bb, e, hp0);
+      });
+      fx(b, 'blizzard', u, null, '16-TILE BLIZZARD', { ttl: 1.6, schedule: { hits, start: 0.15, speed: 5 } });
       interact(b, u, u, 'blizzard-channel', 'Glacial Typhoon channel complete: 16-tile Blizzard, 150% ATK, 2s/3s freeze');
      } else if (chType === 'sandstormTitan') {
       interact(b, u, u, 'sandstorm-channel', 'Sandstorm Titan 10s channel complete');
@@ -3099,39 +3152,73 @@ function fx(b, type, u, e, text, extra = {}) {
       interact(b, u, u, 'blood-domain', 'Boiling Blood Domain: 150% ATK + detonates bleeds + applies 20 bleed stacks');
      }
      else if (chType === 'azure-dragon') {
-      for (const e of living(b)) {
-       damage(b, e, rawAtk(u) * 2.0, u, 'ability');
-       status(b, e, 'stun', 1.0, 0, u);
-      }
-      fx(b, 'pulse', u, null, 'AZURE DRAGON WRATH');
+      // The dragon spirit roars (0.3s), then lightning chains strike enemies in turn, most advanced first.
+      const t0 = b.time, power = rawAtk(u), foes = living(b).sort((a, z) => z.p - a.p), n = foes.length;
+      const hits = foes.map((e, i) => ({ e, uid: e.uid, at: 0.3 + 0.6 * (n > 1 ? i / (n - 1) : 0) }));
+      b.pendingHits ??= [];
+      for (const h of hits) b.pendingHits.push({ at: t0 + h.at, fn: bb => {
+       const e = h.e; if (e.hp <= 0 || e.gone) return;
+       const hp0 = e.hp;
+       damage(bb, e, power * 2.0, u, 'ability');
+       status(bb, e, 'stun', 1.0, 0, u);
+       e.azureStunUntil = bb.time + 1.0;
+       const dealt = hp0 - Math.max(0, e.hp);
+       if (dealt > 0) fx(bb, 'impact', u, e, String(Math.round(dealt)), { vfxKind: 'impact', ttl: 0.5 });
+      } });
+      fx(b, 'azure-wrath', u, null, 'AZURE DRAGON WRATH', { ttl: 1.8, schedule: { hits: hits.map(h => ({ uid: h.uid, at: h.at })) } });
       interact(b, u, u, 'azure-dragon', 'Primordial Azure Dragon: 200% ATK + 1s stun to all enemies');
      }
      else if (chType === 'white-tiger') {
-      for (const e of living(b)) {
-       e.retreatingUntil = b.time + 3;
-       status(b, e, 'slow', 6, 0.45, u);
-      }
-      fx(b, 'impact', u, null, 'WHITE TIGER TERROR ROAR');
+      // The roar spreads from the Tiger at 6 tiles/s after a 0.25s wind-up; Terror lands as it reaches each enemy.
+      const t0 = b.time, ox = u.x + 1, oy = u.y + 1;
+      const hits = living(b).map(e => { const p = track(e.p); return { e, uid: e.uid, at: 0.25 + Math.hypot(p.x - ox, p.y - oy) / 6 }; });
+      b.pendingHits ??= [];
+      for (const h of hits) b.pendingHits.push({ at: t0 + h.at, fn: bb => {
+       const e = h.e; if (e.hp <= 0 || e.gone) return;
+       e.retreatingUntil = bb.time + 3;
+       e.fearUntil = bb.time + 3;
+       status(bb, e, 'slow', 6, 0.45, u);
+      } });
+      fx(b, 'tiger-roar', u, null, 'WHITE TIGER TERROR ROAR', { ttl: 1.6, schedule: { hits: hits.map(h => ({ uid: h.uid, at: h.at })) } });
       interact(b, u, u, 'white-tiger', 'White Tiger God of Slaughter: Roars inflicting Terror board-wide (3s flee + 3s slow)');
      }
      else if (chType === 'xuanwu-toxin') {
       const counts = [0, 1, 2, 3].map(q => living(b).filter(e => Math.floor(e.p / 4) % 4 === q).length);
       let maxQ = 0, maxCount = -1;
       counts.forEach((c, idx) => { if (c > maxCount) { maxCount = c; maxQ = idx; } });
-      b.xuanwuToxins ??= [];
-      b.xuanwuToxins.push({ quadrant: maxQ, until: b.time + 5, owner: u.uid });
-      fx(b, 'warp', u, null, `XUANWU TOXIN ZONE (TILES ${maxQ * 4}-${(maxQ + 1) * 4})`);
+      // The toxin is lobbed onto the quadrant and the 5s pool starts when it lands (0.5s).
+      b.pendingHits ??= [];
+      b.pendingHits.push({ at: b.time + 0.5, fn: bb => { bb.xuanwuToxins ??= []; bb.xuanwuToxins.push({ quadrant: maxQ, until: bb.time + 5, owner: u.uid, at: bb.time }); } });
+      fx(b, 'xuanwu-lob', u, null, `XUANWU TOXIN ZONE (TILES ${maxQ * 4}-${(maxQ + 1) * 4})`, { ttl: 1.0, schedule: { quadrant: maxQ, landAt: 0.5 } });
       interact(b, u, u, 'xuanwu-toxin', `Xuanwu Divine Heaven-Bearer releases toxin into track tiles ${maxQ * 4}-${(maxQ + 1) * 4} (5s)`);
      }
      else if (chType === 'great-sage-staff') {
       const counts = [0, 1, 2, 3].map(q => living(b).filter(e => Math.floor(e.p / 4) % 4 === q).length);
       let maxQ = 0, maxCount = -1;
       counts.forEach((c, idx) => { if (c > maxCount) { maxCount = c; maxQ = idx; } });
-      for (const e of living(b).filter(e => Math.floor(e.p / 4) % 4 === maxQ)) {
-       damage(b, e, rawAtk(u) * 2.0, u, 'ability');
-      }
-      fx(b, 'slash', u, null, `STAFF STRIKE (TILES ${maxQ * 4}-${(maxQ + 1) * 4})`);
+      // A giant staff hangs over the quadrant's centre and slams at 0.55s; hits ripple out from the impact.
+      const t0 = b.time, power = rawAtk(u), mid = maxQ * 4 + 2, IMPACT = 0.55;
+      const hits = living(b).filter(e => Math.floor(e.p / 4) % 4 === maxQ).map(e => ({ e, uid: e.uid, at: IMPACT + Math.abs(e.p - mid) * 0.04 }));
+      b.pendingHits ??= [];
+      for (const h of hits) b.pendingHits.push({ at: t0 + h.at, fn: bb => {
+       const e = h.e; if (e.hp <= 0 || e.gone) return;
+       const hp0 = e.hp;
+       damage(bb, e, power * 2.0, u, 'ability');
+       const dealt = hp0 - Math.max(0, e.hp);
+       if (dealt > 0) fx(bb, 'impact', u, e, String(Math.round(dealt)), { vfxKind: 'impact', ttl: 0.5 });
+      } });
+      b.pendingHits.push({ at: t0 + IMPACT, fn: bb => { const at = track(mid); bb.shake = { ttl: 0.22, mag: 6, x: at.x, y: at.y }; } });
+      fx(b, 'sage-staff', u, null, `STAFF STRIKE (TILES ${maxQ * 4}-${(maxQ + 1) * 4})`, { ttl: 1.6, schedule: { quadrant: maxQ, impactAt: IMPACT, hits: hits.map(h => ({ uid: h.uid, at: h.at })) } });
       interact(b, u, u, 'great-sage-staff', `Great Sage strikes staff down tiles ${maxQ * 4}-${(maxQ + 1) * 4} for 200% ATK damage`);
+     }
+     else if (chType === 'phoenix-inferno') {
+      // Rebirth Inferno: the phoenix flies counter-clockwise from the exit (tile 16) at 20 tiles/s after 0.15s,
+      // igniting each tile as it passes; a tile burns for 5s from ignition. Runners on a burning tile take
+      // 1 Burn stack (1% max HP for 1s) every second (tickPhoenixFlames).
+      b.phoenixFlames ??= [];
+      b.phoenixFlames.push({ owner: u.uid, unit: u, start: b.time + 0.15, speed: 20, dur: 5 });
+      fx(b, 'phoenix-inferno', u, null, 'REBIRTH INFERNO', { ttl: 1.3, schedule: { start: 0.15, speed: 20 } });
+      interact(b, u, u, 'phoenix-inferno', 'Rebirth Inferno: all 16 tiles burn for 5s (1 Burn stack per second)');
      }
      else if (chType === 'berserker-cleave') {
       const seg = densestTrackSegment(b);

@@ -199,6 +199,9 @@ test('Azure Dragon Apex channels on 10th attack for 200% ATK + 1s stun to all en
   dragon.channeling.remaining = 0.05;
   G.step(b, 0.1);
   assert.strictEqual(dragon.channeling, null);
+  dragon.currentCooldown = 99; // no further attacks while the staggered ultimate resolves
+  for (let i = 0; i < 20 && b.pendingHits.length; i++) G.step(b, 0.1);
+  assert.ok(!b.pendingHits.length, 'all ultimate hits resolved');
   assert.ok(e1.frozenUntil > b.time, 'e1 stunned for 1s');
   assert.ok(e2.frozenUntil > b.time, 'e2 stunned for 1s');
 });
@@ -217,6 +220,9 @@ test('White Tiger Apex channels Terror Roar: all enemies retreat backward 3s and
   tiger.channeling.remaining = 0.05;
   G.step(b, 0.1);
   assert.strictEqual(tiger.channeling, null);
+  tiger.currentCooldown = 99; // no further attacks while the staggered ultimate resolves
+  for (let i = 0; i < 20 && b.pendingHits.length; i++) G.step(b, 0.1);
+  assert.ok(!b.pendingHits.length, 'all ultimate hits resolved');
   assert.ok(e1.retreatingUntil > b.time, 'e1 retreating backward');
   assert.ok(e1.slows.some(s => s.power === 0.45), 'e1 slowed 45%');
 });
@@ -237,6 +243,9 @@ test('Xuanwu Apex channels Toxin Zone on highest density quadrant for 5s', () =>
   xuanwu.channeling.remaining = 0.05;
   G.step(b, 0.1);
   assert.strictEqual(xuanwu.channeling, null);
+  xuanwu.currentCooldown = 99; // no further attacks while the staggered ultimate resolves
+  for (let i = 0; i < 20 && b.pendingHits.length; i++) G.step(b, 0.1);
+  assert.ok(!b.pendingHits.length, 'all ultimate hits resolved');
   assert.ok(b.xuanwuToxins.length > 0, 'Toxin zone created');
   assert.strictEqual(b.xuanwuToxins[0].quadrant, 1, 'Toxin placed in quadrant 1');
 });
@@ -256,5 +265,35 @@ test('Great Sage Equal to Heaven channels staff strike for 200% ATK down track q
   sage.channeling.remaining = 0.05;
   G.step(b, 0.1);
   assert.strictEqual(sage.channeling, null);
+  b.units.forEach(v => { v.currentCooldown = 99; }); // the Sage and its clones stop attacking while the staff lands
+  for (let i = 0; i < 20 && b.pendingHits.length; i++) G.step(b, 0.1);
+  assert.ok(!b.pendingHits.length, 'all ultimate hits resolved');
   assert.strictEqual(preHp - e1.hp, 169 * 2.0, '200% ATK dealt');
+});
+
+test('Immortal Vermilion Phoenix: 10th attack channels Rebirth Inferno; burning tiles add 1 Burn stack per second for 5s', () => {
+  const b = battle(['phoenixCubApex'], [4]);
+  const phoenix = b.units[0];
+  phoenix.lineage = 'phoenix';
+  const e1 = enemy(b, 5.0, 100000);
+
+  for (let i = 1; i <= 10; i++) G.attack(b, phoenix);
+  assert.ok(phoenix.channeling, 'Channels on 10th attack');
+  assert.strictEqual(phoenix.channeling.type, 'phoenix-inferno');
+
+  phoenix.channeling.remaining = 0.05;
+  G.step(b, 0.1);
+  assert.strictEqual(phoenix.channeling, null);
+  assert.strictEqual(b.phoenixFlames.length, 1, 'All 16 tiles set burning');
+
+  // Tile 5 ignites 0.15 + (16 - 5) / 20 = 0.7s after release and burns for 5s: one Burn stack each second.
+  let stacks = 0, last = e1.phoenixBurnAt || 0;
+  for (let i = 0; i < 70; i++) {
+    phoenix.currentCooldown = 99;
+    const before = e1.burns.length;
+    G.step(b, 0.1);
+    if ((e1.phoenixBurnAt || 0) !== last) { stacks++; last = e1.phoenixBurnAt; assert.ok(e1.burns.length >= 1, 'a Burn stack is applied'); }
+  }
+  assert.ok(stacks >= 5 && stacks <= 6, `about one stack per second for 5s (got ${stacks})`);
+  assert.strictEqual(b.phoenixFlames.length, 0, 'Flames expire');
 });
