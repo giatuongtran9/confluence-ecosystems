@@ -73,6 +73,10 @@ function bottomDock(){
       <span class="dock-icon">📖</span>
       <span class="dock-label">Codex</span>
     </button>
+    <button class="dock-tab ${screen==='lab'?'active':''}" data-action="labOpen">
+      <span class="dock-icon">🧪</span>
+      <span class="dock-label">Lab</span>
+    </button>
   </nav>`;
 }
 const $=s=>document.querySelector(s),app=$('#app'),modal=$('#modal');
@@ -205,8 +209,10 @@ const FIELD_GRIDS=Object.freeze({
   vesper:{left:33.2,top:33.0,width:33.6,height:33.8},
   yara:{left:33.0,top:32.9,width:34.0,height:34.0}
 });
-const battlefield=()=>BATTLEFIELDS[run.leader];
-const activeFieldGrid=()=>FIELD_GRIDS[run.leader];
+// The battle's own run decides the art (the Ability Lab runs a sandbox battle, possibly with no player run).
+const fieldLeader=()=>battle?.run?.leader||run?.leader||LEADERS[0].id;
+const battlefield=()=>BATTLEFIELDS[fieldLeader()];
+const activeFieldGrid=()=>FIELD_GRIDS[fieldLeader()];
 const cardCell=(x,y)=>{const g=activeFieldGrid(),cw=g.width/3,ch=g.height/3;return {left:g.left+x*cw,top:g.top+y*ch,width:cw,height:ch}};
 // Map logical center-grid coordinates (1–3) and perimeter-route coordinates (0–4) onto the art.
 const routePoint=(x,y,size=700)=>{const g=activeFieldGrid(),cw=g.width/3,ch=g.height/3;return {x:(g.left+(x-.5)*cw)*size/100,y:(g.top+(y-.5)*ch)*size/100}};
@@ -238,7 +244,7 @@ function header(){
   }
   return `<header class="mobile-hud lobby-hud">
     <button class="brand" data-action="home"><span class="sigil">✧</span><span><span class="brand-name">CONFLUENCE</span><span class="brand-sub">THE NINEFOLD CROSSING</span></span></button>
-    <div class="lobby-actions"><button class="hud-icon-btn" data-action="help" aria-label="How to play">?</button></div>
+    <div class="lobby-actions"><button class="hud-icon-btn lab-link" data-action="labOpen" aria-label="Ability Lab" title="Ability Lab">🧪</button><button class="hud-icon-btn" data-action="help" aria-label="How to play">?</button></div>
   </header>`;
 }
 function home(){return `<section class="hero"><div class="hero-copy"><div class="eyebrow">One deck. Nine impossible worlds.</div><h1>Build a living<br><span class="accent">ecosystem.</span></h1><p>Choose your cards. Read the road ahead. Connect attacks, state cycles, spells, and sacrifice into a team that can defeat the boss.</p><div class="row wrap"><span class="tag">3 × 3 formation</span><span class="tag">Automatic combat</span><span class="tag">${CARDS.length} cards · ${FORMS.length} evolutions · 9 genres</span></div></div><div class="hero-art"><div class="orbital"></div><div class="orbital two"></div><div class="hero-cast">${[0,4,8,12].map(sprite).join('')}</div><div class="hero-art-caption">ATTACK · TRANSFORM · TRIGGER · GROW</div></div></section>${run?`<div class="resume"><div><h3>${['won','lost'].includes(run.phase)?'Your last crossing':'A crossing in progress'}</h3><p>${leader().name} · ${run.roster.length} cards · ${Math.ceil(run.health)} health · ${run.coins||0} coins</p></div>${btn('resume','Continue →','primary')}</div>`:''}<div class="sectionhead"><div><div class="eyebrow">Choose a leader, then your first card</div><h2>Choose a power. Accept its price.</h2></div></div><div class="leaders">${LEADERS.map(l=>`<button class="leader" data-action="leader" data-id="${l.id}">${sprite(l.sprite)}<span class="eyebrow">${l.title}</span><h3>${l.name}</h3><p class="leader-benefit">+ ${l.benefit}</p><p class="leader-drawback">− ${l.drawback}</p><div class="leader-foot"><span>Choose leader</span><span>↗</span></div></button>`).join('')}</div><div class="footerline"><span>Automatic combat growth · Optional upgrades at Fate Workshops.</span><span>Saved on this browser</span></div>`}
@@ -438,15 +444,126 @@ function cosmicTrialHUDHTML(b){const t=b?.cosmicTrial;if(!t)return '';const name
 function xenoTrialHUDHTML(b){const t=b?.xenoTrial;if(!t)return '';const name=CARD[t.apexId]?.name||'Xeno-Leviathan',serum=CARD[t.serumId]?.name||'matching Serum';if(t.status==='active')return `<div class="xeno-trial-hud active"><div class="urban-trial-head"><b>⬡ XENO-LEVIATHAN TRIAL</b><span>${t.pair.split('+').join(' + ')} · ${t.nodeType.toUpperCase()}</span></div><p>Clear this Elite/Boss node with zero leaks to awaken ${name} and consume ${serum}. Any leak or failed clear removes the Xeno candidate and Serum.</p></div>`;if(t.status==='passed')return `<div class="xeno-trial-hud passed"><b>✦ XENO TRIAL PASSED</b><span>${name} awakened · ${serum} consumed</span></div>`;return `<div class="xeno-trial-hud failed"><b>⬡ XENO TRIAL FAILED</b><span>${t.reason||'Trial failed'} · Xeno candidate and ${serum} removed</span></div>`}
 function combat(){return `${gamehead()}<div class="combat-layout"><section class="panel arena-panel"><div class="combat-toolbar"><div class="row">${btn('pause',paused?'▶ Resume':'Ⅱ Pause','small','id="pauseBtn"')}${[1,2,4].map(n=>btn('speed',n+'×',`small ${speed===n?'chosen':''}`,`data-id="${n}"`)).join('')}</div><div class="row">${btn('route','Map','small')}</div></div><div id="blackout-hud" class="blackout-hud">${blackoutHUDHTML(battle)}</div><div id="xeno-trial-hud">${xenoTrialHUDHTML(battle)}</div><div id="cosmic-trial-hud">${cosmicTrialHUDHTML(battle)}</div><div id="heavenly-trial-hud">${heavenlyTrialHUDHTML(battle)}</div><div id="arcane-trial-hud">${arcaneTrialHUDHTML(battle)}</div><div id="scrapwork-trial-hud">${scrapworkTrialHUDHTML(battle)}</div><div id="cyber-trial-hud">${cyberTrialHUDHTML(battle)}</div><div id="hunt-trial-hud">${huntTrialHUDHTML(battle)}</div><div id="bloodline-trial-hud">${bloodlineTrialHUDHTML(battle)}</div><div id="urban-trial-hud">${urbanContainmentHUDHTML(battle)}</div><div id="urban-legend-trial-hud">${urbanLegendTrialHUDHTML(battle)}</div>${board()}<div id="loss-strip">${lossNotice()}</div></section></div>`}
 function end(){return `${gamehead()}<section class="stage center"><div class="eyebrow">${run.phase==='won'?'The road holds':'The crossing falls'}</div><h1>${run.phase==='won'?'Worlds, united.':'A thread remains.'}</h1><p class="muted" style="margin-top:20px">Your next deck will tell a different story.</p><div class="summary-grid"><div><b>${run.cleared}</b><small>Battles cleared</small></div><div><b>${run.stats.kills}</b><small>Runners defeated</small></div><div><b>+${Math.round(run.stats.growth)}</b><small>ATK grown in combat</small></div><div><b>${run.coins||0}</b><small>Coins remaining</small></div></div><div class="actions">${btn('home','Choose a new leader','primary')}</div></section>${battleReport(run.recap)}`}
-function codex(){return `<section class="stage"><div class="eyebrow">${CARDS.length} draftable cards · ${FORMS.length} evolutions · Nine genres</div><h1>The fellowship.</h1><p class="muted" style="margin-top:15px">Mix attack loops, Burn, Bleed, tokens, sacrifice, critical hits, and control. Evolved forms are earned in combat or awakened at Fate Workshops, never drafted.</p><div class="filterbar">${btn('filter','All '+(CARDS.length+FORMS.length),filter==='all'?'active':'','data-id="all"')}${Object.entries(GENRES).map(([k,v])=>btn('filter',v[0],filter===k?'active':'',`data-id="${k}"`)).join('')}</div><div class="codex-grid">${[...CARDS,...FORMS].filter(c=>filter==='all'||c.genre===filter).map(c=>cardView(c.id)).join('')}</div></section>`}
-function render(){document.body.classList.toggle('in-combat',screen==='game'&&run?.phase==='combat');document.body.classList.toggle('has-dock',screen!=='home');app.innerHTML=`<div class="shell">${header()}${screen==='home'?home():screen==='codex'?codex():!run?home():run.phase==='combat'?combat():run.phase==='draft'?draftView():['won','lost'].includes(run.phase)?end():mapScreen()}</div>${bottomDock()}`;if(battle&&screen==='game'&&run.phase==='combat')draw();}
+function codex(){return `<section class="stage"><div class="eyebrow">${CARDS.length} draftable cards · ${FORMS.length} evolutions · Nine genres</div><h1>The fellowship.</h1><p class="muted" style="margin-top:15px">Mix attack loops, Burn, Bleed, tokens, sacrifice, critical hits, and control. Evolved forms are earned in combat or awakened at Fate Workshops, never drafted.</p><div class="filterbar">${btn('filter','All '+(CARDS.length+FORMS.length),filter==='all'?'active':'','data-id="all"')}${Object.entries(GENRES).map(([k,v])=>btn('filter',v[0],filter===k?'active':'',`data-id="${k}"`)).join('')}</div><div class="codex-grid">${[...CARDS,...FORMS].filter(c=>filter==='all'||c.genre===filter).map(c=>`<div class="codex-item">${cardView(c.id)}${btn('labOpen','▶ Preview in Ability Lab','small codex-preview',`data-id="${c.id}"`)}</div>`).join('')}</div></section>`}
+function render(){if(screen!=='lab')leaveLab();document.body.classList.toggle('in-combat',screen==='lab'||(screen==='game'&&run?.phase==='combat'));document.body.classList.toggle('in-lab',screen==='lab');document.body.classList.toggle('has-dock',screen!=='home');app.innerHTML=`<div class="shell">${header()}${screen==='home'?home():screen==='codex'?codex():screen==='lab'?labView():!run?home():run.phase==='combat'?combat():run.phase==='draft'?draftView():['won','lost'].includes(run.phase)?end():mapScreen()}</div>${bottomDock()}`;if(battle&&(screen==='lab'||(screen==='game'&&run.phase==='combat')))draw();}
 function showDialog(html,live=false){if(battle&&!battle.done&&!live){paused=true;let p=$('#pauseBtn');if(p)p.textContent='▶ Resume'}if(modal.open)modal.close();modal.dataset.live=live?'true':'false';modal.innerHTML=btn('close','×','close','aria-label="Close dialog"')+(live&&battle&&!battle.done?'<p class="live-warning">● COMBAT CONTINUES · close this window to return to the battlefield</p>':'')+html;modal.showModal()}
 modal.addEventListener('close',()=>{if(!modal.open){selected=null;modal.dataset.live='false'}});
 
 function info(id,u=null){const c=CARD[id];showDialog(`<div class="unit-title">${art(c)}<div><div class="eyebrow">${GENRES[c.genre][0]}</div><h2>${getUnitTitles(c,u).name}</h2>${rarityBadge(id)}${cardTags(c)}<p>${getUnitTitles(c,u).vn}</p></div></div><div class="unit-stats"><div><b>${u?Math.round(Game.base(u)):c.baseAtk}</b><small>ATK</small></div><div><b>${c.attackInterval?(c.attackInterval/(1+(u?.permanentSpeed||0))).toFixed(2)+'s':'—'}</b><small>INTERVAL</small></div><div><b>+${u?.permanentAtkBonus||0}</b><small>PERMANENT</small></div></div><div class="eyebrow">Rules</div><p>${c.rules}</p>${evolutionHint(c,u)}${u?cosmicDetail(u)+cyberDetail(u)+ascensionBarHTML(u):''}${u?`<p class="hint">Workshop: +${Math.round((u.permanentSpeed||0)*100)}% permanent speed · Resonance ${u.resonanceLevel||0}${u.resonanceLevel?" (every 6s: +"+u.resonanceLevel+" allied ability progress)":""}</p>`:""}<div class="eyebrow">${c.ecosystem}</div><div class="spatial"><b>Works well with</b><p>${c.synergy}</p></div><p class="hint">Team Power is the total permanent ATK bonus on deployed originals, including the caster; reserves, consumed cards, and tokens are excluded. Unbuffed ATK excludes damage multipliers. All attacking cards have global reach. Ability charge affects elemental mages, Jade, Lantern, Eye, and Core; it never advances shutdown attack counts, maturity, or evolution witnesses. Consumed originals are permanently lost. Consumed tokens leave their parents safe. The predator defines the meal reward; token and original meals grant the same reward. Permanent ATK lasts for this run.</p>`,true)}
 function help(){showDialog(`<div class="eyebrow">How to play</div><h2>Build the deck. Trust the draw.</h2><ol><li>Choose a genre-themed leader with a universal benefit and drawback, then choose <b>one of three starting attackers</b>. The leader’s genre gets 1.5× selection weight inside each rarity in every draft.</li><li>Inspect the entire branching map. Pick a connected gold destination.</li><li><b>Deploy & Start</b> fills nine slots with randomly drawn cards on the 3×3 grid; each Titan reserves two adjacent slots. Opening effects resolve and the battle begins immediately.</li><li>Enemies walk clockwise around the <b>16 outer tiles</b>. They cannot attack your cards. Runners completing the loop damage you and disappear.</li><li>All cards attack globally. Most synergies work across the deployed team. Predation, token spawns, Altar, Netrunner, and Shoggoth use the neighbor rules printed on their cards. There are no center, corner, edge, or alignment bonuses.</li><li>Cards grow, transform, and trigger automatically <b>during combat</b>. Coins are earned from battles and spent on draft rerolls. Fate Workshops offer optional upgrades and evolution paths.</li><li>After every successful stage, choose <b>one of three cards</b>, skip for no extra reward, or reroll all three for 10 coins per reroll. The first card is mandatory. Normal and Rare cards appear initially, Epic from crossing 5, and Legendary from crossing 10; Mythic Apex forms are earned, not drafted. Elite rewards improve high-rarity chances. A roster over nine cards makes each draw less predictable.</li></ol><p>Predators have named diets within their genre. A token’s ancestry determines its species and genre; being a token alone never makes it edible. Consumed originals—including eligible high-rarity Fodder—are permanently lost. Tokens do not delete their parents. Predators prioritize eligible adjacent tokens, then the weakest eligible original. Each predator defines its fixed meal reward, identical for tokens and originals. Empty slots stay empty unless an explicit summon fills them. Parents summon before opening consumption. Crimson Hound does not summon. Each breeding original or token checks every second: with at least one orthogonal same-species neighbor, roll one 10% birth chance into a free orthogonal slot. A birth is a temporary copy of its parent fodder species, not a separate offspring species. No offspring cap. Tokens snapshot unbuffed ATK and attack interval at birth, inherit species attack and breeding traits, and never inherit growth engines or evolve. Scrapwork Mechs permanently lock their first two forged weapons; both fire per attack at reduced individual power. There are no automatic reserve replacements. Phantoms do not join the deck. The final boss halves crowd control and enrages after 45 seconds, so control alone cannot hold it indefinitely. Permanent ATK and trigger-gauge progress last for the run; temporary buffs and attack-cycle counters reset between battles.</p><p>Card values are shown before leader modifiers. Permanent ATK growth and Burn/Bleed stack counts have no numerical limits. Team Power means the sum of permanent ATK bonuses on deployed original cards, including the caster; consumed cards, reserves, and tokens are excluded. Unbuffed ATK means base ATK plus permanent ATK and any Shoggoth mimic bonus. Ability damage can crit unless marked true damage or a detonation. True damage ignores armor. Other damage remains affected by armor, critical hits, leader damage, and Vulnerable as applicable. Base critical chance: 10%. Critical strikes deal 200% damage. Bleed stacks last 4 seconds. Vents freeze the two leading runners every 8 seconds. Every Burn and Bleed stack expires independently; effects are not permanent. Slows use the strongest active slow rather than adding together. Vulnerable uses the most recently applied value. Original cards can evolve during combat; their new form and accumulated growth persist for the run. Cauldron elixirs have an 8s cooldown and cannot trigger themselves. Growth has no battle cap. Summoning has no per-parent or battle count cap. Each ability retains its stated timing, and requires an empty slot. Normal/Rare cards build permanent power early; late-tier cards use that accumulated power. Herald feeding is a lore-based late growth exception, and evolved forms retain their growth engines. Duplicate passive support auras do not stack. Downtime cannot fall below 0.5 seconds.</p><p>Progress saves between decisions. Reloading during combat returns to the pre-deployment checkpoint. Card information opens in a centered modal while combat continues. Map, Deck, and Help menus pause combat; use Resume to continue.</p>`)}
 function startLeader(id){run=Game.newRun(id);battle=null;selected=null;screen='game';paused=false;save();render();window.scrollTo(0,0)}
+// ---- Ability Lab: one unit alone on the field against an endless, harmless stream of runners ----
+// While the Lab is open, the global `battle` is a sandbox battle; the player's own battle is restored on leaving.
+let labState=null,labId='swordImmortal',labFilter='all',labQuery='',labPickerOpen=false;
+const LAB_COUNTERS={attackCount:'Attacks',archonAttacks:'Archon attacks',qi:'Qi',apexQi:'Apex Qi',souls:'Souls',alloy:'Alloy',alloyAttacks:'Alloy attacks',sandyCharge:'Sandy charge',chromeAttackCharge:'Chrome charge',trophyPoints:'Trophy points',genome:'Genome',dread:'Dread',ram:'RAM',essence:'Essence'};
+const LAB_THRESHOLDS={archonAttacks:10,sandyCharge:8,chromeAttackCharge:4,alloyAttacks:3};
+function labBattle(id){
+  const r=Game.newRun(run?.leader||LEADERS[0].id,1234);
+  r.roster=[Game.instance(r,id)];
+  r.node={row:0,lane:1,type:'battle'};r.depth=5;r.phase='ready';
+  const b=Game.deploy(r);
+  b.sandbox=true;b.plan.count=Infinity;
+  const u=b.units[0];
+  if(u&&u.extraSlot==null){const p=Game.xy(4);u.slot=4;u.x=p.x;u.y=p.y}  // centre tile
+  return b;
+}
+function enterLab(id){
+  if(id&&CARD[id])labId=id;
+  if(!labState)labState={prevBattle:battle,prevPaused:paused,prevSelected:selected,prevFeedback:feedbackSeen,prevEvents:visualEvents};
+  labState.b=labBattle(labId);
+  battle=labState.b;paused=false;selected=null;feedbackSeen=0;visualEvents=[];
+  screen='lab';render();
+}
+function leaveLab(){
+  if(!labState)return;
+  battle=labState.prevBattle;paused=labState.prevPaused;selected=labState.prevSelected;feedbackSeen=labState.prevFeedback;visualEvents=labState.prevEvents;
+  labState=null;
+}
+function labUnit(){return battle?.units.find(v=>!v.removed&&v.id===labId)||battle?.units.find(v=>!v.removed)}
+function labTriggerUlt(){
+  const u=labUnit();if(!u)return;
+  // Most ultimates fire on attackCount % N === 0 with N in {2,3,4,5,6,10}; 60 is a multiple of all of them.
+  const bump=n=>Math.ceil(((n||0)+1)/60)*60-1;
+  u.attackCount=bump(u.attackCount);
+  for(const k of ['siphonCount','scanCount','opticCount','metroidCount'])if(k in u)u[k]=bump(u[k]);
+  for(const [k,v] of Object.entries(LAB_THRESHOLDS))u[k]=Math.max(u[k]||0,v-1);
+  u.currentCooldown=0;
+  toast('Next attack fires the ultimate');
+}
+function labSpawn(kind){
+  Game.spawn(battle);
+  const e=battle.enemies[battle.enemies.length-1];if(!e)return;
+  if(kind==='boss'){e.boss=true;e.hp=e.maxHp=battle.plan.bossHp;e.defense=.2;e.speed*=.95}
+  else{e.elite=true;e.hp=e.maxHp=e.maxHp*2;e.defense=.25}
+}
+function labNeedsPartner(c){
+  const text=`${c.rules||''} ${c.synergy||''}`;
+  return /adjacent|neighbou?r|ally|allies|relic|token|devour|consume|blossom|cauldron|module|mount|install|socket/i.test(text);
+}
+function labCounterHTML(){
+  const u=labUnit();if(!u)return '<p class="muted">No unit on the field.</p>';
+  const rows=Object.entries(LAB_COUNTERS).filter(([k])=>typeof u[k]==='number'&&(k==='attackCount'||u[k]>0)).map(([k,l])=>{
+    const max=LAB_THRESHOLDS[k]||(k==='attackCount'?Math.ceil(((u[k]||0)+1)/10)*10:null);
+    return `<div class="lab-counter-row"><span>${l}</span><b>${Math.round(u[k])}${max?`<small> / ${max}</small>`:''}</b></div>`});
+  if(k10(u))rows.push(`<div class="lab-ring" aria-label="Attacks toward the 10th">${Array.from({length:10},(_,i)=>`<i class="${i<((u.attackCount||0)%10)?'on':''}"></i>`).join('')}</div>`);
+  if(u.channeling)rows.push(`<div class="lab-channel">Channelling ${u.channeling.type} · ${Math.max(0,u.channeling.remaining).toFixed(1)}s</div>`);
+  return rows.join('');
+}
+function k10(u){return /every 10th|10th attack/i.test(CARD[u.id]?.rules||'')}
+function labLogHTML(){
+  const rows=(battle?.feedback||[]).slice(-14).reverse();
+  if(!rows.length)return '<p class="muted">Abilities appear here as they fire.</p>';
+  return rows.map(r=>`<li><time>${r.t.toFixed(1)}s</time>${r.text}</li>`).join('');
+}
+function labPickerHTML(){
+  const all=[...CARDS,...FORMS];
+  return `<input class="lab-search" type="search" placeholder="Search ${all.length} units" value="${labQuery.replace(/"/g,'&quot;')}" aria-label="Search units">
+  <div class="filterbar lab-filters">${btn('labFilter','All',labFilter==='all'?'active':'','data-id="all"')}${Object.entries(GENRES).map(([k,v])=>btn('labFilter',v[0],labFilter===k?'active':'',`data-id="${k}"`)).join('')}</div>
+  <div class="lab-list" role="listbox" aria-label="Units">${all.filter(c=>labFilter==='all'||c.genre===labFilter).map(c=>`<button class="lab-item ${c.id===labId?'active':''}" data-action="labPick" data-id="${c.id}" data-name="${(c.name+' '+(c.vn||'')).toLowerCase().replace(/"/g,'')}" style="--realm:${GENRES[c.genre][1]}" ${labQuery&&!(c.name+' '+(c.vn||'')).toLowerCase().includes(labQuery)?'hidden':''}><span class="lab-item-name">${c.name}</span><span class="lab-item-meta">${c.rarity||''} · ${GENRES[c.genre][0]}</span></button>`).join('')}</div>`;
+}
+function labView(){
+  const c=CARD[labId],partner=labNeedsPartner(c);
+  return `<section class="stage lab"><div class="eyebrow">Ability Lab</div><h2 class="lab-title">Watch every ability</h2>
+  <p class="muted lab-sub">One unit alone on the field. Runners keep coming and never cost health.</p>
+  <div class="lab-layout">
+    <div class="lab-unitbar" style="--realm:${GENRES[c.genre][1]}"><div><small>${GENRES[c.genre][0]}</small><b>${c.name}</b></div>${btn('labToggle',labPickerOpen?'Close ✕':'Change unit ▾','small',`aria-expanded="${labPickerOpen}"`)}</div>
+    ${labPickerOpen?`<aside class="panel lab-picker">${labPickerHTML()}</aside>`:''}
+    <div class="lab-toolbar">${btn('labUlt','⚡ Trigger ultimate now','small primary')}${btn('labElite','+ Elite','small')}${btn('labBoss','+ Boss','small')}${btn('labReset','↺ Reset','small')}</div>
+    <section class="lab-arena">${board()}</section>
+    <aside class="panel lab-info">
+      <div class="lab-card" style="--realm:${GENRES[c.genre][1]}"><div class="eyebrow">${c.rarity||''} · ${GENRES[c.genre][0]}</div><h2>${c.name}</h2>${c.vn?`<div class="muted">${c.vn}</div>`:''}
+        <div class="lab-stats"><span>${c.baseAtk??'—'} ATK</span><span>${c.attackInterval?c.attackInterval+'s':'—'} interval</span></div>
+        <p class="lab-rules">${c.rules||''}</p>${c.synergy?`<p class="lab-synergy"><b>Synergy:</b> ${c.synergy}</p>`:''}
+        ${partner?`<p class="lab-partner">This unit is placed alone, so effects that need adjacent allies, relics, tokens or modules won't fire here.</p>`:''}
+      </div>
+      <h3 class="lab-h">Toward the ultimate</h3><div id="lab-counter">${labCounterHTML()}</div>
+      <h3 class="lab-h">Ability log</h3><ul id="lab-log" class="lab-log">${labLogHTML()}</ul>
+    </aside>
+  </div></section>`;
+}
+function labUI(){
+  const ctr=$('#lab-counter');if(ctr)ctr.innerHTML=labCounterHTML();
+  const log=$('#lab-log');if(log)log.innerHTML=labLogHTML();
+  const field=$('#field');
+  if(field){const key=battle.units.filter(u=>!u.removed).map(u=>u.uid+':'+u.slot).join();if(field.dataset.key!==key){field.dataset.key=key;field.innerHTML=battle.units.filter(u=>!u.removed).map(fieldUnit).join('')}}
+}
+document.addEventListener('input',e=>{
+  if(!e.target.classList?.contains('lab-search'))return;
+  labQuery=e.target.value.trim().toLowerCase();
+  document.querySelectorAll('.lab-item').forEach(b=>{b.hidden=!!labQuery&&!b.dataset.name.includes(labQuery)});
+});
 document.addEventListener('click',e=>{let el=e.target.closest('[data-action]');if(!el)return;let a=el.dataset.action,id=el.dataset.id;
+ if(a==='labOpen'){if(modal.open)modal.close();enterLab(id);window.scrollTo(0,0);return}
+ if(screen==='lab'){
+  if(a==='labPick'){labPickerOpen=false;enterLab(id);return}
+  if(a==='labToggle'){labPickerOpen=!labPickerOpen;render();if(labPickerOpen)$('.lab-search')?.focus();return}
+  if(a==='labFilter'){labFilter=id;render();return}
+  if(a==='labUlt'){labTriggerUlt();return}
+  if(a==='labElite'||a==='labBoss'){labSpawn(a==='labBoss'?'boss':'elite');return}
+  if(a==='labReset'){enterLab(labId);return}
+  if(a==='unit'){info(el.dataset.card);return}
+  if(!['close','help','inspectCard'].includes(a)){leaveLab()}
+ }
  if(a==='close'){modal.close();return}
  if(a==='home'||a==='codex'){if(battle&&!battle.done)paused=true;screen=a;render();window.scrollTo(0,0);return}
  if(a==='help'){help();return}
@@ -2078,7 +2195,7 @@ function liveUI() {
   const ulthud = $('#urban-legend-trial-hud'); if (ulthud) ulthud.innerHTML = urbanLegendTrialHUDHTML(battle);
   for (const u of battle.units.filter(u => u.removed)) document.querySelector('#field [data-id="' + u.uid + '"]')?.remove();
 }
-function frame(ts){let dt=Math.min(.1,(ts-last)/1000||0);last=ts;if(battle&&!battle.done&&!paused&&screen==='game'&&(!modal.open||modal.dataset.live==='true')){let left=dt*speed;while(left>0&&!battle.done){let step=Math.min(1/30,left);Game.step(battle,step);left-=step}if(battle.done){if(modal.open)modal.close();selected=null;save();render();window.scrollTo(0,0)}}if(battle&&screen==='game'&&run.phase==='combat'){draw();uiClock+=dt;if(uiClock>.15){liveUI();uiClock=0}}requestAnimationFrame(frame)}
+function frame(ts){let dt=Math.min(.1,(ts-last)/1000||0);last=ts;if(screen==='lab'&&battle){if(!paused){let left=dt*speed;while(left>0){let step=Math.min(1/30,left);Game.step(battle,step);left-=step}}draw();uiClock+=dt;if(uiClock>.15){labUI();uiClock=0}requestAnimationFrame(frame);return}if(battle&&!battle.done&&!paused&&screen==='game'&&(!modal.open||modal.dataset.live==='true')){let left=dt*speed;while(left>0&&!battle.done){let step=Math.min(1/30,left);Game.step(battle,step);left-=step}if(battle.done){if(modal.open)modal.close();selected=null;save();render();window.scrollTo(0,0)}}if(battle&&screen==='game'&&run.phase==='combat'){draw();uiClock+=dt;if(uiClock>.15){liveUI();uiClock=0}}requestAnimationFrame(frame)}
 render();if(resetSavedRuns)toast('Your saved run was cleared for the update.');requestAnimationFrame(frame);
 
 

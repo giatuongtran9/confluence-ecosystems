@@ -3144,6 +3144,7 @@ function fx(b, type, u, e, text, extra = {}) {
    }
    if (e.gone) continue;
    if (e.p >= 16) {
+    if (b.sandbox) { e.gone = true; continue; } // Ability Lab: runners just leave, no leak or trial failure
     if (e.subjectZero) { e.gone = true; failUrbanContainmentTrial(b, 'Subject Zero escaped'); fx(b, 'warp', null, e, 'SUBJECT ZERO ESCAPED'); continue; }
     if (e.champion) recordTrial(b, e, false);
     if (!e.boss && !e.champion && b.units.some(v => !v.removed && v.id === 'ruleArchitect') && !b.room404Saved) {
