@@ -1225,3 +1225,10 @@ body.has-dock .shell{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))
 .in-combat .board .field-card.channeling-quagmire{transform:translateY(-7px);filter:drop-shadow(0 0 10px #a3e635) drop-shadow(0 0 22px #78532d99) brightness(1.12)}
 .in-combat .board .field-card.channeling-blizzard{transform:translateY(-7px);filter:drop-shadow(0 0 10px #bae6fd) drop-shadow(0 0 22px #0ea5e999) brightness(1.18)}
 .in-combat .board .field-card.channeling-sandstorm{transform:translateY(-7px);filter:drop-shadow(0 0 10px #fde68a) drop-shadow(0 0 22px #b4530999) brightness(1.15)}
+.blackout-banner.state-lights{background:linear-gradient(90deg,#2a2614,#16140b);border:1px solid #f3d66b;box-shadow:0 0 16px rgba(243,214,107,.3)}
+.state-lights .blackout-timer{color:#ffe58a}
+.state-lights .blackout-meter i{background:linear-gradient(90deg,#f8e7a0,#f3c94b);box-shadow:0 0 8px #f3d66b}
+.blackout-meter.gauge{position:relative}
+.blackout-meter.gauge::after{content:'';position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:#cbd5e1aa}
+.blackout-meter.gauge i.order{margin-left:auto;margin-right:50%;background:linear-gradient(90deg,#f3c94b,#f8e7a0)}
+.blackout-meter.gauge i.chaos{margin-left:50%;background:linear-gradient(90deg,#b2304a,#ff4d64)}

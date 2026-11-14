@@ -1024,7 +1024,7 @@ const Game = (() => {
  function allies(b, u) { return b.units.filter(v => !v.removed && v !== u) }
  function support(b, id) { return b.units.filter(v => !v.removed && v.id === id).sort((a, z) => Number(a.uid) - Number(z.uid))[0] }
  function living(b) { return b.enemies.filter(e => e.hp > 0 && !e.gone).sort((a, z) => z.p - a.p || a.uid - z.uid) }
- function tabooBreaker(b, e) { return (e.ruleMarks || 0) > 0 || e.panicUntil > b.time || e.retreatingUntil > b.time || e.speed > 0.40 || e.frozenUntil > b.time || (e.stuns || []).some(v => v.until > b.time) }
+ function tabooBreaker(b, e) { return !compliant(b, e) && (e.panicUntil > b.time || e.retreatingUntil > b.time || e.speed > 0.40 || e.frozenUntil > b.time || (e.stuns || []).some(v => v.until > b.time)) }
  
 
 function resolveAnimArchetype(u) {
@@ -1351,8 +1351,10 @@ function fx(b, type, u, e, text, extra = {}) {
   const enforcers = b.units.filter(u => !u.removed && !token(u) && u.id === 'ruleEnforcer' && (u.dread || 0) >= 140)
     .sort((a,z)=>a.slot-z.slot||a.uid-z.uid);
   for (const enforcer of enforcers) {
-   const relic = neighbors(b, enforcer, false).filter(v => !v.removed && urbanRelicMap[v.id])
-    .sort((a,z)=>a.slot-z.slot||a.uid-z.uid)[0];
+   const adjacentRelics = neighbors(b, enforcer, false).filter(v => !v.removed && urbanRelicMap[v.id])
+    .sort((a,z)=>a.slot-z.slot||a.uid-z.uid);
+   // Two adjacent Protocol relics: one is picked at random; the player never chooses.
+   const relic = adjacentRelics.length > 1 ? adjacentRelics[Math.floor(rand(b.run) * adjacentRelics.length)] : adjacentRelics[0];
    if (relic) return { enforcer, relic, apexId: urbanRelicMap[relic.id] };
   }
   return null;
@@ -1488,7 +1490,7 @@ function fx(b, type, u, e, text, extra = {}) {
  function getTabooMark(e, fam) { return e && e.tabooMarks ? (e.tabooMarks[fam] || 0) : 0 }
  function hasLegendMark(e, fam) { return getTabooMark(e, fam) > 0 }
  function breaksLegendNaturalRule(b, u, e) {
-  if (!e || e.gone || e.hp <= 0) return false;
+  if (!e || e.gone || e.hp <= 0 || compliant(b, e)) return false;
   const fam = family(u);
   const panicked = e.panic || e.panicUntil > b.time;
   const fleeing = e.retreatingUntil > b.time;
@@ -1531,7 +1533,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (newRealm !== oldRealm || u.id !== urbanInvestigatorIds[newRealm]) {
    const nextId = urbanInvestigatorIds[newRealm];
    if (u.id !== nextId) evolve(b, u, nextId);
-   const stats = [[8, 1.3], [24, 1.1], [50, 0.85], [90, 0.65]][newRealm];
+   const stats = [[12, 1.5], [24, 1.4], [48, 1.3], [90, 1.2]][newRealm];
    u.baseAtk = stats[0]; u.attackInterval = stats[1];
    if (newRealm > oldRealm) {
     const title = ['Investigator', 'Occult Detective', 'Anomaly Specialist', 'Rule Enforcer'][newRealm];
@@ -1553,14 +1555,58 @@ function fx(b, type, u, e, text, extra = {}) {
   u.violations = Math.round(((u.violations || 0) + progress)*10000)/10000;
   updateUrbanLegendLineage(b, u);
   startUrbanLegendTrial(b);
-  if (b.time >= (b.blackoutLockoutUntil || 0) && b.time >= (b.curfewUntil || 0)) {
-   b.urbanViolationsForBlackout = (b.urbanViolationsForBlackout || 0) + amount;
-   if (b.urbanViolationsForBlackout >= 5) {
-    b.urbanViolationsForBlackout = 0;
-    triggerBlackout(b);
-   }
-  }
+  pushGauge(b, 20 * amount);
  }
+
+ // Haunted A (Order) vs B (Chaos) share one gauge: −100 fires Lights On, +100 fires Blackout.
+ const HAUNTED_A_SUPPORT = ['securityCam', 'radioPA', 'coroner', 'decoder'];
+ const isOrderUnit = u => !!u && !token(u) && (isUrbanInvestigator(u) || isUrbanAuthority(u) || isUrbanRelic(u) || HAUNTED_A_SUPPORT.includes(u.id));
+ const lightsOn = b => (b.lightsOnUntil || 0) > b.time;
+ const compliant = (b, e) => !!e && ((e.ruleMarks || 0) >= 3 || lightsOn(b));
+ function pushGauge(b, delta) {
+  // Frozen while either pole or the shared 8s lockout is active, as the old Blackout counter was.
+  if (!delta || b.time < (b.blackoutLockoutUntil || 0) || b.curfewUntil > b.time || lightsOn(b)) return;
+  const prev = b.orderChaos || 0, next = Math.max(-100, Math.min(100, prev + delta));
+  b.orderChaos = next;
+  if (prev && Math.sign(prev) !== Math.sign(next) && b.time >= (b.flickerAt || 0)) {
+   b.flickerAt = b.time + 1;
+   const lead = living(b)[0];
+   if (lead) { status(b, lead, 'stun', 0.5, 0, null); fx(b, 'pulse', null, lead, 'FLICKER'); }
+  }
+  if (next >= 100) { b.orderChaos = 0; triggerBlackout(b); }
+  else if (next <= -100) { b.orderChaos = 0; triggerLightsOn(b); }
+ }
+ function triggerLightsOn(b) {
+  if (!b.units.some(v => !v.removed && isOrderUnit(v))) return;
+  const director = b.units.some(v => !v.removed && v.id === 'curfewDirector');
+  b.lightsOnUntil = b.time + (6 + (director ? 3 : 0)) * mod(b.run, 'buffDuration');
+  b.blackoutLockoutUntil = b.lightsOnUntil + 8.0;
+  b.metrics.lightsOn = (b.metrics.lightsOn || 0) + 1;
+  for (const e of living(b)) { e.panicUntil = Math.min(e.panicUntil || 0, b.time); e.panic = false; }
+  fx(b, 'pulse', null, null, 'LIGHTS ON · CONTAINMENT'); triggerShowstopper(b, null, 'LIGHTS ON · CONTAINMENT', 'lights-on');
+ }
+ const ORDER_ULTS = { ruleArchitect: 'Rule Zero Decree', allSeeingOverseer: 'Panopticon Lockdown', curfewDirector: 'Curfew Lockdown', forensicDemiurge: 'Living Autopsy', backroomsWarden: 'No Floor' };
+ function resolveOrderUlt(b, u, id, power) {
+  const runners = living(b);
+  if (id === 'ruleArchitect') for (const e of runners) { addRuleMark(b, e, 2, u); trueHit(b, u, e, power * 1.5, true); }
+  else if (id === 'allSeeingOverseer') for (const e of runners) { status(b, e, 'freeze', 1.5, 0, u); hit(b, u, e, power * 1.2); }
+  else if (id === 'curfewDirector') {
+   for (const e of runners.filter(e => (e.ruleMarks || 0) > 0).sort((a, z) => (z.ruleMarks || 0) - (a.ruleMarks || 0) || z.p - a.p).slice(0, 3)) {
+    const m = e.ruleMarks || 0; status(b, e, 'freeze', m >= 5 ? 4 : m >= 3 ? 3 : 2, 0, u);
+   }
+  } else if (id === 'forensicDemiurge') {
+   for (const e of runners) {
+    if (e.elite || e.boss || e.champion) damage(b, e, e.hp * 0.15, u, 'ability');
+    if ((e.ruleMarks || 0) > 0 && e.hp > 0) trueHit(b, u, e, power * 3, true);
+   }
+  } else if (id === 'backroomsWarden') {
+   for (const e of runners.slice(0, 3)) { dot(b, e, 'bleed', power, 4 * mod(b.run, 'buffDuration'), u); warp(b, e, 6, u); fx(b, 'warp', u, e, 'NO FLOOR'); }
+  }
+  pushGauge(b, id === 'ruleArchitect' ? -40 : -20);
+  fx(b, 'curfew', u, null, ORDER_ULTS[id].toUpperCase());
+ }
+ function addCaseFile(b, n = 1) { b.caseFiles = Math.min(6, (b.caseFiles || 0) + n); }
+ function takeCaseFile(b) { if (!(b.caseFiles > 0)) return false; b.caseFiles--; pushGauge(b, -20); return true; }
 
  function updateUrbanLegendLineage(b, u) {
   const fam = family(u);
@@ -1613,9 +1659,11 @@ function fx(b, type, u, e, text, extra = {}) {
 
  function addRuleMark(b, e, n = 1, source = null) {
   if (e.hp <= 0 || e.gone) return;
+  if (b.curfewUntil > b.time && !e.subjectZero) return; // Blackout: too dark to file Citations
   n = Math.min(n, 5 - (e.ruleMarks || 0));
   if (n <= 0) return;
   e.ruleMarks = (e.ruleMarks || 0) + n;
+  pushGauge(b, -4 * n);
   b.metrics.violations = (b.metrics.violations || 0) + n;
   b.totalRuleMarks = (b.totalRuleMarks || 0) + n;
 
@@ -1625,17 +1673,14 @@ function fx(b, type, u, e, text, extra = {}) {
    interact(b, null, v, 'dread', `+${gain} Dread recorded`);
   }
 
-  if (source && isUrbanLegend(source)) {
-   grantUrbanViolation(b, source, n, e);
-  }
-  // Security Monitor drops Incident Dossier on violations
+  // Security Monitor opens a Case File every 3rd team Citation (every 2nd beside an Investigator).
   for (const cam of b.units.filter(v => !v.removed && v.id === 'securityCam')) {
-   if (rand(b.run) < 0.40) {
-    spawnToken(b, cam, 'dossier', true);
-   }
+   const per = neighbors(b, cam, false).some(isUrbanInvestigator) ? 2 : 3;
+   cam.citations = (cam.citations || 0) + n;
+   while (cam.citations >= per) { cam.citations -= per; addCaseFile(b, 1); }
   }
 
-  fx(b, 'violation', source || e, e, e.subjectZero ? `SUBJECT ZERO · ${e.ruleMarks}/5 MARKS` : 'PHẠM QUY');
+  fx(b, 'violation', source || e, e, e.subjectZero ? `SUBJECT ZERO · ${e.ruleMarks}/5 CITATIONS` : 'CITED');
  }
 
  const practitionerRealmById = Object.freeze({ practitioner: 0, cultivationFoundation: 1, cultivationGoldenCore: 2, cultivationNascentSoul: 3 });
@@ -2064,7 +2109,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (['stair13', 'redRaincoat'].includes(d.evolvedFrom || d.id)) attackInterval = 0;
   if (isUrbanInvestigator(u)) {
    const r = urbanInvestigatorRealmForDread(u.dread || 0);
-   const stats = [[8, 1.3], [24, 1.1], [50, 0.85], [90, 0.65]][r];
+   const stats = [[12, 1.5], [24, 1.4], [48, 1.3], [90, 1.2]][r];
    baseAtk = stats[0]; attackInterval = stats[1];
   }
   if (isPractitioner(u)) {
@@ -2137,7 +2182,7 @@ function fx(b, type, u, e, text, extra = {}) {
   b.units.forEach(u => bindUrbanRelic(b, u));
   if (b.units.some(u => !u.removed && u.id === 'redPhone')) {
    const dur = 10 * mod(b.run, 'buffDuration');
-   for (const u of b.units.filter(v => !v.removed && card(v.id).genre === 'Haunted')) u.hotlineUntil = b.time + dur;
+   for (const u of b.units.filter(v => !v.removed && isOrderUnit(v))) u.hotlineUntil = b.time + dur;
    fx(b, 'state', null, null, 'RED HOTLINE');
   }
   for(const u of [...cosmicUnits(b)])cosmicExtras(b,u);
@@ -2176,7 +2221,8 @@ function fx(b, type, u, e, text, extra = {}) {
   if (neighbors(b, u, false).some(v => v.id === 'demonBlade')) n += .10;
   const inBlackout = b.curfewUntil > b.time;
   const hasDirector = b.units.some(v => !v.removed && v.id === 'curfewDirector');
-  if (card(u.id).genre === 'Haunted') { if (hasDirector) n *= 1.6; else if (inBlackout) n *= 1.4; }
+  if (isOrderUnit(u)) { if (hasDirector) n *= 1.3; if (lightsOn(b)) n *= 1.3; if (neighbors(b, u, false).some(v => v.id === 'radioPA')) n += .15; }
+  else if (card(u.id).genre === 'Haunted' && inBlackout) n *= 1.4;
   if (family(u) === 'mannequin' && (inBlackout || allies(b, u).some(v => v.state !== 'active'))) {
    n *= (u.id === 'livingTaboo' && inBlackout ? 3.0 : 2.5);
   }
@@ -2262,6 +2308,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (b.units.some(u => !u.removed && u.id === 'inkBrush')) n *= 1.10;
   if(!exact){if(b.units.some(u=>!u.removed&&u.id==='kingInYellow'))n*=1.35;if(channel==='ability'&&e.abyssDreadUntil>b.time)n*=1.1;}
   if (e.ruleMarks && !exact) n *= (1 + e.ruleMarks * 0.08);
+  if (!exact && source && lightsOn(b) && isOrderUnit(source)) n *= 1.2;
   if(n>0&&source&&card(source.id).genre==='Lovecraft')e.cosmicCursed=source.uid;
   if (e.preyMarkUntil > b.time && source && card(species(source))?.genre === 'Bloodline') n *= 1.20;
   const actual = Math.min(e.hp, Math.max(0, n));
@@ -2418,7 +2465,6 @@ function fx(b, type, u, e, text, extra = {}) {
   const target = chooseTarget(b, u); if (!target) return false;
   if (isUrbanLegend(u) && !isLegendTarget(b, u, target)) return false;
   const inBlackout = b.curfewUntil > b.time;
-  if (u.id === 'allSeeingOverseer' && !living(b).some(e => e.swift || e.enraged || e.speedBoostUntil > b.time || e.speed > 0.40)) return false;
   if (isXeno(u)) { u.attackCount++; record(b, u).attacks++; u.flash = .18; xenoAttack(b, u, target, atk(b, u)); return true; }
   u.attackCount++; record(b, u).attacks++; u.flash = .18; let power = atk(b, u);
   if (neighbors(b, u, false).some(v => !v.removed && v.id === 'astralLoom')) tick(b, u, 1);
@@ -2653,7 +2699,10 @@ function fx(b, type, u, e, text, extra = {}) {
   }
     else if (isUrbanInvestigator(u) || ['ruleArchitect', 'allSeeingOverseer', 'curfewDirector', 'forensicDemiurge', 'backroomsWarden'].includes(u.id)) {
    if (u.id === 'allSeeingOverseer') {
-    for (const e of living(b).filter(e => e.swift || e.enraged || e.speedBoostUntil > b.time || e.speed > 0.40)) {
+    // No Blind Spots: every runner on all 16 tiles takes 40% ATK; speeders take full damage and stasis.
+    const speeding = e => e.swift || e.enraged || e.speedBoostUntil > b.time || e.speed > 0.40;
+    for (const e of living(b).filter(e => !speeding(e))) hit(b, u, e, power * 0.4);
+    for (const e of living(b).filter(speeding)) {
      hit(b, u, e, power);
      status(b, e, 'freeze', 2.0, 0, u);
      e.swift = false; e.enraged = false; e.speedBoostUntil = 0;
@@ -2665,10 +2714,11 @@ function fx(b, type, u, e, text, extra = {}) {
     addRuleMark(b, target, 1, u);
    } else if (u.id === 'forensicDemiurge') {
     hit(b, u, target, power);
-    dot(b, target, 'bleed', 50, 4, u);
-    if (u.attackCount % 4 === 0 && (target.elite || target.boss || target.champion)) {
-     damage(b, target, target.maxHp * 0.12, u, 'ability');
-     fx(b, 'spell', u, target, '−12% MAX HP');
+    if ((target.ruleMarks || 0) > 0 && target.hp > 0 && !target.gone) {
+     // Necrosis: 30% ATK true per second for 4s; a new hit refreshes it instead of stacking.
+     target.bleeds = (target.bleeds || []).filter(x => !(x.owner === u.uid && x.necrosis));
+     dot(b, target, 'bleed', power * 0.3, 4, u);
+     target.bleeds[target.bleeds.length - 1].necrosis = true;
     }
    } else if (u.id === 'backroomsWarden') {
     for (const e of living(b).slice(0, 3)) {
@@ -2676,24 +2726,13 @@ function fx(b, type, u, e, text, extra = {}) {
      grantUrbanViolation(b, u, 1, e);
      addRuleMark(b, e, 1, null);
     }
-    if (b.time >= (u.backroomsAt || 6)) {
-     u.backroomsAt = b.time + 6;
-     for (const e of living(b).slice(0, 3)) {
-      dot(b, e, 'bleed', 150, 4.0 * mod(b.run, 'buffDuration'), u);
-      warp(b, e, 6, u);
-      fx(b, 'warp', u, e, 'BACKROOMS');
-     }
-    }
    }
    const r = urbanInvestigatorRealmForDread(u.dread || 0);
    if (u.id === 'ruleArchitect') {
     for (const e of living(b).slice(0, 4)) {
      const violator = (e.ruleMarks || 0) > 0;
-     trueHit(b, u, e, power * (violator ? 2.5 : 1));
+     trueHit(b, u, e, power * (violator ? 1.75 : 1));
      addRuleMark(b, e, 1, u);
-    }
-    if (u.attackCount % 4 === 0) {
-     for (const e of living(b).filter(e => (e.ruleMarks || 0) > 0)) { trueHit(b, u, e, 240 + teamPower(b) * 2); fx(b, 'curfew', u, e, 'DETONATE'); }
     }
    } else if (r === 0) {
     hit(b, u, target, power); addRuleMark(b, target, 1, u);
@@ -2705,6 +2744,11 @@ function fx(b, type, u, e, text, extra = {}) {
    } else if (r >= 3) {
     const top3 = [...living(b)].sort((a, z) => z.hp - a.hp).slice(0, 3);
     for (const e of top3) { trueHit(b, u, e, power); addRuleMark(b, e, 1, u); }
+   }
+   if (ORDER_ULTS[u.id] && u.attackCount % 10 === 0) {
+    u.channeling = { type: 'order-' + u.id, duration: 1.2, remaining: 1.2 };
+    u.currentCooldown = Math.max(u.currentCooldown || 0, 1.2);
+    fx(b, 'pulse', u, u, 'CHANNELING · ' + ORDER_ULTS[u.id].toUpperCase());
    }
   }
   else if (family(u) === 'redRaincoat' || family(u) === 'stair13') {
@@ -2881,7 +2925,7 @@ function fx(b, type, u, e, text, extra = {}) {
   const newEnemy = { uid: ++b.enemyUid, p: 0, hp, maxHp: hp, speed: (champion ? .31 : plan.speed) * (boss ? .95 : swift ? 1.6 : armored ? .85 : 1), leak: boss ? b.run.maxHealth : champion ? plan.trial.leak : elite ? 6 : armored ? 3 : 2, defense: armored ? .4 : elite ? .25 : (boss || champion) ? .2 : 0, boss, champion, maxProgress: 0, elite, armored, swift, bornAt: b.time, enraged: false, gone: false, panic: false, panicUntil: 0, retreatingUntil: 0, slows: [], frozenUntil: 0, shredUntil: 0, bleeds: [], burns: [], venoms: [], vulnerableUntil: 0, vulnerability: 0, tabooMarks: { kuchisake: 0, nightBus: 0, payphone: 0, morgueMirror: 0, mannequin: 0, stair13: 0, redRaincoat: 0 } };
   b.enemies.push(newEnemy);
   const architect = b.units.find(v => !v.removed && v.id === 'ruleArchitect');
-  if (architect) addRuleMark(b, newEnemy, 2, architect);
+  if (architect) addRuleMark(b, newEnemy, 1, architect);
   b.spawned++;
   huntArmor(b,newEnemy);brandQuarry(b);
  }
@@ -2959,6 +3003,7 @@ function fx(b, type, u, e, text, extra = {}) {
      const radial = (start, speed) => living(b).map(e => { const p = track(e.p); return { e, uid: e.uid, at: start + Math.hypot(p.x - ox, p.y - oy) / speed }; });
      const queue = (hits, fn) => { b.pendingHits ??= []; for (const h of hits) b.pendingHits.push({ at: t0 + h.at, fn: bb => { if (h.e.hp > 0 && !h.e.gone) fn(bb, h.e); } }); return hits.map(h => ({ uid: h.uid, at: h.at })); };
      const number = (bb, e, hp0) => { const dealt = hp0 - Math.max(0, e.hp); if (dealt > 0) fx(bb, 'impact', u, e, String(Math.round(dealt)), { vfxKind: 'impact', ttl: 0.5 }); };
+     if (chType.startsWith('order-')) resolveOrderUlt(b, u, chType.slice(6), power);
      if (chType === 'magmaLord') {
       // Lava erupts outward from the Magma Lord at 5 tiles/s; the 16-tile fissure starts now as before.
       const hits = queue(radial(0.15, 5), (bb, e) => { const hp0 = e.hp; hit(bb, u, e, power * 1.5, false, { noFx: true }); dot(bb, e, 'burn', Math.max(1, e.maxHp * 0.01), 1, u); number(bb, e, hp0); });
@@ -3290,6 +3335,7 @@ function fx(b, type, u, e, text, extra = {}) {
     }
     let slow = Math.max(inkSlow, toxinSlow, ...e.slows.map(s => s.power)), move = e.frozenUntil > b.time ? 0 : 1 - slow;
    if (b.curfewUntil > b.time) move *= 0.75;
+   if (compliant(b, e)) { move *= 0.75; e.panicUntil = Math.min(e.panicUntil || 0, b.time); e.panic = false; e.speedBoostUntil = 0; }
    const previousProgress = e.p, wasRetreating = e.retreatingUntil > b.time && !((e.boss||e.champion)&&e.enraged);
    e.p += e.speed * dt * move * (e.enraged ? 1.25 : 1) * (b.run.relics.includes('frost') ? .9 : 1);
    if (wasRetreating) e.p -= e.speed * dt * move * (e.enraged ? 1.25 : 1) * (b.run.relics.includes('frost') ? .9 : 1) * 2;
@@ -3666,27 +3712,25 @@ function fx(b, type, u, e, text, extra = {}) {
   // Forensic Coroner examines adjacent Incident Dossier
   if (u.id === 'coroner' && b.time >= (u.autopsyAt || 5)) {
    u.autopsyAt = b.time + 5;
-   const adjDossier = neighbors(b, u, false).find(v => v.id === 'dossier' && !v.removed);
-   if (adjDossier) {
-    adjDossier.removed = true;
-    const recipient = neighbors(b, u, false).filter(v => !v.removed && !token(v) && card(v.id).genre === 'Haunted').sort((a, z) => rawAtk(a) - rawAtk(z))[0] || u;
-    growth(b, recipient, 3);
+   if (takeCaseFile(b)) {
+    // Lowest-ATK Order ally gets +3; an adjacent Order ally is preferred and gets it doubled.
+    const near = neighbors(b, u, false).filter(v => !v.removed && isOrderUnit(v)).sort((a, z) => rawAtk(a) - rawAtk(z))[0];
+    const recipient = near || b.units.filter(v => !v.removed && isOrderUnit(v)).sort((a, z) => rawAtk(a) - rawAtk(z))[0] || u;
+    growth(b, recipient, near ? 6 : 3);
     const investigator = b.units.filter(v => !v.removed && acceptsDread(v)).sort((a, z) => Number(isUrbanAuthority(a)) - Number(isUrbanAuthority(z)) || (a.dread || 0) - (z.dread || 0))[0];
     const dreadGain = 10 + (b.units.some(v => !v.removed && v.id === 'ruleboard') ? 2 : 0);
     if (investigator) addDread(b, investigator, dreadGain);
-    interact(b, u, recipient, 'autopsy', `Dossier examined: +3 perm ATK, +${dreadGain} Dread`);
-    fx(b, 'growth', recipient, null, '+3 ATK');
+    interact(b, u, recipient, 'autopsy', `Case File examined: +${near ? 6 : 3} perm ATK, +${dreadGain} Dread`);
+    fx(b, 'growth', recipient, null, `+${near ? 6 : 3} ATK`);
    }
   }
 
   // Black-Box Cryptographer decodes adjacent Incident Dossier into Survival Manual
   if (u.id === 'decoder' && b.time >= (u.decodeAt || 6)) {
    u.decodeAt = b.time + 6;
-   const adjDossier = neighbors(b, u, false).find(v => v.id === 'dossier' && !v.removed);
-   if (adjDossier) {
-    adjDossier.removed = true;
-    const dur = 4 * mod(b.run, 'buffDuration');
-    for (const ally of b.units.filter(v => !v.removed && card(v.id).genre === 'Haunted')) {
+   if (takeCaseFile(b)) {
+    const dur = (neighbors(b, u, false).some(isOrderUnit) ? 6 : 4) * mod(b.run, 'buffDuration');
+    for (const ally of b.units.filter(v => !v.removed && isOrderUnit(v))) {
      ally.manualUntil = Math.max(ally.manualUntil || 0, b.time + dur);
     }
     const investigator = b.units.filter(v => !v.removed && acceptsDread(v)).sort((a, z) => Number(isUrbanAuthority(a)) - Number(isUrbanAuthority(z)) || (a.dread || 0) - (z.dread || 0))[0];
@@ -3699,12 +3743,9 @@ function fx(b, type, u, e, text, extra = {}) {
 
   if (u.id === 'radioPA' && b.time >= (u.paSlowAt || 6)) {
    u.paSlowAt = b.time + 6;
-   for (const e of living(b).filter(e => (e.ruleMarks || 0) > 0)) status(b, e, 'slow', 3, 0.25, u);
-   fx(b, 'pulse', u, null, 'CURFEW WARNING');
-  }
-  if (u.id === 'radioPA' && b.time >= (u.paDossierAt || 8)) {
-   u.paDossierAt = b.time + 8;
-   spawnToken(b, u, 'dossier', false);
+   for (const e of living(b).slice(0, 2)) addRuleMark(b, e, 1, u);
+   pushGauge(b, -10);
+   fx(b, 'pulse', u, null, 'CURFEW PULSE');
   }
   if (u.id === 'mirrorQueen' && !u.mirrorQueenBonusGranted) {
    const highest = Math.max(0, ...allies(b, u).filter(v => !token(v)).map(rawAtk));
@@ -3733,18 +3774,11 @@ function fx(b, type, u, e, text, extra = {}) {
    const target = zero || living(b)[0];
    if (target) { addRuleMark(b, target, 1, u); interact(b, u, target, 'hotline-mark', zero ? `Subject Zero · ${target.ruleMarks}/5 marks` : 'Emergency Hotline marks leading runner'); }
   }
-  // Director of Curfew uses mark-scaled lockdown; it does not need Blackout.
-  if (u.id === 'curfewDirector' && b.time >= (u.lockdownAt || 6)) {
-   u.lockdownAt = b.time + 6;
-   const marked = living(b).filter(e => (e.ruleMarks || 0) > 0);
-   const target = marked.find(e => e.subjectZero) || marked.sort((a,z)=>(z.ruleMarks||0)-(a.ruleMarks||0)||z.p-a.p||a.uid-z.uid)[0];
-   if (target) { const marks=target.ruleMarks||0,duration=marks>=5?3:marks>=3?2:1; status(b,target,'freeze',duration,0,u); interact(b,u,target,'lockdown',`LOCKDOWN ${duration}s · ${marks}/5 marks`); fx(b,'curfew',u,target,`LOCKDOWN ${duration}s`); }
-  }
 
   // Liminal Keycard warps leading marked runners every 7s
   if (u.id === 'elevatorKey' && b.time >= (u.keyAt || 7)) {
    u.keyAt = b.time + 7;
-   for (const e of living(b).filter(e => (e.ruleMarks || 0) > 0).slice(0, 2)) {
+   for (const e of living(b).filter(e => (e.ruleMarks || 0) > 0).sort((a, z) => (z.ruleMarks || 0) - (a.ruleMarks || 0) || z.p - a.p).slice(0, 2)) {
     warp(b, e, 3, u);
    }
   }
@@ -3840,7 +3874,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (abilityGauge(u) && u.threshold.current >= u.threshold.max) tick(b, u, 0);
  }
 
- return { breakthroughPills: b => Math.max(0, Math.min(3, Math.floor(b?.run?.breakthroughPills || 0))), chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, xenoTrialCandidate, startXenoTrial, failXenoTrial, passXenoTrial, addWeakpoint, addGenome, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, startCosmicTrial, cosmicTrialProof, failCosmicTrial, passCosmicTrial, tickCosmicTrial, updateIdol, dropPage, addSyllables, forgeGrimoire, decipherPage, cosmicPanic, cosmicStatus, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, cyberTrialCandidate, cyberTrialProof, augmented, ramCapacity, berserkActive, updateCyber, installChrome, addRAM, uploadHack, cyberZone, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, isApprentice, isArchon, isElemental, bestPair, receiveEssence, startArcaneTrial, failArcaneTrial, startScrapworkTrial, markScrapworkTrialHit, failScrapworkTrial, elementalLinks, arcaneReaction, elementalSpell, arcaneExtras, tickArcane, HUNT_APEX, isSlayer, startHuntTrial, failHuntTrial, passHuntTrial, priority, trophyFamily, executeThreshold, huntArmor, trophyPoints, forgeHuntRelic, carveTrophy, huntExtras, visceral, isMech, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, oilPool, tickOil, mechAttack, addQi, addDread, isCultivationApex, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, persist, event, flushEvents, evolve, evolutionProgress, consume, devour, spawnToken, dot, warp, extras, growth, teamPower, allies, support, trialFor, encounterFor, ENCOUNTERS, record, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, tick, trigger, status, attack, damage, hit, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, startUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, wavePlan, spawn, favored, rand, finish, processPractitionerBreakthroughs, isPractitioner, isBloodlineRelic, isUrbanInvestigator, isUrbanLegend, addRuleMark, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, triggerWeiqiCorner };
+ return { pushGauge, triggerLightsOn, lightsOn, compliant, isOrderUnit, resolveOrderUlt, breakthroughPills: b => Math.max(0, Math.min(3, Math.floor(b?.run?.breakthroughPills || 0))), chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, xenoTrialCandidate, startXenoTrial, failXenoTrial, passXenoTrial, addWeakpoint, addGenome, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, startCosmicTrial, cosmicTrialProof, failCosmicTrial, passCosmicTrial, tickCosmicTrial, updateIdol, dropPage, addSyllables, forgeGrimoire, decipherPage, cosmicPanic, cosmicStatus, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, cyberTrialCandidate, cyberTrialProof, augmented, ramCapacity, berserkActive, updateCyber, installChrome, addRAM, uploadHack, cyberZone, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, isApprentice, isArchon, isElemental, bestPair, receiveEssence, startArcaneTrial, failArcaneTrial, startScrapworkTrial, markScrapworkTrialHit, failScrapworkTrial, elementalLinks, arcaneReaction, elementalSpell, arcaneExtras, tickArcane, HUNT_APEX, isSlayer, startHuntTrial, failHuntTrial, passHuntTrial, priority, trophyFamily, executeThreshold, huntArmor, trophyPoints, forgeHuntRelic, carveTrophy, huntExtras, visceral, isMech, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, oilPool, tickOil, mechAttack, addQi, addDread, isCultivationApex, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, persist, event, flushEvents, evolve, evolutionProgress, consume, devour, spawnToken, dot, warp, extras, growth, teamPower, allies, support, trialFor, encounterFor, ENCOUNTERS, record, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, tick, trigger, status, attack, damage, hit, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, startUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, wavePlan, spawn, favored, rand, finish, processPractitionerBreakthroughs, isPractitioner, isBloodlineRelic, isUrbanInvestigator, isUrbanLegend, addRuleMark, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, triggerWeiqiCorner };
 })();
 if (typeof module !== 'undefined') module.exports = Game;
 

@@ -353,15 +353,15 @@ const CARDS = [
     "vn": "Điều Tra Viên Ban Đêm",
     "genre": "Haunted",
     "rarity": "Normal",
-    "baseAtk": 8,
-    "attackInterval": 1.3,
+    "baseAtk": 12,
+    "attackInterval": 1.5,
     "max": 0,
     "asset": "hauntedInvestigator",
     "icon": "✧",
     "fav": "neighbor",
     "tags": ["attacker", "investigator", "urban-scaling"],
     "ecosystem": "Quái Đàm · Anomaly Log",
-    "rules": "Attacks add 1 Violation Mark to surviving targets, up to 5 per runner. Each newly applied team mark grants +1 Dread . Advances at 25/70/140 Dread. At Rule Enforcer rank, an adjacent Cursed Containment Relic becomes the focus of the Subject Zero trial on an Elite/Boss node. After ascension, every 30 newly earned Dread grants +2 permanent ATK; old Dread is not reused.",
+    "rules": "Order. Attacks add 1 Citation to the target (max 5 per runner); every new team Citation grants +1 Dread and pushes the Order↔Chaos gauge toward Order. Advances at 25/70/140 Dread. A 140-Dread Rule Enforcer orthogonally adjacent to a Protocol relic on an Elite/Boss node starts the Subject Zero trial. 3+ Citations make a runner Compliant: 25% slower, cannot panic or speed up.",
     "synergy": "Incident Dossiers, Forensic Coroner, and Cursed Containment Relics."
   },
   // 2. Security Monitor (Architecture A Producer)
@@ -371,15 +371,15 @@ const CARDS = [
     "vn": "Camera Giám Sát",
     "genre": "Haunted",
     "rarity": "Normal",
-    "baseAtk": 7,
-    "attackInterval": 1.5,
+    "baseAtk": 0,
+    "attackInterval": 0,
     "max": 0,
     "asset": "sensor",
     "icon": "✧",
     "fav": "neighbor",
     "tags": ["sensor", "producer", "dossier"],
     "ecosystem": "Quái Đàm · Surveillance",
-    "rules": "Rule: 'Always Under Watch.' Attacks runners. Whenever any runner commits a Rule Violation, has a 40% chance to drop an Incident Dossier token onto an empty orthogonal slot. Eaten or decoded dossiers clear the slot.",
+    "rules": "Order support · does not attack. Every 3rd Citation the team applies opens 1 Case File in the team pool (max 6). Adjacent Investigator: every 2nd Citation instead.",
     "synergy": "Forensic Coroner, Black-Box Cryptographer, and Night Investigator."
   },
   // 3. Emergency Broadcast (Architecture A Producer & Buffer)
@@ -389,15 +389,15 @@ const CARDS = [
     "vn": "Đài Phát Thanh Khẩn Cấp",
     "genre": "Haunted",
     "rarity": "Normal",
-    "baseAtk": 9,
-    "attackInterval": 1.6,
+    "baseAtk": 0,
+    "attackInterval": 0,
     "max": 0,
     "asset": "atlasMachineA",
     "icon": "✧",
     "fav": "team",
     "tags": ["control", "producer", "curfew"],
     "ecosystem": "Quái Đàm · Curfew Radio",
-    "rules": "Rule: 'Curfew Announcement.' Every 6s, broadcasts an emergency warning that slows all violators by 25% for 3s. Every 8s, drops an Incident Dossier token onto a free interior slot.",
+    "rules": "Order support · does not attack. Every 6s, a curfew pulse cites the 2 leading runners and pushes the gauge −10 toward Order. Adjacent Order allies gain +15% attack speed.",
     "synergy": "Security Monitor, Forensic Coroner, and Night Investigator."
   },
 
@@ -417,7 +417,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["refiner", "forensics"],
     "ecosystem": "Quái Đàm · Forensics",
-    "rules": "Every 5s, examines an adjacent Incident Dossier token. Grants the lowest-ATK adjacent original Haunted ally (or itself) +3 permanent ATK and delivers +10 Dread to the lowest-Dread Investigator, prioritizing Investigators over ascended Authorities. Authorities convert every 30 new Dread into +2 permanent ATK.",
+    "rules": "Order. Every 5s, examines 1 Case File from the team pool: +3 permanent ATK to the lowest-ATK Order ally (an adjacent Order ally is preferred and gets +6), +10 Dread to the lowest-Dread Investigator, and pushes the gauge −20.",
     "synergy": "Security Monitor, Emergency Broadcast, and Night Investigator."
   },
   // 5. Black-Box Cryptographer (Architecture A Processor)
@@ -435,7 +435,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["refiner", "buffer"],
     "ecosystem": "Quái Đàm · Forensics",
-    "rules": "Every 6s, decodes an adjacent Incident Dossier, granting all deployed Haunted allies +25% attack speed and +15% critical chance for 4s (modified by buff duration). Grants +8 Dread to the lowest-Dread Investigator, prioritizing Investigators over ascended Authorities. Authorities convert every 30 new Dread into +2 permanent ATK.",
+    "rules": "Order. Every 6s, decodes 1 Case File from the team pool: all Order allies gain +25% attack speed and +15% critical chance for 4s (6s with an adjacent Order ally), +8 Dread to the lowest-Dread Investigator, and pushes the gauge −20.",
     "synergy": "Security Monitor, Emergency Broadcast, and Night Investigator."
   },
 
@@ -454,8 +454,8 @@ const CARDS = [
     "icon": "✧",
     "fav": "neighbor",
     "tags": ["relic", "urban-relic", "rules"],
-    "ecosystem": "Quái Đàm · Containment Relic",
-    "rules": "Enhances containment efficiency: Incident Dossiers grant +2 bonus Dread when examined or decoded. When orthogonally adjacent to a 140-Dread Rule Enforcer on an Elite or Boss node, starts the Subject Zero trial; success consumes this Relic to awaken The Architect of Taboos.",
+    "ecosystem": "Quái Đàm · Protocol Relic",
+    "rules": "Protocol relic. Case Files grant +2 bonus Dread when examined or decoded. When orthogonally adjacent to a 140-Dread Rule Enforcer on an Elite or Boss node, starts the Subject Zero trial; success consumes this relic to promote the Enforcer to The Architect of Taboos. Two adjacent relics: one is picked at random.",
     "synergy": "Rule Enforcer (Legendary Investigator) and all Urban Legends."
   },
   // 7. Panopticon Monitor (Relic 2 -> The All-Seeing Overseer)
@@ -472,8 +472,8 @@ const CARDS = [
     "icon": "✧",
     "fav": "neighbor",
     "tags": ["relic", "urban-relic", "vision"],
-    "ecosystem": "Quái Đàm · Containment Relic",
-    "rules": "Scans all 16 tiles. Every 4s, inflicts 1 Violation Mark on the 3 fastest runners. When orthogonally adjacent to a 140-Dread Rule Enforcer on an Elite or Boss node, starts Subject Zero containment; success at 5 marks consumes this Relic to awaken The All-Seeing Overseer.",
+    "ecosystem": "Quái Đàm · Protocol Relic",
+    "rules": "Protocol relic. Every 4s, cites the 3 fastest runners. When orthogonally adjacent to a 140-Dread Rule Enforcer on an Elite or Boss node, starts the Subject Zero trial; success consumes this relic to promote the Enforcer to The All-Seeing Overseer.",
     "synergy": "Rule Enforcer (Legendary Investigator) and fast runners."
   },
   // 8. Red Hotline (Relic 3 -> Director of Curfew)
@@ -490,8 +490,8 @@ const CARDS = [
     "icon": "✧",
     "fav": "neighbor",
     "tags": ["relic", "urban-relic", "curfew"],
-    "ecosystem": "Quái Đàm · Containment Relic",
-    "rules": "On battle start, grants Haunted allies +20% attack speed for 10s. Every 4s, adds 1 Violation Mark to Subject Zero first, otherwise the leading runner. When orthogonally adjacent to a 140-Dread Rule Enforcer on an Elite or Boss node, starts Subject Zero containment; success at 5 marks consumes this Relic to awaken the Director of Curfew.",
+    "ecosystem": "Quái Đàm · Protocol Relic",
+    "rules": "Protocol relic. Battle start: Order allies gain +20% attack speed for 10s. Every 4s, cites Subject Zero first, otherwise the leading runner. When orthogonally adjacent to a 140-Dread Rule Enforcer on an Elite or Boss node, starts the Subject Zero trial; success consumes this relic to promote the Enforcer to the Director of Curfew.",
     "synergy": "Rule Enforcer (Legendary Investigator) and Blackout triggers."
   },
   // 9. Coroner's Bone Saw (Relic 4 -> Forensic Demiurge)
@@ -508,8 +508,8 @@ const CARDS = [
     "icon": "✧",
     "fav": "neighbor",
     "tags": ["relic", "urban-relic", "bleed"],
-    "ecosystem": "Quái Đàm · Containment Relic",
-    "rules": "Inflicts stacking Bleed on hit (10 DPS for 4s). Deals 50% more damage to Elites and Harbingers. When orthogonally adjacent to a 140-Dread Rule Enforcer on an Elite or Boss node, starts Subject Zero containment; success at 5 marks consumes this Relic to awaken the Forensic Demiurge.",
+    "ecosystem": "Quái Đàm · Protocol Relic",
+    "rules": "Protocol relic. Inflicts Bleed on hit and deals 50% more damage to Elites and Harbingers. When orthogonally adjacent to a 140-Dread Rule Enforcer on an Elite or Boss node, starts the Subject Zero trial; success consumes this relic to promote the Enforcer to the Forensic Demiurge.",
     "synergy": "Rule Enforcer (Legendary Investigator) and Bleed synergies."
   },
   // 10. Liminal Keycard (Relic 5 -> Warden of the Backrooms)
@@ -526,8 +526,8 @@ const CARDS = [
     "icon": "✧",
     "fav": "neighbor",
     "tags": ["relic", "urban-relic", "warp"],
-    "ecosystem": "Quái Đàm · Containment Relic",
-    "rules": "Every 7s, warps the 2 leading marked runners backward 3 tiles. When orthogonally adjacent to a 140-Dread Rule Enforcer on an Elite or Boss node, starts Subject Zero containment; success at 5 marks consumes this Relic to awaken the Warden of the Backrooms.",
+    "ecosystem": "Quái Đàm · Protocol Relic",
+    "rules": "Protocol relic. Every 7s, warps the 2 most-cited runners backward 3 tiles. When orthogonally adjacent to a 140-Dread Rule Enforcer on an Elite or Boss node, starts the Subject Zero trial; success consumes this relic to promote the Enforcer to the Warden of the Backrooms.",
     "synergy": "Rule Enforcer (Legendary Investigator) and Spatial Control."
   },
 
@@ -1195,14 +1195,14 @@ const FORMS = [
     "genre": "Haunted",
     "rarity": "Rare",
     "baseAtk": 24,
-    "attackInterval": 1.1,
+    "attackInterval": 1.4,
     "max": 0,
     "asset": "hauntedInvestigator",
     "icon": "✧",
     "fav": "neighbor",
     "tags": ["investigator", "urban-realm", "pierce"],
     "evolvedFrom": "investigator",
-    "rules": "Occult rank · 25 Dread. Attacks pierce the 2 leading runners and inflict 1 Violation Mark on hit. Records +1 Dread per violation . Advances to Anomaly Specialist at 70 Dread.",
+    "rules": "Occult rank · 25 Dread. Attacks pierce the 2 leading runners and add 1 Citation on hit. Records +1 Dread per team Citation. Advances to Anomaly Specialist at 70 Dread.",
     "synergy": "All Urban Legends and Rule Violations."
   },
   {
@@ -1211,15 +1211,15 @@ const FORMS = [
     "vn": "Chuyên Viên Dị Tượng",
     "genre": "Haunted",
     "rarity": "Epic",
-    "baseAtk": 50,
-    "attackInterval": 0.85,
+    "baseAtk": 48,
+    "attackInterval": 1.3,
     "max": 0,
     "asset": "hauntedInvestigator",
     "icon": "✧",
     "fav": "neighbor",
     "tags": ["investigator", "urban-realm", "aoe"],
     "evolvedFrom": "investigator",
-    "rules": "Anomaly rank · 70 Dread. Attacks release an anomaly shockwave hitting 3 violators for double damage. Records +1 Dread per violation . Advances to Rule Enforcer at 140 Dread.",
+    "rules": "Anomaly rank · 70 Dread. Attacks cite the target, then hit 3 cited runners for double damage. Records +1 Dread per team Citation. Advances to Rule Enforcer at 140 Dread.",
     "synergy": "All Urban Legends and Rule Violations."
   },
   {
@@ -1236,7 +1236,7 @@ const FORMS = [
     "fav": "neighbor",
     "tags": ["investigator", "urban-realm", "true-damage"],
     "evolvedFrom": "investigator",
-    "rules": "Enforcer rank · 140 Dread. Attacks the 3 highest-HP runners for full true damage and adds permanent Violation Marks. An adjacent Cursed Containment Relic is a trial focus, not an automatic Mythic. On an Elite or Boss node, Subject Zero appears at wave start. Apply 5 Violation Marks and defeat it before it escapes to consume the Relic and awaken its mapped Mythic Authority. If Subject Zero escapes or is defeated below 5 marks, the Rule Enforcer and Relic are permanently removed from the run roster.",
+    "rules": "Enforcer rank · 140 Dread. Attacks the 3 highest-HP runners for full true damage and cites them. Promotion: on an Elite or Boss node, an orthogonally adjacent Protocol relic summons Subject Zero at wave start; give it 5 Citations, kill it, and clear with zero leaks to consume that relic and become its Mythic. With two adjacent relics, one is picked at random.",
     "synergy": "The 5 Cursed Containment Relics and all Urban Legends."
   },
 
@@ -1260,7 +1260,7 @@ const FORMS = [
     "taboo-master"
   ],
   "evolvedFrom": "investigator",
-  "rules": "Rule 0: Existence Is a Violation. All runners spawn with 2 Violation Marks (+16% damage). Attacks deal 2.5× true damage to violators. Once per battle, traps a leaking runner in Room 404, preventing the leak. Triggers Rule Resonance when adjacent to another Urban Legend or Relic (+20% damage, +25% speed). Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK. Room 404 prevents an ordinary runner leak only; bosses and Harbingers must be defeated through damage.",
+  "rules": "Order Mythic · Rule 0. Runners spawn with 1 Citation. Attacks hit the 4 leading runners for true damage, 1.75× against cited runners, and cite them. Once per battle, traps a leaking runner in Room 404. Every 10th attack channels 1.2s: Rule Zero Decree — +2 Citations on every runner, then 150% ATK true damage to each; pushes the gauge −40.",
   "synergy": "Cursed Noticeboard and Rule Resonance."
 },
   // 2. Panopticon Monitor -> The All-Seeing Overseer
@@ -1278,7 +1278,7 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "urban-apex", "panopticon"],
     "evolvedFrom": "investigator",
-    "rules": "Rule: 'No Blind Spots.' Attacks pierce all 16 track tiles simultaneously. Whenever any runner attempts to speed up, sprint, or enrage, freezes them in stasis for 2.0s and strips their speed boosts. Triggers Rule Resonance when adjacent to another Urban Legend or Relic. Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
+    "rules": "Order Mythic · No Blind Spots. Attacks hit every runner on all 16 tiles for 40% ATK; speeding or enraged runners take full damage, lose their boosts and are frozen for 2s. Every 10th attack channels 1.2s: Panopticon Lockdown — freezes all runners for 1.5s and deals 120% ATK to each.",
     "synergy": "Panopticon Monitor and Rule Resonance."
   },
   // 3. Red Hotline -> Director of Curfew
@@ -1296,7 +1296,7 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "urban-apex", "curfew-master"],
     "evolvedFrom": "investigator",
-    "rules": "Rule: 'Indefinite Curfew.' Establishes permanent containment protocol: all Haunted allies gain +60% attack speed. Attacks deal double damage to violators. Every 6s, locks down the marked runner with the most Violation Marks for 1s at 1–2 marks, 2s at 3–4, or 3s at 5; prioritizes Subject Zero. Works without Blackout. Triggers Rule Resonance when adjacent to another Urban Legend or Relic. Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
+    "rules": "Order Mythic · Indefinite Curfew. Order allies gain +30% attack speed and Lights On lasts +3s. Attacks deal double damage to cited runners and cite the target. Every 10th attack channels 1.2s: Curfew Lockdown — locks the 3 most-cited runners for 2s (1–2 Citations), 3s (3–4) or 4s (5).",
     "synergy": "Red Hotline and Rule Resonance."
   },
   // 4. Coroner's Bone Saw -> Forensic Demiurge
@@ -1314,7 +1314,7 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "urban-apex", "dissection"],
     "evolvedFrom": "investigator",
-    "rules": "Rule: 'Living Autopsy.' Attacks against marked runners inflict true necrosis (50 DPS Bleed ignoring armor). Every 4th attack strips 12% max HP from Elites, Harbingers, and Bosses. Triggers Rule Resonance when adjacent to another Urban Legend or Relic. Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
+    "rules": "Order Mythic · Living Autopsy. Hits on cited runners apply necrosis: 30% ATK true damage per second for 4s (a new hit refreshes it). Every 10th attack channels 1.2s: Living Autopsy — strips 15% current HP from every Elite, Champion and Boss, and deals 300% ATK true damage to every cited runner.",
     "synergy": "Coroner's Bone Saw and Rule Resonance."
   },
   // 5. Liminal Keycard -> Warden of the Backrooms
@@ -1332,7 +1332,7 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "urban-apex", "liminal-space"],
     "evolvedFrom": "investigator",
-    "rules": "Rule: 'Floor Does Not Exist.' Attacks pierce 3 runners. Every 6s, banishes the 3 leading runners into non-Euclidean elevator shafts for 4.0s (taking 150 DPS) and dropping them 6 tiles backward on return. Triggers Rule Resonance when adjacent to another Urban Legend or Relic. Continues receiving Dread from newly applied marks and processed Dossiers. Every 30 Dread earned after ascension grants +2 permanent ATK.",
+    "rules": "Order Mythic · The Floor Does Not Exist. Attacks pierce the 3 leading runners and cite them. Every 10th attack channels 1.2s: No Floor — banishes the 3 leading runners, dealing 100% ATK per second for 4s, and drops them 6 tiles backward.",
     "synergy": "Liminal Keycard and Rule Resonance."
   },
 

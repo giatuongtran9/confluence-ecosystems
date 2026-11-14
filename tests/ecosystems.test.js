@@ -111,28 +111,30 @@ test('Mannequin earns a violation only when it punishes a taboo-breaker',()=>{
  const b=battle(['mannequin']);const e=enemy(b,4);e.speed=.5;G.attack(b,b.units[0]);assert.equal(b.units[0].violations,0.35);assert.equal(G.getTabooMark(e,'mannequin'),1);assert.equal(G.getTabooMark(e,'kuchisake'),0);
 });
 
-test('Red Hotline and Director grant haste without healing',()=>{
- const b=battle(['redPhone','curfewDirector','mannequin'],[0,1,8]);
+test('Red Hotline and Director haste Order units only, without healing',()=>{
+ const b=battle(['redPhone','curfewDirector','investigator','mannequin'],[0,1,6,8]);
  const health=b.run.health;
  G.startAbilities(b);
  assert.ok(b.units[2].hotlineUntil>=10);
  assert.equal(b.run.health,health);
- assert.equal(G.speed(b,b.units[2]),1.92);
+ assert.ok(Math.abs(G.speed(b,b.units[2])-1.2*1.3)<1e-9); // Hotline +20%, Director ×1.3
+ assert.equal(b.units[3].hotlineUntil||0,0);               // Chaos legends get neither
+ assert.equal(G.speed(b,b.units[3]),1);
 });
-test('Emergency Broadcast slow and dossier use separate 6s/8s timers',()=>{
- const b=battle(['radioPA']);const e=enemy(b,4);e.ruleMarks=1;
+test('Emergency Broadcast pulse cites the 2 leading runners every 6s and spawns no tokens',()=>{
+ const b=battle(['radioPA']);const a=enemy(b,6),z=enemy(b,5),c=enemy(b,1);
  b.time=6;G.extras(b,b.units[0],.1);
- assert.ok(e.slows.some(s=>s.power===.25));
+ assert.deepEqual([a.ruleMarks,z.ruleMarks,c.ruleMarks],[1,1,0]);
+ assert.equal(b.orderChaos,-18); // 2 Citations (−8) + pulse (−10)
  assert.equal(b.units.some(u=>u.id==='dossier'),false);
- b.time=8;G.extras(b,b.units[0],.1);
- assert.equal(b.units.some(u=>u.id==='dossier'),true);
 });
-test('Noticeboard adds two Dread to Coroner and Decoder dossier processing',()=>{
- const b=battle(['coroner','decoder','ruleboard','investigator'],[0,1,2,3]);
- const dossier=G.spawnToken(b,b.units[2],'dossier');Object.assign(dossier,{x:b.units[0].x+1,y:b.units[0].y,slot:8});
+test('Noticeboard adds two Dread to Coroner and Decoder Case File processing, no adjacency needed',()=>{
+ const b=battle(['coroner','decoder','ruleboard','investigator'],[0,8,4,2]);
+ b.caseFiles=2;
  b.time=5;G.extras(b,b.units[0],.1);assert.equal(b.units[3].dread,12);
- const other=G.spawnToken(b,b.units[2],'dossier');Object.assign(other,{x:b.units[1].x+1,y:b.units[1].y,slot:9});
  b.time=6;G.extras(b,b.units[1],.1);assert.equal(b.units[3].dread,22);
+ assert.equal(b.caseFiles,0);
+ b.time=11;G.extras(b,b.units[0],.1);assert.equal(b.units[3].dread,22); // empty pool: nothing to examine
 });
 test('Matriarch hastes adjacent originals and tokens of all five species without stacking',()=>{
  for(const id of ['serpentFodder','hound','scuttler','flameToad','peachFodder']){
