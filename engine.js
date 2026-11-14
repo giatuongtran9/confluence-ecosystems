@@ -2376,7 +2376,9 @@ function fx(b, type, u, e, text, extra = {}) {
   if (torment && e.hp > 0) { dot(b, e, 'bleed', 2, 4, u); const totem = support(b, 'totem'); interact(b, totem, u, 'torment', '25% armor penetration + 2 DPS Bleed for 4s'); }
   if (critical && sensor(b, u)) { const src = support(b, 'sensor'); interact(b, src, u, 'critical', 'amplified critical strike'); }
   if (critical && normal) for (const v of allies(b, u).filter(v => v.id === 'core')) tick(b, v, 1, u);
-  fx(b, normal ? 'shot' : 'spell', u, e, critical ? 'CRIT' : '', { crit: critical });
+  // options.fx lets a unit draw its own projectile instead of the generic shot (e.g. Formation Master's Go stones)
+  if (options.fx) fx(b, options.fx.type, u, e, critical ? 'CRIT' : '', { crit: critical, vfxKind: options.fx.kind, ttl: options.fx.ttl });
+  else fx(b, normal ? 'shot' : 'spell', u, e, critical ? 'CRIT' : '', { crit: critical });
  }
 
  function chooseTarget(b, u) {
@@ -2552,12 +2554,10 @@ function fx(b, type, u, e, text, extra = {}) {
   else if (u.id === 'formationMaster') {
    u.stoneToggle = !u.stoneToggle;
    if (u.stoneToggle) {
-    hit(b, u, target, power * 1.2);
-    fx(b, 'go-stone-black', u, target, '', { vfxKind: 'go-stone', ttl: 0.5 });
+    hit(b, u, target, power * 1.2, true, { fx: { type: 'go-stone-black', kind: 'go-stone', ttl: 0.5 } });
    } else {
-    hit(b, u, target, power * 0.8);
+    hit(b, u, target, power * 0.8, true, { fx: { type: 'go-stone-white', kind: 'go-stone', ttl: 0.5 } });
     status(b, target, 'slow', 2, 0.30, u);
-    fx(b, 'go-stone-white', u, target, '', { vfxKind: 'go-stone', ttl: 0.5 });
    }
    if (u.attackCount % 10 === 0) {
     u.channeling = { type: 'formation-star-river', duration: 1.2, remaining: 1.2 };
@@ -3001,7 +3001,7 @@ function fx(b, type, u, e, text, extra = {}) {
        const e = h.e;
        if (e.hp <= 0 || e.gone) return;
        const from = e.p;
-       warp(bb, e, 2, u);
+       warp(bb, e, 2, u, { full: true }); // every enemy, bosses included, goes back 2 tiles (stops at the spawn)
        const corner = Math.floor(e.p) % 4 === 0, hp0 = e.hp;
        e.warpFx = { from, to: e.p, at: bb.time, corner };   // renderer slides the enemy back along the track
        damage(bb, e, power * (corner ? 3.0 : 1.5), u, 'ability');
@@ -3495,7 +3495,8 @@ function fx(b, type, u, e, text, extra = {}) {
  }
  function teamCharge(b, u, n) { for (const v of allies(b, u).filter(v => abilityGauge(v) && !token(v))) { tick(b, v, n, u); interact(b, u, v, 'charge', `+${n} ability progress`); } }
 
- function warp(b, e, tiles, source = null) { if (e.gone || e.hp <= 0 || ((e.boss||e.champion)&&e.enraged)) return; const before = e.p; e.p = Math.max(0, e.p - ((e.boss || e.champion) ? e.enraged ? 0 : tiles * .5 : tiles)); e.retreatingUntil = Math.max(e.retreatingUntil || 0, b.time + ((e.boss||e.champion)?1.25:2.5)); e.panicUntil = Math.max(e.panicUntil || 0, e.retreatingUntil); e.panic = true; if(before>e.p){cosmicStatus(b,e,'warp',source);if(source)event(b, 'displaced', { source, tiles: before - e.p });} }
+ // opts.full: push the full distance even for bosses/champions, including enraged ones (Star-River Weiqi Board).
+ function warp(b, e, tiles, source = null, opts = {}) { if (e.gone || e.hp <= 0 || (!opts.full && (e.boss||e.champion)&&e.enraged)) return; const before = e.p; e.p = Math.max(0, e.p - (opts.full ? tiles : (e.boss || e.champion) ? e.enraged ? 0 : tiles * .5 : tiles)); e.retreatingUntil = Math.max(e.retreatingUntil || 0, b.time + ((e.boss||e.champion)?1.25:2.5)); e.panicUntil = Math.max(e.panicUntil || 0, e.retreatingUntil); e.panic = true; if(before>e.p){cosmicStatus(b,e,'warp',source);if(source)event(b, 'displaced', { source, tiles: before - e.p });} }
  function pulseMadness(b, u) { const stored = u.madnessPower || 0; u.madnessPower = 0; for (const e of living(b)) { const late = e.p >= 12; trueHit(b, u, e, stored); if (late) warp(b, e, 5); } u.madnessAt = b.time + 8; interact(b, u, u, 'madness', `MADNESS → +${Math.round(stored)} stored damage released`); fx(b, 'pulse', u, null, 'MADNESS'); }
  function dot(b, e, type, dps, seconds, u) { if (e.hp <= 0 || e.gone) return; cosmicStatus(b,e,type,u); const key = type === 'burn' ? 'burns' : 'bleeds'; e[key] ??= []; e[key] = e[key].filter(x => x.until > b.time); if (type === 'bleed' && card(species(u))?.genre === 'Bloodline' && support(b, 'matriarch')) seconds += b.units.filter(v => !v.removed && BLOODLINE_FODDER.includes(species(v))).length * .5; e[key].push({ until: b.time + seconds, dps: dps * mod(b.run, 'damage') * mod(b.run, priority(e) ? 'eliteDamage' : 'normalDamage'), owner: u.uid }); }
  function venom(b, e, dps, seconds, u) { if (e.hp <= 0 || e.gone) return; cosmicStatus(b,e,'venom',u); e.venoms ??= []; e.venoms = e.venoms.filter(x => x.until > b.time); e.venoms.push({ until: b.time + seconds, dps: dps * mod(b.run, 'damage'), owner: u.uid }); }

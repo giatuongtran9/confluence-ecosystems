@@ -155,6 +155,31 @@ test('Formation Master: Black Stone (120%), White Stone (80% + 30% slow), 10th c
   assert.ok(!b.pendingHits.length, 'All sweep hits resolved');
 });
 
+test('Formation Master: Star-River pushes bosses, enraged bosses and champions the full 2 tiles', () => {
+  const b = battle(['formationMaster'], [4]);
+  const master = b.units[0];
+  const boss = enemy(b, 9.0); boss.boss = true;
+  const raged = enemy(b, 12.0); raged.boss = true; raged.enraged = true;
+  const champ = enemy(b, 6.0); champ.champion = true;
+  const nearSpawn = enemy(b, 1.0);
+  master.channeling = { type: 'formation-star-river', duration: 1.2, remaining: 0.05 };
+  for (let i = 0; i < 10; i++) G.step(b, 0.1);
+  assert.strictEqual(boss.p, 7.0);
+  assert.strictEqual(raged.p, 10.0);
+  assert.strictEqual(champ.p, 4.0);
+  assert.strictEqual(nearSpawn.p, 0, 'cannot go behind the spawn');
+});
+
+test('Formation Master: normal attacks draw only a Go stone, not the generic shot', () => {
+  const b = battle(['formationMaster'], [4]);
+  enemy(b, 5.0);
+  G.attack(b, b.units[0]);
+  G.attack(b, b.units[0]);
+  const types = b.effects.map(f => f.type);
+  assert.ok(types.includes('go-stone-black') && types.includes('go-stone-white'));
+  assert.ok(!types.includes('shot'), 'no generic shot effect');
+});
+
 test('Talisman Sovereign: 50% Vulnerable, <10% execute, 10th channels Imperial Decree', () => {
   const b = battle(['talismanSovereign'], [4]);
   const sov = b.units[0];
