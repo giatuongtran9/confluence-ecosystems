@@ -1201,3 +1201,7 @@ body.has-dock .shell{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))
 /* Lab reuses the combat unit styling (body.in-combat) but keeps the phone-width shell */
 .in-lab .shell{width:100%;max-width:440px;margin:0 auto;padding:0 12px 76px}
 .in-lab .board{width:100%}
+
+/* Sword Immortal lifts and glows while channelling Ten-Thousand Sword Torrent */
+.in-combat .board .field-card{transition:transform .25s ease-out,filter .25s ease-out}
+.in-combat .board .field-card.channeling-sword{transform:translateY(-7px);filter:drop-shadow(0 0 10px #34d399) drop-shadow(0 0 22px #10b98199) brightness(1.18)}

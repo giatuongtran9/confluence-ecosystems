@@ -2867,6 +2867,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (b.showstopper) { b.showstopper.ttl -= dt; if (b.showstopper.ttl <= 0) b.showstopper = null; }
   if (b.shake) { b.shake.ttl -= dt; if (b.shake.ttl <= 0) b.shake = null; }
   if ((b.hitStopRemaining || 0) > 0) { b.hitStopRemaining = Math.max(0, b.hitStopRemaining - dt); return; }
+  if (b.slowMo) { const scale = b.slowMo.scale; b.slowMo.ttl -= dt; if (b.slowMo.ttl <= 0) b.slowMo = null; dt *= scale; }
   b.time += dt;
   tickPendingHits(b);
   tickHeavenlyTrial(b);
@@ -2956,14 +2957,17 @@ function fx(b, type, u, e, text, extra = {}) {
       const rain = foes.map((e, i) => ({ uid: e.uid, at: Math.min(0.7, 0.15 + 0.5 * (n > 1 ? i / (n - 1) : 0) + ((e.uid * 37) % 7) / 140) }));
       b.pendingHits ??= [];
       // Renderer draws the falling swords, so hits are quiet and just show the number where they land.
-      const landed = (bb, e, before, big) => { const dealt = before - Math.max(0, e.hp); if (dealt > 0) fx(bb, 'impact', u, e, String(Math.round(dealt)), { vfxKind: 'impact', crit: big, ttl: big ? 0.7 : 0.5 }); };
+      const landed = (bb, e, before, big) => { const dealt = before - Math.max(0, e.hp); if (dealt > 0) fx(bb, big ? 'colossal-dmg' : 'impact', u, e, String(Math.round(dealt)), { vfxKind: 'impact', crit: big, ttl: big ? 1.1 : 0.5 }); };
       foes.forEach((e, i) => b.pendingHits.push({ at: t0 + rain[i].at, fn: bb => { if (e.hp > 0 && !e.gone) { const hp0 = e.hp; trueHit(bb, u, e, power, true); landed(bb, e, hp0, false); } } }));
       b.pendingHits.push({ at: t0 + 0.95, fn: bb => {
        const tgt = prio && prio.hp > 0 && !prio.gone ? prio : pickPrio();
+       const at = tgt ? track(tgt.p) : null;
        if (tgt) { const hp0 = tgt.hp; damage(bb, tgt, power + tgt.hp * 0.10, u, 'ability'); landed(bb, tgt, hp0, true); }
        bb.hitStopRemaining = Math.max(bb.hitStopRemaining || 0, 0.1);
-       bb.shake = { ttl: 0.25, mag: 6 };
+       bb.shake = { ttl: 0.25, mag: 7, x: at?.x, y: at?.y }; // renderer punches in toward (x, y)
       } });
+      // Brief slow motion as the Colossal Sword starts to fall (engine runs at 30% for 0.2s of real time)
+      b.pendingHits.push({ at: t0 + 0.8, fn: bb => { bb.slowMo = { scale: 0.3, ttl: 0.2 }; } });
       fx(b, 'sword-torrent', u, prio || u, 'SWORD TORRENT', { ttl: 2.0, schedule: { rain, colossalAt: 0.95, colossalUid: prio?.uid ?? null } });
       interact(b, u, prio || u, 'sword-torrent', 'Ten-Thousand Sword Torrent: sword rain on all tiles + Colossal Sword on ' + (prio?.boss ? 'Boss' : prio?.elite ? 'Elite' : 'leader'));
      }

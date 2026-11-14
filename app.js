@@ -1054,14 +1054,15 @@ function drawSwordTorrentChannel(ctx, cx, cy, prog, size, channelType = 'sword-t
 
 // ---- Sword Torrent VFX: cached sprites, additive light, particle pool ----
 // Timeline (seconds after channel release, engine time; see engine sword-torrent branch):
-// 0–0.15 swords fly up · 0.15–0.7 rain · 0.7–0.85 Colossal hangs · 0.85–0.95 slam · 1.0–2.0 linger.
+// 0–0.15 swords fly up · 0.15–0.68 rain in three accelerating waves · 0.7–0.85 Colossal hangs over a
+// lock-on sigil (engine slow motion from 0.8) · 0.85–0.95 slam · 1.0–2.0 linger, then stuck swords shatter.
 const SWORD_SPRITES = {};
 function swordSprite(colossal) {
   const key = colossal ? 'colossal' : 'rain';
   if (SWORD_SPRITES[key]) return SWORD_SPRITES[key];
-  const scale = colossal ? 1.15 : 0.72;
+  const scale = colossal ? 2.0 : 0.72;
   const len = (colossal ? 155 : 44) * scale, w = (colossal ? 13 : 4.2) * scale;
-  const pad = colossal ? 44 : 18, back = len * 0.8, front = len;
+  const pad = colossal ? 70 : 18, back = len * 0.8, front = len;
   const c = document.createElement('canvas');
   c.width = Math.ceil(back + front + pad * 2);
   c.height = Math.ceil(w * 6 + pad * 2);
@@ -1098,9 +1099,30 @@ function stampSwordTip(ctx, tx, ty, ang, k, alpha, colossal, bury = 0) {
   const reach = swordSprite(colossal).len * 0.96 * k * (1 - bury);
   stampSword(ctx, tx - Math.cos(ang) * reach, ty - Math.sin(ang) * reach, ang, k, alpha, colossal);
 }
+// Cached soft glow disc per colour, stamped with drawImage instead of building a gradient per call.
+const GLOW_SPRITES = {};
+function glowSprite(rgb) {
+  if (GLOW_SPRITES[rgb]) return GLOW_SPRITES[rgb];
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const g = c.getContext('2d'), gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  gr.addColorStop(0, `rgba(${rgb}, 1)`);
+  gr.addColorStop(0.35, `rgba(${rgb}, 0.45)`);
+  gr.addColorStop(1, `rgba(${rgb}, 0)`);
+  g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  return (GLOW_SPRITES[rgb] = c);
+}
+function additiveGlow(ctx, x, y, r, rgb, alpha) {
+  if (alpha <= 0 || r <= 0) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = Math.min(1, alpha);
+  ctx.drawImage(glowSprite(rgb), x - r, y - r, r * 2, r * 2);
+  ctx.restore();
+}
 
-// Fixed particle pool: no per-frame allocation. kind: 0 spark (additive), 1 dust, 2 stone chip.
-const PARTICLE_MAX = 200;
+// Fixed particle pool: no per-frame allocation.
+// kind: 0 spark (additive streak), 1 dust, 2 stone chip, 3 jade shard (additive).
+const PARTICLE_MAX = 300;
 const PARTICLES = Array.from({ length: PARTICLE_MAX }, () => ({ live: false, kind: 0, x: 0, y: 0, vx: 0, vy: 0, life: 0, max: 1, size: 1, color: '#fff', rot: 0, vr: 0 }));
 let particleCursor = 0;
 function emitParticle(kind, x, y, vx, vy, life, size, color) {
@@ -1110,7 +1132,7 @@ function emitParticle(kind, x, y, vx, vy, life, size, color) {
     particleCursor = (particleCursor + n + 1) % PARTICLE_MAX;
     p.live = true; p.kind = kind; p.x = x; p.y = y; p.vx = vx; p.vy = vy;
     p.life = life; p.max = life; p.size = size; p.color = color;
-    p.rot = Math.random() * Math.PI; p.vr = (Math.random() - 0.5) * 12;
+    p.rot = Math.random() * Math.PI; p.vr = (Math.random() - 0.5) * 14;
     return;
   }
 }
@@ -1128,6 +1150,15 @@ function burstImpact(x, y, sparks, dust, chips, power = 1) {
     emitParticle(2, x, y, Math.cos(a) * v, Math.sin(a) * v, 0.55 + Math.random() * 0.4, 1.8 + Math.random() * 2.6, Math.random() < 0.5 ? '#6b6459' : '#4a443c');
   }
 }
+// Shatter a stuck sword: shards spawn along the exposed blade (tip at the ground, rising along -ang).
+function burstShatter(x, y, ang, bladeLen, count) {
+  for (let i = 0; i < count; i++) {
+    const along = Math.random() * bladeLen;
+    const px = x - Math.cos(ang) * along, py = y - Math.sin(ang) * along;
+    const a = Math.random() * Math.PI * 2, v = 40 + Math.random() * 130;
+    emitParticle(3, px, py, Math.cos(a) * v, Math.sin(a) * v - 60, 0.45 + Math.random() * 0.4, 1.6 + Math.random() * 2.4, Math.random() < 0.3 ? '#ecfdf5' : Math.random() < 0.5 ? '#6ee7b7' : '#34d399');
+  }
+}
 function updateParticles(dt) {
   if (dt <= 0) return;
   for (const p of PARTICLES) {
@@ -1136,14 +1167,15 @@ function updateParticles(dt) {
     if (p.life <= 0) { p.live = false; continue; }
     if (p.kind === 0) { p.vx *= 1 - 2.5 * dt; p.vy = p.vy * (1 - 2.5 * dt) + 260 * dt; }
     else if (p.kind === 1) { p.vx *= 1 - 3 * dt; p.vy *= 1 - 3 * dt; p.size += 10 * dt; }
-    else { p.vy += 620 * dt; p.rot += p.vr * dt; }
+    else if (p.kind === 2) { p.vy += 620 * dt; p.rot += p.vr * dt; }
+    else { p.vx *= 1 - 1.5 * dt; p.vy += 300 * dt; p.rot += p.vr * dt; }
     p.x += p.vx * dt; p.y += p.vy * dt;
   }
 }
 function drawParticles(ctx) {
   ctx.save();
   for (const p of PARTICLES) {          // normal blend: dust and chips
-    if (!p.live || p.kind === 0) continue;
+    if (!p.live || p.kind === 0 || p.kind === 3) continue;
     const t = p.life / p.max;
     ctx.globalAlpha = p.kind === 1 ? 0.32 * t : Math.min(1, t * 2);
     ctx.fillStyle = p.color;
@@ -1152,45 +1184,47 @@ function drawParticles(ctx) {
   }
   ctx.globalCompositeOperation = 'lighter';
   ctx.lineCap = 'round';
-  for (const p of PARTICLES) {          // additive: sparks with a short velocity streak
-    if (!p.live || p.kind !== 0) continue;
+  for (const p of PARTICLES) {          // additive: sparks as streaks, jade shards as spinning slivers
+    if (!p.live || (p.kind !== 0 && p.kind !== 3)) continue;
     const t = p.life / p.max;
-    ctx.globalAlpha = t;
-    ctx.strokeStyle = p.color;
-    ctx.lineWidth = p.size;
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
-    ctx.lineTo(p.x - p.vx * 0.035, p.y - p.vy * 0.035);
-    ctx.stroke();
+    ctx.globalAlpha = p.kind === 3 ? Math.min(1, t * 1.6) : t;
+    if (p.kind === 0) {
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = p.size;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(p.x - p.vx * 0.035, p.y - p.vy * 0.035);
+      ctx.stroke();
+    } else {
+      ctx.save();
+      ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.moveTo(-p.size * 1.6, 0); ctx.lineTo(0, -p.size * 0.5); ctx.lineTo(p.size * 1.6, 0); ctx.lineTo(0, p.size * 0.5); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
   }
   ctx.restore();
 }
 
 const hash01 = n => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
-function dimBoard(ctx, size, alpha) {
+// Darken the board with a vignette that keeps (fx, fy) brighter, so the jade light reads as the focus.
+function dimFocus(ctx, size, fx, fy, alpha) {
   if (alpha <= 0) return;
   ctx.save();
-  ctx.fillStyle = `rgba(2, 8, 6, ${alpha})`;
+  const g = ctx.createRadialGradient(fx, fy, 40, fx, fy, size * 0.85);
+  g.addColorStop(0, `rgba(2, 8, 6, ${alpha * 0.4})`);
+  g.addColorStop(0.3, `rgba(2, 8, 6, ${alpha * 0.85})`);
+  g.addColorStop(1, `rgba(2, 8, 6, ${Math.min(0.8, alpha * 1.35)})`);
+  ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
   ctx.restore();
 }
-function additiveGlow(ctx, x, y, r, rgb, alpha) {
-  if (alpha <= 0) return;
-  ctx.save();
-  ctx.globalCompositeOperation = 'lighter';
-  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-  g.addColorStop(0, `rgba(${rgb}, ${alpha})`);
-  g.addColorStop(1, `rgba(${rgb}, 0)`);
-  ctx.fillStyle = g;
-  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-  ctx.restore();
-}
 
-// Gather (the 1.2s channel): board dims, a ring of swords forms around the unit pointing up and draws in.
+// Gather (the 1.2s channel): board dims around the unit, a ring of swords forms pointing up and draws in.
 function drawSwordGather(ctx, cx, cy, prog, size) {
-  dimBoard(ctx, size, 0.3 * Math.min(1, prog / 0.25));
-  additiveGlow(ctx, cx, cy, 46 + 40 * prog, '110, 231, 183', 0.18 + 0.5 * prog);
-  const count = 12, radius = 74 - 36 * prog, lift = 6 + 14 * prog;
+  dimFocus(ctx, size, cx, cy, 0.5 * Math.min(1, prog / 0.25));
+  additiveGlow(ctx, cx, cy, 50 + 46 * prog, '110, 231, 183', 0.22 + 0.55 * prog);
+  const count = 12, radius = 76 - 36 * prog, lift = 6 + 14 * prog;
   for (let i = 0; i < count; i++) {
     const appear = Math.min(1, Math.max(0, (prog - (i / count) * 0.4) / 0.12));
     if (appear <= 0) continue;
@@ -1200,19 +1234,18 @@ function drawSwordGather(ctx, cx, cy, prog, size) {
     // Pointing up, fanned slightly outward; swords behind the unit are drawn fainter
     const ang = -Math.PI / 2 + Math.cos(a) * 0.18;
     const depth = 0.65 + 0.35 * (Math.sin(a) + 1) / 2;
-    stampSwordTip(ctx, sx + tremble, sy - 26, ang, 0.9, appear * depth, false);
+    stampSwordTip(ctx, sx + tremble, sy - 26, ang, 1.0, appear * depth, false);
   }
-  const theme = '⚡ VẠN KIẾM QUY TÔNG';
   ctx.save();
   ctx.textAlign = 'center';
   ctx.font = '700 11px system-ui, -apple-system, sans-serif';
   ctx.fillStyle = '#6ee7b7';
-  ctx.fillText(theme, cx, cy - 78);
+  ctx.fillText('⚡ VẠN KIẾM QUY TÔNG', cx, cy - 80);
   const barW = 96, barH = 5;
   ctx.fillStyle = '#064e3b';
-  ctx.fillRect(cx - barW / 2, cy - 70, barW, barH);
+  ctx.fillRect(cx - barW / 2, cy - 72, barW, barH);
   ctx.fillStyle = '#34d399';
-  ctx.fillRect(cx - barW / 2, cy - 70, barW * Math.min(1, prog), barH);
+  ctx.fillRect(cx - barW / 2, cy - 72, barW * Math.min(1, prog), barH);
   ctx.restore();
 }
 
@@ -1228,40 +1261,96 @@ function nudgeEnemy(uid, dx, dy, squash) {
   e.recoilX = (e.recoilX || 0) + dx; e.recoilY = (e.recoilY || 0) + dy;
   e.hitSquash = Math.max(e.hitSquash || 0, squash);
 }
-function drawGroundCrack(ctx, x, y, seed, alpha) {
+// Visual-only shockwave: runners near the impact snap away from it (no gameplay knockback).
+function shockwavePush(x, y, size, radius, skipUid) {
+  for (const e of battle.enemies) {
+    if (e.gone || e.hp <= 0 || e.uid === skipUid) continue;
+    const tp = Game.track(e.p), p = routePoint(tp.x, tp.y, size);
+    const dx = p.x - x, dy = p.y - y, d = Math.hypot(dx, dy) || 1;
+    if (d > radius) continue;
+    const push = 16 * (1 - d / radius);
+    nudgeEnemy(e.uid, (dx / d) * push, (dy / d) * push, 0.4 * (1 - d / radius));
+  }
+}
+// Ground crack with jade light glowing inside it. glow 0..1 scales the inner light.
+function drawGroundCrack(ctx, x, y, seed, alpha, glow, t) {
   if (alpha <= 0) return;
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.fillStyle = 'rgba(12, 10, 8, 0.55)';
-  ctx.beginPath(); ctx.ellipse(x, y, 34, 13, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = '#140f0b';
-  ctx.lineCap = 'round';
-  for (let i = 0; i < 9; i++) {
-    let a = (i / 9) * Math.PI * 2 + hash01(seed + i) * 0.5, px = x, py = y, w = 3.2;
-    ctx.beginPath(); ctx.moveTo(px, py);
-    const segs = 3 + Math.floor(hash01(seed + i * 7) * 3);
+  const paths = [];
+  for (let i = 0; i < 10; i++) {
+    let a = (i / 10) * Math.PI * 2 + hash01(seed + i) * 0.5, px = x, py = y;
+    const pts = [[px, py]], segs = 3 + Math.floor(hash01(seed + i * 7) * 3);
     for (let s = 0; s < segs; s++) {
       a += (hash01(seed + i * 13 + s) - 0.5) * 0.9;
-      const step = 9 + hash01(seed + i * 17 + s) * 12;
+      const step = 11 + hash01(seed + i * 17 + s) * 14;
       px += Math.cos(a) * step; py += Math.sin(a) * step * 0.42;
-      ctx.lineTo(px, py);
+      pts.push([px, py]);
     }
-    ctx.lineWidth = w; ctx.stroke();
-    w *= 0.7;
+    paths.push(pts);
+  }
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  // Faint scorch only: this pass draws above the runners, so a dark disc would hide the target
+  ctx.fillStyle = 'rgba(12, 10, 8, 0.28)';
+  ctx.beginPath(); ctx.ellipse(x, y, 36, 13, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#120d09'; ctx.lineWidth = 4;
+  for (const pts of paths) { ctx.beginPath(); pts.forEach(([px, py], j) => j ? ctx.lineTo(px, py) : ctx.moveTo(px, py)); ctx.stroke(); }
+  if (glow > 0) {
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = alpha * glow * (0.65 + 0.35 * Math.sin(t * 22));
+    ctx.strokeStyle = '#6ee7b7'; ctx.lineWidth = 1.6;
+    for (const pts of paths) { ctx.beginPath(); pts.forEach(([px, py], j) => j ? ctx.lineTo(px, py) : ctx.moveTo(px, py)); ctx.stroke(); }
+  }
+  ctx.restore();
+  if (glow > 0) additiveGlow(ctx, x, y, 46, '52, 211, 153', 0.5 * glow * alpha);
+}
+// Lock-on sigil on the ground under the Colossal Sword: rotating rings and trigram ticks, squashed to the floor.
+function drawLockSigil(ctx, x, y, prog, alpha) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = Math.min(1, alpha);
+  ctx.translate(x, y);
+  ctx.scale(1, 0.42);
+  const r = 24 + 40 * prog;
+  ctx.strokeStyle = '#6ee7b7';
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke();
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(0, 0, r * 0.68, 0, Math.PI * 2); ctx.stroke();
+  ctx.rotate(prog * 2.4);
+  ctx.strokeStyle = '#ecfdf5';
+  ctx.lineWidth = 3;
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * r * 0.74, Math.sin(a) * r * 0.74);
+    ctx.lineTo(Math.cos(a) * r * 0.94, Math.sin(a) * r * 0.94);
+    ctx.stroke();
   }
   ctx.restore();
 }
+
+// Rain waves: each later wave has more swords landing closer together, so the cadence speeds up.
+const RAIN_WAVES = [{ n: 6, start: 0.15, span: 0.16 }, { n: 10, start: 0.34, span: 0.14 }, { n: 16, start: 0.5, span: 0.13 }];
+const RAIN_DROPS = RAIN_WAVES.flatMap((w, wi) => Array.from({ length: w.n }, (_, i) => {
+  const seed = wi * 97 + i * 7.3 + 5;
+  return { key: 'w' + wi + '-' + i, tile: Math.floor(hash01(seed) * 16), at: w.start + w.span * Math.sqrt(i / (w.n - 1)), seed };
+}));
 
 function drawSwordTorrent(ctx, f, size) {
   const t = (f.maxTtl || 2) - f.ttl;               // seconds since release, engine time
   const sch = f.schedule || { rain: [], colossalAt: 0.95, colossalUid: null };
   const origin = routePoint(f.x, f.y, size);
-  const fade = t > 1.0 ? Math.max(0, 1 - (t - 1.0) / 1.0) : 1;   // linger fade
   f._landed ??= {};
+  const impactAt = sch.colossalAt, hangAt = impactAt - 0.25, slamAt = impactAt - 0.1;
+  const cp = swordTorrentTarget(f, sch.colossalUid, size, routePoint(f.tx, f.ty, size));
+  const cGround = cp.y + 6;
 
-  // Board stays dim until the Colossal impact, then lifts
-  const impactAt = sch.colossalAt;
-  dimBoard(ctx, size, t < impactAt ? 0.3 : 0.3 * Math.max(0, 1 - (t - impactAt) / 0.3));
+  // Dim with the bright spot on the unit, sliding to the Colossal target while it hangs; lifts after impact
+  const toTarget = Math.min(1, Math.max(0, (t - hangAt) / 0.2));
+  const fx = origin.x + (cp.x - origin.x) * toTarget, fy = origin.y + (cGround - origin.y) * toTarget;
+  dimFocus(ctx, size, fx, fy, t < impactAt ? 0.5 : 0.5 * Math.max(0, 1 - (t - impactAt) / 0.35));
 
   // Release: the ring swords shoot up off-screen with short trails
   if (t < 0.2) {
@@ -1273,47 +1362,47 @@ function drawSwordTorrent(ctx, f, size) {
       const a = (i / 12) * Math.PI * 2 + 1.6;
       const sx = origin.x + Math.cos(a) * 38, sy0 = origin.y + Math.sin(a) * 17 - 46;
       const sy = sy0 - ease * (sy0 + 80);
-      ctx.strokeStyle = `rgba(110, 231, 183, ${0.55 * (1 - k * 0.5)})`;
-      ctx.lineWidth = 2.4;
-      ctx.beginPath(); ctx.moveTo(sx, Math.min(sy0, sy + 70)); ctx.lineTo(sx, sy); ctx.stroke();
+      ctx.strokeStyle = `rgba(110, 231, 183, ${0.6 * (1 - k * 0.5)})`;
+      ctx.lineWidth = 2.6;
+      ctx.beginPath(); ctx.moveTo(sx, Math.min(sy0, sy + 80)); ctx.lineTo(sx, sy); ctx.stroke();
     }
     ctx.restore();
     for (let i = 0; i < 12; i++) {
       const a = (i / 12) * Math.PI * 2 + 1.6;
       const sx = origin.x + Math.cos(a) * 38, sy0 = origin.y + Math.sin(a) * 17 - 46;
-      stampSwordTip(ctx, sx, sy0 - ease * (sy0 + 80), -Math.PI / 2, 0.9, 1 - k * 0.3, false);
+      stampSwordTip(ctx, sx, sy0 - ease * (sy0 + 80), -Math.PI / 2, 1.0, 1 - k * 0.3, false);
     }
   }
 
-  // Rain: one sword per enemy (timed to its damage) plus one per track tile for coverage
+  // Rain: one sword per enemy (timed to its damage) plus three waves over the track tiles
   const drops = [];
   for (const r of sch.rain) drops.push({ key: 'e' + r.uid, uid: r.uid, at: r.at, seed: r.uid * 3.7, enemy: true });
-  for (let i = 0; i < 16; i++) drops.push({ key: 't' + i, tile: i, at: 0.15 + (i / 15) * 0.55 + hash01(i + 40) * 0.05, seed: i * 9.1 + 5, enemy: false });
-  const FALL = 0.22;
+  for (const d of RAIN_DROPS) drops.push({ ...d, enemy: false });
+  const FALL = 0.2;
   for (const d of drops) {
     if (t < d.at - FALL) continue;
     let p;
     if (d.enemy) p = swordTorrentTarget(f, d.uid, size, null);
     else { const tp = Game.track(d.tile + 0.5); p = routePoint(tp.x, tp.y, size); }
     if (!p) continue;
-    const jx = (hash01(d.seed) - 0.5) * 18, jy = (hash01(d.seed + 1) - 0.5) * 8;
+    const jx = (hash01(d.seed + 0.5) - 0.5) * (d.enemy ? 14 : 40), jy = (hash01(d.seed + 1) - 0.5) * (d.enemy ? 8 : 22);
     const gx = p.x + jx, gy = p.y + jy + (d.enemy ? 4 : 0);
-    const lean = (hash01(d.seed + 2) - 0.5) * 0.5;               // angle variation
-    const k = (d.enemy ? 1.0 : 0.78) + hash01(d.seed + 3) * 0.25; // size variation
+    const lean = (hash01(d.seed + 2) - 0.5) * 0.5;                    // angle variation
+    const k = d.enemy ? 1.15 + hash01(d.seed + 3) * 0.15 : 0.95 + hash01(d.seed + 3) * 0.3; // size variation
     const ang = Math.PI / 2 + lean;
-    const sx = gx - Math.cos(ang) * 260, sy = gy - Math.sin(ang) * 260;
+    const sx = gx - Math.cos(ang) * 280, sy = gy - Math.sin(ang) * 280;
     if (t < d.at) {
-      const q = (t - (d.at - FALL)) / FALL, e2 = q * q;       // accelerating fall
+      const q = (t - (d.at - FALL)) / FALL, e2 = q * q;            // accelerating fall
       const tx = sx + (gx - sx) * e2, ty = sy + (gy - sy) * e2;
-      ctx.save();                                              // ground shadow grows as it nears
-      ctx.fillStyle = `rgba(0, 0, 0, ${0.12 + 0.3 * q})`;
-      ctx.beginPath(); ctx.ellipse(gx, gy + 2, 3 + 9 * q * k, (1.5 + 3.5 * q) * k, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.save();                                                   // ground shadow grows as it nears
+      ctx.fillStyle = `rgba(0, 0, 0, ${0.12 + 0.32 * q})`;
+      ctx.beginPath(); ctx.ellipse(gx, gy + 2, 3 + 10 * q * k, (1.5 + 3.8 * q) * k, 0, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
       ctx.strokeStyle = `rgba(110, 231, 183, ${0.25 + 0.45 * q})`;
-      ctx.lineWidth = 2.2 * k; ctx.lineCap = 'round';
-      const trail = 30 + 60 * q;
+      ctx.lineWidth = 2.4 * k; ctx.lineCap = 'round';
+      const trail = 34 + 70 * q;
       ctx.beginPath();
       ctx.moveTo(tx - Math.cos(ang) * (trail + 30 * k), ty - Math.sin(ang) * (trail + 30 * k));
       ctx.lineTo(tx - Math.cos(ang) * 20 * k, ty - Math.sin(ang) * 20 * k);
@@ -1325,71 +1414,115 @@ function drawSwordTorrent(ctx, f, size) {
     if (!f._landed[d.key]) {
       f._landed[d.key] = true;
       if (d.enemy) { burstImpact(gx, gy, 9, 4, 3, 1); nudgeEnemy(d.uid, Math.cos(ang) * 4, 5, 0.35); }
-      else burstImpact(gx, gy, 5, 2, 1, 0.8);
+      else burstImpact(gx, gy, 4, 1, 1, 0.8);
     }
-    // Stuck in the ground, glow fades over the linger
+    // Stuck in the ground until it shatters into jade shards near the end of the linger
+    const shatterAt = 1.3 + hash01(d.seed + 4) * 0.4;
+    if (t >= shatterAt) {
+      if (!f._landed[d.key + 'x']) { f._landed[d.key + 'x'] = true; burstShatter(gx, gy, ang, swordSprite(false).len * k * 0.7, d.enemy ? 8 : 5); }
+      continue;
+    }
     const since = t - d.at;
-    additiveGlow(ctx, gx, gy, 18 * k, '110, 231, 183', (since < 0.15 ? 0.7 : 0.35) * fade);
+    additiveGlow(ctx, gx, gy, 20 * k, '110, 231, 183', since < 0.15 ? 0.75 : 0.35);
     if (since < 0.25) {
       const rq = since / 0.25;
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
       ctx.strokeStyle = `rgba(167, 243, 208, ${(1 - rq) * 0.8})`;
       ctx.lineWidth = 2 * (1 - rq);
-      ctx.beginPath(); ctx.ellipse(gx, gy, 4 + rq * 20, 2 + rq * 8, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(gx, gy, 4 + rq * 22, 2 + rq * 9, 0, 0, Math.PI * 2); ctx.stroke();
       ctx.restore();
     }
-    stampSwordTip(ctx, gx, gy, ang, k, fade, false, 0.28);
+    stampSwordTip(ctx, gx, gy, ang, k, 1, false, 0.28);
   }
 
-  // Colossal Sword: hangs high above the target, slams, cracks the ground
-  const fallback = routePoint(f.tx, f.ty, size);
-  const cp = swordTorrentTarget(f, sch.colossalUid, size, fallback);
-  const hangAt = impactAt - 0.25, slamAt = impactAt - 0.1;
+  // Colossal Sword: lock-on sigil, hangs high above the target, slams, cracks the ground, then shatters
   if (t >= hangAt) {
-    // Hang 250px above the target, but never above y=70 so it stays on the board for top-row targets
-    const cGround = cp.y + 6, high = Math.max(cGround - 250, Math.min(cGround - 90, 70));
+    const high = Math.max(cGround - 330, Math.min(cGround - 90, 70)); // stay on the board for top-row targets
     let tipY;
     if (t < slamAt) tipY = high + ((t - hangAt) / (slamAt - hangAt)) * 8;   // nearly still
     else if (t < impactAt) { const q = (t - slamAt) / (impactAt - slamAt); tipY = high + 8 + (cGround - high - 8) * q * q * q; }
     else tipY = cGround;
     const inA = Math.min(1, (t - hangAt) / 0.06);
+    const near = Math.min(1, Math.max(0, (tipY - high) / Math.max(1, cGround - high)));
+    const sigilProg = Math.min(1, (t - hangAt) / (impactAt - hangAt));
+    drawLockSigil(ctx, cp.x, cGround, sigilProg, t < impactAt ? inA * 0.9 : 0.9 * Math.max(0, 1 - (t - impactAt) / 0.3));
     if (t < impactAt) {
-      additiveGlow(ctx, cp.x, cGround, 40, '110, 231, 183', 0.25 * inA);   // target lock on the ground
-      ctx.save();
-      ctx.fillStyle = `rgba(0, 0, 0, ${0.15 + 0.35 * Math.max(0, (t - slamAt) / 0.1)})`;
-      ctx.beginPath(); ctx.ellipse(cp.x, cGround + 2, 26, 9, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.save();                                                         // shadow spreads as it falls
+      ctx.fillStyle = `rgba(0, 0, 0, ${0.18 + 0.45 * near})`;
+      ctx.beginPath(); ctx.ellipse(cp.x, cGround + 2, 14 + 44 * Math.max(near, sigilProg * 0.5), 5 + 15 * Math.max(near, sigilProg * 0.5), 0, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
+      additiveGlow(ctx, cp.x, cGround, 50, '110, 231, 183', 0.3 * inA);
     }
+    const shatterAt = 1.75;
     if (t >= impactAt) {
       if (!f._landed.colossal) {
         f._landed.colossal = true;
-        burstImpact(cp.x, cGround, 24, 12, 30, 1.35);
-        nudgeEnemy(sch.colossalUid, 0, 12, 0.6);
+        burstImpact(cp.x, cGround, 30, 16, 40, 1.5);
+        nudgeEnemy(sch.colossalUid, 0, 14, 0.7);
+        shockwavePush(cp.x, cGround, size, 190, sch.colossalUid);
       }
-      drawGroundCrack(ctx, cp.x, cGround, (sch.colossalUid || 1) * 5.3, fade);
+      const crackFade = t > 1.5 ? Math.max(0, 1 - (t - 1.5) / 0.5) : 1;
+      drawGroundCrack(ctx, cp.x, cGround, (sch.colossalUid || 1) * 5.3, crackFade, t < shatterAt ? 1 : 0.4, t);
       const since = t - impactAt;
-      for (let r = 0; r < 2; r++) {                                       // shockwave rings
-        const rq = Math.min(1, Math.max(0, (since - r * 0.06) / 0.35));
+      for (let r = 0; r < 3; r++) {                                       // shockwave rings
+        const rq = Math.min(1, Math.max(0, (since - r * 0.06) / 0.4));
         if (rq <= 0 || rq >= 1) continue;
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
-        ctx.strokeStyle = `rgba(236, 253, 245, ${(1 - rq) * 0.85})`;
-        ctx.lineWidth = 4 * (1 - rq);
-        ctx.beginPath(); ctx.ellipse(cp.x, cGround, 10 + rq * 110, 4 + rq * 42, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = r === 0 ? `rgba(236, 253, 245, ${(1 - rq) * 0.9})` : `rgba(110, 231, 183, ${(1 - rq) * 0.7})`;
+        ctx.lineWidth = (5 - r) * (1 - rq);
+        ctx.beginPath(); ctx.ellipse(cp.x, cGround, 12 + rq * 165, 5 + rq * 64, 0, 0, Math.PI * 2); ctx.stroke();
         ctx.restore();
       }
-      additiveGlow(ctx, cp.x, cGround - 30, 70, '167, 243, 208', 0.45 * fade);
+      if (t < shatterAt) additiveGlow(ctx, cp.x, cGround - 50, 90, '167, 243, 208', 0.4);
     }
-    stampSwordTip(ctx, cp.x, tipY, Math.PI / 2, 1, inA * (t >= impactAt ? fade : 1), true, t >= impactAt ? 0.15 : 0);
-    if (t >= impactAt && t < impactAt + 0.2) {                            // white additive flash
+    if (t < shatterAt) stampSwordTip(ctx, cp.x, tipY, Math.PI / 2, 1, inA, true, t >= impactAt ? 0.12 : 0);
+    else if (!f._landed.colossalShatter) {
+      f._landed.colossalShatter = true;
+      burstShatter(cp.x, cGround, Math.PI / 2, swordSprite(true).len * 0.85, 40);
+      additiveGlow(ctx, cp.x, cGround - 60, 110, '167, 243, 208', 0.6);
+    }
+    if (t >= impactAt && t < impactAt + 0.12) {                           // short radial flash at the impact
+      const a = 1 - (t - impactAt) / 0.12;
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      ctx.fillStyle = `rgba(255, 255, 255, ${0.75 * (1 - (t - impactAt) / 0.2)})`;
+      const r = 300 * (0.75 + 0.25 * (1 - a));
+      const g = ctx.createRadialGradient(cp.x, cGround, 0, cp.x, cGround, r);
+      g.addColorStop(0, `rgba(255, 255, 255, ${a})`);
+      g.addColorStop(0.25, `rgba(167, 243, 208, ${0.6 * a})`);
+      g.addColorStop(1, 'rgba(16, 185, 129, 0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, size, size);
+      ctx.fillStyle = `rgba(110, 231, 183, ${0.1 * a})`;
       ctx.fillRect(0, 0, size, size);
       ctx.restore();
     }
   }
+}
+// Big gold number for the Colossal hit: pops in, then rises slowly.
+function drawColossalNumber(ctx, x, y, f) {
+  const age = (f.maxTtl || 1.1) - f.ttl;
+  const pop = age < 0.12 ? 1.7 - 0.7 * (age / 0.12) : 1;
+  const alpha = f.ttl < 0.3 ? f.ttl / 0.3 : 1;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(x, y - 74 - age * 30);
+  ctx.scale(pop, pop);
+  ctx.font = '900 34px Cinzel, Georgia, serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#1a1205';
+  ctx.lineWidth = 7;
+  ctx.strokeText(f.text, 0, 0);
+  const g = ctx.createLinearGradient(0, -16, 0, 16);
+  g.addColorStop(0, '#fffbe0');
+  g.addColorStop(0.5, '#fde68a');
+  g.addColorStop(1, '#f59e0b');
+  ctx.fillStyle = g;
+  ctx.fillText(f.text, 0, 0);
+  ctx.restore();
 }
 
 function drawCultivationSword(ctx, x0, y0, tx, ty, curve, prog, pal) {
@@ -1789,20 +1922,28 @@ function draw() {
   let ctx = canvas.getContext('2d'), size = 700, unit = size / 5;
   ctx.clearRect(0, 0, size, size);
 
-  // Particles run on wall time, scaled by game speed; frozen while paused or in hit-stop
+  // Particles run on wall time, scaled by game speed and slow motion; frozen while paused or in hit-stop
   const vfxNow = performance.now();
   let vfxDt = Math.min(0.05, (vfxNow - (draw.lastT || vfxNow)) / 1000);
   draw.lastT = vfxNow;
   if (paused || (battle.hitStopRemaining || 0) > 0) vfxDt = 0;
-  updateParticles(vfxDt * speed);
+  updateParticles(vfxDt * speed * (battle.slowMo ? battle.slowMo.scale : 1));
 
-  // Impact shake + 3% punch-in, both decaying with battle.shake.ttl
+  // Impact camera: 4% punch-in toward the impact point and a mostly vertical, downward-first shake
   ctx.save();
   if (battle.shake && battle.shake.ttl > 0) {
-    const k = Math.min(1, battle.shake.ttl / 0.25), m = battle.shake.mag * k, z = 1 + 0.03 * k;
-    ctx.translate(size / 2, size / 2);
+    const sh = battle.shake, k = Math.min(1, sh.ttl / 0.25), m = sh.mag * k, z = 1 + 0.04 * k;
+    const fp = sh.x != null ? routePoint(sh.x, sh.y, size) : { x: size / 2, y: size / 2 };
+    ctx.translate(fp.x, fp.y);
     ctx.scale(z, z);
-    ctx.translate(-size / 2 + (Math.random() * 2 - 1) * m, -size / 2 + (Math.random() * 2 - 1) * m);
+    ctx.translate(-fp.x, -fp.y);
+    ctx.translate((Math.random() * 2 - 1) * m * 0.3, Math.cos((0.25 - sh.ttl) * 70) * m);
+  }
+
+  // The channelling Sword Immortal lifts and glows (DOM card over the canvas)
+  for (const u of battle.units) {
+    const card = document.querySelector(`.field-card[data-id="${u.uid}"]`);
+    if (card) card.classList.toggle('channeling-sword', !u.removed && u.channeling?.type === 'sword-torrent');
   }
 
   // Ecosystem grounds
@@ -2087,7 +2228,9 @@ function draw() {
       if (prog > 0.65) drawImpactSparks(ctx, tx, ty, (prog - 0.65) / 0.35, pal, f.crit);
     }
 
-    if (f.text && f.type !== 'sword-torrent') {
+    if (f.type === 'colossal-dmg') {
+      drawColossalNumber(ctx, tx, ty, f);
+    } else if (f.text && f.type !== 'sword-torrent') {
       ctx.save();
       ctx.globalAlpha = Math.min(1, f.ttl * 2.2);
       const breakthrough = ['FOUNDATION ESTABLISHMENT', 'GOLDEN CORE', 'NASCENT SOUL'].includes(String(f.text).toUpperCase());
