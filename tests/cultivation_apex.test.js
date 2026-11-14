@@ -155,7 +155,7 @@ test('Formation Master: Black Stone (120%), White Stone (80% + 30% slow), 10th c
   assert.ok(!b.pendingHits.length, 'All sweep hits resolved');
 });
 
-test('Formation Master: Star-River pushes bosses, enraged bosses and champions the full 2 tiles', () => {
+test('Formation Master: Star-River pushes bosses/champions 1 tile and enraged bosses 0', () => {
   const b = battle(['formationMaster'], [4]);
   const master = b.units[0];
   const boss = enemy(b, 9.0); boss.boss = true;
@@ -164,9 +164,9 @@ test('Formation Master: Star-River pushes bosses, enraged bosses and champions t
   const nearSpawn = enemy(b, 1.0);
   master.channeling = { type: 'formation-star-river', duration: 1.2, remaining: 0.05 };
   for (let i = 0; i < 10; i++) G.step(b, 0.1);
-  assert.strictEqual(boss.p, 7.0);
-  assert.strictEqual(raged.p, 10.0);
-  assert.strictEqual(champ.p, 4.0);
+  assert.strictEqual(boss.p, 8.0);
+  assert.strictEqual(raged.p, 12.0, 'enraged bosses are not pushed');
+  assert.strictEqual(champ.p, 5.0);
   assert.strictEqual(nearSpawn.p, 0, 'cannot go behind the spawn');
 });
 
