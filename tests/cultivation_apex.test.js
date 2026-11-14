@@ -141,12 +141,18 @@ test('Formation Master: Black Stone (120%), White Stone (80% + 30% slow), 10th c
   assert.ok(master.channeling);
   assert.strictEqual(master.channeling.type, 'formation-star-river');
 
-  // Finish channel: warps back 2 tiles (from 5.0 to 3.0) and deals damage
-  const preP = e1.p;
+  // Finish channel: the star river sweeps back from the exit end and reaches the enemy shortly after
+  const preP = e1.p, preHp = e1.hp;
   master.channeling.remaining = 0.05;
   G.step(b, 0.1);
   assert.strictEqual(master.channeling, null);
+  assert.strictEqual(e1.p, preP, 'Warp waits for the star river');
+  for (let i = 0; i < 8; i++) G.step(b, 0.1);
+  // Warps back 2 tiles (from 5.0 to 3.0) and deals 150% ATK (tile 3 is not a corner)
   assert.strictEqual(e1.p, Math.max(0, preP - 2));
+  assert.ok(e1.hp < preHp, 'Star-River damage landed');
+  assert.ok(e1.warpFx && e1.warpFx.from === preP, 'Slide-back data recorded for the renderer');
+  assert.ok(!b.pendingHits.length, 'All sweep hits resolved');
 });
 
 test('Talisman Sovereign: 50% Vulnerable, <10% execute, 10th channels Imperial Decree', () => {

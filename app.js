@@ -1224,13 +1224,13 @@ function drawParticles(ctx) {
 
 const hash01 = n => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
 // Darken the board with a vignette that keeps (fx, fy) brighter, so the jade light reads as the focus.
-function dimFocus(ctx, size, fx, fy, alpha) {
+function dimFocus(ctx, size, fx, fy, alpha, rgb = '2, 8, 6') {
   if (alpha <= 0) return;
   ctx.save();
   const g = ctx.createRadialGradient(fx, fy, 40, fx, fy, size * 0.85);
-  g.addColorStop(0, `rgba(2, 8, 6, ${alpha * 0.4})`);
-  g.addColorStop(0.3, `rgba(2, 8, 6, ${alpha * 0.85})`);
-  g.addColorStop(1, `rgba(2, 8, 6, ${Math.min(0.8, alpha * 1.35)})`);
+  g.addColorStop(0, `rgba(${rgb}, ${alpha * 0.4})`);
+  g.addColorStop(0.3, `rgba(${rgb}, ${alpha * 0.85})`);
+  g.addColorStop(1, `rgba(${rgb}, ${Math.min(0.8, alpha * 1.35)})`);
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
   ctx.restore();
@@ -1713,6 +1713,266 @@ function drawMelodicResonance(ctx, f, size) {
 }
 
 
+// ---- Formation Master · Star-River Weiqi Board (Tinh Hà Kỳ Trận) ----
+// Gather: night falls, silver Go-board lines spread from the Master, the four corner tiles glow as star
+// points and black/white stones snap onto enemies as the grid reaches them.
+// Release (seconds after channel end, engine time; see engine formation-star-river branch): after a 0.15s
+// opening a star river flows backward along the track from the exit end at schedule.sweep tiles/s. Each enemy
+// is warped back and hit as it arrives (e.warpFx drives the slide); corner landings get a starburst.
+const NIGHT_RGB = '3, 7, 22', SILVER_RGB = '226, 232, 240', RIVER_RGB = '147, 197, 253';
+const FORMATION_CORNERS = [0, 4, 8, 12];
+const STARFIELD = Array.from({ length: 70 }, (_, i) => ({ x: hash01(i * 3.1 + 1), y: hash01(i * 7.7 + 2), s: 0.6 + hash01(i * 1.3) * 1.5, ph: hash01(i * 9.9) * 6.28 }));
+const easeOut = k => 1 - (1 - k) * (1 - k);
+
+// Visual track position: after a Star-River warp the enemy slides back over 0.45s instead of jumping.
+function visualTrackP(e) {
+  const w = e.warpFx;
+  if (!w || !battle) return e.p;
+  const k = (battle.time - w.at) / 0.45;
+  if (k >= 1 || k < 0) return e.p;
+  return e.p + (w.from - w.to) * (1 - easeOut(k));
+}
+function trackPoint(p, size) { const tp = Game.track(Math.max(0, Math.min(15.999, p))); return routePoint(tp.x, tp.y, size); }
+function ringTile(i, size) { const [x, y] = Game.ring[i]; return routePoint(x, y, size); }
+
+function drawStarfield(ctx, size, alpha, time) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = `rgb(${SILVER_RGB})`;
+  for (const s of STARFIELD) {
+    ctx.globalAlpha = alpha * (0.35 + 0.65 * (0.5 + 0.5 * Math.sin(time * 3 + s.ph)));
+    ctx.beginPath(); ctx.arc(s.x * size, s.y * size, s.s, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
+// 9x9 Go grid through the tile centres (every half tile across the 5x5 board), revealed within radius r of (cx, cy).
+function drawWeiqiGrid(ctx, size, cx, cy, r, alpha) {
+  if (alpha <= 0 || r <= 0) return;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.strokeStyle = `rgba(${SILVER_RGB}, ${0.32 * alpha})`;
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  for (let i = 0; i <= 8; i++) {
+    const v = i * 0.5, a = routePoint(v, 0, size), b = routePoint(v, 4, size), c = routePoint(0, v, size), d = routePoint(4, v, size);
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    ctx.moveTo(c.x, c.y); ctx.lineTo(d.x, d.y);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+function drawStarPoint(ctx, x, y, r, alpha, rgb = SILVER_RGB) {
+  if (alpha <= 0) return;
+  additiveGlow(ctx, x, y, r * 2.2, RIVER_RGB, 0.45 * alpha);
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = Math.min(1, alpha);
+  ctx.fillStyle = `rgb(${rgb})`;
+  ctx.beginPath();
+  for (let i = 0; i < 8; i++) {                       // four-pointed star
+    const a = (i / 8) * Math.PI * 2 - Math.PI / 2, rr = i % 2 ? r * 0.28 : r;
+    if (i) ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); else ctx.moveTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+  }
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function drawGoStoneDisc(ctx, x, y, r, white, alpha) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, alpha);
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+  ctx.beginPath(); ctx.ellipse(x + 1.5, y + r * 0.45, r, r * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+  const g = ctx.createRadialGradient(x - r * 0.35, y - r * 0.45, r * 0.1, x, y, r);
+  if (white) { g.addColorStop(0, '#ffffff'); g.addColorStop(0.7, '#e2e8f0'); g.addColorStop(1, '#94a3b8'); }
+  else { g.addColorStop(0, '#64748b'); g.addColorStop(0.35, '#1e293b'); g.addColorStop(1, '#020617'); }
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.78, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = white ? 'rgba(148, 163, 184, 0.8)' : 'rgba(147, 197, 253, 0.55)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawFormationGather(ctx, cx, cy, prog, size) {
+  const time = battle.time, maxR = size * 0.95, R = maxR * easeOut(Math.min(1, prog / 0.8));
+  dimFocus(ctx, size, cx, cy, 0.55 * Math.min(1, prog / 0.25), NIGHT_RGB);
+  drawStarfield(ctx, size, Math.min(1, prog / 0.3), time);
+  drawWeiqiGrid(ctx, size, cx, cy, R, 1);
+  ctx.save();                                              // leading edge of the spreading grid
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.strokeStyle = `rgba(${RIVER_RGB}, ${0.45 * (1 - prog)})`;
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+  for (const i of FORMATION_CORNERS) {                     // star points light up when the grid reaches them
+    const p = ringTile(i, size), d = Math.hypot(p.x - cx, p.y - cy);
+    const on = Math.min(1, Math.max(0, (R - d) / 40));
+    drawStarPoint(ctx, p.x, p.y, 9 + 2 * Math.sin(time * 6 + i), on);
+  }
+  for (const e of battle.enemies) {                        // stones snap onto enemies under the grid
+    if (e.gone || e.hp <= 0) continue;
+    const p = trackPoint(e.p, size), d = Math.hypot(p.x - cx, p.y - cy), k = Math.min(1, Math.max(0, (R - d) / 30));
+    if (k <= 0) continue;
+    drawGoStoneDisc(ctx, p.x, p.y + 8, 7 * (1.5 - 0.5 * k), e.uid % 2 === 1, k);
+  }
+  additiveGlow(ctx, cx, cy, 46 + 40 * prog, RIVER_RGB, 0.2 + 0.45 * prog);
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.font = '700 11px system-ui, -apple-system, sans-serif';
+  ctx.fillStyle = '#bfdbfe';
+  ctx.fillText('✦ TINH HÀ KỲ TRẬN', cx, cy - 80);
+  const barW = 96, barH = 5;
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(cx - barW / 2, cy - 72, barW, barH);
+  ctx.fillStyle = '#93c5fd';
+  ctx.fillRect(cx - barW / 2, cy - 72, barW * Math.min(1, prog), barH);
+  ctx.restore();
+}
+
+function drawFormationRiver(ctx, f, size) {
+  const t = (f.maxTtl || 2) - f.ttl;                       // seconds since release, engine time
+  const sch = f.schedule || { hits: [], start: 0.15, sweep: 16 / 0.6 };
+  const o = routePoint(f.x, f.y, size), time = battle.time;
+  const riverEnd = sch.start + 16 / sch.sweep, TAIL = 0.5;  // tail: how long a passed stretch stays lit
+  const after = Math.max(0, t - riverEnd);
+  f._landed ??= {};
+
+  dimFocus(ctx, size, o.x, o.y, 0.55 * Math.max(0, 1 - after / 0.5), NIGHT_RGB);
+  drawStarfield(ctx, size, Math.max(0, 1 - after / 0.6), time);
+  drawWeiqiGrid(ctx, size, o.x, o.y, size * 0.95, Math.max(0, 1 - Math.max(0, t - 0.9) / 0.6));
+  for (const i of FORMATION_CORNERS) {
+    const p = ringTile(i, size);
+    drawStarPoint(ctx, p.x, p.y, 10 + 2 * Math.sin(time * 6 + i), Math.max(0, 1 - after / 0.8));
+  }
+
+  // Stones stay on enemies the river hasn't reached yet
+  const hitAt = {};
+  for (const h of sch.hits) hitAt[h.uid] = h.at;
+  for (const e of battle.enemies) {
+    if (e.gone || e.hp <= 0 || hitAt[e.uid] == null || t >= hitAt[e.uid]) continue;
+    const p = trackPoint(visualTrackP(e), size);
+    drawGoStoneDisc(ctx, p.x, p.y + 8, 7, e.uid % 2 === 1, 1);
+  }
+
+  // The star river: lit stretch of track from the front back toward the exit, fading over TAIL seconds
+  const front = 16 - Math.max(0, t - sch.start) * sch.sweep;
+  if (t >= sch.start && t < riverEnd + TAIL) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    const STEP = 0.2;
+    for (let p = Math.max(0, front); p < 16; p += STEP) {
+      const passedAt = sch.start + (16 - p) / sch.sweep, age = t - passedAt;
+      const a = Math.max(0, 1 - age / TAIL);
+      if (a <= 0) continue;
+      const p0 = trackPoint(p, size), p1 = trackPoint(Math.min(15.999, p + STEP), size);
+      ctx.strokeStyle = `rgba(${RIVER_RGB}, ${0.18 * a})`; ctx.lineWidth = 30;
+      ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
+      ctx.strokeStyle = `rgba(${RIVER_RGB}, ${0.45 * a})`; ctx.lineWidth = 10;
+      ctx.stroke();
+      ctx.strokeStyle = `rgba(${SILVER_RGB}, ${0.8 * a})`; ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+    ctx.restore();
+    // Stars drifting in the river, flowing backward with it
+    const tailTiles = TAIL * sch.sweep;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = `rgb(${SILVER_RGB})`;
+    for (let k = 0; k < 46; k++) {
+      const p = front + ((hash01(k * 5.3) * tailTiles + time * 3) % tailTiles);
+      if (p < 0 || p >= 16) continue;
+      const age = t - (sch.start + (16 - p) / sch.sweep), a = Math.max(0, 1 - age / TAIL);
+      const q = trackPoint(p, size), off = (hash01(k * 2.9) - 0.5) * 22;
+      ctx.globalAlpha = a * (0.5 + 0.5 * Math.sin(time * 9 + k));
+      ctx.beginPath(); ctx.arc(q.x + off, q.y + off * 0.5, 1 + hash01(k) * 1.6, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+    if (front > 0) { const q = trackPoint(front, size); additiveGlow(ctx, q.x, q.y, 46, SILVER_RGB, 0.7); }
+  }
+
+  // Hits: a starburst where the river meets each enemy, a star trail while it slides back, corner flares
+  for (const h of sch.hits) {
+    if (t < h.at) continue;
+    const e = battle.enemies.find(v => v.uid === h.uid);
+    const w = e?.warpFx;
+    if (!f._landed[h.uid]) {
+      f._landed[h.uid] = true;
+      if (e && w) {
+        const p = trackPoint(w.from, size);
+        for (let i = 0; i < (w.corner ? 22 : 10); i++) {
+          const a = Math.random() * Math.PI * 2, v = (60 + Math.random() * 140) * (w.corner ? 1.4 : 1);
+          emitParticle(0, p.x, p.y, Math.cos(a) * v, Math.sin(a) * v, 0.3 + Math.random() * 0.3, 1.2 + Math.random() * 1.4, w.corner ? (Math.random() < 0.5 ? '#fde68a' : '#ffffff') : (Math.random() < 0.5 ? '#e2e8f0' : '#93c5fd'));
+        }
+      }
+    }
+    if (!e || !w || e.gone) continue;
+    const since = time - w.at;
+    if (since < 0.6) {                                     // trail from where it was hit to where it is now
+      const vp = visualTrackP(e), a = Math.max(0, 1 - since / 0.6);
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = `rgba(${RIVER_RGB}, ${0.7 * a})`;
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      for (let p = vp, i = 0; p <= w.from + 0.001; p += 0.15, i++) { const q = trackPoint(p, size); if (i) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); }
+      ctx.stroke();
+      ctx.restore();
+    }
+    if (w.corner && since < 0.7) {                         // corner: expanding star and gold flare on the star point
+      const q = trackPoint(w.to, size), k = since / 0.7;
+      drawStarPoint(ctx, q.x, q.y - 4, 14 + 40 * easeOut(k), 1 - k, '253, 230, 138');
+      additiveGlow(ctx, q.x, q.y, 60 * (1 - k * 0.5), '253, 230, 138', 0.7 * (1 - k));
+    }
+  }
+}
+
+// Black Stone / White Stone: a Go stone arcs from the Master and lands on the target with a click and a ripple.
+function drawGoStoneShot(ctx, x, y, tx, ty, prog, white, f) {
+  const FLIGHT = 0.55;
+  if (prog < FLIGHT) {
+    const k = prog / FLIGHT, mx = (x + tx) / 2, my = Math.min(y, ty) - 60;
+    const px = (1 - k) * (1 - k) * x + 2 * (1 - k) * k * mx + k * k * tx, py = (1 - k) * (1 - k) * y + 2 * (1 - k) * k * my + k * k * ty;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = white ? 'rgba(226, 232, 240, 0.35)' : 'rgba(147, 197, 253, 0.35)';
+    ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.beginPath();
+    for (let i = 0; i <= 8; i++) {
+      const kk = Math.max(0, k - 0.25 + (i / 8) * 0.25);
+      const qx = (1 - kk) * (1 - kk) * x + 2 * (1 - kk) * kk * mx + kk * kk * tx, qy = (1 - kk) * (1 - kk) * y + 2 * (1 - kk) * kk * my + kk * kk * ty;
+      if (i) ctx.lineTo(qx, qy); else ctx.moveTo(qx, qy);
+    }
+    ctx.stroke();
+    ctx.restore();
+    drawGoStoneDisc(ctx, px, py, 7, white, 1);
+    return;
+  }
+  const q = (prog - FLIGHT) / (1 - FLIGHT);
+  if (!f._clicked) {
+    f._clicked = true;
+    for (let i = 0; i < 6; i++) { const a = -Math.PI * Math.random(), v = 50 + Math.random() * 80; emitParticle(0, tx, ty, Math.cos(a) * v, Math.sin(a) * v, 0.2 + Math.random() * 0.15, 1.1, white ? '#ffffff' : '#93c5fd'); }
+  }
+  drawGoStoneDisc(ctx, tx, ty, 7, white, 1 - q);
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.strokeStyle = white ? `rgba(226, 232, 240, ${0.8 * (1 - q)})` : `rgba(147, 197, 253, ${0.8 * (1 - q)})`;
+  ctx.lineWidth = 2 * (1 - q);
+  ctx.beginPath(); ctx.ellipse(tx, ty + 4, 6 + q * 22, 2.5 + q * 8, 0, 0, Math.PI * 2); ctx.stroke();
+  if (white) {                                             // slow: a pale ring settles around the target
+    ctx.strokeStyle = `rgba(191, 219, 254, ${0.5 * (1 - q * 0.5)})`;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.ellipse(tx, ty + 6, 15, 5.5, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  ctx.restore();
+}
+
+
 function drawCultivationSword(ctx, x0, y0, tx, ty, curve, prog, pal) {
   const dx = tx - x0, dy = ty - y0;
   const cx = (x0 + tx) * 0.5 - dy * (curve || 0.22);
@@ -2134,6 +2394,7 @@ function draw() {
     if (!card) continue;
     card.classList.toggle('channeling-sword', !u.removed && u.channeling?.type === 'sword-torrent');
     card.classList.toggle('channeling-melodic', !u.removed && u.channeling?.type === 'melodic-resonance');
+    card.classList.toggle('channeling-formation', !u.removed && u.channeling?.type === 'formation-star-river');
   }
 
   // Ecosystem grounds
@@ -2144,7 +2405,7 @@ function draw() {
     ctx.ellipse(q.x, q.y, 22, 12, 0, 0, Math.PI * 2);
     ctx.fill();
   }
-  const pos = e => { let p = Game.track(e.p); return routePoint(p.x, p.y, size); };
+  const pos = e => { let p = Game.track(visualTrackP(e)); return routePoint(p.x, p.y, size); };
 
   for (const z of battle.cyberZones || []) {
     for (let i = z.wall * 4; i < z.wall * 4 + 4; i++) {
@@ -2346,6 +2607,7 @@ function draw() {
       const chProg = Math.min(1, Math.max(0, 1 - (u.channeling.remaining / (u.channeling.duration || 1.2))));
       if (u.channeling.type === 'sword-torrent') drawSwordGather(ctx, pt.x, pt.y, chProg, size);
       else if (u.channeling.type === 'melodic-resonance') drawMelodicGather(ctx, pt.x, pt.y, chProg, size);
+      else if (u.channeling.type === 'formation-star-river') drawFormationGather(ctx, pt.x, pt.y, chProg, size);
       else drawSwordTorrentChannel(ctx, pt.x, pt.y, chProg, size, u.channeling.type);
     }
   }
@@ -2367,6 +2629,10 @@ function draw() {
       drawSwordTorrent(ctx, f, size);
     } else if (f.type === 'melodic-resonance') {
       drawMelodicResonance(ctx, f, size);
+    } else if (f.type === 'formation-star-river') {
+      drawFormationRiver(ctx, f, size);
+    } else if (kind === 'go-stone') {
+      drawGoStoneShot(ctx, x, y, tx, ty, prog, f.type === 'go-stone-white', f);
     } else if (kind === 'sword' || (f.genre === 'Cultivation' && ['shot', 'spell', 'sword'].includes(kind))) {
       drawCultivationSword(ctx, x, y, tx, ty, f.curve, prog, pal);
     } else if (kind === 'claw' || (f.genre === 'Bloodline' && ['slash', 'claw'].includes(kind))) {
@@ -2421,9 +2687,9 @@ function draw() {
       if (prog > 0.65) drawImpactSparks(ctx, tx, ty, (prog - 0.65) / 0.35, pal, f.crit);
     }
 
-    if (f.type === 'colossal-dmg') {
+    if (f.type === 'big-dmg') {
       drawColossalNumber(ctx, tx, ty, f);
-    } else if (f.text && f.type !== 'sword-torrent' && f.type !== 'melodic-resonance') {
+    } else if (f.text && !['sword-torrent', 'melodic-resonance', 'formation-star-river'].includes(f.type)) {
       ctx.save();
       ctx.globalAlpha = Math.min(1, f.ttl * 2.2);
       const breakthrough = ['FOUNDATION ESTABLISHMENT', 'GOLDEN CORE', 'NASCENT SOUL'].includes(String(f.text).toUpperCase());

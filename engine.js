@@ -1081,7 +1081,7 @@ function fx(b, type, u, e, text, extra = {}) {
  const ttl = extra.ttl || (type === 'beam' ? 0.35 : (type && type.startsWith('sword-torrent')) ? 0.85 : vfxKind === 'slash' ? 0.28 : 0.65);
  const tx = (e && typeof e.p === 'number') ? track(e.p).x : (e && typeof e.x === 'number' ? e.x + 1 : (u ? u.x + 1 : 2));
  const ty = (e && typeof e.p === 'number') ? track(e.p).y : (e && typeof e.y === 'number' ? e.y + 1 : (u ? u.y + 1 : 2));
- if (u && e && ['shot', 'spell', 'beam', 'slash'].includes(type)) {
+ if (u && e && (['shot', 'spell', 'beam', 'slash'].includes(type) || type.startsWith('go-stone'))) {
   u.animSeq = (u.animSeq || 0) + 1;
   u.animType = resolveAnimArchetype(u);
   u.animTarget = { x: tx, y: ty };
@@ -2553,11 +2553,11 @@ function fx(b, type, u, e, text, extra = {}) {
    u.stoneToggle = !u.stoneToggle;
    if (u.stoneToggle) {
     hit(b, u, target, power * 1.2);
-    fx(b, 'shot', u, target, 'BLACK STONE (120%)');
+    fx(b, 'go-stone-black', u, target, '', { vfxKind: 'go-stone', ttl: 0.5 });
    } else {
     hit(b, u, target, power * 0.8);
     status(b, target, 'slow', 2, 0.30, u);
-    fx(b, 'spell', u, target, 'WHITE STONE (SLOW)');
+    fx(b, 'go-stone-white', u, target, '', { vfxKind: 'go-stone', ttl: 0.5 });
    }
    if (u.attackCount % 10 === 0) {
     u.channeling = { type: 'formation-star-river', duration: 1.2, remaining: 1.2 };
@@ -2957,7 +2957,7 @@ function fx(b, type, u, e, text, extra = {}) {
       const rain = foes.map((e, i) => ({ uid: e.uid, at: Math.min(0.7, 0.15 + 0.5 * (n > 1 ? i / (n - 1) : 0) + ((e.uid * 37) % 7) / 140) }));
       b.pendingHits ??= [];
       // Renderer draws the falling swords, so hits are quiet and just show the number where they land.
-      const landed = (bb, e, before, big) => { const dealt = before - Math.max(0, e.hp); if (dealt > 0) fx(bb, big ? 'colossal-dmg' : 'impact', u, e, String(Math.round(dealt)), { vfxKind: 'impact', crit: big, ttl: big ? 1.1 : 0.5 }); };
+      const landed = (bb, e, before, big) => { const dealt = before - Math.max(0, e.hp); if (dealt > 0) fx(bb, big ? 'big-dmg' : 'impact', u, e, String(Math.round(dealt)), { vfxKind: 'impact', crit: big, ttl: big ? 1.1 : 0.5 }); };
       foes.forEach((e, i) => b.pendingHits.push({ at: t0 + rain[i].at, fn: bb => { if (e.hp > 0 && !e.gone) { const hp0 = e.hp; trueHit(bb, u, e, power, true); landed(bb, e, hp0, false); } } }));
       b.pendingHits.push({ at: t0 + 0.95, fn: bb => {
        const tgt = prio && prio.hp > 0 && !prio.gone ? prio : pickPrio();
@@ -2991,12 +2991,25 @@ function fx(b, type, u, e, text, extra = {}) {
       interact(b, u, u, 'melodic-resonance', 'Celestial Resonance: 200% ATK + 1.5s stun to all enemies');
      }
      else if (chType === 'formation-star-river') {
-      for (const e of living(b)) {
-       warp(b, e, 2, u);
-       const corner = (Math.floor(e.p) % 4 === 0);
-       damage(b, e, rawAtk(u) * (corner ? 3.0 : 1.5), u, 'ability');
-      }
-      fx(b, 'warp', u, null, 'STAR-RIVER FORMATION');
+      // A star river flows backward along the track from the exit end (tile 16) after a 0.15s
+      // opening, sweeping the 16 tiles in 0.6s; each enemy is warped and hit as the river reaches it.
+      // Corner rule unchanged: 300% if the warp leaves it on tile 0/4/8/12, else 150%.
+      const t0 = b.time, power = rawAtk(u), START = 0.15, SWEEP = 16 / 0.6;
+      const hits = living(b).map(e => ({ e, uid: e.uid, at: START + (16 - e.p) / SWEEP }));
+      b.pendingHits ??= [];
+      for (const h of hits) b.pendingHits.push({ at: t0 + h.at, fn: bb => {
+       const e = h.e;
+       if (e.hp <= 0 || e.gone) return;
+       const from = e.p;
+       warp(bb, e, 2, u);
+       const corner = Math.floor(e.p) % 4 === 0, hp0 = e.hp;
+       e.warpFx = { from, to: e.p, at: bb.time, corner };   // renderer slides the enemy back along the track
+       damage(bb, e, power * (corner ? 3.0 : 1.5), u, 'ability');
+       const dealt = hp0 - Math.max(0, e.hp);
+       if (dealt > 0) fx(bb, corner ? 'big-dmg' : 'impact', u, e, String(Math.round(dealt)), { vfxKind: 'impact', crit: corner, ttl: corner ? 1.1 : 0.5 });
+       if (corner) { const at = track(e.p); bb.shake = { ttl: 0.2, mag: 4, x: at.x, y: at.y }; }
+      } });
+      fx(b, 'formation-star-river', u, null, 'STAR-RIVER FORMATION', { ttl: 2.0, schedule: { hits: hits.map(h => ({ uid: h.uid, at: h.at })), start: START, sweep: SWEEP } });
       interact(b, u, u, 'formation-star-river', 'Star-River Weiqi Board: warps all enemies back 2 tiles (300% on corners)');
      }
      else if (chType === 'talisman-decree') {
