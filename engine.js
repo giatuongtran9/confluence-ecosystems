@@ -1100,7 +1100,8 @@ function fx(b, type, u, e, text, extra = {}) {
   crit: Boolean(extra.crit),
   text,
   ttl,
-  maxTtl: ttl
+  maxTtl: ttl,
+  ...(extra.schedule ? { schedule: extra.schedule } : {})
  });
  if (b.effects.length > 110) b.effects.shift();
 }
@@ -2852,11 +2853,22 @@ function fx(b, type, u, e, text, extra = {}) {
   huntArmor(b,newEnemy);brandQuarry(b);
  }
 
+ function tickPendingHits(b) {
+  const q = b.pendingHits;
+  if (!q || !q.length) return;
+  const due = q.filter(h => h.at <= b.time);
+  if (!due.length) return;
+  b.pendingHits = q.filter(h => h.at > b.time);
+  for (const h of due.sort((a, z) => a.at - z.at)) h.fn(b);
+ }
+
  function step(b, dt) {
   if (b.done) return; dt = Math.min(.1, dt);
   if (b.showstopper) { b.showstopper.ttl -= dt; if (b.showstopper.ttl <= 0) b.showstopper = null; }
+  if (b.shake) { b.shake.ttl -= dt; if (b.shake.ttl <= 0) b.shake = null; }
   if ((b.hitStopRemaining || 0) > 0) { b.hitStopRemaining = Math.max(0, b.hitStopRemaining - dt); return; }
   b.time += dt;
+  tickPendingHits(b);
   tickHeavenlyTrial(b);
   tickBloodlineTrial(b);
   tickUrbanContainmentTrial(b);
@@ -2936,10 +2948,21 @@ function fx(b, type, u, e, text, extra = {}) {
       interact(b, u, u, 'sandstorm-channel', 'Sandstorm Titan 10s channel complete');
      }
      if (chType === 'sword-torrent') {
-      for (const e of living(b)) trueHit(b, u, e, rawAtk(u));
-      const prio = living(b).find(e => e.boss) || living(b).find(e => e.elite || e.champion) || living(b).sort((a, z) => z.hp - a.hp)[0];
-      if (prio) damage(b, prio, rawAtk(u) + prio.hp * 0.10, u, 'ability');
-      fx(b, 'sword-torrent', u, prio || u, 'SWORD TORRENT');
+      // Damage is queued on engine time so it lands with the visual beats:
+      // rain swords land 0.15–0.7s after release, the Colossal Sword at 0.95s.
+      const t0 = b.time, power = rawAtk(u), foes = living(b), n = foes.length;
+      const pickPrio = () => living(b).find(e => e.boss) || living(b).find(e => e.elite || e.champion) || living(b).sort((a, z) => z.hp - a.hp)[0];
+      const prio = pickPrio();
+      const rain = foes.map((e, i) => ({ uid: e.uid, at: Math.min(0.7, 0.15 + 0.5 * (n > 1 ? i / (n - 1) : 0) + ((e.uid * 37) % 7) / 140) }));
+      b.pendingHits ??= [];
+      foes.forEach((e, i) => b.pendingHits.push({ at: t0 + rain[i].at, fn: bb => { if (e.hp > 0 && !e.gone) trueHit(bb, u, e, power); } }));
+      b.pendingHits.push({ at: t0 + 0.95, fn: bb => {
+       const tgt = prio && prio.hp > 0 && !prio.gone ? prio : pickPrio();
+       if (tgt) damage(bb, tgt, power + tgt.hp * 0.10, u, 'ability');
+       bb.hitStopRemaining = Math.max(bb.hitStopRemaining || 0, 0.1);
+       bb.shake = { ttl: 0.25, mag: 6 };
+      } });
+      fx(b, 'sword-torrent', u, prio || u, 'SWORD TORRENT', { schedule: { rain, colossalAt: 0.95, colossalUid: prio?.uid ?? null } });
       interact(b, u, prio || u, 'sword-torrent', 'Ten-Thousand Sword Torrent: sword rain on all tiles + Colossal Sword on ' + (prio?.boss ? 'Boss' : prio?.elite ? 'Elite' : 'leader'));
      }
      else if (chType === 'melodic-resonance') {
