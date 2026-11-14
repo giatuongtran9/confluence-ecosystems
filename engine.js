@@ -2378,7 +2378,8 @@ function fx(b, type, u, e, text, extra = {}) {
   if (critical && sensor(b, u)) { const src = support(b, 'sensor'); interact(b, src, u, 'critical', 'amplified critical strike'); }
   if (critical && normal) for (const v of allies(b, u).filter(v => v.id === 'core')) tick(b, v, 1, u);
   // options.fx lets a unit draw its own projectile instead of the generic shot (e.g. Formation Master's Go stones)
-  if (options.fx) fx(b, options.fx.type, u, e, critical ? 'CRIT' : '', { crit: critical, vfxKind: options.fx.kind, ttl: options.fx.ttl, attackAnim: true });
+  if (options.noFx) { /* the caller draws one shared effect for the whole attack */ }
+  else if (options.fx) fx(b, options.fx.type, u, e, critical ? 'CRIT' : '', { crit: critical, vfxKind: options.fx.kind, ttl: options.fx.ttl, attackAnim: true });
   else fx(b, normal ? 'shot' : 'spell', u, e, critical ? 'CRIT' : '', { crit: critical });
  }
 
@@ -2521,11 +2522,13 @@ function fx(b, type, u, e, text, extra = {}) {
   }
   else if (u.id === 'swordImmortal') {
    const behind = living(b).filter(e => e !== target && e.p <= target.p).sort((a, z) => z.p - a.p);
-   hit(b, u, target, power, true, { armorFactor: 0.5 });
+   const chain = [target, ...behind.slice(0, 3)].map(e => e.uid);   // the one sword pierces these in order
+   hit(b, u, target, power, true, { armorFactor: 0.5, noFx: true });
    const falloff = [0.9, 0.8, 0.7];
    behind.slice(0, 3).forEach((e, idx) => {
-    hit(b, u, e, power * falloff[idx], true, { armorFactor: 0.5, secondary: true });
+    hit(b, u, e, power * falloff[idx], true, { armorFactor: 0.5, secondary: true, noFx: true });
    });
+   fx(b, 'sword-pierce', u, target, '', { vfxKind: 'sword-pierce', ttl: 0.6, attackAnim: true, schedule: { chain } });
    if (u.attackCount % 10 === 0) {
     u.channeling = { type: 'sword-torrent', duration: 1.2, remaining: 1.2 };
     u.currentCooldown = Math.max(u.currentCooldown || 0, 1.2);
@@ -2536,14 +2539,16 @@ function fx(b, type, u, e, text, extra = {}) {
   else if (u.id === 'melodicSaint') {
    u.chordToggle = !u.chordToggle;
    if (u.chordToggle) {
-    for (const ally of b.units.filter(v => !v.removed)) ally.harmonyChordUntil = b.time + 2;
-    fx(b, 'spell', u, null, 'HARMONY CHORD (+50% SPD)');
+    const allies = b.units.filter(v => !v.removed);
+    for (const ally of allies) ally.harmonyChordUntil = b.time + 2;
+    fx(b, 'harmony-chord', u, null, 'HARMONY CHORD (+50% SPD)', { vfxKind: 'harmony-chord', ttl: 0.9, schedule: { allies: allies.map(v => v.uid) } });
    } else {
-    for (const e of living(b)) {
-     hit(b, u, e, power * 0.5);
+    const foes = living(b);
+    for (const e of foes) {
+     hit(b, u, e, power * 0.5, true, { noFx: true });
      status(b, e, 'slow', 2, 0.45, u);
     }
-    fx(b, 'pulse', u, null, 'DISSONANCE CHORD (SLOW)');
+    fx(b, 'dissonance-chord', u, null, 'DISSONANCE CHORD (SLOW)', { vfxKind: 'dissonance-chord', ttl: 0.8, schedule: { hits: foes.map(e => e.uid) } });
    }
    if (u.attackCount % 10 === 0) {
     u.channeling = { type: 'melodic-resonance', duration: 1.2, remaining: 1.2 };

@@ -2687,6 +2687,123 @@ function drawBloodSlash(ctx, x, y, tx, ty, prog, f) {
   ctx.restore();
 }
 
+// ==== Sword Immortal normal attack: one jade sword pierces the target and up to 3 enemies behind it ====
+// The sword flies from the Immortal to the target, then on through each enemy in schedule.chain (in order),
+// leaving a light trail; each pierced enemy gets a slash flash, sparks and a knock. A thin line lingers after.
+function drawSwordPierce(ctx, f, size) {
+  const t = (f.maxTtl || 0.6) - f.ttl, FLY = 0.34;
+  const o = routePoint(f.x, f.y, size), chain = f.schedule?.chain || [];
+  const pts = [{ x: o.x, y: o.y - 18 }];
+  for (const uid of chain) { const p = enemyPt(f, uid, size); if (p) pts.push({ x: p.x, y: p.y - 12, uid }); }
+  if (pts.length < 2) return;
+  const a = pts[pts.length - 2], b = pts[pts.length - 1], d = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+  pts.push({ x: b.x + (b.x - a.x) / d * 70, y: b.y + (b.y - a.y) / d * 70 });         // carries on past the last enemy
+  const cum = [0];
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
+  const L = cum[cum.length - 1], s = L * Math.min(1, easeOut(Math.min(1, t / FLY)) * 1.02);
+  const at = dist => { let i = 1; while (i < cum.length - 1 && cum[i] < dist) i++; const k = (dist - cum[i - 1]) / Math.max(1, cum[i] - cum[i - 1]); return { x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * k, y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * k, i }; };
+  f._passed ??= {};
+  for (let i = 1; i < pts.length - 1; i++) {                                           // pierce each enemy as the sword passes
+    if (s < cum[i] || f._passed[i]) continue;
+    f._passed[i] = { at: t };
+    const p = pts[i], dx = p.x - pts[i - 1].x, dy = p.y - pts[i - 1].y, dd = Math.hypot(dx, dy) || 1;
+    burstColors(p.x, p.y, 10, ['#ecfdf5', '#6ee7b7', '#34d399'], 1, 0.3);
+    nudgeEnemy(p.uid, dx / dd * 6, dy / dd * 6, 0.45);
+  }
+  const fade = t <= FLY ? 1 : Math.max(0, 1 - (t - FLY) / (f.maxTtl - FLY));
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = `rgba(167, 243, 208, ${0.35 * fade})`; ctx.lineWidth = 1.5;          // thin line through everything pierced
+  ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) { if (cum[i] > s) { const q = at(s); ctx.lineTo(q.x, q.y); break; } ctx.lineTo(pts[i].x, pts[i].y); }
+  ctx.stroke();
+  const tail = Math.max(0, s - 150);                                                    // bright trail behind the sword
+  for (let k = 0; k < 10; k++) {
+    const d0 = tail + (s - tail) * (k / 10), d1 = tail + (s - tail) * ((k + 1) / 10), q0 = at(d0), q1 = at(d1);
+    ctx.strokeStyle = `rgba(110, 231, 183, ${(k / 10) * 0.7 * fade})`; ctx.lineWidth = 1 + k * 0.45;
+    ctx.beginPath(); ctx.moveTo(q0.x, q0.y); ctx.lineTo(q1.x, q1.y); ctx.stroke();
+  }
+  for (const [i, pass] of Object.entries(f._passed)) {                                  // slash flash across each pierced enemy
+    const since = t - pass.at;
+    if (since > 0.22) continue;
+    const p = pts[i], q = since / 0.22, dx = p.x - pts[i - 1].x, dy = p.y - pts[i - 1].y, dd = Math.hypot(dx, dy) || 1;
+    ctx.strokeStyle = `rgba(236, 253, 245, ${0.9 * (1 - q)})`; ctx.lineWidth = 2.5 * (1 - q);
+    ctx.beginPath(); ctx.moveTo(p.x - dy / dd * 16, p.y + dx / dd * 16); ctx.lineTo(p.x + dy / dd * 16, p.y - dx / dd * 16); ctx.stroke();
+    additiveGlow(ctx, p.x, p.y, 22, '110, 231, 183', 0.7 * (1 - q));
+  }
+  ctx.restore();
+  if (t <= FLY + 0.08) {                                                                 // the sword itself, tip leading
+    const q = at(Math.min(s, L - 0.01)), q2 = at(Math.max(0, s - 12)), ang = Math.atan2(q.y - q2.y, q.x - q2.x);
+    stampSwordTip(ctx, q.x, q.y, ang, 0.95, t <= FLY ? 1 : 1 - (t - FLY) / 0.08, false);
+  }
+}
+
+// ==== Melodic Saint normal attacks ====
+// Harmony Chord: a warm gold-and-indigo ring spreads gently; golden notes rise from each ally it reaches (speed buff).
+function drawHarmonyChord(ctx, f, size) {
+  const t = (f.maxTtl || 0.9) - f.ttl, o = routePoint(f.x, f.y, size), R = 260 * easeOut(Math.min(1, t / 0.6)), fade = Math.max(0, 1 - t / (f.maxTtl || 0.9));
+  f._reached ??= {};
+  if (!f._start) { f._start = true; for (let i = 0; i < 6; i++) { const n = emitParticle(4, o.x + (Math.random() - 0.5) * 20, o.y - 20, (Math.random() - 0.5) * 50, -40 - Math.random() * 40, 0.9, 0.8 + Math.random() * 0.4, i % 2 ? '#fde68a' : '#c7d2fe'); if (n) n.glyph = i % NOTE_GLYPHS.length; } }
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (let r = 0; r < 2; r++) {
+    const rr = R - r * 22;
+    if (rr <= 4) continue;
+    ctx.strokeStyle = r ? `rgba(129, 140, 248, ${0.45 * fade})` : `rgba(253, 230, 138, ${0.6 * fade})`;
+    ctx.lineWidth = r ? 2 : 3;
+    ctx.beginPath();
+    for (let i = 0; i <= 90; i++) { const th = (i / 90) * Math.PI * 2, w = rr * (1 + 0.025 * Math.sin(th * 8 + t * 20)); if (i) ctx.lineTo(o.x + Math.cos(th) * w, o.y + Math.sin(th) * w * 0.5); else ctx.moveTo(o.x + Math.cos(th) * w, o.y + Math.sin(th) * w * 0.5); }
+    ctx.stroke();
+  }
+  ctx.restore();
+  for (const uid of f.schedule?.allies || []) {
+    const v = battle.units.find(x => x.uid === uid && !x.removed);
+    if (!v || f._reached[uid]) continue;
+    const p = routePoint(v.x + 1, v.y + 1, size), d = Math.hypot(p.x - o.x, (p.y - o.y) * 2);
+    if (d > R) continue;
+    f._reached[uid] = true;
+    for (let i = 0; i < 3; i++) { const n = emitParticle(4, p.x + (i - 1) * 10, p.y - 24, (i - 1) * 12, -55 - Math.random() * 25, 0.9, 0.75, '#fde68a'); if (n) n.glyph = (uid + i) % NOTE_GLYPHS.length; }
+    additiveGlow(ctx, p.x, p.y - 10, 30, '253, 230, 138', 0.6);
+  }
+}
+// Dissonance Chord: a jagged, discordant violet wave rips outward; each enemy it reaches gets broken notes and a jolt.
+function drawDissonanceChord(ctx, f, size) {
+  const t = (f.maxTtl || 0.8) - f.ttl, o = routePoint(f.x, f.y, size), R = 340 * Math.min(1, t / 0.4), fade = Math.max(0, 1 - t / (f.maxTtl || 0.8));
+  f._reached ??= {};
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.lineJoin = 'miter';
+  for (let r = 0; r < 3; r++) {
+    const rr = R - r * 26;
+    if (rr <= 4 || R >= 340 && r === 0 && t > 0.55) continue;
+    ctx.strokeStyle = r === 0 ? `rgba(244, 114, 182, ${0.85 * fade})` : `rgba(168, 85, 247, ${(0.5 / r) * fade})`;
+    ctx.lineWidth = r === 0 ? 2.6 : 1.8;
+    ctx.beginPath();
+    for (let i = 0; i <= 72; i++) {                                    // sawtooth with jitter: harsh, not musical
+      const th = (i / 72) * Math.PI * 2, saw = ((i % 3) - 1) * 0.06 + (hash01(i * 3.3 + Math.floor(t * 30)) - 0.5) * 0.05;
+      const w = rr * (1 + saw);
+      if (i) ctx.lineTo(o.x + Math.cos(th) * w, o.y + Math.sin(th) * w * 0.5); else ctx.moveTo(o.x + Math.cos(th) * w, o.y + Math.sin(th) * w * 0.5);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+  for (const uid of f.schedule?.hits || []) {
+    const p = enemyPt(f, uid, size);
+    if (!p) continue;
+    const d = Math.hypot(p.x - o.x, (p.y - o.y) * 2);
+    if (d > R) continue;
+    if (!f._reached[uid]) {
+      f._reached[uid] = t;
+      for (let i = 0; i < 4; i++) { const a = Math.random() * 6.28, n = emitParticle(4, p.x, p.y - 14, Math.cos(a) * 50, Math.sin(a) * 30 - 30, 0.6, 0.7, i % 2 ? '#f472b6' : '#a855f7'); if (n) { n.glyph = i % NOTE_GLYPHS.length; n.vr = 20; } }
+      const dx = p.x - o.x, dy = p.y - o.y, dd = Math.hypot(dx, dy) || 1;
+      nudgeEnemy(uid, dx / dd * 5, dy / dd * 5, 0.4);
+    }
+    const since = t - f._reached[uid];
+    if (since < 0.25) additiveGlow(ctx, p.x, p.y - 8, 22, '217, 70, 239', 0.7 * (1 - since / 0.25));
+  }
+}
+
 // Marks that stay on enemies between effects: talisman while Vulnerable, blood drips from Blood-Fiend bleeds.
 function drawPersistentMarks(ctx, size) {
   const fiends = new Set(battle.units.filter(v => !v.removed && v.id === 'bloodFiendMaster').map(v => v.uid));
@@ -3379,6 +3496,12 @@ function draw() {
       drawSoulDetonation(ctx, f, size);
     } else if (f.type === 'blood-domain') {
       drawBloodDomain(ctx, f, size);
+    } else if (kind === 'sword-pierce') {
+      drawSwordPierce(ctx, f, size);
+    } else if (kind === 'harmony-chord') {
+      drawHarmonyChord(ctx, f, size);
+    } else if (kind === 'dissonance-chord') {
+      drawDissonanceChord(ctx, f, size);
     } else if (kind === 'talisman') {
       drawTalismanShot(ctx, x, y, tx, ty, prog, f);
     } else if (kind === 'talisman-burn') {
