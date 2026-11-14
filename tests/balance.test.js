@@ -25,11 +25,12 @@ test('one forge working slot can complete two-piece recipe across deployments',(
 test('intake capacity and forge cooldown prevent duplicate smelts',()=>{const b=battle(['smelter','scrapFrame'],[4,8]),s=b.units[0];s.scrapIntake=['rustSword','rustGun'];s.forgeAt=4;const t=G.spawnToken(b,s,'rustGun',true);G.forge(b,s);assert.equal(t.removed,false);assert.equal(s.scrapIntake.length,2);b.time=4;G.forge(b,s);assert.equal(b.metrics.smelts,1);G.forge(b,s);assert.equal(b.metrics.smelts,1);assert.deepEqual(s.scrapIntake,['rustGun']);});
 test('stored intake is preserved when no Mech is deployed',()=>{const b=battle(['smelter']),s=b.units[0];s.scrapIntake=['rustSword'];const t=G.spawnToken(b,s,'rustGun',true);G.forge(b,s);assert.equal(t.removed,false);assert.deepEqual(s.scrapIntake,['rustSword']);});
 
-test('Nascent Soul earns uncapped permanent ATK for each Qi gained above 175',()=>{
+test('Nascent Soul Qi stops at 200 with no excess growth; Mythics earn +0.15 ATK per Qi above 175',()=>{
  const b=battle(['cultivationNascentSoul']),u=b.units[0];u.qi=174;b.run.roster[0].qi=174;
- G.addQi(b,u,4);
- assert.equal(u.qi,178);assert.equal(u.permanentAtkBonus,.45);
- assert.equal(b.run.roster[0].permanentAtkBonus,.45);assert.equal(u.id,'cultivationNascentSoul');
+ G.addQi(b,u,4);assert.equal(u.qi,178);assert.equal(u.permanentAtkBonus,0);
+ G.addQi(b,u,100);assert.equal(u.qi,200);assert.equal(u.permanentAtkBonus,0);assert.equal(u.id,'cultivationNascentSoul');
+ const apex=battle(['swordImmortal']),v=apex.units[0];v.qi=175;G.addQi(apex,v,3);
+ assert.ok(Math.abs(v.permanentAtkBonus-.45)<1e-9);assert.ok(Math.abs(apex.run.roster[0].permanentAtkBonus-.45)<1e-9);
 });
 test('Breakthrough Pill unlocks a realm and carries overflow Qi through the gate',()=>{
  const b=battle(['practitioner','cauldron'],[0,1]),u=b.units[0];u.qi=29;b.run.roster[0].qi=29;b.run.breakthroughPills=1;
@@ -70,12 +71,12 @@ test('Full Cauldron storage turns adjacent Grass into +12 Qi for the highest-Qi 
 });
 test('Cauldron independently brews adjacent Grass and Blossom on the same cycle',()=>{
  const b=battle(['practitioner','cauldron','herbGrass','lotusBlossom'],[0,1,2,4]),cultivator=b.units[0],pot=b.units[1],grass=b.units[2],blossom=b.units[3];
- b.time=8;G.extras(b,pot,0);assert.equal(b.run.breakthroughPills,1);assert.equal(cultivator.qi,6);assert.equal(cultivator.permanentAtkBonus,4);assert.equal(grass.removed,true);assert.equal(blossom.removed,true);
+ b.time=8;G.extras(b,pot,0);assert.equal(b.run.breakthroughPills,1);assert.equal(cultivator.qi,6);assert.equal(cultivator.permanentAtkBonus,2);assert.equal(grass.removed,true);assert.equal(blossom.removed,true);
 });
-test('Cauldron brews a Blossom for +6 Qi and +4 ATK to the least-Qi unit; direct absorption remains +5 Qi/+2 ATK',()=>{
+test('Cauldron brews a Blossom for +6 Qi and +2 ATK to the least-Qi unit; direct absorption remains +5 Qi/+1 ATK',()=>{
  const brewed=battle(['practitioner','cultivationFoundation','cauldron','lotusBlossom'],[0,2,1,4]),cultivator=brewed.units[0],foundation=brewed.units[1],pot=brewed.units[2],blossom=brewed.units[3];
- cultivator.qi=30;foundation.qi=20;brewed.time=8;G.extras(brewed,pot,0);assert.equal(cultivator.qi,30);assert.equal(foundation.qi,26);assert.equal(foundation.permanentAtkBonus,4);assert.equal(blossom.removed,true);
- const direct=battle(['practitioner','lotusBlossom'],[0,1]),p=direct.units[0],token=direct.units[1];G.extras(direct,p,0);assert.equal(p.qi,5);assert.equal(p.permanentAtkBonus,2);assert.equal(token.removed,true);
+ cultivator.qi=30;foundation.qi=20;brewed.time=8;G.extras(brewed,pot,0);assert.equal(cultivator.qi,30);assert.equal(foundation.qi,26);assert.equal(foundation.permanentAtkBonus,2);assert.equal(blossom.removed,true);
+ const direct=battle(['practitioner','lotusBlossom'],[0,1]),p=direct.units[0],token=direct.units[1];G.extras(direct,p,0);assert.equal(p.qi,5);assert.equal(p.permanentAtkBonus,1);assert.equal(token.removed,true);
 });
 test('Nascent Soul starts its Elite/Boss trial at 200 Qi, not 175',()=>{
  const b=tribulationBattle();b.units[0].qi=199;b.run.roster[0].qi=199;assert.equal(G.startHeavenlyTrial(b),null);

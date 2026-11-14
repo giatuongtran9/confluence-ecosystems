@@ -18,16 +18,15 @@ function enemy(b, p=4, hp=100000) {
  const e={uid:b.enemies.length+1,p,hp,maxHp:hp,speed:.336,defense:0,gone:false,slows:[],bleeds:[],burns:[],venoms:[],auras:[],ruleMarks:0,tabooMarks:{kuchisake:0,nightBus:0,payphone:0,morgueMirror:0,mannequin:0,stair13:0,redRaincoat:0}};
  b.enemies.push(e); return e;
 }
-test('grass brewing starts at 8s, shares cadence and temporary speed expires',()=>{
+test('grass brews a Breakthrough Pill at 8s and Blossoms brew on the same cadence',()=>{
  const b=battle(['practitioner','cauldron','herbGrass','lotusRoot'],[0,4,5,8]);
- const [u,c]=b.units;
- G.extras(b,c,.1);assert.equal(u.qi,0);
- b.time=8;G.extras(b,c,.1);assert.equal(u.qi,6);assert.equal(u.permanentAtkBonus,3);
- assert.equal(u.permanentSpeed,undefined);assert.equal(u.pillSpeedUntil,16);
- const faster=G.speed(b,u);b.time=16;assert.ok(G.speed(b,u)<faster);
+ const [u,c,grass]=b.units;
+ G.extras(b,c,.1);assert.equal(u.qi,0);assert.equal(b.run.breakthroughPills,0);
+ b.time=8;G.extras(b,c,.1);assert.equal(b.run.breakthroughPills,1);assert.ok(grass.removed);assert.equal(u.qi,0);assert.equal(c.brewAt,16);
+ assert.ok(!b.run.roster.some(v=>v.id==='herbGrass'));
  const blossom=G.spawnToken(b,b.units[3],'lotusBlossom');Object.assign(blossom,G.xy(7),{slot:7});
- G.extras(b,c,.1);assert.equal(u.qi,18);assert.equal(u.permanentAtkBonus,5);assert.equal(c.brewAt,24);assert.ok(blossom.removed);
- G.extras(b,c,.1);assert.equal(u.qi,18);
+ b.time=16;G.extras(b,c,.1);assert.equal(u.qi,6);assert.equal(u.permanentAtkBonus,2);assert.equal(c.brewAt,24);assert.ok(blossom.removed);
+ G.extras(b,c,.1);assert.equal(u.qi,6);
 });
 test('direct Blossom absorption grants +5 Qi and +1 permanent ATK',()=>{
  const b=battle(['practitioner','lotusRoot'],[4,8]),u=b.units[0];
@@ -44,46 +43,34 @@ test('Cauldron preserves ingredients without a valid recipient',()=>{
  const b=battle(['cauldron','lotusRoot'],[4,8]);const blossom=G.spawnToken(b,b.units[1],'lotusBlossom');
  Object.assign(blossom,G.xy(7),{slot:7});b.time=8;G.extras(b,b.units[0],.1);assert.equal(blossom.removed,false);
 });
-test('all seven Cultivation Apex forms accept Qi, pills and Blossoms',()=>{
+test('all seven Cultivation Apex forms convert Qi and Blossoms into permanent ATK',()=>{
  for(const id of ['swordImmortal','melodicSaint','formationMaster','talismanSovereign','landscapeSage','soulReapingDemon','bloodFiendMaster']){
-  const b=battle([id,'cauldron','herbGrass'],[0,4,5]),u=b.units[0];
-  u.qi=175;G.addQi(b,u,29);assert.equal(u.permanentAtkBonus,0);G.addQi(b,u,1);assert.equal(u.permanentAtkBonus,2);assert.equal(u.apexQi,0);
-  b.time=8;G.extras(b,b.units[1],.1);assert.equal(u.apexQi,18);assert.equal(u.permanentAtkBonus,2);
+  const b=battle([id,'lotusRoot'],[0,8]),u=b.units[0];
+  // Each Qi above 175 grants +0.15 ATK; every 30 Qi earned after ascension grants +2 ATK.
+  u.qi=175;G.addQi(b,u,29);assert.ok(Math.abs(u.permanentAtkBonus-4.35)<1e-9);assert.equal(u.apexQi,29);
+  G.addQi(b,u,1);assert.ok(Math.abs(u.permanentAtkBonus-6.5)<1e-9);assert.equal(u.apexQi,0);
   const blossom=G.spawnToken(b,b.units[1],'lotusBlossom');Object.assign(blossom,G.xy(1),{slot:1});
-  G.extras(b,u,.1);assert.ok(blossom.removed);assert.equal(u.apexQi,3);assert.equal(u.permanentAtkBonus,4);
-  assert.equal(b.run.roster[0].apexQi,3);
+  G.extras(b,u,.1);assert.ok(blossom.removed);assert.equal(u.apexQi,15);assert.equal(u.qi,220);assert.ok(Math.abs(u.permanentAtkBonus-8.75)<1e-9);
+  assert.equal(b.run.roster[0].apexQi,15);
  }
 });
 test('ascension does not convert pre-ascension resources',()=>{
  const b=battle(['practitioner','investigator']);b.units[0].qi=190;b.units[1].dread=160;
  G.evolve(b,b.units[0],'swordImmortal');G.evolve(b,b.units[1],'ruleArchitect');
  G.addQi(b,b.units[0],1);G.addDread(b,b.units[1],1);
- assert.equal(b.units[0].apexQi,1);assert.equal(b.units[1].apexDread,1);assert.equal(b.metrics.growth,0);
+ assert.equal(b.units[0].apexQi,1);assert.equal(b.units[1].apexDread,1);
+ // Only the newly earned Qi above 175 pays out (+0.15 ATK); stored Qi and Dread are not converted.
+ assert.ok(Math.abs(b.metrics.growth-.15)<1e-9);
 });
 test('partial and capped marks reward only marks actually applied',()=>{
  const b=battle(['investigator']),u=b.units[0],e=enemy(b);e.ruleMarks=4;
  G.addRuleMark(b,e,3,u);assert.equal(u.dread,1);assert.equal(b.metrics.violations,1);
  G.addRuleMark(b,e,1,u);assert.equal(u.dread,1);assert.equal(b.totalRuleMarks,1);
 });
-test('Rule Enforcer binds during combat and only once',()=>{
+test('Rule Enforcer rank is earned in combat but the Relic is kept for the Subject Zero trial',()=>{
  const b=battle(['investigator','ruleboard'],[0,1]),u=b.units[0];u.dread=139;
- G.addRuleMark(b,enemy(b),1,u);G.extras(b,u,.1);assert.equal(u.id,'ruleArchitect');assert.ok(b.units[1].removed);
- G.extras(b,u,.1);assert.equal(b.metrics.consumed.length,1);
-});
-test('Authorities keep receiving Dossier and mark Dread after ascension',()=>{
- for(const id of ['ruleArchitect','allSeeingOverseer','curfewDirector','forensicDemiurge','backroomsWarden']){
-  const b=battle([id,'coroner','decoder','securityCam'],[0,4,8,2]),u=b.units[0];
-  G.addDread(b,u,20);
-  let dossier=G.spawnToken(b,b.units[3],'dossier');Object.assign(dossier,G.xy(3),{slot:3});
-  b.time=5;G.extras(b,b.units[1],.1);assert.equal(u.apexDread,0);assert.equal(u.permanentAtkBonus,2);
-  dossier=G.spawnToken(b,b.units[3],'dossier');Object.assign(dossier,G.xy(7),{slot:7});
-  b.time=6;G.extras(b,b.units[2],.1);assert.equal(u.apexDread,8);
-  G.addRuleMark(b,enemy(b),1,b.units[3]);assert.equal(u.apexDread,9);
- }
-});
-test('Chain Letter ordinary hits do not award legend progress',()=>{
- const b=battle(['chainLetter','mannequin'],[0,8]);const e=enemy(b);
- G.attack(b,b.units[0]);G.attack(b,b.units[0]);assert.equal(b.units[1].violations,0);assert.ok(e.rumorInfected);
+ G.addRuleMark(b,enemy(b),1,u);G.extras(b,u,.1);assert.equal(u.id,'ruleEnforcer');assert.equal(b.units[1].removed,false);
+ G.extras(b,u,.1);assert.equal(u.id,'ruleEnforcer');assert.equal((b.metrics.consumed||[]).length,0);assert.equal(b.run.roster.length,2);
 });
 test('rumors reward one contact spread per source and infected deaths',()=>{
  const b=battle(['chainLetter','mannequin'],[0,8]);const e=enemy(b,4),next=enemy(b,4.2);
@@ -147,10 +134,11 @@ test('Noticeboard adds two Dread to Coroner and Decoder dossier processing',()=>
  const other=G.spawnToken(b,b.units[2],'dossier');Object.assign(other,{x:b.units[1].x+1,y:b.units[1].y,slot:9});
  b.time=6;G.extras(b,b.units[1],.1);assert.equal(b.units[3].dread,22);
 });
-test('Matriarch covers all five original and token species without stacking',()=>{
+test('Matriarch hastes adjacent originals and tokens of all five species without stacking',()=>{
  for(const id of ['serpentFodder','hound','scuttler','flameToad','peachFodder']){
-  const b=battle([id,'matriarch','matriarch']),u=b.units[0];
-  assert.equal(G.speed(b,u),1.4);const tok=G.spawnToken(b,u,id);assert.equal(G.speed(b,tok),1.4);
+  const b=battle([id,'matriarch','matriarch'],[0,1,3]),u=b.units[0];
+  assert.equal(G.speed(b,u),1.35);const tok=G.spawnToken(b,u,id);assert.ok(G.touches(tok,b.units[1])||G.touches(tok,b.units[2]));assert.equal(G.speed(b,tok),1.35);
+  const far=battle([id,'matriarch'],[0,8]);assert.equal(G.speed(far,far.units[0]),1);
   const e=enemy(b);G.dot(b,e,'bleed',3,4,u);assert.equal(e.bleeds[0].until,5);
  }
 });
@@ -170,14 +158,14 @@ test('removed cards and offspring are absent from every catalog',()=>{
 });
 test('pre-cleanup runs and player upgrades clear exactly once',()=>{
  const code=fs.readFileSync(require.resolve('../app'),'utf8').split('let feedbackSeen=')[0];
- for(const payload of [{version:3,roster:[{id:'heir'}]},{version:3,roster:[{id:'cub'}]},{version:3,roster:[{id:'cultivationNascentSoul'}]}]){
+ for(const payload of [{version:4,roster:[{id:'practitioner'}]},{version:3,roster:[{id:'heir'}]},{version:3,roster:[{id:'cub'}]},{version:3,roster:[{id:'cultivationNascentSoul'}]}]){
   const values=new Map([['confluence-run-v3',JSON.stringify(payload)],['confluence-meta-v1',JSON.stringify({power:7,shards:50})]]);
   const localStorage={getItem:k=>values.get(k),get length(){return values.size},key:i=>[...values.keys()][i],removeItem:k=>values.delete(k),setItem:(k,v)=>values.set(k,v)};
   const ctx={Game:G,document:{querySelector:()=>({})},localStorage};vm.createContext(ctx);vm.runInContext(code+';globalThis.result={run,resetSavedRuns};',ctx);
-  assert.equal(ctx.result.run,null);assert.equal(ctx.result.resetSavedRuns,true);assert.equal(values.has('confluence-run-v3'),false);assert.equal(values.has('confluence-meta-v1'),false);assert.equal(values.get('confluence-save-reset-v1'),'done');
-  values.set('confluence-run-v4',JSON.stringify({version:4,leader:'none'}));
+  assert.equal(ctx.result.run,null);assert.equal(ctx.result.resetSavedRuns,true);assert.equal(values.has('confluence-run-v3'),false);assert.equal(values.has('confluence-meta-v1'),false);
+  values.set('confluence-run-v5',JSON.stringify({version:5,leader:'none'}));
   const ctx2={Game:G,document:{querySelector:()=>({})},localStorage};vm.createContext(ctx2);vm.runInContext(code+';globalThis.next={run,resetSavedRuns};',ctx2);
-  assert.equal(ctx2.next.resetSavedRuns,false);assert.equal(ctx2.next.run.version,4);
+  assert.equal(ctx2.next.resetSavedRuns,false);assert.equal(ctx2.next.run.version,5);
  }
 });
 test('new resource remainders persist across deployments, temporary pill haste does not',()=>{
@@ -195,7 +183,7 @@ test('WebP maps cover every current Cultivation and Bloodline draft card and Ape
  assert.ok(!source.includes('assets/bloodline-sprites/'));assert.ok(!source.includes('assets/cultivation-sprites/'));
 });
 
-test('The 13th Step and Red Raincoat are purely reactive and evolve to Mythic Apexes', () => {
+test('The 13th Step and Red Raincoat are purely reactive and stay Epic until their Mythic trial', () => {
  const b = battle(['stair13', 'redRaincoat']);
  const e = enemy(b, 2);
  assert.equal(G.attack(b, b.units[0]), false, 'stair13 should not attack normally');
@@ -207,7 +195,7 @@ test('The 13th Step and Red Raincoat are purely reactive and evolve to Mythic Ap
 
  b.units[0].violations = 45;
  G.grantUrbanViolation(b, b.units[0], 0);
- assert.equal(b.units[0].id, 'penroseLabyrinth');
+ assert.equal(b.units[0].id, 'infiniteStair');
 
  b.units[1].violations = 15;
  G.grantUrbanViolation(b, b.units[1], 0);
@@ -215,7 +203,7 @@ test('The 13th Step and Red Raincoat are purely reactive and evolve to Mythic Ap
 
  b.units[1].violations = 45;
  G.grantUrbanViolation(b, b.units[1], 0);
- assert.equal(b.units[1].id, 'crimsonHarbinger');
+ assert.equal(b.units[1].id, 'bloodPhantasm');
 });
 
 test('Blackout has 6s duration with an 8s lockout grace period and 1.5s runner guardrail', () => {

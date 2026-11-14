@@ -76,19 +76,17 @@ function bottomDock(){
   </nav>`;
 }
 const $=s=>document.querySelector(s),app=$('#app'),modal=$('#modal');
-const RUN_KEY='confluence-run-v4',RESET_KEY='confluence-save-reset-v1';
+const RUN_KEY='confluence-run-v5';
 function read(k,f){try{return JSON.parse(localStorage.getItem(k))||f}catch{return f}}
+// Saves from earlier versions are incompatible; discard them once.
 let resetSavedRuns=false;
 try{
- if(localStorage.getItem(RESET_KEY)!=='done'){
-  const oldKeys=Array.from({length:localStorage.length},(_,i)=>localStorage.key(i)).filter(key=>key&&(/^(confluence-run-|confluence-meta-|confluence-save-reset)/.test(key)));
-  resetSavedRuns=oldKeys.some(key=>key.startsWith('confluence-run-'));
-  for(const key of oldKeys)localStorage.removeItem(key);
-  localStorage.setItem(RESET_KEY,'done');
- }
+ const oldKeys=Array.from({length:localStorage.length},(_,i)=>localStorage.key(i)).filter(key=>key&&key!==RUN_KEY&&/^confluence-(run|meta|save-reset)-/.test(key));
+ resetSavedRuns=oldKeys.some(key=>key.startsWith('confluence-run-'));
+ for(const key of oldKeys)localStorage.removeItem(key);
 }catch{}
 let run=read(RUN_KEY,null),screen='home',battle=null,selected=null,paused=false,speed=1,last=0,uiClock=0,filter='all';
-if(run?.version!==4){run=null;try{localStorage.removeItem(RUN_KEY)}catch{}}
+if(run?.version!==5){run=null;try{localStorage.removeItem(RUN_KEY)}catch{}}
 
 let feedbackSeen=0,visualEvents=[],openingAt=0;
 const rarityBadge=id=>`<span class="rarity rarity-${CARD[id].rarity.toLowerCase()}">${CARD[id].rarity}</span>`;
@@ -207,8 +205,8 @@ const FIELD_GRIDS=Object.freeze({
   vesper:{left:33.2,top:33.0,width:33.6,height:33.8},
   yara:{left:33.0,top:32.9,width:34.0,height:34.0}
 });
-const battlefield=()=>BATTLEFIELDS[run?.leader]||{theme:'Training Ground',asset:'assets/battlefield-realistic.png'};
-const activeFieldGrid=()=>FIELD_GRIDS[run?.leader]||{left:34,top:34,width:32,height:32};
+const battlefield=()=>BATTLEFIELDS[run.leader];
+const activeFieldGrid=()=>FIELD_GRIDS[run.leader];
 const cardCell=(x,y)=>{const g=activeFieldGrid(),cw=g.width/3,ch=g.height/3;return {left:g.left+x*cw,top:g.top+y*ch,width:cw,height:ch}};
 // Map logical center-grid coordinates (1–3) and perimeter-route coordinates (0–4) onto the art.
 const routePoint=(x,y,size=700)=>{const g=activeFieldGrid(),cw=g.width/3,ch=g.height/3;return {x:(g.left+(x-.5)*cw)*size/100,y:(g.top+(y-.5)*ch)*size/100}};
@@ -286,9 +284,7 @@ function evolutionHint(c,u=null){
       return `<p class="evolution-hint">✧ Apex Lineage: <b>${lineageName}</b> (Apex Tier 4/4)<br>Ancestral manifestation complete. Relic Resonance active with adjacent Totem.</p>`;
     }
   }
-  if(!c.evolveTo)return '';
-  const p=u?Game.evolutionProgress(u):null;
-  return `<p class="evolution-hint">✧ Evolves into <b>${CARD[c.evolveTo].name}</b><br>${c.evolution}${p?` · ${Math.min(p.current,p.max)} / ${p.max}`:''}</p>`
+  return '';
 }
 function cardView(id,action='inspectCard',extra=''){const c=CARD[id],col=GENRES[c.genre][1];return `<button class="draft-card" data-action="${action}" data-id="${id}" style="--realm:${col}" ${extra}>${rarityBadge(id)}${cardTags(c)}<span class="eyebrow">${GENRES[c.genre][0]} · ${c.fav==='neighbor'?'Neighbor interaction':'Any slot'}</span><div class="card-art">${art(c)}</div><h3>${c.name}</h3><div class="card-numbers"><b>${c.baseAtk} <small>ATK</small></b><span>${c.attackInterval?c.attackInterval+'s / attack':'Support'}</span></div><div class="eyebrow">Rules</div><p>${c.rules}</p><div class="eyebrow">${c.ecosystem}</div><div class="spatial"><b>Works well with</b><p>${c.synergy}</p></div>${evolutionHint(c)}${action==='draft'?'<span class="pick-label">Choose this card →</span>':''}</button>`}
 function mapView(interactive=true){let options=Game.available(run).map(n=>n.id),nodes=run.map.flat(),w=360,h=16*56+26,px=n=>60+n.lane*120,py=n=>24+n.row*56;let paths='';for(let row=0;row<15;row++)for(const a of run.map[row])for(const z of run.map[row+1])if(z.row===15||Math.abs(z.lane-a.lane)<=1){let taken=run.visited.includes(a.id)&&run.visited.includes(z.id);paths+=`<path d="M${px(a)} ${py(a)} L${px(z)} ${py(z)}" class="${taken?'taken':''}"/>`}
@@ -299,7 +295,7 @@ function encounterPanel(n){const e=Game.encounterFor(n),trial=Game.trialFor(n);r
 function battleReport(r){if(!r?.cards)return '';let cards=r.cards,top=cards.filter(c=>c.damage>0).slice(0,3),max=Math.max(1,...cards.map(c=>c.damage)),growth=cards.filter(c=>c.growth>0),interactions=r.interactions||[],lost=r.consumed||[];
  const damageRow=c=>`<div class="damage-row"><div class="row between"><span>${cardLabel(c)}${c.consumed?' · consumed':''}</span><b>${Math.round(c.damage).toLocaleString()}</b></div><div class="damage-meter"><i style="width:${c.damage/max*100}%"></i></div></div>`;
  const interactionRow=i=>`<li><b>${i.from?CARD[i.from].name:'Track'}${i.to&&i.toUid!==i.fromUid?' → '+CARD[i.to].name:''}</b><span>${i.label}</span><em>×${i.count}</em></li>`;
- return `<section class="battle-report"><div class="row between wrap"><div><div class="eyebrow">What your build did</div><h3>Battle breakdown</h3></div><span class="badge">${r.encounter?Game.ENCOUNTERS[r.encounter].name:'Perimeter defense'} · ${Math.round(r.time)}s</span></div><div class="report-grid"><div><h4>Damage leaders</h4>${top.map(damageRow).join('')||'<p class="hint">No damage dealt.</p>'}<p class="hint">Actual damage, including damage over time. Overkill is excluded; support effects are listed as interactions.</p></div><div><h4>Growth & permanent losses</h4>${growth.length?growth.map(c=>`<p class="growth-line"><b>+${c.growth} ATK</b> ${cardLabel(c)}${c.consumed?' · later consumed':''}</p>`).join(''):'<p class="hint">No permanent attack gained this battle.</p>'}${lost.length?`<div class="loss-list">${lost.map(c=>`<p><strong>${c.token?'TOKEN CONSUMED · PARENT SAFE':'ORIGINAL PERMANENTLY LOST'}</strong> ${rarityBadge(c.id)} ${CARD[c.id].name} #${c.uid} → ${CARD[c.by].name} #${c.byUid}<span>${c.reason||'Devour'} granted +${c.bonus} permanent ATK.</span></p>`).join('')}</div>`:'<p class="hint">No cards consumed.</p>'}</div></div>${(r.evolutions||[]).length?`<div class="evolution-report"><h4>Evolutions earned</h4>${r.evolutions.map(e=>`<p>${CARD[e.from].name} → <b>${CARD[e.to].name}</b> · ${e.time.toFixed(1)}s</p>`).join('')}</div>`:''}${readinessPanel()}<div class="report-notes">${(r.notes||[]).map(n=>`<p>${n}</p>`).join('')}</div><details class="report-details"><summary>All cards & triggered interactions (${interactions.length})</summary><div class="report-table-wrap"><table><thead><tr><th>Card</th><th>Hits / spells</th><th>DoT</th><th>Kills</th><th>Gauge triggers</th></tr></thead><tbody>${cards.map(c=>`<tr><td>${cardLabel(c)}</td><td>${Math.round(c.direct+c.ability)}</td><td>${Math.round(c.dot)}</td><td>${c.kills}</td><td>${c.triggers}</td></tr>`).join('')}</tbody></table></div><h4>Interactions that actually happened</h4><ul class="interaction-list">${interactions.map(interactionRow).join('')||'<li>No connected interactions triggered.</li>'}</ul></details></section>`
+ return `<section class="battle-report"><div class="row between wrap"><div><div class="eyebrow">What your build did</div><h3>Battle breakdown</h3></div><span class="badge">${r.encounter?Game.ENCOUNTERS[r.encounter].name:'Perimeter defense'} · ${Math.round(r.time)}s</span></div><div class="report-grid"><div><h4>Damage leaders</h4>${top.map(damageRow).join('')||'<p class="hint">No damage dealt.</p>'}<p class="hint">Actual damage, including damage over time. Overkill is excluded; support effects are listed as interactions.</p></div><div><h4>Growth & permanent losses</h4>${growth.length?growth.map(c=>`<p class="growth-line"><b>+${c.growth} ATK</b> ${cardLabel(c)}${c.consumed?' · later consumed':''}</p>`).join(''):'<p class="hint">No permanent attack gained this battle.</p>'}${lost.length?`<div class="loss-list">${lost.map(c=>`<p><strong>${c.token?'TOKEN CONSUMED · PARENT SAFE':'ORIGINAL PERMANENTLY LOST'}</strong> ${rarityBadge(c.id)} ${CARD[c.id].name} #${c.uid} → ${CARD[c.by].name} #${c.byUid}<span>${c.reason||'Devour'} granted +${c.bonus} permanent ATK.</span></p>`).join('')}</div>`:'<p class="hint">No cards consumed.</p>'}</div></div>${readinessPanel()}<div class="report-notes">${(r.notes||[]).map(n=>`<p>${n}</p>`).join('')}</div><details class="report-details"><summary>All cards & triggered interactions (${interactions.length})</summary><div class="report-table-wrap"><table><thead><tr><th>Card</th><th>Hits / spells</th><th>DoT</th><th>Kills</th><th>Gauge triggers</th></tr></thead><tbody>${cards.map(c=>`<tr><td>${cardLabel(c)}</td><td>${Math.round(c.direct+c.ability)}</td><td>${Math.round(c.dot)}</td><td>${c.kills}</td><td>${c.triggers}</td></tr>`).join('')}</tbody></table></div><h4>Interactions that actually happened</h4><ul class="interaction-list">${interactions.map(interactionRow).join('')||'<li>No connected interactions triggered.</li>'}</ul></details></section>`
 }
 function receiveFeedback(){if(!battle)return;const now=performance.now();for(const e of battle.feedback||[]){if(e.seq<=feedbackSeen)continue;feedbackSeen=e.seq;if(e.kind==='devour'&&e.t>0&&$('.board')){const v=battle.units.find(u=>u.uid===e.fromUid),a=Game.xy(e.fromSlot),z=Game.xy(e.toSlot);if(v){const ghost=document.createElement('div');ghost.className='devour-ghost';const cell=cardCell(a.x,a.y);ghost.style.cssText=`left:${cell.left}%;top:${cell.top}%;width:${cell.width}%;height:${cell.height}%;--dx:${(z.x-a.x)*100}%;--dy:${(z.y-a.y)*100}%`;ghost.innerHTML=art(CARD[v.id]);$('.board').appendChild(ghost);ghost.addEventListener('animationend',()=>ghost.remove(),{once:true});}}visualEvents.push({...e,expires:now+(e.kind==='devour'?3600:1800)});}visualEvents=visualEvents.filter(e=>e.expires>now).slice(-24);}
 function heavenlyTrialHUDHTML(b){const t=b?.heavenlyTrial;if(!t)return '';const soul=b.units.find(u=>u.uid===t.unitUid),name=soul?CARD[soul.id]?.name:'Nascent Soul';if(t.status==='active'){const until=Math.max(0,t.nextStrikeAt-b.time),pct=Math.max(0,Math.min(100,until/4*100));return `<div class="tribulation-hud active"><div class="tribulation-head"><b>⚡ HEAVENLY TRIBULATION</b><span>${until.toFixed(1)}s to next strike</span></div><div class="tribulation-meter"><i style="width:${pct}%"></i></div><p>${name} is stunned for 0.5s every 4s · lightning deals 25 damage to every active runner, including the boss.</p><p><strong>Trial:</strong> clear the Elite/Boss node with zero leaks. Failure permanently removes the Nascent Soul and ${CARD[t.relicId]?.name||'matching relic'} from your roster.</p></div>`}if(t.status==='passed')return `<div class="tribulation-hud passed"><b>✦ TRIBULATION PASSED</b><span>${CARD[t.apexId]?.name||'Mythic Immortal'} awakened · ${t.strikes} lightning strikes</span></div>`;return `<div class="tribulation-hud failed"><b>⚡ TRIBULATION FAILED</b><span>${t.reason||'A runner escaped'} · Nascent Soul and ${CARD[t.relicId]?.name||'matching relic'} removed from the roster</span></div>`}
@@ -311,7 +307,7 @@ function ecosystemPanel(){if(!run.roster.length)return '';const groups=[['Scrapw
 function deckPanel(){return `<section class="panel"><div class="row between"><div><div class="eyebrow">${leader().title}</div><h3>${leader().name.split(',')[0]}</h3></div>${sprite(leader().sprite)}</div><p class="hint">${leader().passive}</p><div class="divider"></div><div class="row between"><b>Your deck · ${run.roster.length}</b>${btn('roster','Inspect','small')}</div>${ecosystemPanel()}<div class="deck-mini">${run.roster.map(u=>`<button data-action="rosterCard" data-id="${u.uid}" title="${CARD[u.id].name}">${art(CARD[u.id])}<span>${Math.round(Game.base(u))}</span></button>`).join('')||'<p class="muted">Your first draft awaits.</p>'}</div><p class="hint">Nine deployment slots are filled randomly each battle. Titans occupy two adjacent slots. A small deck is more consistent. Devoured cards are permanently lost from this run.</p>${run.relics.length?`<div class="divider"></div>${run.relics.map(id=>{let r=RELICS.find(r=>r.id===id);return `<div class="relic"><b>${r.name}</b><p>${r.desc}</p></div>`}).join('')}`:''}</section>`}
 function draftView(){return `${gamehead()}<section class="draft-intro"><div><div class="eyebrow">${run.draftReason==='first'?'Your first card':'Crossing cleared · choose your reward'}</div><h2>One of three. Your choice.</h2><p class="muted">${run.draftReason==='first'?'Begin with a single attacker. Your leader’s genre gets 1.5× selection weight within each rarity in every draft.':'Recruit one card, skip to keep your deck lean, or spend 10 coins to reroll all three choices.'}</p></div>${run.recap&&run.draftReason==='reward'?`<div class="recap"><b>${run.recap.kills} defeated · ${run.recap.leaks} escaped</b><span>+${run.recap.growth.toFixed(0)} permanent ATK · ${run.recap.triggers} ability triggers</span>${run.recap.relic?`<span>Found ${run.recap.relic}</span>`:''}${run.recap.coinsEarned?`<span>+${run.recap.coinsEarned} coins earned</span>`:''}</div>`:''}</section>${run.draftReason==='reward'?battleReport(run.recap):''}<p class="hint rarity-unlocks">Normal / Rare initially · Epic from crossing 5 · Legendary from crossing 10 · Mythic Apex forms are earned only · Elites improve rarity odds</p><div class="draft-grid">${run.offers.map(id=>cardView(id,'draft')).join('')}</div><div class="actions draft-actions">${run.draftReason!=='first'?btn('skipDraft','Skip · keep deck small'):''}${btn('rerollDraft','Reroll · −10 coins','',' '+((run.coins||0)<10?'disabled':''))}</div><p class="hint center">Each reroll costs 10 coins and can be repeated while you can afford it. Normal battles pay 100 coins, Elites 200, and the Boss 500, even on losses. Skipping grants no additional reward.</p><div class="map-layout below-draft">${mapView(false)}${deckPanel()}</div>`}
 function readyPanel(){const n=run.node,p=Game.wavePlan(run),field=battlefield();return `<section class="panel ready-panel"><span class="node-emblem">${NODES[n.type].icon}</span><div class="eyebrow">Crossing ${run.depth+1} · ${NODES[n.type].name}</div><h2>Bring the ecosystem to life.</h2><div class="battlefield-callout"><b>${field.theme} battlefield</b><span>Cards deploy on the center 3×3. Enemies circle the 16-tile outer track.</span></div><p>${NODES[n.type].desc}</p>${encounterPanel(n)}${readinessPanel()}<div class="preview-stats"><span><b>${p.count}</b> runners</span><span><b>${p.hp}</b> base HP</span><span><b>9</b> deployment slots</span></div>${n.type==='boss'?'<p class="health">If the final boss escapes, the run ends.</p><p class="hint">The Unraveler has 11,000 HP and halves slow strength, stun duration, and knockback. After 45 seconds on the track, it moves 25% faster and resists all stuns, freezes, and knockback.</p>':''}<p class="hint">Deploy draws your cards, shuffles them into the nine slots, resolves devours and opening effects, then starts combat immediately.</p>${btn('deploy','Deploy & Start →','primary')}<p class="hint">No manual placement · No energy cost · All attacks have global reach</p>${run.roster.some(u=>['practitioner','cultivationFoundation','cultivationGoldenCore','cultivationNascentSoul','cauldron','herbGrass','lotusRoot'].includes(u.id))?'<p class="hint">Cultivation: normal attacks grant no Qi. Spirit Grass grants +1 Qi every 4s; Lotus Blossoms give +5 Qi/+2 ATK by direct absorption or +6 Qi/+4 ATK when brewed. A Cauldron stores 3 Breakthrough Pills, auto-spends them at 30/85/175 Qi gates only while deployed, and at full storage turns Grass into +12 Qi for the highest-Qi deployed cultivator. At 200 Qi with an adjacent relic on Elite/Boss, the zero-leak Heavenly Tribulation begins.</p>':''}${run.roster.some(u=>['practitioner','cultivationFoundation','cultivationGoldenCore','cultivationNascentSoul','cauldron','herbGrass','lotusRoot'].includes(u.id))?'<p class="hint">Cultivation: normal attacks grant no Qi. Spirit Grass grants +1 Qi every 4s; Lotus Blossoms grant +5 Qi/+2 ATK on direct absorption or +6 Qi/+4 ATK when brewed by a Cauldron. At 30/85/175 Qi, a stored Breakthrough Pill is spent only with a deployed Cauldron. Shared stock: 3; at cap, Grass converts to +12 Qi. Reach 200 Qi with an adjacent eligible relic on Elite/Boss to begin the zero-leak Heavenly Tribulation.</p>':''}${run.roster.some(u=>['investigator','kuchisake','nightBus','payphone','morgueMirror','mannequin','redRaincoat','stair13','ruleboard'].includes(u.id))?'<p class="health">QUÁI ĐÀM ĐÔ THỊ: Enemies violate track rules as they march, stacking Violation Marks (+8% damage taken). Every 5 marks trigger Blackout (Tắt Đèn), slowing runners and granting Haunted units +40% attack speed and True Form attacks. Night Investigator ascends via recorded Dread; Urban Legends reach Epic at 15 and Mythic readiness at 80; an adjacent same-lineage Legend at 45+ is consumed in an Elite/Boss trial, and Mythic requires zero leaks!</p>':''}${run.roster.some(u=>['cub','herald'].includes(u.id))?'<p class="health">CONSUMPTION: predators consume only named prey. The Cub&#39;s first meal locks its lineage; all meals grant permanent ATK and matching meals alone grant evolution stacks. Bloodline fodder attacks and breeds at 10% per second when same-species neighbors are orthogonally adjacent. Eating an original permanently deletes it, including a summoning parent. Tokens and originals grant the same predator-defined reward. No eligible prey means no meal.</p>':''}</section>`}
-function workshopPanel(){return `<section class="panel ready-panel"><div class="eyebrow">Fate Workshop · crossing ${run.depth+1}</div><h2>Choose a card’s next path.</h2><p>One upgrade costs <b>10 health</b>. Cards with an unearned evolution offer three awakening paths. Other cards offer three permanent upgrades. Pick a card to see the exact choices before spending.</p><div class="rostergrid">${run.roster.map(u=>btn('upgradeCard',`${art(CARD[u.id])}<b>${CARD[u.id].name} #${u.uid}</b><span>${Math.round(Game.base(u))} ATK${u.upgradePath?' · '+u.upgradePath+' path':''}</span>`,'unit-card workshop-card',`data-id="${u.uid}" ${run.health<=10?'disabled':''}`)).join('')}</div>${run.health<=10?'<p>At least 11 health is required to purchase.</p>':''}${btn('safe','Pass · restore 3 health','event-option')}</section>`}
+function workshopPanel(){return `<section class="panel ready-panel"><div class="eyebrow">Fate Workshop · crossing ${run.depth+1}</div><h2>Choose a card’s next path.</h2><p>One upgrade costs <b>10 health</b>. Every card offers three permanent upgrades. Pick a card to see the exact choices before spending.</p><div class="rostergrid">${run.roster.map(u=>btn('upgradeCard',`${art(CARD[u.id])}<b>${CARD[u.id].name} #${u.uid}</b><span>${Math.round(Game.base(u))} ATK</span>`,'unit-card workshop-card',`data-id="${u.uid}" ${run.health<=10?'disabled':''}`)).join('')}</div>${run.health<=10?'<p>At least 11 health is required to purchase.</p>':''}${btn('safe','Pass · restore 3 health','event-option')}</section>`}
 function upgradeChoices(uid){const u=run.roster.find(v=>String(v.uid)===String(uid));if(!u)return;showDialog(`<div class="eyebrow">Fate Workshop · ${run.health} health</div><h2>${CARD[u.id].name}</h2><p>Choose one · costs 10 health · growth and instance identity are retained.</p><div class="stack">${Game.workshopOptions(run,uid).map(o=>btn('upgrade',`<b>${o.name}</b><span>${o.desc}</span>`,'event-option',`data-id="${uid}" data-choice="${o.id}"`)).join('')}</div>`)}
 function eventPanel(){const n=run.node;if(n.type==='workshop')return workshopPanel();return `<section class="panel ready-panel"><span class="node-emblem">${NODES[n.type].icon}</span><div class="eyebrow">${NODES[n.type].name}</div><h2>${n.type==='rest'?'A moment to breathe.':n.type==='cache'?'Something survived.':'Every road asks a price.'}</h2><p>${NODES[n.type].desc}</p>${n.type==='rest'?btn('rest','Rest · restore 12 health','primary'):n.type==='cache'?RELICS.filter(r=>!run.relics.includes(r.id)).slice(0,3).map(r=>btn('relic',`<b>${r.name}</b><span>${r.desc}</span>`,'event-option',`data-id="${r.id}"`)).join('')||btn('rest','Vault exhausted · restore 12 health','primary'):`${btn('bargain','Offer 12 health · gain a random relic','event-option',run.health<=12||run.relics.length===RELICS.length?'disabled':'')}${btn('safe','Take the safe road · restore 3 health','event-option')}`}</section>`}
 function mapScreen(){return `${gamehead()}<div class="map-layout">${mapView(run.phase==='map')}<aside class="stack">${run.phase==='ready'?readyPanel():run.phase==='event'?eventPanel():`<section class="panel"><div class="eyebrow">Your next decision</div><h3>Choose a gold destination.</h3><p class="hint">Read the branches ahead before you commit. Battles test the deck; sanctuaries and vaults help it recover and grow.</p></section>`}${deckPanel()}</aside></div>`}
@@ -409,7 +405,7 @@ function xenoDetail(u){
  return lines.map(t=>`<p class="hint">${t}</p>`).join('');
 }
 
-function detail(){let u=battle?.units.find(u=>String(u.uid)===String(selected));if(!u)return `<div class="empty-detail"><span class="sigil">✧</span><h3>Watch the connections.</h3><p>Tap any card to inspect its current attack, progress, and ecosystem role.</p><p class="hint">Team effects work across the board. Only explicitly marked abilities depend on neighbors. No card can take damage.</p></div>`;const c=CARD[u.id];return `<div class="unit-title">${art(c)}<div><div class="eyebrow" style="color:${GENRES[c.genre][1]}">${GENRES[c.genre][0]}</div><h3>${c.name}</h3>${rarityBadge(c.id)}${cardTags(c,!!(u.phantom||u.token))}</div></div><div class="unit-stats"><div><b>${Math.round(Game.atk(battle,u))}</b><small>ATTACK</small></div><div><b>${u.attackInterval?(u.attackInterval/Game.speed(battle,u)).toFixed(2)+'s':'—'}</b><small>INTERVAL</small></div><div><b>+${u.permanentAtkBonus}</b><small>${u.phantom?"WAVE BONUS":"PERMANENT"}</small></div></div>${Game.isPractitioner(u)?`<p class="state-text cultivation-realm">${['Qi-Refining','Foundation Establishment','Golden Core','Nascent Soul'][u.realm||0]} · Realm ${u.realm||0}/3 · ${u.qi||0} Qi${u.realm<3?` · next pill gate ${[30,85,175][u.realm||0]} · stock ${Game.breakthroughPills?.(battle)??0}/3`:u.qi>=200?' · 200 Qi + adjacent relic: Elite/Boss trial':' · next: 200 Qi + adjacent relic on Elite/Boss'}</p>`:''}${Game.isCultivationApex(u)?`<p class="state-text cultivation-realm">Post-ascension Qi ${u.apexQi||0}/30 toward the next permanent +2 ATK · lifetime Qi ${u.qi||0}</p>`:''}${u.id==='cauldron'?`<p class="state-text cultivation-realm">Breakthrough Pills ${Game.breakthroughPills?.(battle)??0}/3 · stored while any Cauldron remains in roster; spend only while one is deployed.</p>`:''}<p class="state-text">${u.removed?(u.phantom?'Token consumed · parent safe':'Original consumed · permanently lost'):u.overclock?'Overclock · '+u.clockRemaining.toFixed(1)+'s remaining':u.state!=='active'?u.state+' · '+u.stateRemaining.toFixed(1)+'s remaining':'Active'}${u.phantom?' · one-wave token · species: '+CARD[Game.species(u)]?.name:''}</p>${u.threshold.max?`<div class="meter"><i style="width:${u.threshold.current/u.threshold.max*100}%"></i></div><p class="hint">Progress ${Math.floor(u.threshold.current)} / ${u.threshold.max}</p>`:''}${cosmicDetail(u)}${cyberDetail(u)}${arcaneDetail(u)}${huntDetail(u)}${scrapworkDetail(u)}${xenoDetail(u)}${ascensionBarHTML(u)}${evolutionHint(c,u)}${u?`<p class="hint">Workshop: ${u.upgradePath||"no awakening path"} · +${Math.round((u.permanentSpeed||0)*100)}% permanent speed · Resonance ${u.resonanceLevel||0}${u.resonanceLevel?" (every 6s: +"+u.resonanceLevel+" allied ability progress)":""}${u.upgradePath==="storm"?" · Every sixth attack: three-target true-damage burst equal to unbuffed ATK.":""}</p>`:""}<div class="eyebrow">Rules</div><div class="ability">${c.rules}</div>${c.rules.includes('Team Power')?`<p class="hint">Current Team Power: <b>${Game.teamPower(battle).toFixed(1)}</b> · permanent ATK on deployed originals, including this card.</p>`:''}<div class="spatial ${Game.favored(battle,u)?'on':''}">Works well with<p>${c.synergy}</p></div><p class="hint">${Math.round(Game.crit(battle,u)*100)}% critical chance · ${Math.round(Game.critMultiplier(battle,u)*100)}% critical damage</p>${c.fav==='neighbor'?`<p class="hint">Neighbors: ${Game.neighbors(battle,u).map(v=>CARD[v.id].name).join(', ')||'none'}</p>`:''}`}
+function detail(){let u=battle?.units.find(u=>String(u.uid)===String(selected));if(!u)return `<div class="empty-detail"><span class="sigil">✧</span><h3>Watch the connections.</h3><p>Tap any card to inspect its current attack, progress, and ecosystem role.</p><p class="hint">Team effects work across the board. Only explicitly marked abilities depend on neighbors. No card can take damage.</p></div>`;const c=CARD[u.id];return `<div class="unit-title">${art(c)}<div><div class="eyebrow" style="color:${GENRES[c.genre][1]}">${GENRES[c.genre][0]}</div><h3>${c.name}</h3>${rarityBadge(c.id)}${cardTags(c,!!(u.phantom||u.token))}</div></div><div class="unit-stats"><div><b>${Math.round(Game.atk(battle,u))}</b><small>ATTACK</small></div><div><b>${u.attackInterval?(u.attackInterval/Game.speed(battle,u)).toFixed(2)+'s':'—'}</b><small>INTERVAL</small></div><div><b>+${u.permanentAtkBonus}</b><small>${u.phantom?"WAVE BONUS":"PERMANENT"}</small></div></div>${Game.isPractitioner(u)?`<p class="state-text cultivation-realm">${['Qi-Refining','Foundation Establishment','Golden Core','Nascent Soul'][u.realm||0]} · Realm ${u.realm||0}/3 · ${u.qi||0} Qi${u.realm<3?` · next pill gate ${[30,85,175][u.realm||0]} · stock ${Game.breakthroughPills?.(battle)??0}/3`:u.qi>=200?' · 200 Qi + adjacent relic: Elite/Boss trial':' · next: 200 Qi + adjacent relic on Elite/Boss'}</p>`:''}${Game.isCultivationApex(u)?`<p class="state-text cultivation-realm">Post-ascension Qi ${u.apexQi||0}/30 toward the next permanent +2 ATK · lifetime Qi ${u.qi||0}</p>`:''}${u.id==='cauldron'?`<p class="state-text cultivation-realm">Breakthrough Pills ${Game.breakthroughPills?.(battle)??0}/3 · stored while any Cauldron remains in roster; spend only while one is deployed.</p>`:''}<p class="state-text">${u.removed?(u.phantom?'Token consumed · parent safe':'Original consumed · permanently lost'):u.state!=='active'?u.state+' · '+u.stateRemaining.toFixed(1)+'s remaining':'Active'}${u.phantom?' · one-wave token · species: '+CARD[Game.species(u)]?.name:''}</p>${u.threshold.max?`<div class="meter"><i style="width:${u.threshold.current/u.threshold.max*100}%"></i></div><p class="hint">Progress ${Math.floor(u.threshold.current)} / ${u.threshold.max}</p>`:''}${cosmicDetail(u)}${cyberDetail(u)}${arcaneDetail(u)}${huntDetail(u)}${scrapworkDetail(u)}${xenoDetail(u)}${ascensionBarHTML(u)}${evolutionHint(c,u)}${u?`<p class="hint">Workshop: +${Math.round((u.permanentSpeed||0)*100)}% permanent speed · Resonance ${u.resonanceLevel||0}${u.resonanceLevel?" (every 6s: +"+u.resonanceLevel+" allied ability progress)":""}</p>`:""}<div class="eyebrow">Rules</div><div class="ability">${c.rules}</div>${c.rules.includes('Team Power')?`<p class="hint">Current Team Power: <b>${Game.teamPower(battle).toFixed(1)}</b> · permanent ATK on deployed originals, including this card.</p>`:''}<div class="spatial ${Game.favored(battle,u)?'on':''}">Works well with<p>${c.synergy}</p></div><p class="hint">${Math.round(Game.crit(battle,u)*100)}% critical chance · ${Math.round(Game.critMultiplier(battle,u)*100)}% critical damage</p>${c.fav==='neighbor'?`<p class="hint">Neighbors: ${Game.neighbors(battle,u).map(v=>CARD[v.id].name).join(', ')||'none'}</p>`:''}`}
 function blackoutHUDHTML(b){
  if(!b)return '';
  const hasUrban = b.units.some(u=>!u.removed&&Game.isUrbanLegend(u));
@@ -447,7 +443,7 @@ function render(){document.body.classList.toggle('in-combat',screen==='game'&&ru
 function showDialog(html,live=false){if(battle&&!battle.done&&!live){paused=true;let p=$('#pauseBtn');if(p)p.textContent='▶ Resume'}if(modal.open)modal.close();modal.dataset.live=live?'true':'false';modal.innerHTML=btn('close','×','close','aria-label="Close dialog"')+(live&&battle&&!battle.done?'<p class="live-warning">● COMBAT CONTINUES · close this window to return to the battlefield</p>':'')+html;modal.showModal()}
 modal.addEventListener('close',()=>{if(!modal.open){selected=null;modal.dataset.live='false'}});
 
-function info(id,u=null){const c=CARD[id];showDialog(`<div class="unit-title">${art(c)}<div><div class="eyebrow">${GENRES[c.genre][0]}</div><h2>${getUnitTitles(c,u).name}</h2>${rarityBadge(id)}${cardTags(c)}<p>${getUnitTitles(c,u).vn}</p></div></div><div class="unit-stats"><div><b>${u?Math.round(Game.base(u)):c.baseAtk}</b><small>ATK</small></div><div><b>${c.attackInterval?(c.attackInterval/(1+(u?.permanentSpeed||0))).toFixed(2)+'s':'—'}</b><small>INTERVAL</small></div><div><b>+${u?.permanentAtkBonus||0}</b><small>PERMANENT</small></div></div><div class="eyebrow">Rules</div><p>${c.rules}</p>${evolutionHint(c,u)}${u?cosmicDetail(u)+cyberDetail(u)+ascensionBarHTML(u):''}${u?`<p class="hint">Workshop: ${u.upgradePath||"no awakening path"} · +${Math.round((u.permanentSpeed||0)*100)}% permanent speed · Resonance ${u.resonanceLevel||0}${u.resonanceLevel?" (every 6s: +"+u.resonanceLevel+" allied ability progress)":""}${u.upgradePath==="storm"?" · Every sixth attack: three-target true-damage burst equal to unbuffed ATK.":""}</p>`:""}<div class="eyebrow">${c.ecosystem}</div><div class="spatial"><b>Works well with</b><p>${c.synergy}</p></div><p class="hint">Team Power is the total permanent ATK bonus on deployed originals, including the caster; reserves, consumed cards, and tokens are excluded. Unbuffed ATK excludes damage multipliers. All attacking cards have global reach. Ability charge affects elemental mages, Jade, Lantern, Eye, and Core; it never advances shutdown attack counts, maturity, or evolution witnesses. Consumed originals are permanently lost. Consumed tokens leave their parents safe. The predator defines the meal reward; token and original meals grant the same reward. Permanent ATK lasts for this run.</p>`,true)}
+function info(id,u=null){const c=CARD[id];showDialog(`<div class="unit-title">${art(c)}<div><div class="eyebrow">${GENRES[c.genre][0]}</div><h2>${getUnitTitles(c,u).name}</h2>${rarityBadge(id)}${cardTags(c)}<p>${getUnitTitles(c,u).vn}</p></div></div><div class="unit-stats"><div><b>${u?Math.round(Game.base(u)):c.baseAtk}</b><small>ATK</small></div><div><b>${c.attackInterval?(c.attackInterval/(1+(u?.permanentSpeed||0))).toFixed(2)+'s':'—'}</b><small>INTERVAL</small></div><div><b>+${u?.permanentAtkBonus||0}</b><small>PERMANENT</small></div></div><div class="eyebrow">Rules</div><p>${c.rules}</p>${evolutionHint(c,u)}${u?cosmicDetail(u)+cyberDetail(u)+ascensionBarHTML(u):''}${u?`<p class="hint">Workshop: +${Math.round((u.permanentSpeed||0)*100)}% permanent speed · Resonance ${u.resonanceLevel||0}${u.resonanceLevel?" (every 6s: +"+u.resonanceLevel+" allied ability progress)":""}</p>`:""}<div class="eyebrow">${c.ecosystem}</div><div class="spatial"><b>Works well with</b><p>${c.synergy}</p></div><p class="hint">Team Power is the total permanent ATK bonus on deployed originals, including the caster; reserves, consumed cards, and tokens are excluded. Unbuffed ATK excludes damage multipliers. All attacking cards have global reach. Ability charge affects elemental mages, Jade, Lantern, Eye, and Core; it never advances shutdown attack counts, maturity, or evolution witnesses. Consumed originals are permanently lost. Consumed tokens leave their parents safe. The predator defines the meal reward; token and original meals grant the same reward. Permanent ATK lasts for this run.</p>`,true)}
 function help(){showDialog(`<div class="eyebrow">How to play</div><h2>Build the deck. Trust the draw.</h2><ol><li>Choose a genre-themed leader with a universal benefit and drawback, then choose <b>one of three starting attackers</b>. The leader’s genre gets 1.5× selection weight inside each rarity in every draft.</li><li>Inspect the entire branching map. Pick a connected gold destination.</li><li><b>Deploy & Start</b> fills nine slots with randomly drawn cards on the 3×3 grid; each Titan reserves two adjacent slots. Opening effects resolve and the battle begins immediately.</li><li>Enemies walk clockwise around the <b>16 outer tiles</b>. They cannot attack your cards. Runners completing the loop damage you and disappear.</li><li>All cards attack globally. Most synergies work across the deployed team. Predation, token spawns, Altar, Netrunner, and Shoggoth use the neighbor rules printed on their cards. There are no center, corner, edge, or alignment bonuses.</li><li>Cards grow, transform, and trigger automatically <b>during combat</b>. Coins are earned from battles and spent on draft rerolls. Fate Workshops offer optional upgrades and evolution paths.</li><li>After every successful stage, choose <b>one of three cards</b>, skip for no extra reward, or reroll all three for 10 coins per reroll. The first card is mandatory. Normal and Rare cards appear initially, Epic from crossing 5, and Legendary from crossing 10; Mythic Apex forms are earned, not drafted. Elite rewards improve high-rarity chances. A roster over nine cards makes each draw less predictable.</li></ol><p>Predators have named diets within their genre. A token’s ancestry determines its species and genre; being a token alone never makes it edible. Consumed originals—including eligible high-rarity Fodder—are permanently lost. Tokens do not delete their parents. Predators prioritize eligible adjacent tokens, then the weakest eligible original. Each predator defines its fixed meal reward, identical for tokens and originals. Empty slots stay empty unless an explicit summon fills them. Parents summon before opening consumption. Crimson Hound does not summon. Each breeding original or token checks every second: with at least one orthogonal same-species neighbor, roll one 10% birth chance into a free orthogonal slot. A birth is a temporary copy of its parent fodder species, not a separate offspring species. No offspring cap. Tokens snapshot unbuffed ATK and attack interval at birth, inherit species attack and breeding traits, and never inherit growth engines or evolve. Scrapwork Mechs permanently lock their first two forged weapons; both fire per attack at reduced individual power. There are no automatic reserve replacements. Phantoms do not join the deck. The final boss halves crowd control and enrages after 45 seconds, so control alone cannot hold it indefinitely. Permanent ATK and trigger-gauge progress last for the run; temporary buffs and attack-cycle counters reset between battles.</p><p>Card values are shown before leader modifiers. Permanent ATK growth and Burn/Bleed stack counts have no numerical limits. Team Power means the sum of permanent ATK bonuses on deployed original cards, including the caster; consumed cards, reserves, and tokens are excluded. Unbuffed ATK means base ATK plus permanent ATK and any Shoggoth mimic bonus. Ability damage can crit unless marked true damage or a detonation. True damage ignores armor. Other damage remains affected by armor, critical hits, leader damage, and Vulnerable as applicable. Base critical chance: 10%. Critical strikes deal 200% damage. Bleed stacks last 4 seconds. Vents freeze the two leading runners every 8 seconds. Every Burn and Bleed stack expires independently; effects are not permanent. Slows use the strongest active slow rather than adding together. Vulnerable uses the most recently applied value. Original cards can evolve during combat; their new form and accumulated growth persist for the run. Cauldron elixirs have an 8s cooldown and cannot trigger themselves. Growth has no battle cap. Summoning has no per-parent or battle count cap. Each ability retains its stated timing, and requires an empty slot. Normal/Rare cards build permanent power early; late-tier cards use that accumulated power. Herald feeding is a lore-based late growth exception, and evolved forms retain their growth engines. Duplicate passive support auras do not stack. Downtime cannot fall below 0.5 seconds.</p><p>Progress saves between decisions. Reloading during combat returns to the pre-deployment checkpoint. Card information opens in a centered modal while combat continues. Map, Deck, and Help menus pause combat; use Resume to continue.</p>`)}
 function startLeader(id){run=Game.newRun(id);battle=null;selected=null;screen='game';paused=false;save();render();window.scrollTo(0,0)}
 document.addEventListener('click',e=>{let el=e.target.closest('[data-action]');if(!el)return;let a=el.dataset.action,id=el.dataset.id;
@@ -939,120 +935,6 @@ function drawSwordTorrentChannel(ctx, cx, cy, prog, size, channelType = 'sword-t
   ctx.restore();
 }
 
-function drawSwordTorrentA(ctx, x, y, tx, ty, prog, size) {
-  ctx.save();
-  if (prog < 0.35) {
-    const flashAlpha = (1 - prog / 0.35) * 0.22;
-    ctx.fillStyle = 'rgba(16, 185, 129, ' + flashAlpha + ')';
-    ctx.fillRect(0, 0, size, size);
-  }
-
-  for (let i = 0; i < 16; i++) {
-    const tp = Game.track(i);
-    const pt = routePoint(tp.x, tp.y, size);
-
-    for (let s = 0; s < 2; s++) {
-      const delay = (i * 0.02) + (s * 0.14);
-      const localProg = Math.min(1, Math.max(0, (prog - delay) * 2.4));
-      if (localProg <= 0) continue;
-
-      const startY = pt.y - 165;
-      const startX = pt.x + 38;
-      const fallT = Math.min(1, localProg * 1.35);
-      const curX = startX + (pt.x - startX) * fallT;
-      const curY = startY + (pt.y - startY) * fallT;
-      const angle = Math.atan2(pt.y - startY, pt.x - startX);
-
-      ctx.strokeStyle = s === 0 ? 'rgba(52, 211, 153, 0.65)' : 'rgba(110, 231, 183, 0.5)';
-      ctx.lineWidth = 2.6;
-      ctx.beginPath();
-      ctx.moveTo(startX, startY);
-      ctx.lineTo(curX, curY);
-      ctx.stroke();
-
-      // Offset back along angle so the sword TIP lands cleanly on curX, curY
-      const tipOffset = 34 * 0.72;
-      const drawX = curX - Math.cos(angle) * tipOffset;
-      const drawY = curY - Math.sin(angle) * tipOffset;
-      const sAlpha = Math.min(1, (1 - localProg * 0.32));
-      drawEmeraldSwordBlade(ctx, drawX, drawY, angle, 0.72, sAlpha, false);
-
-      if (localProg >= 0.72) {
-        const impT = (localProg - 0.72) / 0.28;
-        const impRad = impT * 26;
-        ctx.strokeStyle = `rgba(52, 211, 153, ${(1 - impT) * 0.9})`;
-        ctx.lineWidth = 2 * (1 - impT);
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, impRad, 0, Math.PI * 2);
-        ctx.stroke();
-
-        for (let k = 0; k < 4; k++) {
-          const spAng = k * (Math.PI / 2) + i;
-          const spDist = impT * 18;
-          ctx.fillStyle = '#ecfdf5';
-          ctx.fillRect(pt.x + Math.cos(spAng) * spDist - 1.5, pt.y + Math.sin(spAng) * spDist - 1.5, 3, 3);
-        }
-      }
-    }
-  }
-
-  ctx.fillStyle = '#34d399';
-  ctx.font = '800 13px system-ui, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.shadowColor = '#10b981';
-  ctx.shadowBlur = 10;
-  ctx.fillText('TEN-THOUSAND SWORD TORRENT · CELESTIAL RAIN', size * 0.5, 26);
-  ctx.restore();
-}
-
-function drawSwordTorrentB(ctx, x, y, tx, ty, prog, size) {
-  ctx.save();
-  const cx = x, cy = y;
-  const maxRadius = size * 0.58;
-  const curRadius = Math.min(maxRadius, (prog / 0.85) * maxRadius);
-
-  const arms = 6;
-  ctx.save();
-  ctx.translate(cx, cy);
-  const rot = prog * Math.PI * 6.5;
-  ctx.rotate(rot);
-
-  for (let i = 0; i < arms; i++) {
-    const a = (i * Math.PI * 2) / arms;
-    ctx.strokeStyle = i % 2 === 0 ? 'rgba(52, 211, 153, ' + ((1 - prog * 0.5) * 0.8) + ')' : 'rgba(16, 185, 129, ' + ((1 - prog * 0.5) * 0.5) + ')';
-    ctx.lineWidth = 4 * (1 - prog * 0.4);
-    ctx.shadowColor = '#34d399';
-    ctx.shadowBlur = 10;
-    ctx.beginPath();
-    for (let r = 10; r <= curRadius; r += 12) {
-      const theta = a + r * 0.04;
-      const px = Math.cos(theta) * r;
-      const py = Math.sin(theta) * (r * 0.85);
-      if (r === 10) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-    }
-    ctx.stroke();
-  }
-  ctx.restore();
-
-  const ringCount = 16;
-  for (let i = 0; i < ringCount; i++) {
-    const bladeAng = (i * Math.PI * 2) / ringCount + rot * 0.7;
-    const bx = cx + Math.cos(bladeAng) * curRadius;
-    const by = cy + Math.sin(bladeAng) * (curRadius * 0.82);
-    const tangent = bladeAng + Math.PI * 0.5;
-    drawEmeraldSwordBlade(ctx, bx, by, tangent, 0.78, Math.min(1, (1 - prog * 0.35)), false);
-  }
-
-  ctx.fillStyle = '#6ee7b7';
-  ctx.font = '800 13px system-ui, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.shadowColor = '#10b981';
-  ctx.shadowBlur = 10;
-  ctx.fillText('TEN-THOUSAND SWORD TORRENT · BLADE STORM', size * 0.5, 26);
-  ctx.restore();
-}
-
-// === LOCKED-IN OPTION C: COLOSSAL HEAVEN-SPLITTING JADE JIAN + CELESTIAL SWORD RAIN ===
 function drawSwordTorrentC(ctx, x, y, tx, ty, prog, size) {
   ctx.save();
   const bX = tx, bY = ty;
@@ -1813,11 +1695,7 @@ function draw() {
 
     if (f.type === 'sword-channel' || kind === 'sword-channel') {
       drawSwordTorrentChannel(ctx, x, y, prog, size);
-    } else if (f.type === 'sword-torrent-a' || kind === 'sword-torrent-a') {
-      drawSwordTorrentA(ctx, x, y, tx, ty, prog, size);
-    } else if (f.type === 'sword-torrent-b' || kind === 'sword-torrent-b') {
-      drawSwordTorrentB(ctx, x, y, tx, ty, prog, size);
-    } else if (f.type === 'sword-torrent-c' || kind === 'sword-torrent-c' || f.type === 'sword-torrent' || kind === 'sword-torrent') {
+    } else if (f.type === 'sword-torrent' || kind === 'sword-torrent') {
       drawSwordTorrentC(ctx, x, y, tx, ty, prog, size);
     } else if (kind === 'sword' || (f.genre === 'Cultivation' && ['shot', 'spell', 'sword'].includes(kind))) {
       drawCultivationSword(ctx, x, y, tx, ty, f.curve, prog, pal);
@@ -1979,7 +1857,7 @@ function liveUI() {
   for (const u of battle.units.filter(u => u.removed)) document.querySelector('#field [data-id="' + u.uid + '"]')?.remove();
 }
 function frame(ts){let dt=Math.min(.1,(ts-last)/1000||0);last=ts;if(battle&&!battle.done&&!paused&&screen==='game'&&(!modal.open||modal.dataset.live==='true')){let left=dt*speed;while(left>0&&!battle.done){let step=Math.min(1/30,left);Game.step(battle,step);left-=step}if(battle.done){if(modal.open)modal.close();selected=null;save();render();window.scrollTo(0,0)}}if(battle&&screen==='game'&&run.phase==='combat'){draw();uiClock+=dt;if(uiClock>.15){liveUI();uiClock=0}}requestAnimationFrame(frame)}
-render();if(resetSavedRuns)toast('Your saved run and old account upgrades were cleared for the update.');requestAnimationFrame(frame);
+render();if(resetSavedRuns)toast('Your saved run was cleared for the update.');requestAnimationFrame(frame);
 
 
 
