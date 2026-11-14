@@ -454,7 +454,9 @@ function help(){showDialog(`<div class="eyebrow">How to play</div><h2>Build the 
 function startLeader(id){run=Game.newRun(id);battle=null;selected=null;screen='game';paused=false;save();render();window.scrollTo(0,0)}
 // ---- Ability Lab: one unit alone on the field against an endless, harmless stream of runners ----
 // While the Lab is open, the global `battle` is a sandbox battle; the player's own battle is restored on leaving.
-let labState=null,labId='swordImmortal',labFilter='all',labQuery='',labPickerOpen=false;
+let labState=null,labId='swordImmortal',labFilter='all',labQuery='',labPickerOpen=false,labSpeed=1;
+// The Lab has its own speed (default 1x) so a 2x/4x battle setting doesn't rush the preview.
+const simSpeed=()=>screen==='lab'?labSpeed:speed;
 const LAB_COUNTERS={attackCount:'Attacks',archonAttacks:'Archon attacks',qi:'Qi',apexQi:'Apex Qi',souls:'Souls',alloy:'Alloy',alloyAttacks:'Alloy attacks',sandyCharge:'Sandy charge',chromeAttackCharge:'Chrome charge',trophyPoints:'Trophy points',genome:'Genome',dread:'Dread',ram:'RAM',essence:'Essence'};
 const LAB_THRESHOLDS={archonAttacks:10,sandyCharge:8,chromeAttackCharge:4,alloyAttacks:3};
 function labBattle(id){
@@ -529,6 +531,7 @@ function labView(){
     <div class="lab-unitbar" style="--realm:${GENRES[c.genre][1]}"><div><small>${GENRES[c.genre][0]}</small><b>${c.name}</b></div>${btn('labToggle',labPickerOpen?'Close ✕':'Change unit ▾','small',`aria-expanded="${labPickerOpen}"`)}</div>
     ${labPickerOpen?`<aside class="panel lab-picker">${labPickerHTML()}</aside>`:''}
     <div class="lab-toolbar">${btn('labUlt','⚡ Trigger ultimate now','small primary')}${btn('labElite','+ Elite','small')}${btn('labBoss','+ Boss','small')}${btn('labReset','↺ Reset','small')}</div>
+    <div class="lab-toolbar lab-speed" role="group" aria-label="Preview speed"><span>Speed</span>${[0.25,0.5,1].map(n=>btn('labSpeed',n===1?'1×':n===0.5?'½×':'¼×',`small ${labSpeed===n?'chosen':''}`,`data-id="${n}" aria-pressed="${labSpeed===n}"`)).join('')}</div>
     <section class="lab-arena">${board()}</section>
     <aside class="panel lab-info">
       <div class="lab-card" style="--realm:${GENRES[c.genre][1]}"><div class="eyebrow">${c.rarity||''} · ${GENRES[c.genre][0]}</div><h2>${c.name}</h2>${c.vn?`<div class="muted">${c.vn}</div>`:''}
@@ -559,6 +562,7 @@ document.addEventListener('click',e=>{let el=e.target.closest('[data-action]');i
   if(a==='labToggle'){labPickerOpen=!labPickerOpen;render();if(labPickerOpen)$('.lab-search')?.focus();return}
   if(a==='labFilter'){labFilter=id;render();return}
   if(a==='labUlt'){labTriggerUlt();return}
+  if(a==='labSpeed'){labSpeed=Number(id);document.querySelectorAll('[data-action="labSpeed"]').forEach(b=>{const on=Number(b.dataset.id)===labSpeed;b.classList.toggle('chosen',on);b.setAttribute('aria-pressed',on)});return}
   if(a==='labElite'||a==='labBoss'){labSpawn(a==='labBoss'?'boss':'elite');return}
   if(a==='labReset'){enterLab(labId);return}
   if(a==='unit'){info(el.dataset.card);return}
@@ -1583,7 +1587,7 @@ function drawNoteGlyphs(ctx, pts, alpha) {
 }
 
 function drawMelodicGather(ctx, cx, cy, prog, size) {
-  const now = performance.now() / 1000, appear = Math.min(1, prog / 0.2);
+  const now = battle.time, appear = Math.min(1, prog / 0.2);
   dimFocus(ctx, size, cx, cy, 0.45 * Math.min(1, prog / 0.25));
   additiveGlow(ctx, cx, cy, 48 + 44 * prog, MELODIC_RGB, 0.2 + 0.5 * prog);
   ctx.save();                                              // sound rings contracting toward the Saint
@@ -1620,7 +1624,7 @@ function drawMelodicResonance(ctx, f, size) {
   const sch = f.schedule || { hits: [], start: 0.12, waveSpeed: 5 };
   const o = routePoint(f.x, f.y, size), ox1 = routePoint(f.x + 1, f.y, size), oy1 = routePoint(f.x, f.y + 1, size);
   const pxX = ox1.x - o.x, pxY = oy1.y - o.y;               // pixels per grid tile, so the wave meets enemies on time
-  const now = performance.now() / 1000;
+  const now = battle.time;
   f._landed ??= {};
   const waveR = Math.max(0, (t - sch.start) * sch.waveSpeed), maxR = 4.6;
 
@@ -2111,7 +2115,7 @@ function draw() {
   let vfxDt = Math.min(0.05, (vfxNow - (draw.lastT || vfxNow)) / 1000);
   draw.lastT = vfxNow;
   if (paused || (battle.hitStopRemaining || 0) > 0) vfxDt = 0;
-  updateParticles(vfxDt * speed * (battle.slowMo ? battle.slowMo.scale : 1));
+  updateParticles(vfxDt * simSpeed() * (battle.slowMo ? battle.slowMo.scale : 1));
 
   // Impact camera: 4% punch-in toward the impact point and a mostly vertical, downward-first shake
   ctx.save();
@@ -2527,7 +2531,7 @@ function liveUI() {
   const ulthud = $('#urban-legend-trial-hud'); if (ulthud) ulthud.innerHTML = urbanLegendTrialHUDHTML(battle);
   for (const u of battle.units.filter(u => u.removed)) document.querySelector('#field [data-id="' + u.uid + '"]')?.remove();
 }
-function frame(ts){let dt=Math.min(.1,(ts-last)/1000||0);last=ts;if(screen==='lab'&&battle){if(!paused){let left=dt*speed;while(left>0){let step=Math.min(1/30,left);Game.step(battle,step);left-=step}}draw();uiClock+=dt;if(uiClock>.15){labUI();uiClock=0}requestAnimationFrame(frame);return}if(battle&&!battle.done&&!paused&&screen==='game'&&(!modal.open||modal.dataset.live==='true')){let left=dt*speed;while(left>0&&!battle.done){let step=Math.min(1/30,left);Game.step(battle,step);left-=step}if(battle.done){if(modal.open)modal.close();selected=null;save();render();window.scrollTo(0,0)}}if(battle&&screen==='game'&&run.phase==='combat'){draw();uiClock+=dt;if(uiClock>.15){liveUI();uiClock=0}}requestAnimationFrame(frame)}
+function frame(ts){let dt=Math.min(.1,(ts-last)/1000||0);last=ts;if(screen==='lab'&&battle){if(!paused){let left=dt*labSpeed;while(left>0){let step=Math.min(1/30,left);Game.step(battle,step);left-=step}}draw();uiClock+=dt;if(uiClock>.15){labUI();uiClock=0}requestAnimationFrame(frame);return}if(battle&&!battle.done&&!paused&&screen==='game'&&(!modal.open||modal.dataset.live==='true')){let left=dt*speed;while(left>0&&!battle.done){let step=Math.min(1/30,left);Game.step(battle,step);left-=step}if(battle.done){if(modal.open)modal.close();selected=null;save();render();window.scrollTo(0,0)}}if(battle&&screen==='game'&&run.phase==='combat'){draw();uiClock+=dt;if(uiClock>.15){liveUI();uiClock=0}}requestAnimationFrame(frame)}
 render();if(resetSavedRuns)toast('Your saved run was cleared for the update.');requestAnimationFrame(frame);
 
 

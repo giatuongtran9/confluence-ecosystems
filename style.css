@@ -1206,3 +1206,6 @@ body.has-dock .shell{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))
 .in-combat .board .field-card{transition:transform .25s ease-out,filter .25s ease-out}
 .in-combat .board .field-card.channeling-sword{transform:translateY(-7px);filter:drop-shadow(0 0 10px #34d399) drop-shadow(0 0 22px #10b98199) brightness(1.18)}
 .in-combat .board .field-card.channeling-melodic{transform:translateY(-7px);filter:drop-shadow(0 0 10px #818cf8) drop-shadow(0 0 22px #6366f199) brightness(1.18)}
+.lab-speed{align-items:center}
+.lab-speed span{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-right:2px}
+.lab-speed .chosen{border-color:var(--gold);color:var(--gold)}
