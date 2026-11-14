@@ -465,15 +465,15 @@ const CARDS = [
     "vn": "Màn Hình Giám Sát Toàn Cảnh",
     "genre": "Haunted",
     "rarity": "Epic",
-    "baseAtk": 14,
-    "attackInterval": 1.5,
+    "baseAtk": 0,
+    "attackInterval": 0,
     "max": 0,
     "asset": "sensor",
     "icon": "✧",
     "fav": "neighbor",
     "tags": ["relic", "urban-relic", "vision"],
     "ecosystem": "Quái Đàm · Protocol Relic",
-    "rules": "Protocol relic. Every 4s, cites the 3 fastest runners. When orthogonally adjacent to a 140-Dread Rule Enforcer on an Elite or Boss node, starts the Subject Zero trial; success consumes this relic to promote the Enforcer to The All-Seeing Overseer.",
+    "rules": "Protocol relic · support, does not attack. Every 4s, cites the 3 fastest runners. When orthogonally adjacent to a 140-Dread Rule Enforcer on an Elite or Boss node, starts the Subject Zero trial; success consumes this relic to promote the Enforcer to The All-Seeing Overseer.",
     "synergy": "Rule Enforcer (Legendary Investigator) and fast runners."
   },
   // 8. Red Hotline (Relic 3 -> Director of Curfew)
@@ -501,15 +501,15 @@ const CARDS = [
     "vn": "Cưa Xương Pháp Y",
     "genre": "Haunted",
     "rarity": "Epic",
-    "baseAtk": 26,
-    "attackInterval": 1.2,
+    "baseAtk": 0,
+    "attackInterval": 0,
     "max": 0,
     "asset": "executioner",
     "icon": "✧",
     "fav": "neighbor",
     "tags": ["relic", "urban-relic", "bleed"],
     "ecosystem": "Quái Đàm · Protocol Relic",
-    "rules": "Protocol relic. Inflicts Bleed on hit and deals 50% more damage to Elites and Harbingers. When orthogonally adjacent to a 140-Dread Rule Enforcer on an Elite or Boss node, starts the Subject Zero trial; success consumes this relic to promote the Enforcer to the Forensic Demiurge.",
+    "rules": "Protocol relic · support, does not attack. Adjacent Order allies apply 1 Bleed stack (1% max HP/s) when they hit Cited runners and deal +50% damage to Elites, Champions and Bosses. When orthogonally adjacent to a 140-Dread Rule Enforcer on an Elite or Boss node, starts the Subject Zero trial; success consumes this relic to promote the Enforcer to the Forensic Demiurge.",
     "synergy": "Rule Enforcer (Legendary Investigator) and Bleed synergies."
   },
   // 10. Liminal Keycard (Relic 5 -> Warden of the Backrooms)
@@ -519,15 +519,15 @@ const CARDS = [
     "vn": "Thẻ Từ Tầng Âm",
     "genre": "Haunted",
     "rarity": "Epic",
-    "baseAtk": 12,
-    "attackInterval": 1.8,
+    "baseAtk": 0,
+    "attackInterval": 0,
     "max": 0,
     "asset": "totem",
     "icon": "✧",
     "fav": "neighbor",
     "tags": ["relic", "urban-relic", "warp"],
     "ecosystem": "Quái Đàm · Protocol Relic",
-    "rules": "Protocol relic. Every 7s, warps the 2 most-cited runners backward 3 tiles. When orthogonally adjacent to a 140-Dread Rule Enforcer on an Elite or Boss node, starts the Subject Zero trial; success consumes this relic to promote the Enforcer to the Warden of the Backrooms.",
+    "rules": "Protocol relic · support, does not attack. Every 7s, warps the 2 most-cited runners backward 3 tiles. When orthogonally adjacent to a 140-Dread Rule Enforcer on an Elite or Boss node, starts the Subject Zero trial; success consumes this relic to promote the Enforcer to the Warden of the Backrooms.",
     "synergy": "Rule Enforcer (Legendary Investigator) and Spatial Control."
   },
 
@@ -539,7 +539,7 @@ const CARDS = [
     "vn": "Khẩu Liệt Nữ",
     "genre": "Haunted",
     "rarity": "Rare",
-    "baseAtk": 18,
+    "baseAtk": 14,
     "attackInterval": 1.1,
     "max": 0,
     "asset": "hauntedBase",
@@ -547,7 +547,7 @@ const CARDS = [
     "fav": "team",
     "tags": ["attacker", "urban-lineage", "boss-slayer"],
     "ecosystem": "Quái Đàm · Autonomous Legend",
-    "rules": "Rule: 'Do Not Say Ugly / Do Not Flee.' Prioritizes the fastest runner; if target speed > 0.30, inflicts 1 Violation Mark. Attacks against marked targets apply Bleed (5 DPS for 4s). Epic at 15 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent Slit-Mouthed Woman lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. It remains Epic until the node is cleared with zero runner leaks. Any leak fails the trial and removes this devourer from the roster.",
+    "rules": "Rule: 'Do Not Say Ugly / Do Not Flee.' Prioritizes the fastest runner; if target speed > 0.30, inflicts 1 Violation Mark. Attacks against marked targets apply Bleed (25% ATK per second for 4s). Epic at 15 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent Slit-Mouthed Woman lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. It remains Epic until the node is cleared with zero runner leaks. Any leak fails the trial and removes this devourer from the roster.",
     "synergy": "Fast runners, Bleed, and other Urban Legends."
   },
   // 12. Midnight Bus 44 (Autonomous Legend 2)
@@ -565,7 +565,7 @@ const CARDS = [
     "fav": "team",
     "tags": ["control", "urban-lineage", "banish"],
     "ecosystem": "Quái Đàm · Autonomous Legend",
-    "rules": "Rule: 'The last bus only takes rule-breakers.' Reacts only to marked, panicked, fleeing, or unnaturally fast runners; it does not attack ordinary runners. Its attack pierces 2 violators and adds 1 Violation Mark to each survivor, up to 5. Every 8s, sweeps the leading runner's 4-tile edge and warps runners with 2+ marks backward 3 tiles. Epic at 15 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent Midnight Bus 44 lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. It remains Epic until the node is cleared with zero runner leaks. Any leak fails the trial and removes this devourer from the roster.",
+    "rules": "Rule: 'The last bus only takes rule-breakers.' Reacts only to marked, panicked, fleeing, or unnaturally fast runners; with none in reach, it swipes the leading runner for 50% ATK. Its attack pierces 2 violators and adds 1 Violation Mark to each survivor, up to 5. Every 8s, sweeps the leading runner's 4-tile edge and warps runners with 2+ marks backward 3 tiles. Epic at 15 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent Midnight Bus 44 lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. It remains Epic until the node is cleared with zero runner leaks. Any leak fails the trial and removes this devourer from the roster.",
     "synergy": "Crowded tracks, Warps, and other Urban Legends."
   },
   // 13. The Midnight Caller (Autonomous Legend 3)
@@ -583,7 +583,7 @@ const CARDS = [
     "fav": "team",
     "tags": ["control", "urban-lineage", "sonic"],
     "ecosystem": "Quái Đàm · Autonomous Legend",
-    "rules": "Rule: 'Answer on the 3rd Ring.' Reacts only to marked, panicked, or fleeing runners; it does not attack ordinary runners. Every 3rd triggered attack rings across all 16 tiles, dealing full damage and slowing violators by 30% for 2s. Rings immediately when Blackout begins. Epic at 15 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent Midnight Caller lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. It remains Epic until the node is cleared with zero runner leaks. Any leak fails the trial and removes this devourer from the roster.",
+    "rules": "Rule: 'Answer on the 3rd Ring.' Reacts only to marked, panicked, or fleeing runners; with none in reach, it swipes the leading runner for 50% ATK. Every 3rd triggered attack rings across all 16 tiles, dealing full damage and slowing violators by 30% for 2s. Rings immediately when Blackout begins. Epic at 15 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent Midnight Caller lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. It remains Epic until the node is cleared with zero runner leaks. Any leak fails the trial and removes this devourer from the roster.",
     "synergy": "16 perimeter tiles, Blackout triggers, and other Urban Legends."
   },
   // 14. Morgue Mirror (Autonomous Legend 4)
@@ -601,7 +601,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["support", "urban-lineage", "mirror"],
     "ecosystem": "Quái Đàm · Autonomous Legend",
-    "rules": "Rule: 'Never Stare into the Reflection.' Reacts to marked, panicked, frozen, or retreating runners and those approaching its reflective angle; it ignores ordinary runners. Reflects 25% of adjacent allies' ATK onto the violating runner. When Blackout triggers, summons 1 temporary Mirror Reflection token. Epic at 15 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent Morgue Mirror lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. It remains Epic until the node is cleared with zero runner leaks. Any leak fails the trial and removes this devourer from the roster.",
+    "rules": "Rule: 'Never Stare into the Reflection.' Reacts to marked, panicked, frozen, or retreating runners and those approaching its reflective angle; with none in reach, it swipes the leading runner for 50% ATK. Reflects 25% of adjacent allies' ATK onto the violating runner. When Blackout triggers, summons 1 temporary Mirror Reflection token. Epic at 15 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent Morgue Mirror lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. It remains Epic until the node is cleared with zero runner leaks. Any leak fails the trial and removes this devourer from the roster.",
     "synergy": "High-ATK neighbors, Blackouts, and other Urban Legends."
   },
   // 15. Window Mannequin (Autonomous Legend 5)
@@ -619,7 +619,7 @@ const CARDS = [
     "fav": "team",
     "tags": ["attacker", "urban-lineage"],
     "ecosystem": "Quái Đàm · Autonomous Legend",
-    "rules": "Rule: 'It Only Moves When Unseen.' Reacts when a runner breaks taboo by running fast, panicking, fleeing, or carrying a mark, or when an ally is inactive; it ignores ordinary runners. During Blackout (or while any ally is inactive), gains +150% attack speed and +100% critical damage. Epic at 15 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent Window Mannequin lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. It remains Epic until the node is cleared with zero runner leaks. Any leak fails the trial and removes this devourer from the roster.",
+    "rules": "Rule: 'It Only Moves When Unseen.' Reacts when a runner breaks taboo by running fast, panicking, fleeing, or carrying a mark, or when an ally is inactive; with none in reach, it swipes the leading runner for 50% ATK. During Blackout (or while any ally is inactive), gains +150% attack speed and +100% critical damage. Epic at 15 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent Window Mannequin lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. It remains Epic until the node is cleared with zero runner leaks. Any leak fails the trial and removes this devourer from the roster.",
     "synergy": "Blackouts, Night Investigator, and other Urban Legends."
   },
 
@@ -660,7 +660,7 @@ const CARDS = [
     "fav": "team",
     "tags": ["attacker", "urban-lineage", "retribution"],
     "ecosystem": "Quái Đàm · Do Not Look Back",
-    "rules": "Rule: 'Do Not Look Back.' Reactive trap · does not attack normally. Slashes runners who turn back, retreat, or get warped/slowed, dealing 18 true damage, applying bleed, and leaving a blood pool. In Blackout, triggers against turning or crowding runners, dealing double shadow damage. Epic at 15 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent Red Raincoat Specter lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. It remains Epic until the node is cleared with zero runner leaks. Any leak fails the trial and removes this devourer from the roster.",
+    "rules": "Rule: 'Do Not Look Back.' Reactive trap; with no taboo-breaker in reach, swipes the leading runner for 50% ATK. Slashes runners who turn back, retreat, or get warped/slowed, dealing 18 true damage, applying bleed, and leaving a blood pool. In Blackout, triggers against turning or crowding runners, dealing double shadow damage. Epic at 15 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent Red Raincoat Specter lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. It remains Epic until the node is cleared with zero runner leaks. Any leak fails the trial and removes this devourer from the roster.",
     "synergy": "Control cards, Midnight Bus 44, The Midnight Caller, and Void Eye."
   },
   // 18. The 13th Step
@@ -678,7 +678,7 @@ const CARDS = [
     "fav": "neighbor",
     "tags": ["trap", "urban-lineage", "vertigo"],
     "ecosystem": "Quái Đàm · Infinite Staircase",
-    "rules": "Rule: 'Never Count the Steps.' Reactive trap · does not attack normally. Lays curse marks on corners and triggers every 13th step, dealing 35 damage, causing stumble, and warping repeat violators. During Blackout, triggers every 4th step, banishing victims into the Penrose Trapdoor. Epic at 15 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent 13th Step lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. It remains Epic until the node is cleared with zero runner leaks. Any leak fails the trial and removes this devourer from the roster.",
+    "rules": "Rule: 'Never Count the Steps.' Reactive trap · does not attack normally. Lays curse marks on corners and triggers every 13th step, dealing 150% ATK (rearms every 1.6s), causing stumble, and warping repeat violators. During Blackout, triggers every 4th step, banishing victims into the Penrose Trapdoor. Epic at 15 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent 13th Step lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. It remains Epic until the node is cleared with zero runner leaks. Any leak fails the trial and removes this devourer from the roster.",
     "synergy": "Night Investigator, Slit-Mouthed Woman, and corner track tiles."
   },
 
@@ -974,7 +974,7 @@ const CARDS = [
     "fav": "team",
     "icon": "✧",
     "ecosystem": "Predation · swarm haste",
-    "rules": "3-Target Strike: Hits up to 3 leading runners for 70% ATK each. Matriarch's Haste: Passively grants adjacent allies +35% attack speed. Prey Mark: Her attacks mark targets for 3s (+20% damage taken from all Bloodline attacks) and apply 1 Bleed stack (1% enemy max HP/s for 1s).",
+    "rules": "3-Target Strike: Hits up to 3 leading runners for 50% ATK each. Matriarch's Haste: Passively grants adjacent allies +25% attack speed. Prey Mark: Her attacks mark targets for 3s (+20% damage taken from all Bloodline attacks) and apply 1 Bleed stack (1% enemy max HP/s for 1s).",
     "synergy": "Primordial Blood Cub, all five Bloodline fodders, and Bleed support."
   },
 {
@@ -1054,7 +1054,7 @@ const CARDS = [
     "attacker"
   ],
   "ecosystem": "Bloodline · Vermilion Phoenix prey",
-  "rules": "Attacks runners for 100% ATK. Eligible prey for the Primordial Blood Cub; its first meal imprints the Vermilion Phoenix lineage. Same-species neighbors can breed a temporary Flame Toad copy (10%/s).",
+  "rules": "Attacks runners for 100% ATK and applies 1 Burn stack (1% max HP for 1s). Eligible prey for the Primordial Blood Cub; its first meal imprints the Vermilion Phoenix lineage. Same-species neighbors can breed a temporary Flame Toad copy (10%/s).",
   "synergy": "Primordial Blood Cub and other Flame Toads."
 },
 {
@@ -1194,7 +1194,7 @@ const FORMS = [
     "vn": "Thần Thám Huyền Bí",
     "genre": "Haunted",
     "rarity": "Rare",
-    "baseAtk": 24,
+    "baseAtk": 20,
     "attackInterval": 1.4,
     "max": 0,
     "asset": "hauntedInvestigator",
@@ -1219,7 +1219,7 @@ const FORMS = [
     "fav": "neighbor",
     "tags": ["investigator", "urban-realm", "aoe"],
     "evolvedFrom": "investigator",
-    "rules": "Anomaly rank · 70 Dread. Attacks cite the target, then hit 3 cited runners for double damage. Records +1 Dread per team Citation. Advances to Rule Enforcer at 140 Dread.",
+    "rules": "Anomaly rank · 70 Dread. Attacks cite the target, then hit 3 cited runners for 60% ATK. Records +1 Dread per team Citation. Advances to Rule Enforcer at 140 Dread.",
     "synergy": "All Urban Legends and Rule Violations."
   },
   {
@@ -1260,7 +1260,7 @@ const FORMS = [
     "taboo-master"
   ],
   "evolvedFrom": "investigator",
-  "rules": "Order Mythic · Rule 0. Runners spawn with 1 Citation. Attacks hit the 4 leading runners for true damage, 1.75× against cited runners, and cite them. Once per battle, traps a leaking runner in Room 404. Every 10th attack channels 1.2s: Rule Zero Decree — +2 Citations on every runner, then 150% ATK true damage to each; pushes the gauge −40.",
+  "rules": "Order Mythic · Rule 0. Runners spawn with 1 Citation. Attacks hit the 4 leading runners for true damage, 1.1× against cited runners, and cite them. Once per battle, traps a leaking runner in Room 404. Every 10th attack channels 1.2s: Rule Zero Decree — +2 Citations on every runner, then 150% ATK true damage to each; pushes the gauge −40.",
   "synergy": "Cursed Noticeboard and Rule Resonance."
 },
   // 2. Panopticon Monitor -> The All-Seeing Overseer
@@ -1278,7 +1278,7 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "urban-apex", "panopticon"],
     "evolvedFrom": "investigator",
-    "rules": "Order Mythic · No Blind Spots. Attacks hit every runner on all 16 tiles for 40% ATK; speeding or enraged runners take full damage, lose their boosts and are frozen for 2s. Every 10th attack channels 1.2s: Panopticon Lockdown — freezes all runners for 1.5s and deals 120% ATK to each.",
+    "rules": "Order Mythic · No Blind Spots. Attacks hit every runner on all 16 tiles for 30% ATK; speeding or enraged runners take full damage, lose their boosts and are frozen for 2s. Every 10th attack channels 1.2s: Panopticon Lockdown — freezes all runners for 1.5s and deals 120% ATK to each.",
     "synergy": "Panopticon Monitor and Rule Resonance."
   },
   // 3. Red Hotline -> Director of Curfew
@@ -1373,7 +1373,7 @@ const FORMS = [
     "boss-slayer"
   ],
   "evolvedFrom": "kuchisake",
-  "rules": "'Am I Pretty?' Reacts to fast, marked, panicked, or retreating runners and ignores ordinary runners. Strikes against marked violators critically hit for 3.5× damage and apply 35 DPS Bleed. Instantly executes ordinary runners below 30% HP. Every 6th attack shreds 15% current HP from Bosses and Harbingers. Triggers Rule Resonance when adjacent to another Urban Legend. Harbingers are also immune to execution.",
+  "rules": "'Am I Pretty?' Reacts to fast, marked, panicked, or retreating runners and otherwise swipes the leading runner for 50% ATK. Strikes against marked violators critically hit for 3.5× damage and apply Bleed (20% ATK per second for 4s). Instantly executes ordinary runners below 30% HP. Every 6th attack shreds 15% current HP from Bosses and Harbingers. Triggers Rule Resonance when adjacent to another Urban Legend. Harbingers are also immune to execution.",
   "synergy": "Bosses, Harbingers, and Rule Resonance."
 },
   // Lineage 2: Midnight Bus 44
@@ -1412,7 +1412,7 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "urban-apex", "abduction"],
     "evolvedFrom": "nightBus",
-    "rules": "Reacts only to marked, panicked, fleeing, or unnaturally fast runners; it does not attack ordinary runners. Its attack pierces 4 violators and adds 1 Violation Mark to surviving targets. Every 8s, sweeps the leading runner's 4-tile edge, warping runners with 2+ marks back 5 tiles. Every 6s, applies 140 DPS Bleed for 3s (modified by buff duration) to the 2 leading runners and warps them back 5 tiles. Triggers Relic Resonance beside a relic.",
+    "rules": "Reacts only to marked, panicked, fleeing, or unnaturally fast runners; with none in reach, swipes the leading runner for 50% ATK. Its attack pierces 4 violators and adds 1 Violation Mark to surviving targets. Every 8s, sweeps the leading runner's 4-tile edge, warping runners with 2+ marks back 5 tiles. Every 6s, applies Bleed (60% ATK per second) for 3s (modified by buff duration) to the 2 leading runners and warps them back 5 tiles. Triggers Relic Resonance beside a relic.",
     "synergy": "Track control, Warps, and Rule Resonance."
   },
   // Lineage 3: The Midnight Payphone
@@ -1447,7 +1447,7 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "urban-apex", "infinite-redial"],
     "evolvedFrom": "payphone",
-    "rules": "'Infinite Redial.' Reacts only to taboo-breaking runners; it does not attack ordinary runners. Every 2nd triggered attack rings all 16 perimeter tiles for 150% ATK damage, stunning marked runners for 1.2s and extending active Blackout by 1.5s. Triggers Rule Resonance when adjacent to another Urban Legend.",
+    "rules": "'Infinite Redial.' Reacts only to taboo-breaking runners; with none in reach, swipes the leading runner for 50% ATK. Every 2nd triggered attack rings all 16 perimeter tiles for 180% ATK damage, stunning marked runners for 1.2s and extending active Blackout by 1.5s. Triggers Rule Resonance when adjacent to another Urban Legend.",
     "synergy": "16 tiles, Blackout extension, and Rule Resonance."
   },
   // Lineage 4: Morgue Mirror
@@ -1474,7 +1474,7 @@ const FORMS = [
     "vn": "Nữ Hoàng Trong Gương",
     "genre": "Haunted",
     "rarity": "Mythic",
-    "baseAtk": 150,
+    "baseAtk": 170,
     "attackInterval": 0.9,
     "max": 0,
     "asset": "lantern",
@@ -1482,7 +1482,7 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "urban-apex", "mirror-realm"],
     "evolvedFrom": "morgueMirror",
-    "rules": "'Glass Domain.' Reacts to taboo-breaking runners and those approaching its reflective angle; it ignores ordinary runners. Permanently adds 100% of the highest ally raw ATK on the grid to her own. During Blackout, fills available adjacent orthogonal slots with 100%-ATK Mirror Clones for 4s × buffDuration. Triggers Rule Resonance when adjacent to another Urban Legend.",
+    "rules": "'Glass Domain.' Reacts to taboo-breaking runners and those approaching its reflective angle; every runner counts as staring into the glass; each strike reflects onto 2 more runners at full damage. Permanently adds 100% of the highest ally raw ATK on the grid to her own. During Blackout, fills available adjacent orthogonal slots with 100%-ATK Mirror Clones for 6s × buffDuration. Outside Blackout, reflects 2 clones every 12s. Triggers Rule Resonance when adjacent to another Urban Legend.",
     "synergy": "All allies, Mirror Clones, and Rule Resonance."
   },
   // Lineage 5: Window Mannequin
@@ -1521,7 +1521,7 @@ const FORMS = [
     "berserk"
   ],
   "evolvedFrom": "mannequin",
-  "rules": "The apex manifestation of taboo. Reacts only to taboo-breaking runners; it does not attack ordinary runners. During Blackout, attacks at 3.0× speed with 100% critical chance. Once per battle, if an ordinary runner reaches tile 15, instantly ambushes and executes it before it can leak. Triggers Rule Resonance when adjacent to another Urban Legend. Bosses and Harbingers cannot be executed.",
+  "rules": "The apex manifestation of taboo. Reacts only to taboo-breaking runners; with none in reach, it swipes the leading runner for 50% ATK. During Blackout, attacks at 3.0× speed with 100% critical chance. Once per battle, if an ordinary runner reaches tile 15, instantly ambushes and executes it before it can leak. Triggers Rule Resonance when adjacent to another Urban Legend. Bosses and Harbingers cannot be executed.",
   "synergy": "Blackouts and Rule Resonance."
 },
   // Lineage 6: Red Raincoat Specter
@@ -1539,7 +1539,7 @@ const FORMS = [
     "fav": "team",
     "tags": ["urban-form", "bleed", "retribution"],
     "evolvedFrom": "redRaincoat",
-    "rules": "Reactive blood-pool trap: slashes runners who retreat, turn back, warp, or are slowed. Remains Epic after 45 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent Red Raincoat Specter lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. Mythic evolution requires clearing the node with zero runner leaks; any leak fails and removes this devourer from the roster.",
+    "rules": "Reactive blood-pool trap: slashes runners who retreat, turn back, warp, or are slowed; otherwise swipes the leading runner for 50% ATK. Remains Epic after 45 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent Red Raincoat Specter lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. Mythic evolution requires clearing the node with zero runner leaks; any leak fails and removes this devourer from the roster.",
     "synergy": "Bleed, Retribution, and Harbinger of the Crimson Rain."
   },
   {
@@ -1556,7 +1556,7 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "urban-apex", "crimson-deluge"],
     "evolvedFrom": "redRaincoat",
-    "rules": "'The Crimson Deluge.' Reactive slashes critically hit for 3.0× damage. During Blackout, sudden turns or running within 2 tiles of another runner triggers lethal dismemberment; fleeing or panicked victims take triple damage and unleash a crimson mist slowing nearby runners by 60%. Triggers Rule Resonance when adjacent to another Urban Legend.",
+    "rules": "'The Crimson Deluge.' Reactive slashes critically hit for 3.0× damage. During Blackout, sudden turns or running within 2 tiles of another runner triggers lethal dismemberment; fleeing or panicked victims take 2.5× damage and unleash a crimson mist slowing nearby runners by 60%. Triggers Rule Resonance when adjacent to another Urban Legend.",
     "synergy": "Bleed, Panic, and Rule Resonance."
   },
   // Lineage 7: The 13th Step
@@ -1574,7 +1574,7 @@ const FORMS = [
     "fav": "neighbor",
     "tags": ["urban-form", "trap", "vertigo"],
     "evolvedFrom": "stair13",
-    "rules": "Every 4 steps during Blackout, banishes repeat violators into its trapdoor. Remains Epic after 45 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent 13th Step lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. Mythic evolution requires clearing the node with zero runner leaks; any leak fails and removes this devourer from the roster.",
+    "rules": "Every 4 steps during Blackout, banishes repeat violators into its trapdoor. Corner and step traps deal 200% ATK and rearm every 1.2s. Remains Epic after 45 Violations. At 80 Violations, an Elite/Boss Folklore Merger trial begins if an adjacent 13th Step lineage Legend has 45+ Violations. That prey is permanently consumed at trial start; this Legend inherits 20% of its current ATK. Mythic evolution requires clearing the node with zero runner leaks; any leak fails and removes this devourer from the roster.",
     "synergy": "Traps, Vertigo, and The Penrose Labyrinth."
   },
   {
@@ -1742,7 +1742,7 @@ const FORMS = [
     "name": "Landscape Sage",
     "vn": "Họa Tiên",
     "genre": "Cultivation",
-    "baseAtk": 110,
+    "baseAtk": 140,
     "attackInterval": 0.8,
     "rarity": "Mythic",
     "asset": "lantern",
@@ -1751,7 +1751,7 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "banish"],
     "evolvedFrom": "practitioner",
-    "rules": "Base 110 ATK. Attacks deal 100% ATK and leave an ink puddle on the track slowing passing runners 25% for 2s. Every 10th attack, channels for 1.2s to summon Mountain-River Ink Dragon: sweeps counter-clockwise across the perimeter dealing 200% ATK, stuns all runners for 2s, and warps Boss/Elite/Champion runners backward 3 tiles. Gains +2 permanent ATK per 30 post-ascension Qi.",
+    "rules": "Base 140 ATK. Attacks deal 100% ATK and leave an ink puddle on the track slowing passing runners 25% for 2s. Every 10th attack, channels for 1.2s to summon Mountain-River Ink Dragon: sweeps counter-clockwise across the perimeter dealing 200% ATK, stuns all runners for 2s, and warps Boss/Elite/Champion runners backward 3 tiles. Gains +2 permanent ATK per 30 post-ascension Qi.",
     "synergy": "Mountain-River Scroll, Relic Resonance."
   },
   // 6. Soul-Reaping Heavenly Demon
@@ -1769,7 +1769,7 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "demonic", "chain"],
     "evolvedFrom": "practitioner",
-    "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks fire a volley hitting up to 5 targets for 50% ATK each. Every enemy death adds +1 permanent Soul to the banner. Every 10th attack, channels for 1.2s to detonate Ten-Thousand Soul Banner: deals (150% + floor(Souls / 2)%) ATK to all enemies. Triggers Relic Resonance when adjacent to another Cultivation relic (+20% Mythic damage).",
+    "rules": "Devours adjacent Lotus Blossoms for +15 Qi; every 30 Qi gained after ascension grants +2 permanent ATK. Attacks fire a volley hitting up to 5 targets for 60% ATK each. Every enemy death adds +1 permanent Soul to the banner. Every 10th attack, channels for 1.2s to detonate Ten-Thousand Soul Banner: deals (150% + floor(Souls / 2)%) ATK to all enemies. Triggers Relic Resonance when adjacent to another Cultivation relic (+20% Mythic damage).",
     "synergy": "Ten-Thousand Soul Banner, Relic Resonance."
   },
   // 7. Blood-Fiend Sword Master
@@ -1787,7 +1787,7 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "demonic", "cleave"],
     "evolvedFrom": "practitioner",
-    "rules": "Base 150 ATK. Attacks deal 100% ATK and apply 1 bleed stack (1% target max HP/sec for 3s). Every 10th attack, channels for 1.2s to trigger Boiling Blood Domain: deals 150% ATK to all enemies, detonates existing bleed stacks for instant true damage, and applies 20 bleed stacks (1% max HP/sec for 20s). Gains +2 permanent ATK per 30 post-ascension Qi.",
+    "rules": "Base 150 ATK. Attacks deal 100% ATK and apply 1 bleed stack (1% target max HP for 1s). Every 10th attack, channels for 1.2s to trigger Boiling Blood Domain: deals 150% ATK to all enemies, detonates existing bleed stacks for instant true damage, and applies 1 bleed stack lasting 3s (1% max HP/sec). Gains +2 permanent ATK per 30 post-ascension Qi.",
     "synergy": "Blood-Drinking Demon Blade, Relic Resonance."
   },
   // 4 Other Earned Forms
@@ -1951,7 +1951,7 @@ const FORMS = [
   "vn": "White Tiger God of Slaughter",
   "genre": "Bloodline",
   "rarity": "Mythic",
-  "baseAtk": 130,
+  "baseAtk": 150,
   "attackInterval": 0.9,
   "max": 0,
   "asset": "atlasCaster",
@@ -1964,7 +1964,7 @@ const FORMS = [
   "evolvedFrom": "cub",
   "lineage": "tiger",
   "lineageTier": 4,
-  "rules": "Normal attack deals 100% ATK damage and applies 1 Bleed stack (1% enemy max HP for 1s). Gains +25% extra crit chance (base is now 75%). Every 10th attack, channels for 1.2s to roar and inflict Terror board-wide: all enemies run backward for 3s, then are slowed by 45% for 3s.",
+  "rules": "Normal attack deals 100% ATK damage and applies 1 Bleed stack (1% enemy max HP for 1s). Gains +25% extra crit chance (base is now 75%). Every 10th attack, channels for 1.2s to roar and inflict Terror board-wide: all enemies run backward for 2s, then are slowed by 45% for 3s.",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
@@ -2140,7 +2140,7 @@ const FORMS = [
   "evolvedFrom": "cub",
   "lineage": "phoenix",
   "lineageTier": 4,
-  "rules": "Normal attack deals 100% ATK damage and applies 1 Burn stack (1% enemy max HP for 1s), spreading 1 Burn stack to 3 runners behind. Burning deaths spread stacks behind. Every 10th attack, channels for 1.2s to release Rebirth Inferno: all 16 tiles burn for 5s, and runners on them take 1 Burn stack every second. Once per run, if player health drops to 0, revives with 15 HP.",
+  "rules": "Normal attack hits 2 runners for 100% ATK and applies 1 Burn stack (1% enemy max HP for 1s), spreading 1 Burn stack to 3 runners behind. Burning deaths spread stacks behind. Every 10th attack, channels for 1.2s to release Rebirth Inferno: all 16 tiles burn for 5s, and runners on them take 1 Burn stack every second. Once per run, if player health drops to 0, revives with 15 HP.",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
@@ -2184,7 +2184,7 @@ const FORMS = [
   "evolvedFrom": "cub",
   "lineage": "monkey",
   "lineageTier": 2,
-  "rules": "Normal attack deals 100% ATK damage. Passively gains +20% ATK (base 45 → 54 ATK). Every 4th attack summons a clone with 75% ATK into an empty slot (clones perform normal attacks only).",
+  "rules": "Normal attack deals 100% ATK damage. Passively gains +20% ATK (base 45 → 54 ATK). Every 4th attack summons a 6s clone with 75% ATK into an empty slot (max 2 alive) (clones perform normal attacks only).",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
@@ -2206,7 +2206,7 @@ const FORMS = [
   "evolvedFrom": "cub",
   "lineage": "monkey",
   "lineageTier": 3,
-  "rules": "Normal attack deals 100% ATK damage and cleaves up to 3 runners behind. Passively gains +30% ATK (base 85 → 111 ATK). Every 4th attack summons a clone with 75% ATK into an empty slot (clones also cleave 3 runners behind).",
+  "rules": "Normal attack deals 100% ATK damage and cleaves up to 2 runners behind for 50% ATK. Passively gains +30% ATK (base 85 → 111 ATK). Every 4th attack summons a 6s clone with 50% ATK into an empty slot (max 2 alive) (clones perform normal attacks only).",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
@@ -2228,31 +2228,13 @@ const FORMS = [
   "evolvedFrom": "cub",
   "lineage": "monkey",
   "lineageTier": 4,
-  "rules": "Normal attack deals 100% ATK damage and cleaves up to 3 runners behind. Passively gains +30% ATK (base 130 → 169 ATK). Every 4th attack summons a clone with 75% ATK into an empty slot. Every 10th attack, channels for 1.2s: strikes staff down the track quadrant with the highest enemy density for 200% ATK damage board-wide in that quadrant.",
+  "rules": "Normal attack deals 100% ATK damage and cleaves up to 3 runners behind. Passively gains +30% ATK (base 130 → 169 ATK). Every 4th attack summons a 6s clone with 75% ATK into an empty slot (max 2 alive; clones perform normal attacks only). Every 10th attack, channels for 1.2s: strikes staff down the track quadrant with the highest enemy density for 200% ATK damage board-wide in that quadrant.",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 }
 ];
 
 // --- TOKENS (1 CULTIVATION BLOSSOM + 5 EXISTING) ---
 const TOKENS = [
-  {
-    "id": "dossier",
-    "name": "Incident Dossier",
-    "vn": "Hồ Sơ Sự Cố",
-    "genre": "Haunted",
-    "rarity": "Normal",
-    "baseAtk": 0,
-    "attackInterval": 0,
-    "asset": "hauntedInvestigator",
-    "tags": ["token", "dossier", "consumable"],
-    "token": true,
-    "fav": "neighbor",
-    "species": "securityCam",
-    "ecosystem": "Quái Đàm · Incident Evidence",
-    "rules": "Dropped on the grid by Security Monitor or Emergency Broadcast when rule violations occur. An adjacent Forensic Coroner examines it to grant +3 permanent ATK to an ally and +10 Dread to the Investigator. An adjacent Decoder converts it into a team haste/crit Survival Manual.",
-    "synergy": "Security Monitor, Forensic Coroner, Black-Box Cryptographer, and Night Investigator."
-  },
-
   {
     "id": "mirrorClone",
     "name": "Mirror Reflection",
@@ -2372,8 +2354,8 @@ CARDS.push(...[
     "name": "Magnetic Crane",
     "genre": "PostApoc",
     "rarity": "Normal",
-    "baseAtk": 8,
-    "attackInterval": 1.6,
+    "baseAtk": 0,
+    "attackInterval": 0,
     "max": 0,
     "icon": "⚙",
     "fav": "neighbor",
@@ -2381,7 +2363,7 @@ CARDS.push(...[
       "mechanical"
     ],
     "ecosystem": "Scrapwork · salvage and forging",
-    "rules": "Every 4s, moves loose scrap from anywhere on the grid into free slots adjacent to a Smelter. Never displaces a card or occupies a Titan reservation.",
+    "rules": "Support · does not attack. Every 4s, moves loose scrap from anywhere on the grid into free slots adjacent to a Smelter. Never displaces a card or occupies a Titan reservation.",
     "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
     "scrapworkAsset": "magneticCrane"
   },
@@ -2390,7 +2372,7 @@ CARDS.push(...[
     "name": "Hydraulic Riveter",
     "genre": "PostApoc",
     "rarity": "Normal",
-    "baseAtk": 14,
+    "baseAtk": 7,
     "attackInterval": 2.0,
     "max": 0,
     "icon": "⚙",
@@ -2485,7 +2467,7 @@ FORMS.push(...[
     "name": "Berserker Greatsword Colossus",
     "genre": "PostApoc",
     "rarity": "Mythic",
-    "baseAtk": 280,
+    "baseAtk": 320,
     "attackInterval": 1.5,
     "max": 0,
     "icon": "⚙",
@@ -2494,7 +2476,7 @@ FORMS.push(...[
       "mechanical"
     ],
     "ecosystem": "Scrapwork · salvage and forging",
-    "rules": "Two-slot Titan forged from 2 Colossal Scrap Blades (base 180 + 50 + 50 ATK). Normal attack hits all enemies in the tile of the highest-HP runner. Every 10th attack, channels for 1.2s, then cleaves the densest track segment for 200% ATK damage. Continues earning Alloy.",
+    "rules": "Two-slot Titan forged from 2 Colossal Scrap Blades (base 220 + 50 + 50 ATK). Normal attack hits all enemies in the tile of the highest-HP runner and the tile behind it. Every 10th attack, channels for 1.2s, then cleaves the densest track segment for 200% ATK damage. Continues earning Alloy.",
     "synergy": "Scavenged Frame, Junk Scavenger, Magnetic Crane, Hydraulic Riveter, Junkyard Smelter, and Titan Reactor Core.",
     "scrapworkAsset": "berserkerColossus",
     "evolvedFrom": "scrapFrame"
@@ -2669,7 +2651,7 @@ CARDS.push({
   "name": "Aeromancer",
   "genre": "Arcane",
   "rarity": "Rare",
-  "baseAtk": 22,
+  "baseAtk": 20,
   "attackInterval": 1.3,
   "max": 10,
   "icon": "✦",
@@ -2678,7 +2660,7 @@ CARDS.push({
     "elemental"
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
-  "rules": "Hits 2 targets. Each attack charges 1 tick and gains +Math.floor(mastery / 5)% permanent attack speed. At 10 ticks: hits 4 targets for 100% ATK damage, grants adjacent allies +20% haste for 3s, grants +1% Mastery and +1 permanent ATK. Supplies Wind Essence.",
+  "rules": "Hits 2 targets. Each attack charges 1 tick and gains +Math.floor(mastery / 5)% permanent attack speed (max +30%). At 10 ticks: hits 4 targets for 100% ATK damage, grants adjacent allies +20% haste for 3s, grants +1% Mastery and +1 permanent ATK. Supplies Wind Essence.",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "aeroMage",
   "element": "wind"
@@ -2799,7 +2781,7 @@ FORMS.push({
   "name": "Elemental Archmage",
   "genre": "Arcane",
   "rarity": "Legendary",
-  "baseAtk": 90,
+  "baseAtk": 120,
   "attackInterval": 1.4,
   "max": 10,
   "icon": "✦",
@@ -2827,7 +2809,7 @@ FORMS.push({
     "elemental"
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
-  "rules": "Normal attack creates a 2s molten fissure on the hit tile, inflicting 1 Burn stack per second on enemies running across it. Every 10th attack: channels 1.2s to deal 150% ATK across all 16 tiles, inflict 1 Burn stack, and create a 16-tile Molten Fissure for 5s (1 burn/s). Reaction (Earth + Fire): Completely shreds target armor (100% strip). Patronage: When this Archon is deployed, Pyromancer and Geomancer max-gauge spells gain both elemental effects (Pyromancer inflicts 1 Burn stack and pierces 20% armor; Geomancer pierces 20% armor and inflicts 1 Burn stack).",
+  "rules": "Normal attack creates a 3s molten fissure on the hit tile, inflicting 1 Burn stack per second on enemies running across it. Every 10th attack: channels 1.2s to deal 150% ATK across all 16 tiles, inflict 1 Burn stack, and create a 16-tile Molten Fissure for 5s (1 burn/s). Reaction (Earth + Fire): Completely shreds target armor (100% strip). Patronage: When this Archon is deployed, Pyromancer and Geomancer max-gauge spells gain both elemental effects (Pyromancer inflicts 1 Burn stack and pierces 20% armor; Geomancer pierces 20% armor and inflicts 1 Burn stack).",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "magmaLord",
   "evolvedFrom": "elementalApprentice"
@@ -2846,7 +2828,7 @@ FORMS.push({
     "elemental"
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
-  "rules": "Normal attack hits 1 quadrant (4 tiles) with 20% chance of 2-tile warp back. Every 10th attack: channels 1.2s to summon a counter-clockwise tornado across all 16 tiles dealing 150% ATK, pushing enemies 3 tiles back, and inflicting 1 Burn stack. Reaction (Fire + Wind): Spreads all target Burn stacks to up to 2 runners behind it. Patronage: When this Archon is deployed, Pyromancer and Aeromancer max-gauge spells gain both elemental effects (Pyromancer inflicts 1 Burn stack, hits 4 targets, and grants adjacent allies +20% haste for 3s; Aeromancer hits 4 targets, grants adjacent allies +20% haste for 3s, and inflicts 1 Burn stack).",
+  "rules": "Normal attack hits every runner in 1 quadrant (4 tiles) for 45% ATK with 20% chance of 2-tile warp back. Every 10th attack: channels 1.2s to summon a counter-clockwise tornado across all 16 tiles dealing 150% ATK, pushing enemies 3 tiles back, and inflicting 1 Burn stack. Reaction (Fire + Wind): Spreads all target Burn stacks to up to 2 runners behind it. Patronage: When this Archon is deployed, Pyromancer and Aeromancer max-gauge spells gain both elemental effects (Pyromancer inflicts 1 Burn stack, hits 4 targets, and grants adjacent allies +20% haste for 3s; Aeromancer hits 4 targets, grants adjacent allies +20% haste for 3s, and inflicts 1 Burn stack).",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "tempestArchon",
   "evolvedFrom": "elementalApprentice"
@@ -2865,7 +2847,7 @@ FORMS.push({
     "elemental"
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
-  "rules": "Normal attack hits 3 enemies; if Drenched, bursts 10% missing HP (once per enemy). Every 10th attack: channels 1.2s to coat all 16 tiles in Vapor Mist for 5s (5% max HP/s true damage). Reaction (Fire + Water): Deals 15% missing HP true damage. Patronage: When this Archon is deployed, Pyromancer and Hydromancer max-gauge spells gain both elemental effects (Pyromancer applies Drenched [30% slow for 3s] and inflicts 1 Burn stack; Hydromancer inflicts 1 Burn stack and applies Drenched [30% slow for 3s]).",
+  "rules": "Normal attack hits 3 enemies; if Drenched, bursts 6% missing HP (once per enemy). Every 10th attack: channels 1.2s to coat all 16 tiles in Vapor Mist for 5s (2% max HP/s true damage). Reaction (Fire + Water): Deals 15% missing HP true damage. Patronage: When this Archon is deployed, Pyromancer and Hydromancer max-gauge spells gain both elemental effects (Pyromancer applies Drenched [30% slow for 3s] and inflicts 1 Burn stack; Hydromancer inflicts 1 Burn stack and applies Drenched [30% slow for 3s]).",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "steamSovereign",
   "evolvedFrom": "elementalApprentice"
@@ -2875,8 +2857,8 @@ FORMS.push({
   "name": "Quagmire Colossus",
   "genre": "Arcane",
   "rarity": "Mythic",
-  "baseAtk": 150,
-  "attackInterval": 1.5,
+  "baseAtk": 170,
+  "attackInterval": 1.2,
   "max": 0,
   "icon": "✦",
   "fav": "neighbor",
@@ -2884,7 +2866,7 @@ FORMS.push({
     "elemental"
   ],
   "ecosystem": "Arcane Loom · elemental synthesis",
-  "rules": "Normal attack deals 100% ATK. Its first attack each battle converts one random 4-tile quadrant into Primordial Swamp for the rest of the battle (2% max HP/s + 45% slow). Every 10th attack: channels 1.2s to stun for 2s and drench for 4s across all 16 tiles. Reaction (Earth + Water): Target is Drenched (30% slow) and has armor reduced by 20% for 3s. Patronage: When this Archon is deployed, Hydromancer and Geomancer max-gauge spells gain both elemental effects (Hydromancer pierces 20% armor and applies Drenched [30% slow for 3s]; Geomancer applies Drenched [30% slow for 3s] and pierces 20% armor).",
+  "rules": "Normal attack hits 2 runners for 100% ATK. Its first attack each battle converts one random 4-tile quadrant into Primordial Swamp for the rest of the battle (2% max HP/s + 45% slow). Every 10th attack: channels 1.2s to stun for 2s and drench for 4s across all 16 tiles. Reaction (Earth + Water): Target is Drenched (30% slow) and has armor reduced by 20% for 3s. Patronage: When this Archon is deployed, Hydromancer and Geomancer max-gauge spells gain both elemental effects (Hydromancer pierces 20% armor and applies Drenched [30% slow for 3s]; Geomancer applies Drenched [30% slow for 3s] and pierces 20% armor).",
   "synergy": "Adjacent primary spells supply essence to Apprentices. Combine two different essences for one permanent pair point. Prism refracts gauge charge; Battery stores overflow. At 80 pair points, Astral Loom starts an Elite/Boss trial: prove the chosen reaction on a priority target, then clear with zero leaks.",
   "arcaneAsset": "quagmireColossus",
   "evolvedFrom": "elementalApprentice"
@@ -2894,7 +2876,7 @@ FORMS.push({
   "name": "Glacial Typhoon",
   "genre": "Arcane",
   "rarity": "Mythic",
-  "baseAtk": 140,
+  "baseAtk": 160,
   "attackInterval": 1.2,
   "max": 0,
   "icon": "✦",
@@ -3399,22 +3381,22 @@ CARDS.push(
 );
 
 const XENO_BRANCH_DATA = [
-  ['chitin+chitin', 'impalerMorph', 'Sub-Orbital Impaler', 56, 1.2, 'keratinSerum', 'Hyper-Keratin Vial', 'impalerApex', 'Apex Impaler Behemoth', 245, 1.5, 'Pierces 4 runners in a line; critical hits ricochet bone shards to 2 nearby runners.', 'Relativistic Bone-Railgun: Sweeps an entire 4-tile perimeter track wall, ignoring 100% of armor. Against Weakpoint-marked runners, guaranteed critical hits deal 260%+ damage, knock targets backward 2 tiles, and ricochet splinter volleys to 3 additional runners. Grants +50% bonus permanent ATK transfer to any deployed Vector Railgun.'],
-  ['acid+acid', 'acidBrood', 'Royal Acid-Brood', 50, 1.0, 'royalSerum', 'Xenomorph Royal Jelly', 'xenoQueen', 'Sovereign Xenomorph Queen', 170, 1, 'Critical hits strip 60% armor and leave 3-tile acid puddles dealing 30 true DPS.', 'Molecular Dissolution: Critical strikes permanently dissolve 100% of runner armor and coat a 4-tile track edge in pressurized Molecular Acid (65 true DPS for 5s). Every 4th critical hit against an Elite, Harbinger, or Boss dissolves 14% of its current HP directly.'],
+  ['chitin+chitin', 'impalerMorph', 'Sub-Orbital Impaler', 32, 1.2, 'keratinSerum', 'Hyper-Keratin Vial', 'impalerApex', 'Apex Impaler Behemoth', 245, 1.5, 'Pierces 3 runners in a line; critical hits ricochet bone shards to 2 nearby runners.', 'Relativistic Bone-Railgun: Sweeps an entire 4-tile perimeter track wall, ignoring 100% of armor. Against Weakpoint-marked runners, guaranteed critical hits deal 260%+ damage, knock targets backward 2 tiles, and ricochet splinter volleys to 3 additional runners. Grants +50% bonus permanent ATK transfer to any deployed Vector Railgun.'],
+  ['acid+acid', 'acidBrood', 'Royal Acid-Brood', 50, 1.0, 'royalSerum', 'Xenomorph Royal Jelly', 'xenoQueen', 'Sovereign Xenomorph Queen', 170, 1, 'Critical hits strip 60% armor and leave 3-tile acid puddles dealing 40% ATK true per second.', 'Molecular Dissolution: Critical strikes permanently dissolve 100% of runner armor and coat a 4-tile track edge in pressurized Molecular Acid (65 true DPS for 5s). Every 4th critical hit against an Elite, Harbinger, or Boss dissolves 14% of its current HP directly.'],
   ['psionic+psionic', 'synapseNexus', 'Synaptic Nexus', 46, 0.8, 'cortexSerum', 'Overmind Cortex Vial', 'hiveOvermind', 'Cerebral Hive-Overmind', 140, 0.9, 'Grants all allies +20% crit chance; fires a bonus psychic ray whenever an adjacent ally crits.', 'Hive-Mind Telemetry Synchronization: Grants +30% Critical Strike Chance and +30% Critical Hit Damage across the entire 3×3 grid. Synchronized Fire: Whenever any allied card lands a Critical Hit, immediately fires a coordinated psionic lance at that target for 75% ATK true damage.'],
-  ['chitin+acid', 'ravagerMorph', 'Caustic Ravager', 54, 1.05, 'ordnanceSerum', 'Bio-Ordnance Vial', 'causticRavager', 'Caustic Ravager Titan', 190, 1.1, 'Launches barbed acid pods that explode on critical hit for 150% splash damage within 2 tiles.', 'Living Bio-Artillery: Launches clusters of Barbed Acid-Pods into the densest runner group. On Critical Hit, detonates in a 5-tile radius, dealing 220% Crit Damage, shredding 50% defense, and inflicting stacking acid bleed (40 DPS).'],
+  ['chitin+acid', 'ravagerMorph', 'Caustic Ravager', 54, 1.05, 'ordnanceSerum', 'Bio-Ordnance Vial', 'causticRavager', 'Caustic Ravager Titan', 190, 1.1, 'Launches barbed acid pods that explode on critical hit for 75% splash damage within 2 tiles.', 'Living Bio-Artillery: Launches clusters of Barbed Acid-Pods into the densest runner group. On Critical Hit, detonates in a 5-tile radius, dealing 220% Crit Damage, shredding 50% defense, and inflicting stacking acid bleed (40 DPS).'],
   ['chitin+psionic', 'stalkerMorph', 'Phase-Chitin Hunter', 52, 0.75, 'phaseSerum', 'Phase-Chitin Vial', 'phaseStalker', 'Quantum Phase-Stalker', 180, 0.8, 'Prioritizes Elites/Harbingers; crits deal double damage to targets below 35% HP.', 'Predatory Phase-Execution: Prioritizes Elites/Harbingers/Bosses; attacks always critically strike Weakpoint-marked targets. Instantly executes non-boss runners below 35% HP. Against Bosses and Harbingers, every 5th critical slash phases inside their hull to deal 450 true damage and stun for 1.2s.'],
   ['acid+psionic', 'siphonMorph', 'Bio-Plasma Leech', 48, 0.85, 'metroidSerum', 'Metroid Siphon Vial', 'metroidLeviathan', 'Parasitic Metroid Leviathan', 160, 0.9, 'Drains bio-energy from runners, granting +2 ticks to Singularity Core and allied ability gauges every 4th hit.', 'Bio-Electric Life Drain: Latches bio-electric tendrils onto the 2 highest-HP runners, slowing them by 45% and draining 8% of Max HP every 3 seconds as true damage. Reactor Siphon: Every 3rd attack charges Singularity Core and all allied ability gauges by +2 ticks and grants +2 permanent ATK.']
 ];
 
 for (const [strain, id, name, atk, interval] of [
-  ['chitin', 'spineLurker', 'Spine-Lurker', 24, 1.1],
+  ['chitin', 'spineLurker', 'Spine-Lurker', 21, 1.1],
   ['acid', 'bileSpitter', 'Bile-Spitter', 22, 1.2],
   ['psionic', 'opticDrone', 'Optic-Drone', 20, 0.9]
 ]) {
   FORMS.push(xenoCard(id, name, 'Rare', atk, interval,
     strain === 'chitin' ? 'Fires high-velocity bone needles that pierce 2 runners and always critically strike targets with 2+ Weakpoints.' :
-    strain === 'acid' ? 'Critical hits splash corrosive bile across 2 adjacent runners, melting 35% of their armor and applying 12 DPS acid burn.' :
+    strain === 'acid' ? 'Critical hits splash corrosive bile across 2 adjacent runners, melting 35% of their armor and applying an acid burn (30% ATK per second).' :
     'Every 3rd attack scans the leading runner with 2 Weakpoint stacks and arcs bio-electric lightning to a second target.',
     { evolvedFrom: 'xenoSpecimen' }
   ));
@@ -3428,13 +3410,6 @@ for (const [pair, id, name, atk, interval, serum, serumName, apex, apexName, ape
   );
 }
 
-for (const [strain, id, name, rule] of [
-  ['chitin', 'chitinHelix', 'Alpha-Chitin Helix', 'Adjacent allies gain +25% Critical Hit Damage and their critical hits pierce 1 additional runner. Pulse: Grants +12 Genome and +3 permanent ATK to Specimen, and fires a piercing bone spike.'],
-  ['acid', 'acidHelix', 'Beta-Acid Helix', 'Adjacent allies critical hits apply Molecular Corrosion (shreds 30% armor and deals 10 true DPS for 4s). Pulse: Grants +12 Genome and +3 permanent ATK to Specimen, and sprays a 3-tile acid pool.'],
-  ['psionic', 'psionicHelix', 'Gamma-Synapse Helix', 'Adjacent allies gain +15% Critical Hit Chance and charge Singularity Core by +1 extra tick on crit. Pulse: Grants +12 Genome and +3 permanent ATK to Specimen, and stuns all Weakpoint runners for 1.0s.']
-]) {
-  TOKENS.push(xenoCard(id, name, 'Normal', 0, 0, rule, { token: true }));
-}
 
 
 // Update existing SciFi card rules to match design proposal
@@ -3446,20 +3421,20 @@ Object.assign(CARDS.find(c => c.id === 'core'), { rules: 'Grants all other allie
 // Sci-Fi redesign: strains are earned by how the team fights; Biomass feeds the Specimen; Metamorphosis hatches mid-battle.
 const XENO_LAB_SYNERGY = 'Crits feed Chitin, armour shred and acid feed Acid, stuns, slows and ability boosts feed Psionic. Kills fill the Biomass pool the Specimen eats. At 130 Genome on an Elite/Boss node, the chrysalis cocoons for 15s and hatches into its Mythic if no runner leaks.';
 for (const c of [...CARDS, ...FORMS].filter(c => c.genre === 'SciFi')) c.synergy = XENO_LAB_SYNERGY;
-CARDS.push(xenoCard('alphaSpecimen', 'Alpha Specimen', 'Legendary', 88, 1.2, "A wild adult xeno. Each hit adds +1 to your Specimen's current top strain and +1 Biomass. Critical hits on Weakpointed runners stun them for 0.5s."));
+CARDS.push(xenoCard('alphaSpecimen', 'Alpha Specimen', 'Legendary', 88, 1.2, "A wild adult xeno. Attacks pierce 2 runners. Each hit adds +1 to your Specimen's current top strain and +1 Biomass. Critical hits on Weakpointed runners stun them for 0.5s."));
 for (const [id, fields] of Object.entries({
   xenoSpecimen: { baseAtk: 12, attackInterval: 1.5, rules: 'The core. Strikes the leading runner. Tracks three strain scores across the run — Chitin (team crits), Acid (armour shred and acid) and Psionic (stuns, slows and ability boosts) — and eats 4 Biomass every 5s for +3 Genome and +1 permanent ATK. At 25 Genome becomes the larva of its top strain; at 65 the chrysalis of its top two strains (pure if the top is at least double the second). At 130 Genome on an Elite/Boss node it cocoons for 15s: no leaks and it hatches into its Mythic mid-battle.' },
   bioScanner: { baseAtk: 0, attackInterval: 0, rules: 'Support · does not attack. Every 3s, scans the first 3 runners for 1 Weakpoint each (max 5 per runner; +5% crit chance against that runner per stack). Adjacent ally: every 2s.' },
   geneSplicer: { baseAtk: 0, attackInterval: 0, rules: 'Support · does not attack. The Specimen eats twice as fast: 8 Biomass every 5s for +6 Genome. Adjacent to the Specimen: +2 permanent ATK per meal instead of +1.' },
   sensor: { rules: 'Support. All other allies gain +10% critical chance (+15% if adjacent). Sci-Fi critical damage from all sources is capped at 250%.' },
   nanite: { baseAtk: 20, attackInterval: 1.1, rules: 'Critical hits shred runner defense by 25% for 3s (feeds Acid). Every 6 critical hits across battles grant +1 permanent ATK.' },
-  railgun: { baseAtk: 60, attackInterval: 1.6, rules: 'Pierces 3 runners in a line (5 with Telemetry Sensor and knocks back 1 tile), ignoring armor. Gains bonus attack damage equal to 100% of the single highest permanent ATK bonus among other allies.' },
+  railgun: { baseAtk: 54, attackInterval: 1.6, rules: 'Pierces 3 runners in a line (5 with Telemetry Sensor and knocks back 1 tile), ignoring armor. Gains bonus attack damage equal to 100% of the single highest permanent ATK bonus among other allies.' },
   impalerApex: { baseAtk: 150, attackInterval: 1.3, rules: 'Chitin + Chitin. Pierces the 4 leading runners, ignoring armor. Critical hits ricochet to 2 more runners for 50% of the hit. Every 10th attack channels 1.2s: Relativistic Volley — every runner takes 300% ATK ignoring armor and gains 2 Weakpoints.' },
-  xenoQueen: { baseAtk: 130, attackInterval: 1.0, rules: 'Acid + Acid. Critical hits strip 50% armor and leave a 3-tile acid pool (30% ATK true per second for 3s). Every 10th attack channels 1.2s: Hive Swarm — acid on all 4 walls for 5s (40% ATK per second) and 14% current HP off every Elite, Champion and Boss.' },
-  hiveOvermind: { baseAtk: 130, attackInterval: 1.0, rules: 'Psionic + Psionic. All allies gain +20% critical chance. When an ally crits, fires a psychic ray for 40% ATK (at most once per 0.5s). Every 10th attack channels 1.2s: Synaptic Storm — every ally\'s next 3 attacks crit, and a psionic lance hits every runner for 120% ATK.' },
+  xenoQueen: { baseAtk: 130, attackInterval: 1.0, rules: 'Acid + Acid. Critical hits strip 50% armor and leave a 3-tile acid pool (50% ATK true per second for 3s). Every 10th attack channels 1.2s: Hive Swarm — acid on all 4 walls for 5s (40% ATK per second) and 14% current HP off every Elite, Champion and Boss.' },
+  hiveOvermind: { baseAtk: 130, attackInterval: 1.0, rules: 'Psionic + Psionic. Attacks lance the 3 leading runners. All allies gain +20% critical chance. When an ally crits, fires a psychic ray for 70% ATK (at most once per 0.5s). Every 10th attack channels 1.2s: Synaptic Storm — every ally\'s next 3 attacks crit, and a psionic lance hits every runner for 120% ATK.' },
   causticRavager: { baseAtk: 140, attackInterval: 1.2, rules: 'Chitin + Acid. Targets the densest cluster; critical hits strip 50% armor and bleed runners within 2.5 tiles. Every 10th attack channels 1.2s: Acid Barrage — pods hit every runner for 150% ATK and strip 50% armor.' },
-  phaseStalker: { baseAtk: 160, attackInterval: 1.4, rules: 'Chitin + Psionic. Targets Elites and Bosses first. Critical hits deal double damage to targets below 35% HP, and ordinary runners below 35% HP are executed. Every 10th attack channels 1.2s: Phase Execution — blinks to the strongest Elite or Boss for 400% ATK true damage and a 1.5s stun; ordinary runners below 35% on that wall are executed.' },
-  metroidLeviathan: { baseAtk: 145, attackInterval: 1.2, rules: 'Acid + Psionic. Every 4th hit, all allies move 1 attack closer to their 10th attack. Every 10th attack channels 1.2s: Singularity Feast — drains 10% max HP from every ordinary runner and 4% from Elites, Champions and Bosses, and moves all allies 2 attacks closer to their 10th attack.' }
+  phaseStalker: { baseAtk: 160, attackInterval: 1.0, rules: 'Chitin + Psionic. Targets Elites and Bosses first. Attacks pierce 2 runners and deal +50% to Weakpointed runners. Critical hits deal double damage to targets below 35% HP, and ordinary runners below 35% HP are executed. Every 10th attack channels 1.2s: Phase Execution — blinks to the strongest Elite or Boss for 400% ATK true damage and a 1.5s stun; ordinary runners below 35% on that wall are executed.' },
+  metroidLeviathan: { baseAtk: 145, attackInterval: 1.2, rules: 'Acid + Psionic. Attacks latch onto a second runner for 50% ATK. Every 4th hit, all allies move 1 attack closer to their 10th attack. Every 10th attack channels 1.2s: Singularity Feast — drains 10% max HP from every ordinary runner and 4% from Elites, Champions and Bosses, and moves all allies 2 attacks closer to their 10th attack.' }
 })) Object.assign([...CARDS, ...FORMS].find(c => c.id === id), fields);
 
 const CARD = Object.fromEntries([...CARDS, ...FORMS, ...TOKENS].map(c => [c.id, c]));

@@ -1,0 +1,63 @@
+'use strict';
+// Cross-genre balance pass: %-max-HP boss halving, idle Chaos swipes, summon caps, Bone Saw aura, stair rearm, save migration.
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const G = require('../engine');
+
+function battle(ids, slots = ids.map((_, i) => i)) {
+ const r = G.newRun('orion', 17);
+ r.roster = ids.map(id => G.instance(r, id));
+ r.node = { row: 5, lane: 1, type: 'battle' }; r.depth = 5; r.phase = 'combat';
+ const b = { run: r, time: 0, units: [], enemies: [], effects: [], metrics: { kills: 0, leaks: 0, growth: 0, triggers: 0, devours: 0 }, plan: { count: 0, interval: 1, hp: 100 }, spawned: 0 };
+ b.units = r.roster.map((u, i) => G.runtime(b, u, slots[i]));
+ b.units.forEach(u => { G.prepareHooks(b, u); G.record(b, u); });
+ return b;
+}
+function enemy(b, p = 4, hp = 100000, extra = {}) {
+ const e = { uid: b.enemies.length + 1, p, hp, maxHp: hp, speed: .3, defense: 0, gone: false, slows: [], bleeds: [], burns: [], venoms: [], stuns: [], weakpoints: 0, ruleMarks: 0, tabooMarks: {}, ...extra };
+ b.enemies.push(e); return e;
+}
+
+test('Bosses take half from 1%-max-HP stacks', () => {
+ const b = battle(['matriarch']); const u = b.units[0];
+ const grunt = enemy(b, 6), boss = enemy(b, 5, 100000, { boss: true });
+ G.attack(b, u);
+ assert.equal(grunt.bleeds.at(-1).dps, 1000);
+ assert.equal(boss.bleeds.at(-1).dps, 500);
+});
+
+test('an idle Chaos legend swipes the leading runner for 50% ATK; the 13th Step stays a pure trap', () => {
+ const b = battle(['payphone', 'stair13']); const e = enemy(b);
+ assert.equal(G.attack(b, b.units[0]), true);
+ assert.ok(e.hp < 100000); assert.equal(b.units[0].violations || 0, 0);
+ assert.equal(G.attack(b, b.units[1]), false);
+});
+
+test('Monkey clones: at most 2 alive, each expires after 6s', () => {
+ const b = battle(['monkeyCubT3'], [4]); const u = b.units[0]; enemy(b);
+ for (let i = 0; i < 16; i++) { u.currentCooldown = 0; G.attack(b, u); }
+ const clones = b.units.filter(v => !v.removed && v.summonerUid === u.uid);
+ assert.equal(clones.length, 2);
+ assert.ok(clones.every(c => c.expiresAt === b.time + 6));
+});
+
+test('Bone Saw is a 0/0 support: adjacent Order allies bleed Cited runners', () => {
+ const b = battle(['investigator', 'boneSaw'], [0, 1]); const [inv, saw] = b.units;
+ assert.equal(saw.attackInterval, 0);
+ const e = enemy(b, 6, 100000, { ruleMarks: 1 });
+ G.attack(b, inv);
+ assert.ok(e.bleeds.some(x => x.owner === inv.uid));
+});
+
+test('lesser stairs rearm on their interval instead of firing on every runner step', () => {
+ const b = battle(['stair13']); const e1 = enemy(b, 3.98), e2 = enemy(b, 3.98);
+ G.step(b, 0.1);
+ assert.equal([e1, e2].filter(e => e.hp < 100000).length, 1);
+});
+
+test('saves holding deleted cards drop them and refund 10 coins each', () => {
+ const r = G.newRun('orion', 3); r.roster = [G.instance(r, 'investigator'), { uid: 99, id: 'chitinHelix' }, { uid: 100, id: 'dossier' }]; r.coins = 5;
+ assert.equal(G.migrateRun(r), 2);
+ assert.deepEqual(r.roster.map(u => u.id), ['investigator']);
+ assert.equal(r.coins, 25);
+});

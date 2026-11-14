@@ -36,7 +36,7 @@ test('Cultivation Mythic Apex: base stats and attack intervals', () => {
     melodicSaint: { baseAtk: 110, interval: 1.0 },
     formationMaster: { baseAtk: 110, interval: 0.8 },
     talismanSovereign: { baseAtk: 120, interval: 0.7 },
-    landscapeSage: { baseAtk: 110, interval: 0.8 },
+    landscapeSage: { baseAtk: 140, interval: 0.8 },
     soulReapingDemon: { baseAtk: 140, interval: 1.0 },
     bloodFiendMaster: { baseAtk: 150, interval: 1.0 }
   };
@@ -278,5 +278,5 @@ test('Blood-Fiend Sword Master: 1 bleed stack on normal hit, 10th channels Boili
   bf.currentCooldown = 99; // no further slashes while the blood pool spreads
   for (let i = 0; i < 20 && b.pendingHits.length; i++) G.step(b, 0.1);
   assert.ok(!b.pendingHits.length, 'blood pool reached every enemy');
-  assert.strictEqual(e1.bleeds.length, 20, 'Should apply 20 bleed stacks');
+  assert.strictEqual(e1.bleeds.length, 1, 'Should apply 1 fresh 3s bleed stack');
 });

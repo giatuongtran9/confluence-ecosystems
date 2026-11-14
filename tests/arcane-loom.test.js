@@ -73,7 +73,7 @@ test('Phase 1: Card & Data Definitions - rarities, base stats, and support card 
   assert.equal(D.CARD.geoMage.max, 10);
 
   assert.equal(D.CARD.aeroMage.rarity, 'Rare');
-  assert.equal(D.CARD.aeroMage.baseAtk, 22);
+  assert.equal(D.CARD.aeroMage.baseAtk, 20);
   assert.equal(D.CARD.aeroMage.attackInterval, 1.3);
   assert.equal(D.CARD.aeroMage.max, 10);
 
@@ -92,7 +92,7 @@ test('Phase 1: Card & Data Definitions - rarities, base stats, and support card 
   assert.equal(D.CARD.elementalMage.attackInterval, 1.4);
 
   assert.equal(D.CARD.elementalArchmage.rarity, 'Legendary');
-  assert.equal(D.CARD.elementalArchmage.baseAtk, 90);
+  assert.equal(D.CARD.elementalArchmage.baseAtk, 120);
   assert.equal(D.CARD.elementalArchmage.attackInterval, 1.4);
 
   assert.equal(D.CARD.magmaLord.baseAtk, 150);
@@ -101,9 +101,9 @@ test('Phase 1: Card & Data Definitions - rarities, base stats, and support card 
   assert.equal(D.CARD.tempestArchon.attackInterval, 0.9);
   assert.equal(D.CARD.steamSovereign.baseAtk, 145);
   assert.equal(D.CARD.steamSovereign.attackInterval, 1.4);
-  assert.equal(D.CARD.quagmireColossus.baseAtk, 150);
-  assert.equal(D.CARD.quagmireColossus.attackInterval, 1.5);
-  assert.equal(D.CARD.blizzardArchon.baseAtk, 140);
+  assert.equal(D.CARD.quagmireColossus.baseAtk, 170);
+  assert.equal(D.CARD.quagmireColossus.attackInterval, 1.2);
+  assert.equal(D.CARD.blizzardArchon.baseAtk, 160);
   assert.equal(D.CARD.blizzardArchon.attackInterval, 1.2);
   assert.equal(D.CARD.sandstormTitan.baseAtk, 145);
   assert.equal(D.CARD.sandstormTitan.attackInterval, 1.0);
@@ -380,7 +380,7 @@ test('Magma Lord normal fissure applies only Burn while enemies remain on the ti
   const hp = e.hp;
   G.attack(b, u);
   assert.equal(e.hp, hp - G.atk(b, u));
-  assert.ok(b.arcaneZones.some(z => z.type === 'magma' && z.until === 2));
+  assert.ok(b.arcaneZones.some(z => z.type === 'magma' && z.until === 3));
   for (let i = 0; i < 12; i++) { b.time += 0.1; G.tickArcane(b, 0.1); }
   assert.equal(e.burns.length, 1);
   assert.equal(e.burns[0].dps, 1000);

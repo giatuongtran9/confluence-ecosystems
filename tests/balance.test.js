@@ -285,7 +285,7 @@ test('Scrapwork trial fails on leak, missing module proof, or failed clear and r
 test('Cultivation base stats are updated across Practitioner realms and Mythic forms',()=>{
  const expected={practitioner:[12,1.5],cultivationFoundation:[25,1.4],cultivationGoldenCore:[50,1.3],cultivationNascentSoul:[85,1.2]};
  for(const [id,[atk,interval]] of Object.entries(expected)){const b=battle([id]);assert.equal(b.units[0].baseAtk,atk,id);assert.equal(b.units[0].attackInterval,interval,id);}
- for(const [id,atk] of [['melodicSaint',110],['landscapeSage',110],['bloodFiendMaster',150]])assert.equal(G.base(G.instance(G.newRun('none', 2),id)),atk,id);
+ for(const [id,atk] of [['melodicSaint',110],['landscapeSage',140],['bloodFiendMaster',150]])assert.equal(G.base(G.instance(G.newRun('none', 2),id)),atk,id);
 });
 test('Cauldron and every Cultivation relic are non-attacking support cards',()=>{
  const ids=['cauldron','flyingSword','guqin','weiqiBoard','inkBrush','mountainScroll','soulBanner','demonBlade'];

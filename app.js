@@ -91,6 +91,7 @@ try{
 }catch{}
 let run=read(RUN_KEY,null),screen='home',battle=null,selected=null,paused=false,speed=1,last=0,uiClock=0,filter='all';
 if(run?.version!==5){run=null;try{localStorage.removeItem(RUN_KEY)}catch{}}
+if(run&&Game.migrateRun(run))try{localStorage.setItem(RUN_KEY,JSON.stringify(run))}catch{}
 
 let feedbackSeen=0,visualEvents=[],openingAt=0;
 const rarityBadge=id=>`<span class="rarity rarity-${CARD[id].rarity.toLowerCase()}">${CARD[id].rarity}</span>`;

@@ -59,7 +59,7 @@ function enemy(b, p = 4, hp = 10000, maxHp = 10000, defense = 0, priority = fals
  return e;
 }
 
-test('Impaler Morph ignores armor and hits 4 enemies with shard splash on crit', () => {
+test('Impaler Morph ignores armor and pierces 3 enemies', () => {
  const b = battle(['impalerMorph'], [4], 'orion');
  const u = b.units[0];
  const e1 = enemy(b, 4, 1000, 1000, 0.5);
@@ -71,12 +71,11 @@ test('Impaler Morph ignores armor and hits 4 enemies with shard splash on crit',
  G.addWeakpoint(b, e1, 25);
  G.xenoAttack(b, u, e1, 100);
 
- // e1 should take full direct damage ignoring 50% armor (100 * 2.3 = 230)
- assert.ok(e1.hp < 1000);
- // e2, e3, e4 should take direct damage plus shard splash
- assert.ok(e2.hp < 1000);
- assert.ok(e3.hp < 1000);
+ // The bone spear pierces the 3 leading runners (e4, e3, e2); the trailing e1 is out of reach.
  assert.ok(e4.hp < 1000);
+ assert.ok(e3.hp < 1000);
+ assert.ok(e2.hp < 1000);
+ assert.equal(e1.hp, 1000);
 });
 
 test('Acid Brood shreds armor and spawns acid pool on crit', () => {

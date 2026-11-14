@@ -66,7 +66,7 @@ test('Bloodline forms base stats match requested values', () => {
     tigerCubT1: { atk: 24, interval: 1.3 },
     tigerCubT2: { atk: 45, interval: 1.2 },
     tigerCubT3: { atk: 80, interval: 1.1 },
-    tigerCubApex: { atk: 130, interval: 0.9 },
+    tigerCubApex: { atk: 150, interval: 0.9 },
 
     xuanwuCubT1: { atk: 20, interval: 1.5 },
     xuanwuCubT2: { atk: 45, interval: 1.4 },
@@ -120,14 +120,14 @@ test('Golden-Hooped Staff gives adjacent units +30% attack speed', () => {
   assert.strictEqual(Math.round(buffedSpd * 100), Math.round((baseSpd + 0.30) * 100));
 });
 
-test('Brood Matriarch gives adjacent units +35% attack speed', () => {
+test('Brood Matriarch gives adjacent units +25% attack speed', () => {
   const b = battle(['matriarch', 'cub', 'cub'], [4, 5, 0]);
   const adjCub = b.units.find(u => u.slot === 5);
   const nonAdjCub = b.units.find(u => u.slot === 0);
   
   const baseSpd = G.speed(b, nonAdjCub);
   const buffedSpd = G.speed(b, adjCub);
-  assert.strictEqual(Math.round(buffedSpd * 100), Math.round((baseSpd + 0.35) * 100));
+  assert.strictEqual(Math.round(buffedSpd * 100), Math.round((baseSpd + 0.25) * 100));
 });
 
 test('Slaughter Tiger Seal gives adjacent units +20% crit chance', () => {

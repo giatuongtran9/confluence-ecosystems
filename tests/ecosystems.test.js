@@ -81,9 +81,9 @@ test('rumors reward one contact spread per source and infected deaths',()=>{
 });
 test('Urban Legend marks are independent and Midnight Bus ignores another legend mark',()=>{
  const b=battle(['nightBus']),u=b.units[0],e=enemy(b,6);
- assert.equal(G.attack(b,u),false);assert.equal(e.p,6);assert.equal(G.getTabooMark(e,'nightBus'),0);
+ assert.equal(G.attack(b,u),true);assert.equal(e.p,6);assert.equal(G.getTabooMark(e,'nightBus'),0); // idle swipe only
  e.tabooMarks.kuchisake=1;
- assert.equal(G.attack(b,u),false);assert.equal(e.p,6);assert.equal(G.getTabooMark(e,'nightBus'),0);
+ assert.equal(G.attack(b,u),true);assert.equal(e.p,6);assert.equal(G.getTabooMark(e,'nightBus'),0);
  e.speed=.5;assert.equal(G.attack(b,u),true);assert.equal(G.getTabooMark(e,'nightBus'),1);assert.equal(u.violations,0.35);
  e.speed=.5;assert.equal(G.attack(b,u),true);assert.equal(G.getTabooMark(e,'nightBus'),2);
  b.time=8;G.extras(b,u,.1);assert.equal(e.p,3);
@@ -104,8 +104,8 @@ test('seven taboo-mark types track per runner without a shared cap',()=>{
  e.tabooMarks.nightBus=0;e.speed=.3;
  assert.equal(G.isLegendTarget(b,b.units[0],e),false);
 });
-test('Payphone and Mannequin do not attack ordinary runners',()=>{
- for(const id of ['payphone','mannequin']){const b=battle([id]);const e=enemy(b,4);assert.equal(G.attack(b,b.units[0]),false);assert.equal(e.hp,100000);assert.equal(b.units[0].violations,0);}
+test('Payphone and Mannequin only swipe ordinary runners for 50% ATK and earn no violations',()=>{
+ for(const id of ['payphone','mannequin']){const b=battle([id]);const e=enemy(b,4);assert.equal(G.attack(b,b.units[0]),true);assert.equal(100000-e.hp,G.atk(b,b.units[0])*0.5);assert.equal(b.units[0].violations,0);}
 });
 test('Mannequin earns a violation only when it punishes a taboo-breaker',()=>{
  const b=battle(['mannequin']);const e=enemy(b,4);e.speed=.5;G.attack(b,b.units[0]);assert.equal(b.units[0].violations,0.35);assert.equal(G.getTabooMark(e,'mannequin'),1);assert.equal(G.getTabooMark(e,'kuchisake'),0);
@@ -139,7 +139,7 @@ test('Noticeboard adds two Dread to Coroner and Decoder Case File processing, no
 test('Matriarch hastes adjacent originals and tokens of all five species without stacking',()=>{
  for(const id of ['serpentFodder','hound','scuttler','flameToad','peachFodder']){
   const b=battle([id,'matriarch','matriarch'],[0,1,3]),u=b.units[0];
-  assert.equal(G.speed(b,u),1.35);const tok=G.spawnToken(b,u,id);assert.ok(G.touches(tok,b.units[1])||G.touches(tok,b.units[2]));assert.equal(G.speed(b,tok),1.35);
+  assert.equal(G.speed(b,u),1.25);const tok=G.spawnToken(b,u,id);assert.ok(G.touches(tok,b.units[1])||G.touches(tok,b.units[2]));assert.equal(G.speed(b,tok),1.25);
   const far=battle([id,'matriarch'],[0,8]);assert.equal(G.speed(far,far.units[0]),1);
   const e=enemy(b);G.dot(b,e,'bleed',3,4,u);assert.equal(e.bleeds[0].until,5);
  }
@@ -185,11 +185,11 @@ test('WebP maps cover every current Cultivation and Bloodline draft card and Ape
  assert.ok(!source.includes('assets/bloodline-sprites/'));assert.ok(!source.includes('assets/cultivation-sprites/'));
 });
 
-test('The 13th Step and Red Raincoat are purely reactive and stay Epic until their Mythic trial', () => {
+test('The 13th Step is purely reactive, Red Raincoat swipes when idle, and both and stay Epic until their Mythic trial', () => {
  const b = battle(['stair13', 'redRaincoat']);
  const e = enemy(b, 2);
  assert.equal(G.attack(b, b.units[0]), false, 'stair13 should not attack normally');
- assert.equal(G.attack(b, b.units[1]), false, 'redRaincoat should not attack normally');
+ assert.equal(G.attack(b, b.units[1]), true, 'redRaincoat swipes the leading runner for 50% ATK');
 
  b.units[0].violations = 15;
  G.grantUrbanViolation(b, b.units[0], 0);
@@ -256,6 +256,7 @@ test('The 13th Step triggers Blackout from 5 taboo corner/step violations', () =
   e.p = 3.98;
   e.slows = [];
   e.retreatingUntil = 0;
+  b.units[0].trapReadyAt = 0; // the trap rearms every 1.6s; skip the wait
   G.step(b, 0.1);
  }
  assert.ok(b.curfewUntil > b.time, 'Blackout triggered by 13th Step corner crossings');
