@@ -2009,11 +2009,24 @@ function channelLabel(ctx, cx, cy, text, prog, fg, bg) {
   ctx.restore();
 }
 const quadPt = (x0, y0, cx, cy, x1, y1, k) => ({ x: (1 - k) * (1 - k) * x0 + 2 * (1 - k) * k * cx + k * k * x1, y: (1 - k) * (1 - k) * y0 + 2 * (1 - k) * k * cy + k * k * y1 });
+// Unit-centred channel ring (like Sword Immortal's): count items orbit (cx, cy), drawing in and rising as prog grows.
+// draw(x, y, i, depth, appear, angle) renders one item; depth 0.65 (behind) .. 1 (in front).
+function channelRing(cx, cy, prog, count, r0, r1, draw) {
+  const radius = r0 - (r0 - r1) * prog, lift = 6 + 14 * prog, now = battle.time;
+  for (let i = 0; i < count; i++) {
+    const appear = Math.min(1, Math.max(0, (prog - (i / count) * 0.4) / 0.12));
+    if (appear <= 0) continue;
+    const a = (i / count) * Math.PI * 2 + prog * 1.6 + now * 0.6;
+    const tremble = prog > 0.8 ? Math.sin(now * 90 + i * 1.7) * (prog - 0.8) * 8 : 0;
+    draw(cx + Math.cos(a) * radius + tremble, cy + Math.sin(a) * radius * 0.45 - lift, i, 0.65 + 0.35 * (Math.sin(a) + 1) / 2, appear, a);
+  }
+}
 
 // ==== Talisman Sovereign · Imperial Ink Decree (Hoàng Kim Thánh Chỉ) ====
-// Gather: a golden imperial scroll unrolls above the Sovereign and a brush writes 敕令.
+// Gather: a ring of talismans orbits and tightens around the Sovereign while a golden imperial scroll unrolls
+// above and golden script is written column by column (right to left), sealed with a red imperial stamp.
 // Release: talismans fly from the scroll and seal onto enemies one by one (schedule.hits); executes burn in gold.
-const GOLD_RGB = '250, 204, 21', GOLD_SOFT = '253, 230, 138';
+const GOLD_RGB = '250, 204, 21';
 function drawTalismanPaper(ctx, x, y, ang, k, alpha) {
   if (alpha <= 0) return;
   ctx.save();
@@ -2023,53 +2036,102 @@ function drawTalismanPaper(ctx, x, y, ang, k, alpha) {
   ctx.fillRect(-6, -10, 12, 20);
   ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 1.2;
   ctx.strokeRect(-5, -9, 10, 18);
-  ctx.fillStyle = '#b91c1c';
-  ctx.font = '900 11px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('符', 0, 0.5);
+  ctx.strokeStyle = '#b91c1c'; ctx.lineWidth = 1.3; ctx.lineCap = 'round';   // abstract talisman sigil strokes
+  ctx.beginPath(); ctx.moveTo(-3, -6); ctx.lineTo(3, -6); ctx.moveTo(0, -7); ctx.lineTo(0, 6); ctx.moveTo(-3, -1); ctx.quadraticCurveTo(0, 2, 3, -1); ctx.moveTo(-2, 4); ctx.lineTo(2, 4); ctx.stroke();
   ctx.restore();
 }
-function scrollGeom(cx, cy) { return { x: cx, y: Math.max(52, cy - 128), w: 230, h: 56 }; }
-function drawImperialScroll(ctx, g, open, write, glow, alpha, time) {
-  if (alpha <= 0 || open <= 0) return;
-  const w = g.w * open, x0 = g.x - w / 2;
-  additiveGlow(ctx, g.x, g.y, 90 + 40 * glow, GOLD_RGB, (0.25 + 0.45 * glow) * alpha);
-  ctx.save();
-  ctx.globalAlpha = Math.min(1, alpha);
-  const bg = ctx.createLinearGradient(0, g.y - g.h / 2, 0, g.y + g.h / 2);
-  bg.addColorStop(0, '#fbecc5'); bg.addColorStop(1, '#e8cf91');
-  ctx.fillStyle = bg;
-  ctx.fillRect(x0, g.y - g.h / 2, w, g.h);
-  ctx.strokeStyle = '#ca8a04'; ctx.lineWidth = 2;
-  ctx.strokeRect(x0 + 3, g.y - g.h / 2 + 3, w - 6, g.h - 6);
-  if (write > 0) {                                         // brush-written decree, revealed left to right
-    ctx.save();
-    ctx.beginPath(); ctx.rect(x0, g.y - g.h / 2, w * Math.min(1, write), g.h); ctx.clip();
-    ctx.fillStyle = '#1c1208';
-    ctx.font = '900 32px "Noto Serif SC", "Songti SC", "SimSun", serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.shadowColor = `rgba(${GOLD_RGB}, ${0.6 * glow})`; ctx.shadowBlur = 12 * glow;
-    ctx.fillText('敕 令', g.x, g.y + 2);
-    ctx.restore();
-    if (write < 1) {                                       // brush tip at the writing front
-      const bx = x0 + w * write;
-      ctx.fillStyle = '#1c1208';
-      ctx.beginPath(); ctx.ellipse(bx, g.y + Math.sin(time * 30) * 8, 3, 6, 0.4, 0, Math.PI * 2); ctx.fill();
+// Golden script: brush strokes in 6 vertical columns, generated once (normalised 0..1 scroll coordinates).
+const SCRIPT_STROKES = (() => {
+  const out = [];
+  for (let c = 0; c < 6; c++) {
+    const x = 0.86 - c * 0.14;                     // columns from right to left
+    for (let s = 0; s < 6; s++) {
+      const seed = c * 31 + s * 7.7, y0 = 0.16 + s * 0.12 + (hash01(seed) - 0.5) * 0.04, kind = Math.floor(hash01(seed + 1) * 4);
+      const dx = (hash01(seed + 2) - 0.5) * 0.06, len = 0.06 + hash01(seed + 3) * 0.05;
+      const st = kind === 0 ? [x - 0.035, y0, x + dx, y0 - 0.02, x + 0.035, y0 + 0.01]          // horizontal
+        : kind === 1 ? [x + dx * 0.3, y0 - 0.02, x + dx, y0 + len * 0.5, x - dx * 0.4, y0 + len]  // vertical
+        : kind === 2 ? [x + 0.02, y0, x - 0.01, y0 + 0.03, x - 0.035, y0 + len]                  // left-falling
+        : [x - 0.01, y0, x + 0.01, y0 + 0.03, x + 0.035, y0 + len];                               // right-falling
+      out.push({ st, w: 1.6 + hash01(seed + 4) * 1.8, order: (c + s / 6) / 6 });
     }
   }
-  for (const sx of [x0, x0 + w]) {                         // rollers
-    ctx.fillStyle = '#5b3a1a';
-    ctx.fillRect(sx - 4, g.y - g.h / 2 - 7, 8, g.h + 14);
-    ctx.fillStyle = '#eab308';
-    ctx.fillRect(sx - 5, g.y - g.h / 2 - 10, 10, 4);
-    ctx.fillRect(sx - 5, g.y + g.h / 2 + 6, 10, 4);
+  return out;
+})();
+function scrollGeom(cx, cy) { return { x: cx, y: Math.max(52, cy - 128), w: 230, h: 64 }; }
+function drawImperialSeal(ctx, x, y, s, alpha) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, alpha);
+  ctx.translate(x, y); ctx.scale(s, s); ctx.rotate(-0.06);
+  ctx.fillStyle = '#b91c1c';
+  ctx.fillRect(-12, -12, 24, 24);
+  ctx.strokeStyle = '#fee2e2'; ctx.lineWidth = 1.4;     // carved border and a square-spiral seal pattern
+  ctx.strokeRect(-10, -10, 20, 20);
+  ctx.beginPath(); ctx.moveTo(-7, -7); ctx.lineTo(7, -7); ctx.lineTo(7, 7); ctx.lineTo(-4, 7); ctx.lineTo(-4, -4); ctx.lineTo(4, -4); ctx.lineTo(4, 4); ctx.lineTo(-1, 4); ctx.lineTo(-1, -1); ctx.stroke();
+  ctx.restore();
+}
+function drawImperialScroll(ctx, g, open, write, glow, alpha, time, seal = 0) {
+  if (alpha <= 0 || open <= 0) return;
+  const w = g.w * open, x0 = g.x - w / 2, y0 = g.y - g.h / 2;
+  additiveGlow(ctx, g.x, g.y, 95 + 40 * glow, GOLD_RGB, (0.22 + 0.4 * glow) * alpha);
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, alpha);
+  const bg = ctx.createLinearGradient(0, y0, 0, y0 + g.h);
+  bg.addColorStop(0, '#f6e4b8'); bg.addColorStop(0.5, '#fbeccc'); bg.addColorStop(1, '#e3c78a');
+  ctx.fillStyle = bg;
+  ctx.fillRect(x0, y0, w, g.h);
+  ctx.strokeStyle = '#b45309'; ctx.lineWidth = 2;
+  ctx.strokeRect(x0 + 3, y0 + 3, w - 6, g.h - 6);
+  ctx.strokeStyle = 'rgba(180, 83, 9, 0.4)'; ctx.lineWidth = 1;
+  ctx.strokeRect(x0 + 6, y0 + 6, w - 12, g.h - 12);
+  // Golden script written right to left; each stroke appears once the brush reaches its place in the order
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x0, y0, w, g.h); ctx.clip();
+  ctx.lineCap = 'round';
+  for (const s of SCRIPT_STROKES) {
+    const k = Math.min(1, Math.max(0, (write - s.order) * 8));
+    if (k <= 0) continue;
+    const [ax, ay, bx, by, cx2, cy2] = s.st, px = v => g.x - g.w / 2 + v * g.w, py = v => y0 + v * g.h;
+    const end = quadPt(px(ax), py(ay), px(bx), py(by), px(cx2), py(cy2), k);
+    ctx.strokeStyle = '#a16207'; ctx.lineWidth = s.w;
+    ctx.beginPath(); ctx.moveTo(px(ax), py(ay));
+    ctx.quadraticCurveTo(px(ax) + (px(bx) - px(ax)) * k, py(ay) + (py(by) - py(ay)) * k, end.x, end.y);
+    ctx.stroke();
   }
   ctx.restore();
+  if (glow > 0.2 && write > 0) {                               // gold sheen over the script
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = `rgba(${GOLD_RGB}, ${0.12 * glow})`;
+    ctx.fillRect(x0, y0, w, g.h);
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  if (write > 0 && write < 1) {                                 // brush tip at the writing front
+    const s = SCRIPT_STROKES.reduce((best, v) => Math.abs(v.order - write) < Math.abs(best.order - write) ? v : best);
+    const bx = g.x - g.w / 2 + s.st[4] * g.w, by = y0 + s.st[5] * g.h;
+    ctx.fillStyle = '#1c1208';
+    ctx.beginPath(); ctx.ellipse(bx, by - 6 + Math.sin(time * 30) * 2, 2.6, 7, 0.5, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#7c2d12'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(bx + 2, by - 12); ctx.lineTo(bx + 12, by - 34); ctx.stroke();
+  }
+  for (const sx of [x0, x0 + w]) {                              // rollers
+    ctx.fillStyle = '#5b3a1a';
+    ctx.fillRect(sx - 4, y0 - 7, 8, g.h + 14);
+    ctx.fillStyle = '#eab308';
+    ctx.fillRect(sx - 5, y0 - 10, 10, 4);
+    ctx.fillRect(sx - 5, y0 + g.h + 6, 10, 4);
+  }
+  ctx.restore();
+  if (seal > 0) drawImperialSeal(ctx, x0 + 26, g.y + 8, 1 + 0.6 * (1 - seal), Math.min(1, seal * 2) * alpha);
 }
 function drawTalismanGather(ctx, cx, cy, prog, size) {
   dimFocus(ctx, size, cx, cy, 0.45 * Math.min(1, prog / 0.25), '24, 14, 4');
-  const g = scrollGeom(cx, cy);
-  drawImperialScroll(ctx, g, easeOut(Math.min(1, prog / 0.4)), Math.min(1, Math.max(0, (prog - 0.35) / 0.55)), prog, 1, battle.time);
-  additiveGlow(ctx, cx, cy, 44 + 36 * prog, GOLD_RGB, 0.18 + 0.4 * prog);
+  const g = scrollGeom(cx, cy), write = Math.min(1, Math.max(0, (prog - 0.3) / 0.55));
+  drawImperialScroll(ctx, g, easeOut(Math.min(1, prog / 0.35)), write, prog, 1, battle.time, Math.max(0, (prog - 0.88) / 0.12));
+  additiveGlow(ctx, cx, cy, 48 + 40 * prog, GOLD_RGB, 0.2 + 0.45 * prog);
+  channelRing(cx, cy, prog, 10, 80, 44, (x, y, i, depth, appear, a) => {
+    additiveGlow(ctx, x, y, 14, GOLD_RGB, 0.45 * appear);
+    drawTalismanPaper(ctx, x, y + Math.sin(battle.time * 5 + i) * 2, Math.cos(a) * 0.3, 1.25, appear * depth);
+  });
   channelLabel(ctx, cx, cy + 150, '📜 HOÀNG KIM THÁNH CHỈ', prog, '#fde047', '#451a03');
 }
 function drawTalismanDecree(ctx, f, size) {
@@ -2077,7 +2139,8 @@ function drawTalismanDecree(ctx, f, size) {
   const o = routePoint(f.x, f.y, size), g = scrollGeom(o.x, o.y), FLIGHT = 0.25;
   f._landed ??= {};
   dimFocus(ctx, size, o.x, o.y, 0.45 * Math.max(0, 1 - Math.max(0, t - 0.9) / 0.4), '24, 14, 4');
-  drawImperialScroll(ctx, g, 1, 1, t < 0.2 ? 1.5 : 1, Math.max(0, 1 - Math.max(0, t - 0.95) / 0.4), battle.time);
+  drawImperialScroll(ctx, g, 1, 1, t < 0.2 ? 1.6 : 1, Math.max(0, 1 - Math.max(0, t - 0.95) / 0.4), battle.time, 1);
+  if (t < 0.25) additiveGlow(ctx, g.x - g.w / 2 + 26, g.y + 8, 40, '248, 113, 113', 0.8 * (1 - t / 0.25));   // the seal flares
   for (const h of sch.hits) {
     const p = enemyPt(f, h.uid, size);
     if (!p) continue;
@@ -2091,7 +2154,7 @@ function drawTalismanDecree(ctx, f, size) {
     }
     if (!f._landed[h.uid]) { f._landed[h.uid] = true; burstColors(p.x, p.y - 20, 12, ['#fde047', '#ffffff', '#f87171'], 1, 0.4); }
     const since = t - h.at;
-    if (since < 0.35) {                                    // seal: a red-gold stamp ring
+    if (since < 0.35) {                                         // seal: a red-gold stamp ring
       const q = since / 0.35;
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
       ctx.strokeStyle = `rgba(248, 113, 113, ${0.9 * (1 - q)})`; ctx.lineWidth = 3 * (1 - q);
@@ -2123,65 +2186,120 @@ function drawTalismanBurn(ctx, tx, ty, prog, f) {
 }
 
 // ==== Landscape Sage · Mountain-River Ink Dragon (Sơn Hà Mực Long) ====
-// Gather: the board takes an ink-wash look and a dragon is painted stroke by stroke above the Sage.
-// Release: the dragon flies counter-clockwise along the track from the exit end; enemies are struck,
-// stunned (ink swirl) and bosses dragged back as its head passes (schedule.hits).
+// Gather: ink strokes spiral in around the Sage while the board takes an ink-wash look and a large dragon is
+// painted stroke by stroke above. Release: the dragon flies counter-clockwise along the track from the exit
+// end; enemies are struck, stunned (ink swirl) and bosses dragged back as its head passes (schedule.hits).
 const INK = '#0c0c0e';
 function drawInkWash(ctx, size, cx, cy, alpha) {
   if (alpha <= 0) return;
   ctx.save();
-  ctx.fillStyle = `rgba(236, 232, 220, ${0.2 * alpha})`;   // rice-paper wash
+  ctx.fillStyle = `rgba(236, 232, 220, ${0.2 * alpha})`;        // rice-paper wash
   ctx.fillRect(0, 0, size, size);
   ctx.restore();
   dimFocus(ctx, size, cx, cy, 0.35 * alpha, '10, 10, 12');
 }
-// pts run tail → head. reveal 0..1 paints from the tail; the head appears once fully painted.
-function drawInkDragon(ctx, pts, reveal, alpha, time) {
-  if (alpha <= 0 || pts.length < 2) return;
-  const n = Math.max(2, Math.floor(pts.length * reveal));
+// pts run tail → head; W scales body thickness. reveal 0..1 paints from the tail; the head appears at the end.
+function drawInkDragon(ctx, pts, reveal, alpha, time, W = 1) {
+  if (alpha <= 0 || pts.length < 3) return;
+  const N = pts.length, n = Math.max(2, Math.floor(N * reveal));
+  const width = u => W * (5 + 17 * Math.sin(Math.min(1, u * 1.05) * Math.PI * 0.95 + 0.05));
+  const nrm = i => { const a = pts[Math.max(0, i - 1)], b = pts[Math.min(N - 1, i + 1)], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1; return { x: -dy / d, y: dx / d, tx: dx / d, ty: dy / d }; };
+  const off = (i, k) => { const m = nrm(i); return { x: pts[i].x + m.x * k, y: pts[i].y + m.y * k }; };
   ctx.save();
   ctx.globalAlpha = Math.min(1, alpha);
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  for (let pass = 0; pass < 2; pass++) {                   // grey wash halo, then the ink body
-    for (let i = 1; i < n; i++) {
-      const u = i / (pts.length - 1), w = 3 + 13 * Math.sin(Math.min(1, u * 1.08) * Math.PI * 0.92 + 0.08);
-      ctx.strokeStyle = pass ? INK : 'rgba(60, 60, 64, 0.28)';
-      ctx.lineWidth = pass ? w : w + 10;
-      ctx.beginPath(); ctx.moveTo(pts[i - 1].x, pts[i - 1].y); ctx.lineTo(pts[i].x, pts[i].y); ctx.stroke();
+  const seg = (i, w, style, dx = 0) => { const a = off(i - 1, dx), b = off(i, dx); ctx.strokeStyle = style; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); };
+  for (let i = 1; i < n; i++) seg(i, width(i / (N - 1)) + 16, 'rgba(55, 55, 60, 0.22)');           // wash halo
+  // Legs (behind the body): front pair near the head, back pair mid-body; they paddle while flying
+  for (const [u, ph] of [[0.42, 0], [0.47, 1.4], [0.8, 0.7], [0.85, 2.1]]) {
+    const i = Math.floor(u * (N - 1));
+    if (i >= n - 1 || i < 1) continue;
+    const m = nrm(i), w = width(u), swing = Math.sin(time * 7 + ph) * 0.5;
+    const hip = off(i, w * 0.35), knee = { x: hip.x + (m.x * 0.9 - m.tx * (0.4 + swing)) * 16 * W, y: hip.y + (m.y * 0.9 - m.ty * (0.4 + swing)) * 16 * W };
+    const foot = { x: knee.x + (m.x * 0.5 + m.tx * 0.7) * 13 * W, y: knee.y + (m.y * 0.5 + m.ty * 0.7) * 13 * W };
+    ctx.strokeStyle = INK; ctx.lineWidth = 5 * W;
+    ctx.beginPath(); ctx.moveTo(hip.x, hip.y); ctx.lineTo(knee.x, knee.y); ctx.lineTo(foot.x, foot.y); ctx.stroke();
+    ctx.lineWidth = 1.6 * W;                                                  // three claws
+    for (let c = -1; c <= 1; c++) { ctx.beginPath(); ctx.moveTo(foot.x, foot.y); ctx.lineTo(foot.x + (m.tx + c * m.x * 0.6) * 7 * W, foot.y + (m.ty + c * m.y * 0.6) * 7 * W); ctx.stroke(); }
+  }
+  // Dorsal mane: flame-like spikes along the back
+  ctx.fillStyle = INK;
+  for (let i = 4; i < n - 3; i += 3) {
+    const u = i / (N - 1), m = nrm(i), w = width(u), base = off(i, -w * 0.45), len = (6 + w * 0.5) * (0.8 + 0.4 * Math.sin(time * 4 + i));
+    ctx.beginPath();
+    ctx.moveTo(base.x - m.tx * 4 * W, base.y - m.ty * 4 * W);
+    ctx.quadraticCurveTo(base.x - m.x * len * 0.6 + m.tx * 2, base.y - m.y * len * 0.6 + m.ty * 2, base.x - m.x * len - m.tx * len * 0.5, base.y - m.y * len - m.ty * len * 0.5);
+    ctx.lineTo(base.x + m.tx * 4 * W, base.y + m.ty * 4 * W);
+    ctx.fill();
+  }
+  for (let i = 1; i < n; i++) seg(i, width(i / (N - 1)), INK);                                       // body
+  for (let i = 2; i < n; i++) seg(i, width(i / (N - 1)) * 0.32, 'rgba(120, 120, 126, 0.55)', width(i / (N - 1)) * 0.28);   // belly band
+  ctx.setLineDash([7, 5]);                                                                           // dry-brush streaks
+  for (let i = 2; i < n; i += 2) for (const k of [-0.25, 0.05]) seg(i, 1, 'rgba(160, 160, 166, 0.35)', width(i / (N - 1)) * k);
+  ctx.setLineDash([]);
+  ctx.strokeStyle = 'rgba(205, 205, 212, 0.5)'; ctx.lineWidth = 1;                                 // scale rows
+  for (let i = 3; i < n - 2; i += 2) {
+    const u = i / (N - 1), m = nrm(i), w = width(u), ang = Math.atan2(m.ty, m.tx);
+    for (const k of [-0.18, 0.1]) { const p = off(i, w * k); ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(2, w * 0.16), ang + Math.PI * 0.55, ang + Math.PI * 1.45); ctx.stroke(); }
+  }
+  if (reveal > 0.05) {                                                                              // brushy tail fin
+    const m = nrm(0), t0 = pts[0];
+    ctx.strokeStyle = INK; ctx.lineWidth = 2 * W;
+    for (let k = -2; k <= 2; k++) {
+      const sp = k * 0.35 + Math.sin(time * 5 + k) * 0.08;
+      ctx.beginPath(); ctx.moveTo(t0.x, t0.y);
+      ctx.quadraticCurveTo(t0.x - m.tx * 12 * W + m.x * k * 6 * W, t0.y - m.ty * 12 * W + m.y * k * 6 * W, t0.x - (m.tx * Math.cos(sp) - m.x * Math.sin(sp)) * 24 * W, t0.y - (m.ty * Math.cos(sp) - m.y * Math.sin(sp)) * 24 * W);
+      ctx.stroke();
     }
   }
-  ctx.strokeStyle = 'rgba(200, 200, 205, 0.55)'; ctx.lineWidth = 1.2;    // scale highlights
-  for (let i = 3; i < n - 2; i += 3) {
-    const a = pts[i], b2 = pts[i + 1], ang = Math.atan2(b2.y - a.y, b2.x - a.x);
-    ctx.beginPath(); ctx.arc(a.x, a.y, 4, ang + 0.8, ang + 2.3); ctx.stroke();
-  }
-  if (reveal >= 0.98) {                                     // head: horns, whiskers, jade eye
-    const h = pts[pts.length - 1], p2 = pts[pts.length - 3] || pts[0], ang = Math.atan2(h.y - p2.y, h.x - p2.x);
+  if (reveal >= 0.98) {                                                                             // head
+    const h = pts[N - 1], m = nrm(N - 1), ang = Math.atan2(m.ty, m.tx), sw = Math.sin(time * 8);
     ctx.save();
-    ctx.translate(h.x, h.y); ctx.rotate(ang);
+    ctx.translate(h.x, h.y); ctx.rotate(ang); ctx.scale(W, W);
+    ctx.strokeStyle = INK; ctx.lineCap = 'round';
+    for (let k = 0; k < 6; k++) {                                // mane streaming back from the head
+      ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(-4, -4 + k * 1.5);
+      ctx.quadraticCurveTo(-18, -14 + k * 4 + Math.sin(time * 6 + k) * 3, -34 - k * 2, -10 + k * 5 + Math.sin(time * 6 + k) * 5); ctx.stroke();
+    }
     ctx.fillStyle = INK;
-    ctx.beginPath(); ctx.ellipse(4, 0, 14, 9, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = INK; ctx.lineWidth = 2.4;
-    ctx.beginPath(); ctx.moveTo(-4, -6); ctx.quadraticCurveTo(-14, -20, -22, -18); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(-4, 6); ctx.quadraticCurveTo(-14, 20, -22, 18); ctx.stroke();
-    ctx.lineWidth = 1.2;
-    const sw = Math.sin(time * 8) * 4;
-    ctx.beginPath(); ctx.moveTo(16, -3); ctx.quadraticCurveTo(30, -10 + sw, 40, -4 + sw); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(16, 3); ctx.quadraticCurveTo(30, 10 - sw, 40, 4 - sw); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(2, 0, 15, 10, 0, 0, Math.PI * 2); ctx.fill();         // skull
+    ctx.beginPath(); ctx.moveTo(8, -7); ctx.quadraticCurveTo(24, -7, 30, -2); ctx.lineTo(22, 0); ctx.lineTo(8, 2); ctx.fill();   // upper snout
+    ctx.beginPath(); ctx.moveTo(8, 4); ctx.quadraticCurveTo(20, 8 + sw, 27, 7 + sw * 2); ctx.lineTo(10, 8); ctx.fill();          // open lower jaw
+    ctx.fillStyle = '#e5e7eb';                                                             // fangs
+    ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(21.5, 4); ctx.lineTo(23, 0); ctx.fill();
+    ctx.lineWidth = 2.6;                                                                  // branching horns
+    for (const sgn of [-1, 1]) {
+      ctx.beginPath(); ctx.moveTo(-2, sgn * 6); ctx.quadraticCurveTo(-10, sgn * 16, -22, sgn * 18); ctx.stroke();
+      ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(-12, sgn * 14); ctx.lineTo(-14, sgn * 22); ctx.stroke(); ctx.lineWidth = 2.6;
+    }
+    ctx.lineWidth = 1.2;                                                                  // long whiskers
+    ctx.beginPath(); ctx.moveTo(24, -4); ctx.bezierCurveTo(36, -14 + sw * 4, 48, -2 + sw * 6, 60, -12 + sw * 5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(24, 4); ctx.bezierCurveTo(36, 14 - sw * 4, 48, 4 - sw * 6, 58, 14 - sw * 5); ctx.stroke();
+    ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.ellipse(8, -4, 3.2, 2, -0.2, 0, Math.PI * 2); ctx.fill();   // eye
     ctx.restore();
-    additiveGlow(ctx, h.x + Math.cos(ang) * 6, h.y + Math.sin(ang) * 6 - 3, 6, '110, 231, 183', 1);
+    additiveGlow(ctx, h.x + Math.cos(ang) * 8 * W + Math.sin(ang) * 4 * W, h.y + Math.sin(ang) * 8 * W - Math.cos(ang) * 4 * W, 7 * W, '110, 231, 183', 1);
   }
   ctx.restore();
 }
 function drawLandscapeGather(ctx, cx, cy, prog, size) {
   drawInkWash(ctx, size, cx, cy, Math.min(1, prog / 0.25));
-  const pts = [];
-  for (let i = 0; i <= 40; i++) {
-    const u = i / 40;
-    pts.push({ x: cx - 100 + 200 * u, y: cy - 78 + Math.sin(u * Math.PI * 3) * 20 * (0.6 + 0.4 * u) });
+  const now = battle.time;
+  ctx.save();                                                                   // ink strokes spiralling in
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 6; i++) {
+    const ph = (now * 0.9 + i / 6) % 1, r = 118 * (1 - ph) + 26, a0 = i * 1.05 + ph * 3.2;
+    ctx.strokeStyle = `rgba(12, 12, 14, ${Math.min(1, prog * 2) * (0.25 + 0.6 * ph)})`;
+    ctx.lineWidth = 2 + 6 * ph;
+    ctx.beginPath(); ctx.ellipse(cx, cy + 6, r, r * 0.45, 0, a0, a0 + 1.1); ctx.stroke();
   }
-  drawInkDragon(ctx, pts, Math.min(1, prog / 0.9), 1, battle.time);
-  if (Math.random() < 0.25 && prog < 0.9) {                 // ink flicks off the brush
+  ctx.restore();
+  const pts = [];
+  for (let i = 0; i <= 56; i++) {
+    const u = i / 56;
+    pts.push({ x: cx - 140 + 280 * u, y: Math.max(40, cy - 96) + Math.sin(u * Math.PI * 3) * 26 * (0.6 + 0.4 * u) });
+  }
+  drawInkDragon(ctx, pts, Math.min(1, prog / 0.9), 1, now, 1.25);
+  if (Math.random() < 0.3 && prog < 0.9) {                                       // ink flicks off the brush
     const i = Math.floor(pts.length * Math.min(1, prog / 0.9)) - 1, p = pts[Math.max(0, i)];
     emitParticle(2, p.x, p.y, (Math.random() - 0.5) * 120, -40 - Math.random() * 80, 0.5, 1.5 + Math.random() * 1.5, INK);
   }
@@ -2193,37 +2311,37 @@ function drawLandscapeDragon(ctx, f, size) {
   f._landed ??= {};
   drawInkWash(ctx, size, o.x, o.y, Math.max(0, 1 - Math.max(0, t - end - 0.2) / 0.5));
   // Head position along the track: emerges at the exit (16) and flies back toward the spawn (0)
-  const head = 16 - Math.max(0, t - sch.start) * sch.speed, BODY = 4.5;
-  if (t < sch.start) {                                      // emergence: an ink splash at the exit
+  const head = 16 - Math.max(0, t - sch.start) * sch.speed, BODY = 6;
+  if (t < sch.start) {                                                           // emergence: an ink splash at the exit
     const q = trackPoint(15.9, size), k = t / sch.start;
     additiveGlow(ctx, q.x, q.y, 30 * k, '110, 231, 183', 0.5 * k);
-    if (!f._splash) { f._splash = true; droplets(q.x, q.y, 14, INK, 1.2); }
+    if (!f._splash) { f._splash = true; droplets(q.x, q.y, 18, INK, 1.3); }
   } else {
     const fade = Math.max(0, 1 - Math.max(0, t - end) / 0.35);
     const pts = [];
-    for (let p = Math.min(15.999, head + BODY); p >= Math.max(0, head); p -= 0.12) {   // tail → head
-      const q = trackPoint(p, size), wig = Math.sin(p * 2.6 + time * 9) * 9;
-      const n2 = trackPoint(Math.max(0, p - 0.12), size), dx = n2.x - q.x, dy = n2.y - q.y, d = Math.hypot(dx, dy) || 1;
-      pts.push({ x: q.x - (dy / d) * wig, y: q.y + (dx / d) * wig - 10 });
+    for (let p = Math.min(15.999, head + BODY); p >= Math.max(0, head); p -= 0.1) {   // tail → head
+      const q = trackPoint(p, size), wig = Math.sin(p * 2.4 + time * 8) * 12;
+      const n2 = trackPoint(Math.max(0, p - 0.1), size), dx = n2.x - q.x, dy = n2.y - q.y, d = Math.hypot(dx, dy) || 1;
+      pts.push({ x: q.x - (dy / d) * wig, y: q.y + (dx / d) * wig - 14 });
     }
-    drawInkDragon(ctx, pts, 1, fade, time);
-    if (head > 0 && Math.random() < 0.5) { const q = trackPoint(Math.min(15.99, head + BODY), size); emitParticle(1, q.x, q.y, (Math.random() - 0.5) * 20, -10, 0.6, 5, '#1f2937'); }
+    drawInkDragon(ctx, pts, 1, fade, time, 1.45);
+    if (head > 0 && Math.random() < 0.6) { const q = trackPoint(Math.min(15.99, head + BODY), size); emitParticle(1, q.x, q.y, (Math.random() - 0.5) * 20, -10, 0.7, 6, '#1f2937'); }
   }
   for (const h of sch.hits) {
     if (t < h.at) continue;
     const p = enemyPt(f, h.uid, size);
     if (!p) continue;
-    if (!f._landed[h.uid]) { f._landed[h.uid] = true; droplets(p.x, p.y - 6, 10, INK, 1); burstColors(p.x, p.y - 8, 6, ['#6ee7b7', '#ffffff'], 0.8, 0.35); nudgeEnemy(h.uid, 0, 6, 0.45); }
+    if (!f._landed[h.uid]) { f._landed[h.uid] = true; droplets(p.x, p.y - 6, 12, INK, 1.1); burstColors(p.x, p.y - 8, 6, ['#6ee7b7', '#ffffff'], 0.8, 0.35); nudgeEnemy(h.uid, 0, 7, 0.5); }
     const e = battle.enemies.find(v => v.uid === h.uid);
     if (!e || e.gone || e.hp <= 0) continue;
-    if (e.warpFx && time - e.warpFx.at < 0.6) {             // boss dragged back: ink trail along the track
+    if (e.warpFx && time - e.warpFx.at < 0.6) {                                   // boss dragged back: ink trail
       const vp = visualTrackP(e), a = 1 - (time - e.warpFx.at) / 0.6;
       ctx.save(); ctx.strokeStyle = `rgba(12, 12, 14, ${0.7 * a})`; ctx.lineWidth = 7; ctx.lineCap = 'round';
       ctx.beginPath();
       for (let pp = vp, i = 0; pp <= e.warpFx.from + 0.001; pp += 0.15, i++) { const q = trackPoint(pp, size); if (i) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); }
       ctx.stroke(); ctx.restore();
     }
-    if ((e.frozenUntil || 0) > battle.time) {               // stun: a turning ink swirl over the head
+    if ((e.frozenUntil || 0) > battle.time) {                                     // stun: a turning ink swirl
       ctx.save();
       ctx.translate(p.x, p.y - 30); ctx.rotate(time * 5);
       ctx.strokeStyle = 'rgba(12, 12, 14, 0.85)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
@@ -2242,7 +2360,7 @@ function drawInkFlick(ctx, x, y, tx, ty, prog, f) {
     const k = prog / FLIGHT;
     ctx.save();
     ctx.fillStyle = INK;
-    for (let i = 0; i < 4; i++) {                           // blob with trailing droplets
+    for (let i = 0; i < 4; i++) {                                                  // blob with trailing droplets
       const qq = quadPt(x, y, (x + tx) / 2, Math.min(y, ty) - 50, tx, ty, Math.max(0, k - i * 0.05));
       ctx.globalAlpha = 1 - i * 0.22;
       ctx.beginPath(); ctx.arc(qq.x, qq.y, 5 - i, 0, Math.PI * 2); ctx.fill();
@@ -2280,7 +2398,7 @@ function drawInkPuddles(ctx, size) {
 }
 
 // ==== Soul-Reaping Heavenly Demon · Ten-Thousand Soul Banner (Vạn Hồn Bạo Phá) ====
-// Gather: a black banner unfurls behind the Demon with its collected souls swirling as green wisps.
+// Gather: souls spiral into the Demon from all around while a torn black silk banner unfurls behind it.
 // Release: a wisp leaves the banner for each enemy and explodes on arrival (schedule.hits).
 const SOUL_RGB = '187, 247, 208', SOUL_DEEP = '34, 197, 94';
 function drawWisp(ctx, x, y, vx, vy, r, alpha) {
@@ -2298,41 +2416,80 @@ function drawWisp(ctx, x, y, vx, vy, r, alpha) {
   ctx.beginPath(); ctx.arc(x, y, r * 0.7, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
 }
-function bannerGeom(cx, cy) { const top = Math.max(26, cy - 160); return { px: cx + 30, top, bottom: cy - 18, cx: cx + 2, cy: top + 50 }; }
+function bannerGeom(cx, cy) { const top = Math.max(30, cy - 170); return { px: cx + 34, top, bottom: cy - 14, cx: cx - 4, cy: top + 62 }; }
+// Torn black silk banner on a crossbar: fold shading, embroidered edge, frayed hem, tassels, bronze finial, green mist.
 function drawSoulBanner(ctx, g, unfurl, glow, alpha, time) {
   if (alpha <= 0) return;
+  const w = 66, h = 118 * unfurl, x1 = g.px - 5, x0 = x1 - w, y0 = g.top + 6;
   ctx.save();
   ctx.globalAlpha = Math.min(1, alpha);
-  ctx.strokeStyle = '#3f3f46'; ctx.lineWidth = 3;            // pole
-  ctx.beginPath(); ctx.moveTo(g.px, g.bottom); ctx.lineTo(g.px, g.top - 6); ctx.stroke();
-  const h = 100 * unfurl, w = 58;
-  if (h > 2) {
-    ctx.beginPath();                                        // cloth hangs from the pole top, free edge waving
-    ctx.moveTo(g.px, g.top);
-    for (let i = 0; i <= 12; i++) { const yy = g.top + (h * i) / 12, xx = g.px - w + Math.sin(time * 5 + i * 0.7) * 5 * (i / 12); ctx.lineTo(xx, yy); }
-    ctx.lineTo(g.px, g.top + h);
-    ctx.closePath();
-    ctx.fillStyle = '#050505'; ctx.fill();
-    ctx.strokeStyle = `rgba(${SOUL_RGB}, ${0.35 + 0.4 * glow})`; ctx.lineWidth = 1.5; ctx.stroke();
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.fillStyle = `rgba(${SOUL_RGB}, ${Math.min(1, 0.4 + 0.6 * glow)})`;
-    ctx.font = '900 26px "Noto Serif SC", "SimSun", serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('魂', g.px - w / 2, g.top + h * 0.5);
+  const pole = ctx.createLinearGradient(g.px - 3, 0, g.px + 3, 0);                  // lacquered pole with bronze bands
+  pole.addColorStop(0, '#1c1917'); pole.addColorStop(0.5, '#57534e'); pole.addColorStop(1, '#1c1917');
+  ctx.fillStyle = pole; ctx.fillRect(g.px - 3, g.top - 6, 6, g.bottom - g.top + 6);
+  ctx.fillStyle = '#a16207';
+  for (const yy of [g.top + 2, g.top + 40, g.bottom - 10]) ctx.fillRect(g.px - 4, yy, 8, 3);
+  ctx.fillStyle = '#ca8a04';                                                         // bronze spear finial
+  ctx.beginPath(); ctx.moveTo(g.px, g.top - 26); ctx.lineTo(g.px + 5, g.top - 10); ctx.lineTo(g.px, g.top - 6); ctx.lineTo(g.px - 5, g.top - 10); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#3f2a14'; ctx.fillRect(x0 - 6, y0 - 3, w + 10, 5);               // crossbar
+  ctx.fillStyle = '#a16207'; ctx.fillRect(x0 - 9, y0 - 4, 5, 7);
+  if (h > 4) {
+    const cols = 14, edge = [];                                                     // waving cloth outline
+    for (let i = 0; i <= cols; i++) {
+      const u = i / cols, x = x0 + u * w + Math.sin(time * 4 + u * 5) * 3 * unfurl;
+      const tear = hash01(i * 3.7) * 0.22 + (i === 4 || i === 10 ? 0.28 : 0);      // ragged hem with two deep tears
+      edge.push({ x: x + Math.sin(time * 5 + u * 7) * 4 * unfurl, y: y0 + h * (1 - tear) });
+    }
+    const outline = () => {
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y0);
+      for (let i = cols; i >= 0; i--) ctx.lineTo(edge[i].x, edge[i].y);
+      ctx.closePath();
+    };
+    outline();
+    const fold = ctx.createLinearGradient(x0, 0, x1, 0);                            // vertical folds
+    fold.addColorStop(0, '#0b0b0c'); fold.addColorStop(0.18, '#1d1d20'); fold.addColorStop(0.32, '#070708');
+    fold.addColorStop(0.55, '#19191c'); fold.addColorStop(0.72, '#060607'); fold.addColorStop(0.88, '#18181b'); fold.addColorStop(1, '#09090a');
+    ctx.fillStyle = fold; ctx.fill();
+    ctx.save(); ctx.clip();
+    const shade = ctx.createLinearGradient(0, y0, 0, y0 + h);
+    shade.addColorStop(0, 'rgba(0,0,0,0)'); shade.addColorStop(1, 'rgba(0,0,0,0.45)');
+    ctx.fillStyle = shade; ctx.fillRect(x0 - 10, y0, w + 20, h);
+    ctx.strokeStyle = `rgba(${SOUL_RGB}, ${0.25 + 0.3 * glow})`; ctx.lineWidth = 1.2; ctx.setLineDash([3, 2]);   // embroidered edging
+    ctx.strokeRect(x0 + 5, y0 + 5, w - 10, h * 0.62);
+    ctx.setLineDash([]);
+    ctx.restore();
+    ctx.strokeStyle = '#27272a'; ctx.lineWidth = 0.8;                                // frayed threads at the hem
+    for (let i = 1; i < cols; i += 2) { const p = edge[i]; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + Math.sin(time * 6 + i) * 2, p.y + 5 + hash01(i) * 6); ctx.stroke(); }
+    ctx.globalCompositeOperation = 'lighter';                                        // glowing 魂
+    ctx.fillStyle = `rgba(${SOUL_RGB}, ${Math.min(1, (0.45 + 0.55 * glow) * (0.85 + 0.15 * Math.sin(time * 9)))})`;
+    ctx.font = '900 30px "Noto Serif SC", "SimSun", serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('魂', x0 + w / 2, y0 + Math.min(h * 0.4, 46));
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  ctx.strokeStyle = '#7f1d1d'; ctx.lineWidth = 1.5;                                   // tassels at the crossbar ends
+  for (const tx of [x0 - 6, x1 + 2]) {
+    const sway = Math.sin(time * 3 + tx) * 2;
+    ctx.beginPath(); ctx.moveTo(tx, y0); ctx.lineTo(tx + sway, y0 + 16); ctx.stroke();
+    ctx.fillStyle = '#b91c1c'; ctx.beginPath(); ctx.arc(tx + sway, y0 + 18, 2.4, 0, Math.PI * 2); ctx.fill();
   }
   ctx.restore();
-  additiveGlow(ctx, g.px - 29, g.top + h * 0.5, 60, SOUL_RGB, 0.2 + 0.4 * glow);
+  additiveGlow(ctx, x0 + w / 2, y0 + 46, 64, SOUL_RGB, (0.18 + 0.4 * glow) * alpha);
+  for (let i = 0; i < 4; i++) {                                                       // green mist rising off the cloth
+    const ph = (time * 0.6 + i / 4) % 1;
+    additiveGlow(ctx, x0 + w * (0.2 + 0.6 * hash01(i * 5.5)), y0 + h * 0.8 - ph * 70, 14 + ph * 10, SOUL_RGB, 0.25 * (1 - ph) * alpha * unfurl);
+  }
 }
 function drawSoulGather(ctx, cx, cy, prog, size, u) {
   const time = battle.time, souls = u?.souls || 0, g = bannerGeom(cx, cy);
   dimFocus(ctx, size, cx, cy, 0.5 * Math.min(1, prog / 0.25), '2, 10, 5');
   drawSoulBanner(ctx, g, easeOut(Math.min(1, prog / 0.45)), prog, 1, time);
-  const n = Math.min(40, 6 + Math.floor(souls / 3)), appear = Math.min(1, prog / 0.3);
-  for (let i = 0; i < n; i++) {                             // souls swirl around banner and Demon, tightening
-    const sp = 1.6 + hash01(i * 3.3) * 1.4, a = time * sp + i * 2.39, r = (70 - prog * 26) * (0.6 + 0.4 * hash01(i));
-    const x = g.cx + Math.cos(a) * r, y = (g.cy + cy) / 2 + Math.sin(a) * r * 0.75;
-    drawWisp(ctx, x, y, -Math.sin(a) * sp, Math.cos(a) * sp * 0.75, 2.4, appear * (0.5 + 0.5 * hash01(i * 7)));
+  const n = Math.min(36, 8 + Math.floor(souls / 3)), appear = Math.min(1, prog / 0.25);
+  for (let i = 0; i < n; i++) {                                     // souls spiral in from all around and are absorbed
+    const ph = (time * (0.7 + 0.5 * hash01(i * 2.1)) + hash01(i)) % 1, r = 150 * (1 - ph) + 8, a = hash01(i * 7.3) * 6.28 + ph * 4.2;
+    const x = cx + Math.cos(a) * r, y = cy - 6 + Math.sin(a) * r * 0.55;
+    drawWisp(ctx, x, y, -Math.sin(a) - Math.cos(a) * 1.5, Math.cos(a) * 0.55 - Math.sin(a) * 0.8, 2.4, appear * Math.min(1, ph * 4) * (0.6 + 0.4 * prog));
+    if (ph > 0.95) additiveGlow(ctx, cx, cy - 6, 22, SOUL_RGB, 0.5 * appear);
   }
-  additiveGlow(ctx, cx, cy, 40 + 30 * prog, SOUL_RGB, 0.15 + 0.35 * prog);
+  additiveGlow(ctx, cx, cy, 44 + 34 * prog, SOUL_RGB, 0.18 + 0.4 * prog);
   channelLabel(ctx, cx, cy + 150, `💀 VẠN HỒN BẠO PHÁ · ${souls} souls`, prog, '#bbf7d0', '#052e16');
 }
 function drawSoulDetonation(ctx, f, size) {
@@ -2341,7 +2498,7 @@ function drawSoulDetonation(ctx, f, size) {
   f._landed ??= {};
   dimFocus(ctx, size, o.x, o.y, 0.5 * Math.max(0, 1 - Math.max(0, t - 0.9) / 0.4), '2, 10, 5');
   drawSoulBanner(ctx, g, 1, t < LAUNCH ? 1.4 : 0.8, Math.max(0, 1 - Math.max(0, t - 1.0) / 0.4), time);
-  const extra = Math.min(20, Math.floor((sch.souls || 0) / 4));   // spare souls scatter upward
+  const extra = Math.min(20, Math.floor((sch.souls || 0) / 4));       // spare souls scatter upward
   for (let i = 0; i < extra && t > LAUNCH && t < LAUNCH + 0.9; i++) {
     const k = (t - LAUNCH) / 0.9, a = -Math.PI / 2 + (hash01(i * 5.1) - 0.5) * 2.4, d = 30 + k * 180;
     drawWisp(ctx, g.cx + Math.cos(a) * d, g.cy + Math.sin(a) * d * 0.8, Math.cos(a), Math.sin(a), 2.2, 1 - k);
@@ -2383,7 +2540,7 @@ function drawSoulWispShot(ctx, x, y, tx, ty, prog, f) {
   if (!f._hit) { f._hit = true; burstColors(tx, ty - 8, 5, ['#bbf7d0', '#22c55e'], 0.6, 0.3); }
   additiveGlow(ctx, tx, ty - 8, 18, SOUL_RGB, 0.7 * (1 - q));
 }
-function drawSoulReturn(ctx, x, y, tx, ty, prog) {           // from the fallen enemy (tx, ty) back to the Demon (x, y)
+function drawSoulReturn(ctx, x, y, tx, ty, prog) {                    // from the fallen enemy (tx, ty) back to the Demon (x, y)
   const g = bannerGeom(x, y), k = easeOut(prog);
   const q = quadPt(tx, ty - 10, (tx + g.cx) / 2, Math.min(ty, g.cy) - 60, g.cx, g.cy, k);
   const q2 = quadPt(tx, ty - 10, (tx + g.cx) / 2, Math.min(ty, g.cy) - 60, g.cx, g.cy, Math.max(0, k - 0.05));
@@ -2391,52 +2548,87 @@ function drawSoulReturn(ctx, x, y, tx, ty, prog) {           // from the fallen 
 }
 
 // ==== Blood-Fiend Sword Master · Boiling Blood Domain (Huyết Hải Cuồng Lộc) ====
-// Gather: a boiling crimson pool spreads around the Master.
-// Release: the pool floods outward at 5 tiles/s; as it reaches each enemy a blood sword erupts under it
-// and detonated bleeds burst as a geyser (e.bloodBurst).
+// Gather: crimson blades circle and draw in around the Master over a boiling pool of liquid blood.
+// Release: the pool floods outward (to the track) at 5 tiles/s with splashes at its edge; as it reaches each
+// enemy a large blood sword erupts from cracked ground, and detonated bleeds burst as a geyser (e.bloodBurst).
 const BLOOD_RGB = '220, 38, 38';
-function drawBloodPool(ctx, cx, cy, rx, ry, alpha, time) {
-  if (alpha <= 0 || rx <= 1) return;
-  ctx.save();
+function bloodPoolPath(ctx, cx, cy, rx, ry, time) {
   ctx.beginPath();
-  for (let i = 0; i <= 48; i++) {
-    const th = (i / 48) * Math.PI * 2, wob = 1 + 0.06 * Math.sin(th * 7 + time * 3) + 0.05 * Math.sin(th * 3 - time * 2);
+  for (let i = 0; i <= 56; i++) {
+    const th = (i / 56) * Math.PI * 2;
+    const wob = 1 + 0.07 * Math.sin(th * 5 + time * 2.4) + 0.04 * Math.sin(th * 11 - time * 3.1) + 0.03 * Math.sin(th * 2 + 1.3);
     const x = cx + Math.cos(th) * rx * wob, y = cy + Math.sin(th) * ry * wob;
     if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
   }
   ctx.closePath();
+}
+// Glossy liquid blood: dark core, rim shading, a moving specular sheen, ripples and popping bubbles.
+function drawBloodPool(ctx, cx, cy, rx, ry, alpha, time) {
+  if (alpha <= 0 || rx <= 1) return;
+  ctx.save();
+  bloodPoolPath(ctx, cx, cy, rx, ry, time);
   const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(rx, ry));
-  g.addColorStop(0, `rgba(69, 10, 10, ${0.6 * alpha})`);
-  g.addColorStop(0.75, `rgba(127, 29, 29, ${0.45 * alpha})`);
-  g.addColorStop(1, `rgba(185, 28, 28, ${0.25 * alpha})`);
+  g.addColorStop(0, `rgba(36, 2, 2, ${0.88 * alpha})`);
+  g.addColorStop(0.6, `rgba(88, 7, 7, ${0.82 * alpha})`);
+  g.addColorStop(0.92, `rgba(127, 18, 18, ${0.78 * alpha})`);
+  g.addColorStop(1, `rgba(153, 27, 27, ${0.7 * alpha})`);
   ctx.fillStyle = g; ctx.fill();
+  ctx.strokeStyle = `rgba(30, 2, 2, ${0.9 * alpha})`; ctx.lineWidth = 3; ctx.stroke();        // dark rim
+  ctx.save(); ctx.clip();
   ctx.globalCompositeOperation = 'lighter';
-  ctx.strokeStyle = `rgba(${BLOOD_RGB}, ${0.7 * alpha})`; ctx.lineWidth = 2.5; ctx.stroke();
-  for (let i = 0; i < 16; i++) {                            // bubbles grow and pop
+  for (let r = 0; r < 3; r++) {                                                                // ripples from the centre
+    const ph = (time * 0.8 + r / 3) % 1;
+    ctx.strokeStyle = `rgba(252, 165, 165, ${0.16 * (1 - ph) * alpha})`; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.ellipse(cx, cy, rx * ph, ry * ph, 0, 0, Math.PI * 2); ctx.stroke();
+  }
+  for (let s = 0; s < 2; s++) {                                                                // specular sheen
+    const sx = cx - rx * 0.35 + Math.sin(time * 0.7 + s * 2) * rx * 0.15, sy = cy - ry * 0.4 + s * ry * 0.25;
+    const sh = ctx.createRadialGradient(sx, sy, 0, sx, sy, rx * 0.35);
+    sh.addColorStop(0, `rgba(255, 228, 228, ${0.22 * alpha})`); sh.addColorStop(1, 'rgba(255, 228, 228, 0)');
+    ctx.fillStyle = sh;
+    ctx.beginPath(); ctx.ellipse(sx, sy, rx * 0.35, ry * 0.22, -0.2, 0, Math.PI * 2); ctx.fill();
+  }
+  for (let i = 0; i < 18; i++) {                                                               // bubbles grow and pop
     const ph = (time * 1.4 + hash01(i * 4.4)) % 1, a = hash01(i * 2.2) * 6.28, d = Math.sqrt(hash01(i * 9.1)) * 0.85;
     const bx = cx + Math.cos(a) * rx * d, by = cy + Math.sin(a) * ry * d;
-    ctx.strokeStyle = `rgba(254, 202, 202, ${(ph < 0.85 ? 0.5 : (1 - ph) * 3) * alpha})`; ctx.lineWidth = 1.2;
+    ctx.strokeStyle = `rgba(254, 202, 202, ${(ph < 0.85 ? 0.4 : (1 - ph) * 2.5) * alpha})`; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.arc(bx, by, 1 + ph * 4, 0, Math.PI * 2); ctx.stroke();
   }
   ctx.restore();
+  ctx.strokeStyle = `rgba(252, 165, 165, ${0.3 * alpha})`; ctx.lineWidth = 1;                  // wet highlight on the rim
+  bloodPoolPath(ctx, cx, cy - 1.5, rx * 0.985, ry * 0.97, time); ctx.stroke();
+  ctx.restore();
 }
-function drawBloodBlade(ctx, x, y, h, alpha) {              // a crimson blade erupting tip-first from the ground
+// A large crimson sword erupting tip-first from cracked ground: fuller ridge, edge highlight, cross-guard at ground level.
+function drawBloodBlade(ctx, x, y, h, alpha, crack = 1) {
   if (alpha <= 0 || h <= 0) return;
-  additiveGlow(ctx, x, y - h * 0.5, h * 0.7, BLOOD_RGB, 0.55 * alpha);
+  if (crack > 0) {                                                                // ground crack around the base
+    ctx.save(); ctx.globalAlpha = Math.min(1, alpha * crack);
+    ctx.strokeStyle = '#1c0505'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    for (let i = 0; i < 6; i++) { const a = (i / 6) * 6.28 + 0.4; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * 18, y + Math.sin(a) * 6); ctx.lineTo(x + Math.cos(a + 0.3) * 26, y + Math.sin(a + 0.3) * 9); ctx.stroke(); }
+    ctx.restore();
+  }
+  additiveGlow(ctx, x, y - h * 0.5, h * 0.6, BLOOD_RGB, 0.5 * alpha);
   ctx.save();
   ctx.globalAlpha = Math.min(1, alpha);
-  const g = ctx.createLinearGradient(x, y - h, x, y);
-  g.addColorStop(0, '#fee2e2'); g.addColorStop(0.35, '#ef4444'); g.addColorStop(1, '#7f1d1d');
+  const w = 9;
+  const g = ctx.createLinearGradient(x - w, 0, x + w, 0);
+  g.addColorStop(0, '#450a0a'); g.addColorStop(0.45, '#dc2626'); g.addColorStop(0.55, '#fca5a5'); g.addColorStop(1, '#7f1d1d');
   ctx.fillStyle = g;
-  ctx.beginPath(); ctx.moveTo(x, y - h); ctx.lineTo(x + 5, y - h + 12); ctx.lineTo(x + 4, y); ctx.lineTo(x - 4, y); ctx.lineTo(x - 5, y - h + 12); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#450a0a'; ctx.fillRect(x - 9, y - 3, 18, 3);           // guard at ground level
+  ctx.beginPath(); ctx.moveTo(x, y - h); ctx.lineTo(x + w, y - h + 20); ctx.lineTo(x + w * 0.8, y); ctx.lineTo(x - w * 0.8, y); ctx.lineTo(x - w, y - h + 20); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = 'rgba(254, 226, 226, 0.75)'; ctx.lineWidth = 1;              // fuller ridge
+  ctx.beginPath(); ctx.moveTo(x, y - h + 6); ctx.lineTo(x, y - 4); ctx.stroke();
+  ctx.fillStyle = '#2b0606';                                                       // cross-guard
+  ctx.beginPath(); ctx.moveTo(x - 17, y - 2); ctx.quadraticCurveTo(x, y - 8, x + 17, y - 2); ctx.lineTo(x + 15, y + 2); ctx.lineTo(x - 15, y + 2); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(x, y - 3, 2.6, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
 }
 function drawBloodGather(ctx, cx, cy, prog, size) {
-  const time = battle.time, r = 92 * easeOut(Math.min(1, prog / 0.85));
+  const time = battle.time, r = 96 * easeOut(Math.min(1, prog / 0.85));
   dimFocus(ctx, size, cx, cy, 0.45 * Math.min(1, prog / 0.25), '20, 2, 2');
   drawBloodPool(ctx, cx, cy + 10, r, r * 0.45, 1, time);
-  additiveGlow(ctx, cx, cy, 44 + 36 * prog, BLOOD_RGB, 0.2 + 0.45 * prog);
+  additiveGlow(ctx, cx, cy, 46 + 36 * prog, BLOOD_RGB, 0.2 + 0.45 * prog);
+  channelRing(cx, cy, prog, 8, 80, 44, (x, y, i, depth, appear) => drawBloodBlade(ctx, x, y + 8, 34 * appear, appear * depth, 0));
   channelLabel(ctx, cx, cy + 150, '🩸 HUYẾT HẢI CUỒNG LỘC', prog, '#fca5a5', '#450a0a');
 }
 function drawBloodDomain(ctx, f, size) {
@@ -2444,10 +2636,13 @@ function drawBloodDomain(ctx, f, size) {
   const o = routePoint(f.x, f.y, size), ox1 = routePoint(f.x + 1, f.y, size), oy1 = routePoint(f.x, f.y + 1, size);
   const pxX = ox1.x - o.x, pxY = oy1.y - o.y;
   f._landed ??= {};
-  const R = Math.max(0.6, Math.min(5.2, (t - 0.1) * 5));     // tiles; the edge reaches each enemy on its hit
+  const grow = Math.max(0, (t - 0.1) * 5), R = Math.max(0.6, Math.min(3.4, grow));   // tiles; stops at the track
   const drain = Math.max(0, 1 - Math.max(0, t - 1.1) / 0.6);
-  dimFocus(ctx, size, o.x, o.y, 0.45 * drain, '20, 2, 2');
-  drawBloodPool(ctx, o.x, o.y + 10, R * pxX, R * pxY, drain, time);
+  dimFocus(ctx, size, o.x, o.y, 0.3 * drain, '20, 2, 2');            // the pool itself is drawn under the runners (drawBloodGround)
+  if (grow > 0.6 && grow < 3.4) for (let i = 0; i < 3; i++) {                       // splashes thrown off the advancing edge
+    const a = Math.random() * 6.28, ex = o.x + Math.cos(a) * R * pxX, ey = o.y + 10 + Math.sin(a) * R * pxY;
+    emitParticle(2, ex, ey, Math.cos(a) * 60, -60 - Math.random() * 80, 0.4, 1.2 + Math.random() * 1.4, Math.random() < 0.3 ? '#fca5a5' : '#991b1b');
+  }
   for (const h of sch.hits) {
     if (t < h.at) continue;
     const p = enemyPt(f, h.uid, size);
@@ -2457,14 +2652,24 @@ function drawBloodDomain(ctx, f, size) {
       f._landed[h.uid] = true;
       const geyser = !!(e?.bloodBurst?.geyser);
       (f._geyser ??= {})[h.uid] = geyser;
-      droplets(p.x, p.y, 10, '#b91c1c', 1);
-      if (geyser) for (let i = 0; i < 26; i++) emitParticle(2, p.x + (Math.random() - 0.5) * 10, p.y - 4, (Math.random() - 0.5) * 70, -220 - Math.random() * 200, 0.6 + Math.random() * 0.4, 1.6 + Math.random() * 2, Math.random() < 0.4 ? '#fca5a5' : '#dc2626');
-      nudgeEnemy(h.uid, 0, -6, 0.5);
+      droplets(p.x, p.y, 14, '#b91c1c', 1.2);
+      for (let i = 0; i < 8; i++) emitParticle(2, p.x, p.y + 6, (Math.random() - 0.5) * 160, -90 - Math.random() * 120, 0.6, 1.8 + Math.random() * 2, Math.random() < 0.5 ? '#44403c' : '#57534e');   // ground debris
+      if (geyser) for (let i = 0; i < 30; i++) emitParticle(2, p.x + (Math.random() - 0.5) * 10, p.y - 4, (Math.random() - 0.5) * 70, -240 - Math.random() * 220, 0.6 + Math.random() * 0.4, 1.6 + Math.random() * 2, Math.random() < 0.4 ? '#fca5a5' : '#dc2626');
+      nudgeEnemy(h.uid, 0, -8, 0.6);
     }
     const since = t - h.at;
-    const rise = Math.min(1, since / 0.1), sink = since > 0.55 ? Math.max(0, 1 - (since - 0.55) / 0.3) : 1;
-    drawBloodBlade(ctx, p.x, p.y + 8, 46 * rise * sink, sink);
-    if (f._geyser?.[h.uid] && since < 0.5) additiveGlow(ctx, p.x, p.y - 50, 46, BLOOD_RGB, 0.7 * (1 - since / 0.5));
+    const rise = easeOut(Math.min(1, since / 0.09)), sink = since > 0.6 ? Math.max(0, 1 - (since - 0.6) / 0.3) : 1;
+    drawBloodBlade(ctx, p.x, p.y + 10, 84 * rise * sink, sink, sink);
+    if (f._geyser?.[h.uid] && since < 0.5) additiveGlow(ctx, p.x, p.y - 60, 52, BLOOD_RGB, 0.7 * (1 - since / 0.5));
+  }
+}
+// Ground layer for Boiling Blood Domain: the flooding pool is drawn before the runners so they stand in it.
+function drawBloodGround(ctx, size) {
+  for (const f of battle.effects) {
+    if (f.type !== 'blood-domain') continue;
+    const t = (f.maxTtl || 1.8) - f.ttl, o = routePoint(f.x, f.y, size), ox1 = routePoint(f.x + 1, f.y, size), oy1 = routePoint(f.x, f.y + 1, size);
+    const R = Math.max(0.6, Math.min(3.4, Math.max(0, (t - 0.1) * 5))), drain = Math.max(0, 1 - Math.max(0, t - 1.1) / 0.6);
+    drawBloodPool(ctx, o.x, o.y + 10, R * (ox1.x - o.x), R * (oy1.y - o.y), 0.65 * drain, battle.time);
   }
 }
 function drawBloodSlash(ctx, x, y, tx, ty, prog, f) {
@@ -2482,7 +2687,7 @@ function drawBloodSlash(ctx, x, y, tx, ty, prog, f) {
   ctx.restore();
 }
 
-// Marks that stay on enemies between effects: 符 talisman while Vulnerable, blood drips from Blood-Fiend bleeds.
+// Marks that stay on enemies between effects: talisman while Vulnerable, blood drips from Blood-Fiend bleeds.
 function drawPersistentMarks(ctx, size) {
   const fiends = new Set(battle.units.filter(v => !v.removed && v.id === 'bloodFiendMaster').map(v => v.uid));
   for (const e of battle.enemies) {
@@ -2924,6 +3129,7 @@ function draw() {
   }
 
   drawInkPuddles(ctx, size);
+  drawBloodGround(ctx, size);
 
   // Ecosystem grounds
   for (const oil of battle.oilPools || []) {
