@@ -935,144 +935,344 @@ function drawSwordTorrentChannel(ctx, cx, cy, prog, size, channelType = 'sword-t
   ctx.restore();
 }
 
-function drawSwordTorrentC(ctx, x, y, tx, ty, prog, size) {
+// ---- Sword Torrent VFX: cached sprites, additive light, particle pool ----
+// Timeline (seconds after channel release, engine time; see engine sword-torrent branch):
+// 0–0.15 swords fly up · 0.15–0.7 rain · 0.7–0.85 Colossal hangs · 0.85–0.95 slam · 1.0–2.0 linger.
+const SWORD_SPRITES = {};
+function swordSprite(colossal) {
+  const key = colossal ? 'colossal' : 'rain';
+  if (SWORD_SPRITES[key]) return SWORD_SPRITES[key];
+  const scale = colossal ? 1.15 : 0.72;
+  const len = (colossal ? 155 : 44) * scale, w = (colossal ? 13 : 4.2) * scale;
+  const pad = colossal ? 44 : 18, back = len * 0.8, front = len;
+  const c = document.createElement('canvas');
+  c.width = Math.ceil(back + front + pad * 2);
+  c.height = Math.ceil(w * 6 + pad * 2);
+  const g = c.getContext('2d'), ox = back + pad, oy = c.height / 2;
+  // Baked glow: an elongated radial gradient along the blade
+  const gr = (front + back) * 0.55;
+  g.save();
+  g.translate(ox + len * 0.3, oy);
+  g.scale(1, (c.height / 2) / gr);
+  const glow = g.createRadialGradient(0, 0, 0, 0, 0, gr);
+  glow.addColorStop(0, 'rgba(110, 231, 183, 0.55)');
+  glow.addColorStop(0.45, 'rgba(16, 185, 129, 0.22)');
+  glow.addColorStop(1, 'rgba(16, 185, 129, 0)');
+  g.fillStyle = glow;
+  g.beginPath(); g.arc(0, 0, gr, 0, Math.PI * 2); g.fill();
+  g.restore();
+  drawEmeraldSwordBlade(g, ox, oy, 0, scale, 1, colossal); // shadowBlur runs once, here
+  return (SWORD_SPRITES[key] = { canvas: c, ox, oy, len });
+}
+// Stamp a cached sword. (x, y) is the guard; the blade points along ang.
+function stampSword(ctx, x, y, ang, k, alpha, colossal) {
+  if (alpha <= 0) return;
+  const s = swordSprite(colossal);
   ctx.save();
-  const bX = tx, bY = ty;
-
-  // 1. Emerald Celestial Sky Flash on Impact
-  if (prog > 0.35 && prog < 0.65) {
-    const flashAlpha = (1 - Math.abs(prog - 0.45) / 0.20) * 0.24;
-    if (flashAlpha > 0) {
-      ctx.fillStyle = 'rgba(16, 185, 129, ' + flashAlpha + ')';
-      ctx.fillRect(0, 0, size, size);
-    }
-  }
-
-  // 2. CELESTIAL SWORD RAIN (Like Option A) Across All 16 Perimeter Tiles!
-  for (let i = 0; i < 16; i++) {
-    const tp = Game.track(i);
-    const pt = routePoint(tp.x, tp.y, size);
-
-    for (let s = 0; s < 2; s++) {
-      const delay = (i * 0.018) + (s * 0.13);
-      const localProg = Math.min(1, Math.max(0, (prog - delay) * 2.35));
-      if (localProg <= 0) continue;
-
-      const startY = pt.y - 165;
-      const startX = pt.x + 36;
-      const fallT = Math.min(1, localProg * 1.35);
-      const curX = startX + (pt.x - startX) * fallT;
-      const curY = startY + (pt.y - startY) * fallT;
-      const angle = Math.atan2(pt.y - startY, pt.x - startX);
-
-      // Jade Qi tail streak from the heavens
-      ctx.strokeStyle = s === 0 ? 'rgba(52, 211, 153, 0.68)' : 'rgba(110, 231, 183, 0.52)';
-      ctx.lineWidth = 2.6;
-      ctx.beginPath();
-      ctx.moveTo(startX, startY);
-      ctx.lineTo(curX, curY);
-      ctx.stroke();
-
-      // Draw authentic Jian sword with tip touching curX, curY
-      const tipOffset = 34 * 0.72;
-      const drawX = curX - Math.cos(angle) * tipOffset;
-      const drawY = curY - Math.sin(angle) * tipOffset;
-      const sAlpha = Math.min(1, (1 - localProg * 0.3));
-      drawEmeraldSwordBlade(ctx, drawX, drawY, angle, 0.72, sAlpha, false);
-
-      // Jade Lotus / Bagua Ripple on each tile upon impact
-      if (localProg >= 0.72) {
-        const impT = (localProg - 0.72) / 0.28;
-        const impRad = impT * 26;
-        ctx.strokeStyle = `rgba(52, 211, 153, ${(1 - impT) * 0.9})`;
-        ctx.lineWidth = 2 * (1 - impT);
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, impRad, 0, Math.PI * 2);
-        ctx.stroke();
-
-        for (let k = 0; k < 4; k++) {
-          const spAng = k * (Math.PI / 2) + i;
-          const spDist = impT * 18;
-          ctx.fillStyle = '#ecfdf5';
-          ctx.fillRect(pt.x + Math.cos(spAng) * spDist - 1.5, pt.y + Math.sin(spAng) * spDist - 1.5, 3, 3);
-        }
-      }
-    }
-  }
-
-  // 3. COLOSSAL SOVEREIGN JADE JIAN (巨型翡翠仙劍) Crashing Vertically Onto Highest-HP Target!
-  const dropProg = Math.min(1, prog / 0.42);
-  const colossalScale = 1.15;
-  const colossalBladeLen = 155 * colossalScale;
-
-  // Vertical Heavenly Pillar Beam locking onto the target before & during impact
-  const pillarAlpha = prog < 0.42 ? 0.55 : Math.max(0, (1 - (prog - 0.42) / 0.58) * 0.65);
-  const pillarW = prog < 0.42 ? 22 : 36 * (1 - (prog - 0.42) / 0.58);
-  const pillarGrad = ctx.createLinearGradient(bX - pillarW, 0, bX + pillarW, 0);
-  pillarGrad.addColorStop(0, 'rgba(16, 185, 129, 0)');
-  pillarGrad.addColorStop(0.5, `rgba(110, 231, 183, ${pillarAlpha})`);
-  pillarGrad.addColorStop(1, 'rgba(16, 185, 129, 0)');
-  ctx.fillStyle = pillarGrad;
-  ctx.fillRect(bX - pillarW, 0, pillarW * 2, bY + 12);
-
-  // Calculate sword guard position so the colossal sword TIP embeds into (bX, bY) at dropProg = 1
-  const tipStartY = -40;
-  const curTipY = tipStartY + dropProg * (bY - tipStartY);
-  const guardY = curTipY - colossalBladeLen * 0.92; // Tip slightly buried into ground at impact
-  const colAlpha = prog > 0.78 ? Math.max(0, 1 - (prog - 0.78) / 0.22) : 1;
-
-  // Render the Colossal Celestial Jade Jian pointing straight down (Math.PI * 0.5)
-  drawEmeraldSwordBlade(ctx, bX, guardY, Math.PI * 0.5, colossalScale, colAlpha, true);
-
-  // 4. Colossal Impact Crater, 8-Trigram Bagua Shockwave & -30% Current HP Strip Callout
-  if (dropProg >= 1.0) {
-    const impactT = Math.min(1, (prog - 0.42) / 0.58);
-
-    // Isometric ground Bagua octagon seal under the pinned Colossal Sword
-    ctx.save();
-    ctx.translate(bX, bY);
-    ctx.scale(1.0, 0.52);
-    const baguaR = 25 + impactT * 75;
-    ctx.strokeStyle = `rgba(254, 240, 138, ${(1 - impactT) * 0.95})`;
-    ctx.lineWidth = 3 * (1 - impactT * 0.6);
-    ctx.beginPath();
-    for (let k = 0; k <= 8; k++) {
-      const a = (k / 8) * Math.PI * 2 + impactT * 1.5;
-      const px = Math.cos(a) * baguaR, py = Math.sin(a) * baguaR;
-      if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-    }
-    ctx.stroke();
-    ctx.restore();
-
-    // Expanding Jade Shockwave Rings
-    for (let r = 0; r < 3; r++) {
-      const ringT = Math.max(0, impactT - r * 0.12);
-      if (ringT <= 0) continue;
-      ctx.strokeStyle = r === 0 ? `rgba(236, 253, 245, ${(1 - ringT) * 0.95})` : `rgba(52, 211, 153, ${(1 - ringT) * 0.9})`;
-      ctx.lineWidth = (4 - r) * (1 - ringT);
-      ctx.beginPath();
-      ctx.arc(bX, bY, ringT * 82, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-
-    // Callout Banner for 30% Current HP Strip
-    ctx.save();
-    ctx.textAlign = 'center';
-    ctx.font = '900 15px system-ui, -apple-system, sans-serif';
-    ctx.fillStyle = '#fef08a';
-    ctx.shadowColor = '#047857';
-    ctx.shadowBlur = 14;
-    ctx.fillText('🗡 −30% CURRENT HP! · VẠN KIẾM QUY TÔNG', bX, bY - 45 - impactT * 24);
-    ctx.restore();
-  }
-
-  ctx.fillStyle = '#a7f3d0';
-  ctx.font = '800 13px system-ui, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.shadowColor = '#10b981';
-  ctx.shadowBlur = 10;
-  ctx.fillText('TEN-THOUSAND SWORD TORRENT · COLOSSAL JIAN & SWORD RAIN', size * 0.5, 26);
+  ctx.globalAlpha = Math.min(1, alpha);
+  ctx.translate(x, y);
+  ctx.rotate(ang);
+  if (k !== 1) ctx.scale(k, k);
+  ctx.drawImage(s.canvas, -s.ox, -s.oy);
   ctx.restore();
+}
+// Stamp so the tip sits at (tx, ty); bury pulls the guard toward the tip (0 = tip just touching).
+function stampSwordTip(ctx, tx, ty, ang, k, alpha, colossal, bury = 0) {
+  const reach = swordSprite(colossal).len * 0.96 * k * (1 - bury);
+  stampSword(ctx, tx - Math.cos(ang) * reach, ty - Math.sin(ang) * reach, ang, k, alpha, colossal);
+}
+
+// Fixed particle pool: no per-frame allocation. kind: 0 spark (additive), 1 dust, 2 stone chip.
+const PARTICLE_MAX = 200;
+const PARTICLES = Array.from({ length: PARTICLE_MAX }, () => ({ live: false, kind: 0, x: 0, y: 0, vx: 0, vy: 0, life: 0, max: 1, size: 1, color: '#fff', rot: 0, vr: 0 }));
+let particleCursor = 0;
+function emitParticle(kind, x, y, vx, vy, life, size, color) {
+  for (let n = 0; n < PARTICLE_MAX; n++) {
+    const p = PARTICLES[(particleCursor + n) % PARTICLE_MAX];
+    if (p.live) continue;
+    particleCursor = (particleCursor + n + 1) % PARTICLE_MAX;
+    p.live = true; p.kind = kind; p.x = x; p.y = y; p.vx = vx; p.vy = vy;
+    p.life = life; p.max = life; p.size = size; p.color = color;
+    p.rot = Math.random() * Math.PI; p.vr = (Math.random() - 0.5) * 12;
+    return;
+  }
+}
+function burstImpact(x, y, sparks, dust, chips, power = 1) {
+  for (let i = 0; i < sparks; i++) {
+    const a = -Math.PI * (0.1 + Math.random() * 0.8), v = (90 + Math.random() * 170) * power;
+    emitParticle(0, x, y, Math.cos(a) * v, Math.sin(a) * v, 0.25 + Math.random() * 0.3, 1.2 + Math.random() * 1.6, Math.random() < 0.4 ? '#ecfdf5' : '#6ee7b7');
+  }
+  for (let i = 0; i < dust; i++) {
+    const a = Math.random() * Math.PI * 2, v = (14 + Math.random() * 30) * power;
+    emitParticle(1, x + Math.cos(a) * 4, y + Math.sin(a) * 2, Math.cos(a) * v, Math.sin(a) * v * 0.45 - 6, 0.5 + Math.random() * 0.45, (6 + Math.random() * 7) * power, '#8b8577');
+  }
+  for (let i = 0; i < chips; i++) {
+    const a = -Math.PI * (0.15 + Math.random() * 0.7), v = (120 + Math.random() * 200) * power;
+    emitParticle(2, x, y, Math.cos(a) * v, Math.sin(a) * v, 0.55 + Math.random() * 0.4, 1.8 + Math.random() * 2.6, Math.random() < 0.5 ? '#6b6459' : '#4a443c');
+  }
+}
+function updateParticles(dt) {
+  if (dt <= 0) return;
+  for (const p of PARTICLES) {
+    if (!p.live) continue;
+    p.life -= dt;
+    if (p.life <= 0) { p.live = false; continue; }
+    if (p.kind === 0) { p.vx *= 1 - 2.5 * dt; p.vy = p.vy * (1 - 2.5 * dt) + 260 * dt; }
+    else if (p.kind === 1) { p.vx *= 1 - 3 * dt; p.vy *= 1 - 3 * dt; p.size += 10 * dt; }
+    else { p.vy += 620 * dt; p.rot += p.vr * dt; }
+    p.x += p.vx * dt; p.y += p.vy * dt;
+  }
+}
+function drawParticles(ctx) {
+  ctx.save();
+  for (const p of PARTICLES) {          // normal blend: dust and chips
+    if (!p.live || p.kind === 0) continue;
+    const t = p.life / p.max;
+    ctx.globalAlpha = p.kind === 1 ? 0.32 * t : Math.min(1, t * 2);
+    ctx.fillStyle = p.color;
+    if (p.kind === 1) { ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill(); }
+    else { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillRect(-p.size, -p.size * 0.6, p.size * 2, p.size * 1.2); ctx.restore(); }
+  }
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.lineCap = 'round';
+  for (const p of PARTICLES) {          // additive: sparks with a short velocity streak
+    if (!p.live || p.kind !== 0) continue;
+    const t = p.life / p.max;
+    ctx.globalAlpha = t;
+    ctx.strokeStyle = p.color;
+    ctx.lineWidth = p.size;
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(p.x - p.vx * 0.035, p.y - p.vy * 0.035);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+const hash01 = n => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+function dimBoard(ctx, size, alpha) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.fillStyle = `rgba(2, 8, 6, ${alpha})`;
+  ctx.fillRect(0, 0, size, size);
+  ctx.restore();
+}
+function additiveGlow(ctx, x, y, r, rgb, alpha) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0, `rgba(${rgb}, ${alpha})`);
+  g.addColorStop(1, `rgba(${rgb}, 0)`);
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+// Gather (the 1.2s channel): board dims, a ring of swords forms around the unit pointing up and draws in.
+function drawSwordGather(ctx, cx, cy, prog, size) {
+  dimBoard(ctx, size, 0.3 * Math.min(1, prog / 0.25));
+  additiveGlow(ctx, cx, cy, 46 + 40 * prog, '110, 231, 183', 0.18 + 0.5 * prog);
+  const count = 12, radius = 74 - 36 * prog, lift = 6 + 14 * prog;
+  for (let i = 0; i < count; i++) {
+    const appear = Math.min(1, Math.max(0, (prog - (i / count) * 0.4) / 0.12));
+    if (appear <= 0) continue;
+    const a = (i / count) * Math.PI * 2 + prog * 1.6;
+    const sx = cx + Math.cos(a) * radius, sy = cy + Math.sin(a) * radius * 0.45 - lift;
+    const tremble = prog > 0.8 ? Math.sin(performance.now() * 0.09 + i * 1.7) * (prog - 0.8) * 10 : 0;
+    // Pointing up, fanned slightly outward; swords behind the unit are drawn fainter
+    const ang = -Math.PI / 2 + Math.cos(a) * 0.18;
+    const depth = 0.65 + 0.35 * (Math.sin(a) + 1) / 2;
+    stampSwordTip(ctx, sx + tremble, sy - 26, ang, 0.9, appear * depth, false);
+  }
+  const theme = '⚡ VẠN KIẾM QUY TÔNG';
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.font = '700 11px system-ui, -apple-system, sans-serif';
+  ctx.fillStyle = '#6ee7b7';
+  ctx.fillText(theme, cx, cy - 78);
+  const barW = 96, barH = 5;
+  ctx.fillStyle = '#064e3b';
+  ctx.fillRect(cx - barW / 2, cy - 70, barW, barH);
+  ctx.fillStyle = '#34d399';
+  ctx.fillRect(cx - barW / 2, cy - 70, barW * Math.min(1, prog), barH);
+  ctx.restore();
+}
+
+function swordTorrentTarget(f, uid, size, fallback) {
+  f._pos ??= {};
+  const e = uid != null && battle.enemies.find(v => v.uid === uid && !v.gone && v.hp > 0);
+  if (e) { const p = Game.track(e.p); f._pos[uid] = routePoint(p.x, p.y, size); }
+  return f._pos[uid] || fallback;
+}
+function nudgeEnemy(uid, dx, dy, squash) {
+  const e = battle.enemies.find(v => v.uid === uid);
+  if (!e) return;
+  e.recoilX = (e.recoilX || 0) + dx; e.recoilY = (e.recoilY || 0) + dy;
+  e.hitSquash = Math.max(e.hitSquash || 0, squash);
+}
+function drawGroundCrack(ctx, x, y, seed, alpha) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = 'rgba(12, 10, 8, 0.55)';
+  ctx.beginPath(); ctx.ellipse(x, y, 34, 13, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#140f0b';
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 9; i++) {
+    let a = (i / 9) * Math.PI * 2 + hash01(seed + i) * 0.5, px = x, py = y, w = 3.2;
+    ctx.beginPath(); ctx.moveTo(px, py);
+    const segs = 3 + Math.floor(hash01(seed + i * 7) * 3);
+    for (let s = 0; s < segs; s++) {
+      a += (hash01(seed + i * 13 + s) - 0.5) * 0.9;
+      const step = 9 + hash01(seed + i * 17 + s) * 12;
+      px += Math.cos(a) * step; py += Math.sin(a) * step * 0.42;
+      ctx.lineTo(px, py);
+    }
+    ctx.lineWidth = w; ctx.stroke();
+    w *= 0.7;
+  }
+  ctx.restore();
+}
+
+function drawSwordTorrent(ctx, f, size) {
+  const t = (f.maxTtl || 2) - f.ttl;               // seconds since release, engine time
+  const sch = f.schedule || { rain: [], colossalAt: 0.95, colossalUid: null };
+  const origin = routePoint(f.x, f.y, size);
+  const fade = t > 1.0 ? Math.max(0, 1 - (t - 1.0) / 1.0) : 1;   // linger fade
+  f._landed ??= {};
+
+  // Board stays dim until the Colossal impact, then lifts
+  const impactAt = sch.colossalAt;
+  dimBoard(ctx, size, t < impactAt ? 0.3 : 0.3 * Math.max(0, 1 - (t - impactAt) / 0.3));
+
+  // Release: the ring swords shoot up off-screen with short trails
+  if (t < 0.2) {
+    const k = Math.min(1, t / 0.15), ease = k * k;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2 + 1.6;
+      const sx = origin.x + Math.cos(a) * 38, sy0 = origin.y + Math.sin(a) * 17 - 46;
+      const sy = sy0 - ease * (sy0 + 80);
+      ctx.strokeStyle = `rgba(110, 231, 183, ${0.55 * (1 - k * 0.5)})`;
+      ctx.lineWidth = 2.4;
+      ctx.beginPath(); ctx.moveTo(sx, Math.min(sy0, sy + 70)); ctx.lineTo(sx, sy); ctx.stroke();
+    }
+    ctx.restore();
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2 + 1.6;
+      const sx = origin.x + Math.cos(a) * 38, sy0 = origin.y + Math.sin(a) * 17 - 46;
+      stampSwordTip(ctx, sx, sy0 - ease * (sy0 + 80), -Math.PI / 2, 0.9, 1 - k * 0.3, false);
+    }
+  }
+
+  // Rain: one sword per enemy (timed to its damage) plus one per track tile for coverage
+  const drops = [];
+  for (const r of sch.rain) drops.push({ key: 'e' + r.uid, uid: r.uid, at: r.at, seed: r.uid * 3.7, enemy: true });
+  for (let i = 0; i < 16; i++) drops.push({ key: 't' + i, tile: i, at: 0.15 + (i / 15) * 0.55 + hash01(i + 40) * 0.05, seed: i * 9.1 + 5, enemy: false });
+  const FALL = 0.22;
+  for (const d of drops) {
+    if (t < d.at - FALL) continue;
+    let p;
+    if (d.enemy) p = swordTorrentTarget(f, d.uid, size, null);
+    else { const tp = Game.track(d.tile + 0.5); p = routePoint(tp.x, tp.y, size); }
+    if (!p) continue;
+    const jx = (hash01(d.seed) - 0.5) * 18, jy = (hash01(d.seed + 1) - 0.5) * 8;
+    const gx = p.x + jx, gy = p.y + jy + (d.enemy ? 4 : 0);
+    const lean = (hash01(d.seed + 2) - 0.5) * 0.5;               // angle variation
+    const k = (d.enemy ? 1.0 : 0.78) + hash01(d.seed + 3) * 0.25; // size variation
+    const ang = Math.PI / 2 + lean;
+    const sx = gx - Math.cos(ang) * 260, sy = gy - Math.sin(ang) * 260;
+    if (t < d.at) {
+      const q = (t - (d.at - FALL)) / FALL, e2 = q * q;       // accelerating fall
+      const tx = sx + (gx - sx) * e2, ty = sy + (gy - sy) * e2;
+      ctx.save();                                              // ground shadow grows as it nears
+      ctx.fillStyle = `rgba(0, 0, 0, ${0.12 + 0.3 * q})`;
+      ctx.beginPath(); ctx.ellipse(gx, gy + 2, 3 + 9 * q * k, (1.5 + 3.5 * q) * k, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = `rgba(110, 231, 183, ${0.25 + 0.45 * q})`;
+      ctx.lineWidth = 2.2 * k; ctx.lineCap = 'round';
+      const trail = 30 + 60 * q;
+      ctx.beginPath();
+      ctx.moveTo(tx - Math.cos(ang) * (trail + 30 * k), ty - Math.sin(ang) * (trail + 30 * k));
+      ctx.lineTo(tx - Math.cos(ang) * 20 * k, ty - Math.sin(ang) * 20 * k);
+      ctx.stroke();
+      ctx.restore();
+      stampSwordTip(ctx, tx, ty, ang, k, 1, false);
+      continue;
+    }
+    if (!f._landed[d.key]) {
+      f._landed[d.key] = true;
+      if (d.enemy) { burstImpact(gx, gy, 9, 4, 3, 1); nudgeEnemy(d.uid, Math.cos(ang) * 4, 5, 0.35); }
+      else burstImpact(gx, gy, 5, 2, 1, 0.8);
+    }
+    // Stuck in the ground, glow fades over the linger
+    const since = t - d.at;
+    additiveGlow(ctx, gx, gy, 18 * k, '110, 231, 183', (since < 0.15 ? 0.7 : 0.35) * fade);
+    if (since < 0.25) {
+      const rq = since / 0.25;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = `rgba(167, 243, 208, ${(1 - rq) * 0.8})`;
+      ctx.lineWidth = 2 * (1 - rq);
+      ctx.beginPath(); ctx.ellipse(gx, gy, 4 + rq * 20, 2 + rq * 8, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
+    stampSwordTip(ctx, gx, gy, ang, k, fade, false, 0.28);
+  }
+
+  // Colossal Sword: hangs high above the target, slams, cracks the ground
+  const fallback = routePoint(f.tx, f.ty, size);
+  const cp = swordTorrentTarget(f, sch.colossalUid, size, fallback);
+  const hangAt = impactAt - 0.25, slamAt = impactAt - 0.1;
+  if (t >= hangAt) {
+    // Hang 250px above the target, but never above y=70 so it stays on the board for top-row targets
+    const cGround = cp.y + 6, high = Math.max(cGround - 250, Math.min(cGround - 90, 70));
+    let tipY;
+    if (t < slamAt) tipY = high + ((t - hangAt) / (slamAt - hangAt)) * 8;   // nearly still
+    else if (t < impactAt) { const q = (t - slamAt) / (impactAt - slamAt); tipY = high + 8 + (cGround - high - 8) * q * q * q; }
+    else tipY = cGround;
+    const inA = Math.min(1, (t - hangAt) / 0.06);
+    if (t < impactAt) {
+      additiveGlow(ctx, cp.x, cGround, 40, '110, 231, 183', 0.25 * inA);   // target lock on the ground
+      ctx.save();
+      ctx.fillStyle = `rgba(0, 0, 0, ${0.15 + 0.35 * Math.max(0, (t - slamAt) / 0.1)})`;
+      ctx.beginPath(); ctx.ellipse(cp.x, cGround + 2, 26, 9, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+    if (t >= impactAt) {
+      if (!f._landed.colossal) {
+        f._landed.colossal = true;
+        burstImpact(cp.x, cGround, 24, 12, 30, 1.35);
+        nudgeEnemy(sch.colossalUid, 0, 12, 0.6);
+      }
+      drawGroundCrack(ctx, cp.x, cGround, (sch.colossalUid || 1) * 5.3, fade);
+      const since = t - impactAt;
+      for (let r = 0; r < 2; r++) {                                       // shockwave rings
+        const rq = Math.min(1, Math.max(0, (since - r * 0.06) / 0.35));
+        if (rq <= 0 || rq >= 1) continue;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.strokeStyle = `rgba(236, 253, 245, ${(1 - rq) * 0.85})`;
+        ctx.lineWidth = 4 * (1 - rq);
+        ctx.beginPath(); ctx.ellipse(cp.x, cGround, 10 + rq * 110, 4 + rq * 42, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+      }
+      additiveGlow(ctx, cp.x, cGround - 30, 70, '167, 243, 208', 0.45 * fade);
+    }
+    stampSwordTip(ctx, cp.x, tipY, Math.PI / 2, 1, inA * (t >= impactAt ? fade : 1), true, t >= impactAt ? 0.15 : 0);
+    if (t >= impactAt && t < impactAt + 0.2) {                            // white additive flash
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.75 * (1 - (t - impactAt) / 0.2)})`;
+      ctx.fillRect(0, 0, size, size);
+      ctx.restore();
+    }
+  }
 }
 
 function drawCultivationSword(ctx, x0, y0, tx, ty, curve, prog, pal) {
@@ -1472,6 +1672,22 @@ function draw() {
   let ctx = canvas.getContext('2d'), size = 700, unit = size / 5;
   ctx.clearRect(0, 0, size, size);
 
+  // Particles run on wall time, scaled by game speed; frozen while paused or in hit-stop
+  const vfxNow = performance.now();
+  let vfxDt = Math.min(0.05, (vfxNow - (draw.lastT || vfxNow)) / 1000);
+  draw.lastT = vfxNow;
+  if (paused || (battle.hitStopRemaining || 0) > 0) vfxDt = 0;
+  updateParticles(vfxDt * speed);
+
+  // Impact shake + 3% punch-in, both decaying with battle.shake.ttl
+  ctx.save();
+  if (battle.shake && battle.shake.ttl > 0) {
+    const k = Math.min(1, battle.shake.ttl / 0.25), m = battle.shake.mag * k, z = 1 + 0.03 * k;
+    ctx.translate(size / 2, size / 2);
+    ctx.scale(z, z);
+    ctx.translate(-size / 2 + (Math.random() * 2 - 1) * m, -size / 2 + (Math.random() * 2 - 1) * m);
+  }
+
   // Ecosystem grounds
   for (const oil of battle.oilPools || []) {
     const p = Game.track(oil.tile + 0.5), q = routePoint(p.x, p.y, size);
@@ -1680,7 +1896,8 @@ function draw() {
     if (u.channeling) {
       const pt = routePoint(u.x + 1, u.y + 1, size);
       const chProg = Math.min(1, Math.max(0, 1 - (u.channeling.remaining / (u.channeling.duration || 1.2))));
-      drawSwordTorrentChannel(ctx, pt.x, pt.y, chProg, size, u.channeling.type);
+      if (u.channeling.type === 'sword-torrent') drawSwordGather(ctx, pt.x, pt.y, chProg, size);
+      else drawSwordTorrentChannel(ctx, pt.x, pt.y, chProg, size, u.channeling.type);
     }
   }
 
@@ -1694,9 +1911,11 @@ function draw() {
     const kind = f.vfxKind || 'projectile';
 
     if (f.type === 'sword-channel' || kind === 'sword-channel') {
-      drawSwordTorrentChannel(ctx, x, y, prog, size);
+      // The live u.channeling pass above already draws an active channel; only draw orphaned ones
+      const chU = battle.units.find(v => v.uid === f.uid);
+      if (!(chU && chU.channeling)) drawSwordTorrentChannel(ctx, x, y, prog, size);
     } else if (f.type === 'sword-torrent' || kind === 'sword-torrent') {
-      drawSwordTorrentC(ctx, x, y, tx, ty, prog, size);
+      drawSwordTorrent(ctx, f, size);
     } else if (kind === 'sword' || (f.genre === 'Cultivation' && ['shot', 'spell', 'sword'].includes(kind))) {
       drawCultivationSword(ctx, x, y, tx, ty, f.curve, prog, pal);
     } else if (kind === 'claw' || (f.genre === 'Bloodline' && ['slash', 'claw'].includes(kind))) {
@@ -1751,7 +1970,7 @@ function draw() {
       if (prog > 0.65) drawImpactSparks(ctx, tx, ty, (prog - 0.65) / 0.35, pal, f.crit);
     }
 
-    if (f.text) {
+    if (f.text && f.type !== 'sword-torrent') {
       ctx.save();
       ctx.globalAlpha = Math.min(1, f.ttl * 2.2);
       const breakthrough = ['FOUNDATION ESTABLISHMENT', 'GOLDEN CORE', 'NASCENT SOUL'].includes(String(f.text).toUpperCase());
@@ -1767,6 +1986,8 @@ function draw() {
       ctx.restore();
     }
   }
+
+  drawParticles(ctx);
 
 // LAYER 4: Mythic Showstopper Radial Vignette Spotlight
   if (battle.showstopper && battle.showstopper.ttl > 0) {
@@ -1784,6 +2005,7 @@ function draw() {
     ctx.restore();
   }
   ctx.globalAlpha = 1;
+  ctx.restore(); // shake transform
 }
 function liveUI() {
   if (!$('#field')) return;

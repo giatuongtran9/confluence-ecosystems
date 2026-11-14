@@ -2955,14 +2955,16 @@ function fx(b, type, u, e, text, extra = {}) {
       const prio = pickPrio();
       const rain = foes.map((e, i) => ({ uid: e.uid, at: Math.min(0.7, 0.15 + 0.5 * (n > 1 ? i / (n - 1) : 0) + ((e.uid * 37) % 7) / 140) }));
       b.pendingHits ??= [];
-      foes.forEach((e, i) => b.pendingHits.push({ at: t0 + rain[i].at, fn: bb => { if (e.hp > 0 && !e.gone) trueHit(bb, u, e, power); } }));
+      // Renderer draws the falling swords, so hits are quiet and just show the number where they land.
+      const landed = (bb, e, before, big) => { const dealt = before - Math.max(0, e.hp); if (dealt > 0) fx(bb, 'impact', u, e, String(Math.round(dealt)), { vfxKind: 'impact', crit: big, ttl: big ? 0.7 : 0.5 }); };
+      foes.forEach((e, i) => b.pendingHits.push({ at: t0 + rain[i].at, fn: bb => { if (e.hp > 0 && !e.gone) { const hp0 = e.hp; trueHit(bb, u, e, power, true); landed(bb, e, hp0, false); } } }));
       b.pendingHits.push({ at: t0 + 0.95, fn: bb => {
        const tgt = prio && prio.hp > 0 && !prio.gone ? prio : pickPrio();
-       if (tgt) damage(bb, tgt, power + tgt.hp * 0.10, u, 'ability');
+       if (tgt) { const hp0 = tgt.hp; damage(bb, tgt, power + tgt.hp * 0.10, u, 'ability'); landed(bb, tgt, hp0, true); }
        bb.hitStopRemaining = Math.max(bb.hitStopRemaining || 0, 0.1);
        bb.shake = { ttl: 0.25, mag: 6 };
       } });
-      fx(b, 'sword-torrent', u, prio || u, 'SWORD TORRENT', { schedule: { rain, colossalAt: 0.95, colossalUid: prio?.uid ?? null } });
+      fx(b, 'sword-torrent', u, prio || u, 'SWORD TORRENT', { ttl: 2.0, schedule: { rain, colossalAt: 0.95, colossalUid: prio?.uid ?? null } });
       interact(b, u, prio || u, 'sword-torrent', 'Ten-Thousand Sword Torrent: sword rain on all tiles + Colossal Sword on ' + (prio?.boss ? 'Boss' : prio?.elite ? 'Elite' : 'leader'));
      }
      else if (chType === 'melodic-resonance') {
@@ -3468,7 +3470,7 @@ function fx(b, type, u, e, text, extra = {}) {
  function pulseMadness(b, u) { const stored = u.madnessPower || 0; u.madnessPower = 0; for (const e of living(b)) { const late = e.p >= 12; trueHit(b, u, e, stored); if (late) warp(b, e, 5); } u.madnessAt = b.time + 8; interact(b, u, u, 'madness', `MADNESS → +${Math.round(stored)} stored damage released`); fx(b, 'pulse', u, null, 'MADNESS'); }
  function dot(b, e, type, dps, seconds, u) { if (e.hp <= 0 || e.gone) return; cosmicStatus(b,e,type,u); const key = type === 'burn' ? 'burns' : 'bleeds'; e[key] ??= []; e[key] = e[key].filter(x => x.until > b.time); if (type === 'bleed' && card(species(u))?.genre === 'Bloodline' && support(b, 'matriarch')) seconds += b.units.filter(v => !v.removed && BLOODLINE_FODDER.includes(species(v))).length * .5; e[key].push({ until: b.time + seconds, dps: dps * mod(b.run, 'damage') * mod(b.run, priority(e) ? 'eliteDamage' : 'normalDamage'), owner: u.uid }); }
  function venom(b, e, dps, seconds, u) { if (e.hp <= 0 || e.gone) return; cosmicStatus(b,e,'venom',u); e.venoms ??= []; e.venoms = e.venoms.filter(x => x.until > b.time); e.venoms.push({ until: b.time + seconds, dps: dps * mod(b.run, 'damage'), owner: u.uid }); }
- function trueHit(b, u, e, n) { damage(b, e, n * mod(b.run, 'damage') * mod(b.run, priority(e) ? 'eliteDamage' : 'normalDamage') * (e.vulnerableUntil > b.time ? 1 + e.vulnerability : 1), u, 'ability'); fx(b, 'spell', u, e, 'TRUE'); }
+ function trueHit(b, u, e, n, quiet = false) { damage(b, e, n * mod(b.run, 'damage') * mod(b.run, priority(e) ? 'eliteDamage' : 'normalDamage') * (e.vulnerableUntil > b.time ? 1 + e.vulnerability : 1), u, 'ability'); if (!quiet) fx(b, 'spell', u, e, 'TRUE'); }
 
  function extras(b, u, dt) {
   breed(b, u); if (token(u)) return;
