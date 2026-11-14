@@ -1156,3 +1156,48 @@ body.has-dock .shell{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))
 .cosmic-trial-hud{margin:.65rem 0;padding:.8rem 1rem;border:1px solid #8772a9;border-radius:12px;background:linear-gradient(135deg,rgba(34,25,47,.97),rgba(20,21,30,.98));color:#eee4f7}.cosmic-trial-hud.passed{border-color:#75b986;color:#c8f0ce}.cosmic-trial-hud.failed{border-color:#c45a65;color:#ffd2d2}.cosmic-trial-hud .urban-trial-head span{color:#ccb4ee}.cosmic-trial-hud p{margin:.45rem 0 0;font-size:.86rem;line-height:1.4;color:#d5cbe1}.cosmic-trial-hud .module-proof{display:flex;gap:.8rem;font-weight:700}.cosmic-trial-hud .module-proof .proved{color:#99dfa8}
 
 .xeno-trial-hud{margin:.65rem 0;padding:.8rem 1rem;border:1px solid #4c9ca5;border-radius:12px;background:linear-gradient(135deg,rgba(18,43,51,.97),rgba(20,24,32,.98));color:#dffaff}.xeno-trial-hud.active{box-shadow:inset 0 0 0 1px rgba(88,220,226,.24)}.xeno-trial-hud.passed{border-color:#75b986;color:#c8f0ce}.xeno-trial-hud.failed{border-color:#c45a65;color:#ffd2d2}.xeno-trial-hud .urban-trial-head span{color:#80dce3}.xeno-trial-hud p{margin:.45rem 0 0;font-size:.86rem;line-height:1.4;color:#c7dce4}
+
+/* ---- Ability Lab (single column, phone-width shell) ---- */
+.lab .lab-title{font-size:24px;margin-top:4px}
+.lab .lab-sub{font-size:13px;margin-top:4px}
+.lab .lab-layout{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.lab-unitbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-radius:10px;background:#101a17;border:1px solid var(--line);border-left:3px solid var(--realm)}
+.lab-unitbar small{display:block;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.lab-unitbar b{font-size:15px}
+.lab-picker{padding:10px;display:flex;flex-direction:column;gap:8px}
+.lab-search{width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:#0b1210;color:var(--ink);font:inherit;font-size:14px}
+.lab-search:focus{outline:2px solid var(--gold);outline-offset:1px}
+.lab-filters{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:5px;margin:0;padding-bottom:3px}
+.lab-filters button{padding:4px 9px;font-size:11px;white-space:nowrap;flex:none}
+.lab-list{overflow-y:auto;display:flex;flex-direction:column;gap:3px;max-height:300px;padding-right:3px}
+.lab-item{display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;padding:7px 9px;border-radius:8px;border:1px solid transparent;border-left:3px solid var(--realm);background:#101a17;color:var(--ink);cursor:pointer}
+.lab-item:hover{background:#16241f}
+.lab-item.active{border-color:var(--gold);background:#1b2a24}
+.lab-item[hidden]{display:none}
+.lab-item-name{font-weight:700;font-size:13px}
+.lab-item-meta{font-size:11px;color:var(--muted)}
+.lab-toolbar{display:flex;flex-wrap:wrap;gap:6px}
+.lab .board{background:#79705b var(--battlefield-image) center/100% 100% no-repeat;border:1px solid #9b8961;border-radius:7px;box-shadow:0 12px 40px #0009;overflow:hidden}
+.lab-info{padding:13px;display:flex;flex-direction:column;gap:6px}
+.lab-card{border-left:3px solid var(--realm);padding-left:11px}
+.lab-card h2{margin:4px 0 2px;font-size:19px}
+.lab-stats{display:flex;gap:10px;margin:8px 0;font-size:12px;color:var(--gold);font-weight:700}
+.lab-rules{font-size:13px;line-height:1.5;margin:6px 0}
+.lab-synergy{font-size:12px;color:var(--muted);margin:4px 0}
+.lab-partner{font-size:12px;line-height:1.45;padding:8px 10px;border-radius:8px;background:#2a2114;border:1px solid #5b4524;color:#f0d9a8;margin:6px 0 0}
+.lab-h{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin:10px 0 2px}
+.lab-counter-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;border-bottom:1px solid #22302a}
+.lab-counter-row small{color:var(--muted);font-weight:400}
+.lab-ring{display:flex;gap:5px;margin:8px 0 2px}
+.lab-ring i{width:13px;height:13px;border-radius:50%;border:1.5px solid #2f6b56;background:#0e1916}
+.lab-ring i.on{background:#34d399;border-color:#a7f3d0;box-shadow:0 0 8px #10b981}
+.lab-channel{margin-top:6px;font-size:12px;font-weight:700;color:#6ee7b7}
+.lab-log{list-style:none;margin:0;padding:0;max-height:240px;overflow-y:auto;font-size:12px;line-height:1.4}
+.lab-log li{padding:5px 0;border-bottom:1px solid #1e2a25}
+.lab-log time{color:var(--gold);font-variant-numeric:tabular-nums;margin-right:7px}
+.codex-item{display:flex;flex-direction:column;gap:6px}
+.codex-preview{align-self:stretch}
+
+/* Lab reuses the combat unit styling (body.in-combat) but keeps the phone-width shell */
+.in-lab .shell{width:100%;max-width:440px;margin:0 auto;padding:0 12px 76px}
+.in-lab .board{width:100%}

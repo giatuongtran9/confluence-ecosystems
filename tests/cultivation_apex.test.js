@@ -83,7 +83,11 @@ test('Sword Immortal: pierce 50% DEF, 4-target falloff (100%->70%), 10th attack 
   sword.channeling.remaining = 0.05;
   G.step(b, 0.1);
   assert.strictEqual(sword.channeling, null);
+  assert.strictEqual(e1.hp, preHp, 'Damage is scheduled, not instant');
+  // Rain lands over 0.15–0.7s, Colossal at 0.95s (+0.1s hit-stop)
+  for (let i = 0; i < 14; i++) G.step(b, 0.1);
   assert.ok(e1.hp < preHp - 300, 'Boss should take sword rain + Colossal Sword');
+  assert.ok(!b.pendingHits.length, 'All queued hits resolved');
 });
 
 test('Melodic Saint: Harmony chord buffs attack speed, Dissonance slows, 10th channels Celestial Resonance', () => {
