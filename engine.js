@@ -1081,7 +1081,7 @@ function fx(b, type, u, e, text, extra = {}) {
  const ttl = extra.ttl || (type === 'beam' ? 0.35 : (type && type.startsWith('sword-torrent')) ? 0.85 : vfxKind === 'slash' ? 0.28 : 0.65);
  const tx = (e && typeof e.p === 'number') ? track(e.p).x : (e && typeof e.x === 'number' ? e.x + 1 : (u ? u.x + 1 : 2));
  const ty = (e && typeof e.p === 'number') ? track(e.p).y : (e && typeof e.y === 'number' ? e.y + 1 : (u ? u.y + 1 : 2));
- if (u && e && (['shot', 'spell', 'beam', 'slash'].includes(type) || type.startsWith('go-stone'))) {
+ if (u && e && (['shot', 'spell', 'beam', 'slash'].includes(type) || extra.attackAnim)) {
   u.animSeq = (u.animSeq || 0) + 1;
   u.animType = resolveAnimArchetype(u);
   u.animTarget = { x: tx, y: ty };
@@ -2298,6 +2298,7 @@ function fx(b, type, u, e, text, extra = {}) {
    }
    for (const demon of b.units.filter(v => !v.removed && v.id === 'soulReapingDemon')) {
     demon.souls = (demon.souls || 0) + 1;
+    fx(b, 'soul-return', demon, e, '', { vfxKind: 'soul-return', ttl: 0.7 }); // a wisp flies from the corpse to the banner
     persist(b, demon);
    }
    startHeavenlyTrial(b);
@@ -2377,7 +2378,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (critical && sensor(b, u)) { const src = support(b, 'sensor'); interact(b, src, u, 'critical', 'amplified critical strike'); }
   if (critical && normal) for (const v of allies(b, u).filter(v => v.id === 'core')) tick(b, v, 1, u);
   // options.fx lets a unit draw its own projectile instead of the generic shot (e.g. Formation Master's Go stones)
-  if (options.fx) fx(b, options.fx.type, u, e, critical ? 'CRIT' : '', { crit: critical, vfxKind: options.fx.kind, ttl: options.fx.ttl });
+  if (options.fx) fx(b, options.fx.type, u, e, critical ? 'CRIT' : '', { crit: critical, vfxKind: options.fx.kind, ttl: options.fx.ttl, attackAnim: true });
   else fx(b, normal ? 'shot' : 'spell', u, e, critical ? 'CRIT' : '', { crit: critical });
  }
 
@@ -2567,11 +2568,12 @@ function fx(b, type, u, e, text, extra = {}) {
    }
   }
   else if (u.id === 'talismanSovereign') {
-   hit(b, u, target, power);
+   hit(b, u, target, power, true, { fx: { type: 'talisman-shot', kind: 'talisman', ttl: 0.45 } });
    status(b, target, 'vulnerable', 3, 0.50, u);
+   target.talismanMarkUntil = b.time + 3; // renderer: 符 mark while Vulnerable
    if (!target.boss && !target.champion && target.hp > 0 && target.hp / target.maxHp < 0.10) {
     damage(b, target, target.hp, u, 'direct');
-    fx(b, 'impact', u, target, 'EXECUTE');
+    fx(b, 'talisman-burn', u, target, 'EXECUTE', { vfxKind: 'talisman-burn', ttl: 0.7 });
    }
    if (u.attackCount % 10 === 0) {
     u.channeling = { type: 'talisman-decree', duration: 1.2, remaining: 1.2 };
@@ -2581,10 +2583,9 @@ function fx(b, type, u, e, text, extra = {}) {
    }
   }
   else if (u.id === 'landscapeSage') {
-   hit(b, u, target, power);
+   hit(b, u, target, power, true, { fx: { type: 'ink-flick', kind: 'ink-flick', ttl: 0.5 } });
    b.inkPuddles ??= [];
-   b.inkPuddles.push({ owner: u.uid, p: Math.floor(target.p), until: b.time + 2, slow: 0.25 });
-   fx(b, 'spell', u, target, 'INK PUDDLE');
+   b.inkPuddles.push({ owner: u.uid, p: Math.floor(target.p), until: b.time + 2, slow: 0.25, at: b.time });
    if (u.attackCount % 10 === 0) {
     u.channeling = { type: 'landscape-dragon', duration: 1.2, remaining: 1.2 };
     u.currentCooldown = Math.max(u.currentCooldown || 0, 1.2);
@@ -2594,7 +2595,7 @@ function fx(b, type, u, e, text, extra = {}) {
   }
   else if (u.id === 'soulReapingDemon') {
    for (const e of living(b).slice(0, 5)) {
-    hit(b, u, e, power * 0.5);
+    hit(b, u, e, power * 0.5, true, { fx: { type: 'soul-wisp', kind: 'soul-wisp', ttl: 0.5 } });
    }
    if (u.attackCount % 10 === 0) {
     u.channeling = { type: 'soul-reap-detonation', duration: 1.2, remaining: 1.2 };
@@ -2608,7 +2609,7 @@ function fx(b, type, u, e, text, extra = {}) {
    dot(b, target, 'bleed', 10, 4, u);
   }
   else if (u.id === 'bloodFiendMaster') {
-   hit(b, u, target, power);
+   hit(b, u, target, power, true, { fx: { type: 'blood-slash', kind: 'blood-slash', ttl: 0.4 } });
    const bleedDps = Math.max(1, target.maxHp * 0.01);
    dot(b, target, 'bleed', bleedDps, 3, u);
    if (u.attackCount % 10 === 0) {
@@ -3013,49 +3014,83 @@ function fx(b, type, u, e, text, extra = {}) {
       interact(b, u, u, 'formation-star-river', 'Star-River Weiqi Board: warps all enemies back 2 tiles (300% on corners)');
      }
      else if (chType === 'talisman-decree') {
-      for (const e of living(b)) {
-       damage(b, e, rawAtk(u) * 2.5, u, 'ability');
-       if (!e.boss && !e.champion && e.hp > 0 && e.hp / e.maxHp < 0.15) {
-        damage(b, e, e.hp, u, 'direct');
-       }
-       if (e.hp > 0) {
-        status(b, e, 'vulnerable', 3, 0.50, u);
-       }
-      }
-      fx(b, 'beam', u, null, 'IMPERIAL INK DECREE');
+      // Talismans fly down from the scroll and seal onto enemies one after another, most advanced first,
+      // between 0.25s and 0.8s after release; each enemy's decree lands when its talisman does.
+      const t0 = b.time, power = rawAtk(u), foes = living(b).sort((a, z) => z.p - a.p), n = foes.length;
+      const hits = foes.map((e, i) => ({ e, uid: e.uid, at: 0.25 + 0.55 * (n > 1 ? i / (n - 1) : 0) }));
+      b.pendingHits ??= [];
+      for (const h of hits) b.pendingHits.push({ at: t0 + h.at, fn: bb => {
+       const e = h.e;
+       if (e.hp <= 0 || e.gone) return;
+       const hp0 = e.hp;
+       damage(bb, e, power * 2.5, u, 'ability');
+       let executed = false;
+       if (!e.boss && !e.champion && e.hp > 0 && e.hp / e.maxHp < 0.15) { damage(bb, e, e.hp, u, 'direct'); executed = true; }
+       if (e.hp > 0) { status(bb, e, 'vulnerable', 3, 0.50, u); e.talismanMarkUntil = bb.time + 3; }
+       const dealt = hp0 - Math.max(0, e.hp);
+       if (executed) fx(bb, 'talisman-burn', u, e, 'EXECUTE', { vfxKind: 'talisman-burn', ttl: 0.7 });
+       else if (dealt > 0) fx(bb, 'impact', u, e, String(Math.round(dealt)), { vfxKind: 'impact', ttl: 0.5 });
+      } });
+      fx(b, 'talisman-decree', u, null, 'IMPERIAL INK DECREE', { ttl: 1.6, schedule: { hits: hits.map(h => ({ uid: h.uid, at: h.at })) } });
       interact(b, u, u, 'talisman-decree', 'Imperial Ink Decree: 250% ATK board-wide + 15% execute + 50% Vulnerable');
      }
      else if (chType === 'landscape-dragon') {
-      for (const e of living(b)) {
-       damage(b, e, rawAtk(u) * 2.0, u, 'ability');
-       status(b, e, 'stun', 2.0, 0, u);
-       if (e.boss || e.elite || e.champion) warp(b, e, 3, u);
-      }
-      fx(b, 'slash', u, null, 'INK DRAGON SWEEP');
+      // The ink dragon flies counter-clockwise from the exit end (tile 16) after a 0.15s emergence,
+      // covering the 16 tiles in 0.8s; each enemy is struck as the dragon's head passes it.
+      const t0 = b.time, power = rawAtk(u), START = 0.15, SPEED = 16 / 0.8;
+      const hits = living(b).map(e => ({ e, uid: e.uid, at: START + (16 - e.p) / SPEED }));
+      b.pendingHits ??= [];
+      for (const h of hits) b.pendingHits.push({ at: t0 + h.at, fn: bb => {
+       const e = h.e;
+       if (e.hp <= 0 || e.gone) return;
+       const hp0 = e.hp;
+       damage(bb, e, power * 2.0, u, 'ability');
+       status(bb, e, 'stun', 2.0, 0, u);
+       if (e.boss || e.elite || e.champion) { const from = e.p; warp(bb, e, 3, u); if (e.p < from) e.warpFx = { from, to: e.p, at: bb.time, corner: false }; }
+       const dealt = hp0 - Math.max(0, e.hp);
+       if (dealt > 0) fx(bb, 'impact', u, e, String(Math.round(dealt)), { vfxKind: 'impact', ttl: 0.5 });
+      } });
+      fx(b, 'landscape-dragon', u, null, 'INK DRAGON SWEEP', { ttl: 3.0, schedule: { hits: hits.map(h => ({ uid: h.uid, at: h.at })), start: START, speed: SPEED } });
       interact(b, u, u, 'landscape-dragon', 'Mountain-River Ink Dragon: 200% ATK + 2s stun to all runners + warps Boss/Elite 3 tiles');
      }
      else if (chType === 'soul-reap-detonation') {
       const soulMult = 1.50 + Math.floor((u.souls || 0) / 2) / 100;
-      for (const e of living(b)) {
-       damage(b, e, rawAtk(u) * soulMult, u, 'ability');
-      }
-      fx(b, 'state', u, null, 'SOUL DETONATION (' + Math.round(soulMult * 100) + '%)');
+      // Soul wisps leave the banner after 0.2s and dive at 6 tiles/s; each enemy is hit when its wisp arrives.
+      const t0 = b.time, power = rawAtk(u), ox = u.x + 1, oy = u.y + 1;
+      const hits = living(b).map(e => { const p = track(e.p); return { e, uid: e.uid, at: 0.2 + Math.hypot(p.x - ox, p.y - oy) / 6 + ((e.uid * 37) % 5) / 100 }; });
+      b.pendingHits ??= [];
+      for (const h of hits) b.pendingHits.push({ at: t0 + h.at, fn: bb => {
+       const e = h.e;
+       if (e.hp <= 0 || e.gone) return;
+       const hp0 = e.hp;
+       damage(bb, e, power * soulMult, u, 'ability');
+       const dealt = hp0 - Math.max(0, e.hp);
+       if (dealt > 0) fx(bb, 'impact', u, e, String(Math.round(dealt)), { vfxKind: 'impact', ttl: 0.5 });
+      } });
+      fx(b, 'soul-reap-detonation', u, null, 'SOUL DETONATION (' + Math.round(soulMult * 100) + '%)', { ttl: 1.6, schedule: { hits: hits.map(h => ({ uid: h.uid, at: h.at })), souls: u.souls || 0 } });
       interact(b, u, u, 'soul-reap-detonation', 'Ten-Thousand Soul Detonation: ' + Math.round(soulMult * 100) + '% ATK to all enemies (' + (u.souls || 0) + ' souls)');
      }
      else if (chType === 'blood-domain') {
-      for (const e of living(b)) {
-       damage(b, e, rawAtk(u) * 1.5, u, 'ability');
+      // The blood pool spreads from the Master at 5 tiles/s after 0.1s; when it reaches an enemy a blood
+      // sword erupts under it: 150% ATK, its bleeds detonate (geyser), then 20 new bleed stacks.
+      const t0 = b.time, power = rawAtk(u), ox = u.x + 1, oy = u.y + 1;
+      const hits = living(b).map(e => { const p = track(e.p); return { e, uid: e.uid, at: 0.1 + Math.hypot(p.x - ox, p.y - oy) / 5 }; });
+      b.pendingHits ??= [];
+      for (const h of hits) b.pendingHits.push({ at: t0 + h.at, fn: bb => {
+       const e = h.e;
+       if (e.hp <= 0 || e.gone) return;
+       const hp0 = e.hp;
+       damage(bb, e, power * 1.5, u, 'ability');
        let detonateDmg = 0;
-       for (const bl of (e.bleeds || [])) {
-        const remTime = Math.max(0, bl.until - b.time);
-        detonateDmg += bl.dps * remTime;
-       }
-       if (detonateDmg > 0) damage(b, e, detonateDmg, u, 'ability');
+       for (const bl of (e.bleeds || [])) detonateDmg += bl.dps * Math.max(0, bl.until - bb.time);
+       if (detonateDmg > 0 && e.hp > 0) damage(bb, e, detonateDmg, u, 'ability');
        e.bleeds = [];
-       const bleedDps = Math.max(1, e.maxHp * 0.01);
-       for (let s = 0; s < 20; s++) dot(b, e, 'bleed', bleedDps, 20, u);
-      }
-      fx(b, 'impact', u, null, 'BOILING BLOOD DOMAIN');
+       e.bloodBurst = { at: bb.time, geyser: detonateDmg > 0 };   // renderer: sword eruption + geyser
+       if (e.hp > 0) { const bleedDps = Math.max(1, e.maxHp * 0.01); for (let s = 0; s < 20; s++) dot(bb, e, 'bleed', bleedDps, 20, u); }
+       const dealt = hp0 - Math.max(0, e.hp);
+       if (dealt > 0) fx(bb, detonateDmg > 0 ? 'big-dmg' : 'impact', u, e, String(Math.round(dealt)), { vfxKind: 'impact', crit: detonateDmg > 0, ttl: detonateDmg > 0 ? 1.0 : 0.5 });
+      } });
+      fx(b, 'blood-domain', u, null, 'BOILING BLOOD DOMAIN', { ttl: 1.8, schedule: { hits: hits.map(h => ({ uid: h.uid, at: h.at })) } });
       interact(b, u, u, 'blood-domain', 'Boiling Blood Domain: 150% ATK + detonates bleeds + applies 20 bleed stacks');
      }
      else if (chType === 'azure-dragon') {

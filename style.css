@@ -1210,3 +1210,7 @@ body.has-dock .shell{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))
 .lab-speed span{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-right:2px}
 .lab-speed .chosen{border-color:var(--gold);color:var(--gold)}
 .in-combat .board .field-card.channeling-formation{transform:translateY(-7px);filter:drop-shadow(0 0 10px #93c5fd) drop-shadow(0 0 22px #e2e8f099) brightness(1.18)}
+.in-combat .board .field-card.channeling-talisman{transform:translateY(-7px);filter:drop-shadow(0 0 10px #facc15) drop-shadow(0 0 22px #ca8a0499) brightness(1.18)}
+.in-combat .board .field-card.channeling-landscape{transform:translateY(-7px);filter:drop-shadow(0 0 8px #0c0c0e) drop-shadow(0 0 18px #6ee7b799) brightness(1.1)}
+.in-combat .board .field-card.channeling-soul{transform:translateY(-7px);filter:drop-shadow(0 0 10px #4ade80) drop-shadow(0 0 22px #16a34a99) brightness(1.15)}
+.in-combat .board .field-card.channeling-blood{transform:translateY(-7px);filter:drop-shadow(0 0 10px #ef4444) drop-shadow(0 0 22px #991b1b99) brightness(1.15)}

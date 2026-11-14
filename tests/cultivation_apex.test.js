@@ -198,6 +198,9 @@ test('Talisman Sovereign: 50% Vulnerable, <10% execute, 10th channels Imperial D
   sov.channeling.remaining = 0.05;
   G.step(b, 0.1);
   assert.strictEqual(sov.channeling, null);
+  sov.currentCooldown = 99; // no further attacks while the talismans seal
+  for (let i = 0; i < 20 && b.pendingHits.length; i++) G.step(b, 0.1);
+  assert.ok(!b.pendingHits.length, 'every talisman sealed');
   assert.ok(e2.vulnerableUntil > b.time, 'Imperial decree applies Vulnerable to survivors');
 });
 
@@ -218,6 +221,9 @@ test('Landscape Sage: ink puddle slow, 10th channels Mountain-River Ink Dragon (
   const preP = boss.p;
   sage.channeling.remaining = 0.05;
   G.step(b, 0.1);
+  sage.currentCooldown = 99; // no further attacks while the dragon's staggered hits resolve
+  for (let i = 0; i < 20 && b.pendingHits.length; i++) G.step(b, 0.1);
+  assert.ok(!b.pendingHits.length, 'all dragon hits resolved');
   // Boss warp is subject to boss resistance (3 * 0.5 = 1.5 tiles back)
   assert.strictEqual(boss.p, preP - 1.5, 'Boss warped backward 1.5 tiles (3.0 * 0.5 boss resistance)');
   assert.ok(boss.frozenUntil > b.time, 'Boss stunned for 2s (frozenUntil)');
@@ -245,6 +251,9 @@ test('Soul-Reaping Demon: multi-target hit, souls increment on enemy death, 10th
   const preHp = e2.hp;
   demon.channeling.remaining = 0.05;
   G.step(b, 0.1);
+  demon.currentCooldown = 99; // no further volleys while the soul wisps arrive
+  for (let i = 0; i < 20 && b.pendingHits.length; i++) G.step(b, 0.1);
+  assert.ok(!b.pendingHits.length, 'all soul wisps arrived');
   assert.strictEqual(preHp - e2.hp, 245, '175% ATK dealt with 50 souls');
 });
 
@@ -266,5 +275,8 @@ test('Blood-Fiend Sword Master: 1 bleed stack on normal hit, 10th channels Boili
   bf.channeling.remaining = 0.05;
   G.step(b, 0.1);
   assert.strictEqual(bf.channeling, null);
+  bf.currentCooldown = 99; // no further slashes while the blood pool spreads
+  for (let i = 0; i < 20 && b.pendingHits.length; i++) G.step(b, 0.1);
+  assert.ok(!b.pendingHits.length, 'blood pool reached every enemy');
   assert.strictEqual(e1.bleeds.length, 20, 'Should apply 20 bleed stacks');
 });
