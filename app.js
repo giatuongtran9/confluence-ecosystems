@@ -1121,9 +1121,10 @@ function additiveGlow(ctx, x, y, r, rgb, alpha) {
 }
 
 // Fixed particle pool: no per-frame allocation.
-// kind: 0 spark (additive streak), 1 dust, 2 stone chip, 3 jade shard (additive).
+// kind: 0 spark (additive streak), 1 dust, 2 stone chip, 3 jade shard (additive), 4 music note (additive glyph).
 const PARTICLE_MAX = 300;
-const PARTICLES = Array.from({ length: PARTICLE_MAX }, () => ({ live: false, kind: 0, x: 0, y: 0, vx: 0, vy: 0, life: 0, max: 1, size: 1, color: '#fff', rot: 0, vr: 0 }));
+const PARTICLES = Array.from({ length: PARTICLE_MAX }, () => ({ live: false, kind: 0, x: 0, y: 0, vx: 0, vy: 0, life: 0, max: 1, size: 1, color: '#fff', rot: 0, vr: 0, glyph: 0 }));
+const NOTE_GLYPHS = ['♪', '♫', '♩', '♬'];
 let particleCursor = 0;
 function emitParticle(kind, x, y, vx, vy, life, size, color) {
   for (let n = 0; n < PARTICLE_MAX; n++) {
@@ -1132,9 +1133,10 @@ function emitParticle(kind, x, y, vx, vy, life, size, color) {
     particleCursor = (particleCursor + n + 1) % PARTICLE_MAX;
     p.live = true; p.kind = kind; p.x = x; p.y = y; p.vx = vx; p.vy = vy;
     p.life = life; p.max = life; p.size = size; p.color = color;
-    p.rot = Math.random() * Math.PI; p.vr = (Math.random() - 0.5) * 14;
-    return;
+    p.rot = Math.random() * Math.PI; p.vr = (Math.random() - 0.5) * 14; p.glyph = 0;
+    return p;
   }
+  return null;
 }
 function burstImpact(x, y, sparks, dust, chips, power = 1) {
   for (let i = 0; i < sparks; i++) {
@@ -1168,14 +1170,15 @@ function updateParticles(dt) {
     if (p.kind === 0) { p.vx *= 1 - 2.5 * dt; p.vy = p.vy * (1 - 2.5 * dt) + 260 * dt; }
     else if (p.kind === 1) { p.vx *= 1 - 3 * dt; p.vy *= 1 - 3 * dt; p.size += 10 * dt; }
     else if (p.kind === 2) { p.vy += 620 * dt; p.rot += p.vr * dt; }
-    else { p.vx *= 1 - 1.5 * dt; p.vy += 300 * dt; p.rot += p.vr * dt; }
+    else if (p.kind === 3) { p.vx *= 1 - 1.5 * dt; p.vy += 300 * dt; p.rot += p.vr * dt; }
+    else { p.vx *= 1 - 2.2 * dt; p.vy = p.vy * (1 - 1.2 * dt) - 26 * dt; p.rot = Math.sin(p.life * 7 + p.vr) * 0.35; } // notes float up, swaying
     p.x += p.vx * dt; p.y += p.vy * dt;
   }
 }
 function drawParticles(ctx) {
   ctx.save();
   for (const p of PARTICLES) {          // normal blend: dust and chips
-    if (!p.live || p.kind === 0 || p.kind === 3) continue;
+    if (!p.live || p.kind === 0 || p.kind >= 3) continue;
     const t = p.life / p.max;
     ctx.globalAlpha = p.kind === 1 ? 0.32 * t : Math.min(1, t * 2);
     ctx.fillStyle = p.color;
@@ -1184,11 +1187,20 @@ function drawParticles(ctx) {
   }
   ctx.globalCompositeOperation = 'lighter';
   ctx.lineCap = 'round';
-  for (const p of PARTICLES) {          // additive: sparks as streaks, jade shards as spinning slivers
-    if (!p.live || (p.kind !== 0 && p.kind !== 3)) continue;
+  ctx.font = '700 16px Georgia, serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (const p of PARTICLES) {          // additive: sparks as streaks, shards as spinning slivers, notes as glyphs
+    if (!p.live || p.kind === 1 || p.kind === 2) continue;
     const t = p.life / p.max;
-    ctx.globalAlpha = p.kind === 3 ? Math.min(1, t * 1.6) : t;
-    if (p.kind === 0) {
+    ctx.globalAlpha = p.kind === 0 ? t : Math.min(1, t * 1.6);
+    if (p.kind === 4) {
+      ctx.save();
+      ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.scale(p.size, p.size);
+      ctx.fillStyle = p.color;
+      ctx.fillText(NOTE_GLYPHS[p.glyph], 0, 0);
+      ctx.restore();
+    } else if (p.kind === 0) {
       ctx.strokeStyle = p.color;
       ctx.lineWidth = p.size;
       ctx.beginPath();
@@ -1524,6 +1536,178 @@ function drawColossalNumber(ctx, x, y, f) {
   ctx.fillText(f.text, 0, 0);
   ctx.restore();
 }
+
+// ---- Melodic Saint · Celestial Resonance (Thiên Lãi Cộng Hưởng) ----
+// Gather: seven guqin strings vibrate harder as the 1.2s channel fills, sound rings contract, notes orbit.
+// Release (seconds after channel end, engine time; see engine melodic-resonance branch): 0–0.12 pluck,
+// then a sound wave spreads at schedule.waveSpeed tiles/s. Each enemy is hit and stunned when the wave
+// reaches it; notes circle its head while the 1.5s stun lasts.
+const MELODIC_RGB = '129, 140, 248', MELODIC_CORE = '199, 210, 254';
+function guqinStrings(ctx, cx, cy, width, amp, alpha, time, snap = 0) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.lineCap = 'round';
+  for (let s = 0; s < 7; s++) {
+    const y0 = cy + 14 + (s - 3) * 6.5;
+    const freq = 26 + s * 5;                               // higher strings vibrate faster
+    const a = amp * (0.6 + 0.4 * Math.sin(time * 3 + s));
+    ctx.strokeStyle = s % 3 === 0 ? `rgba(${MELODIC_CORE}, ${alpha})` : `rgba(${MELODIC_RGB}, ${alpha * 0.85})`;
+    ctx.lineWidth = 1.2 + snap * 0.7;
+    ctx.beginPath();
+    for (let i = 0; i <= 24; i++) {
+      const u = i / 24, x = cx - width / 2 + u * width;
+      const bow = -Math.sin(u * Math.PI) * 6;              // strings arc gently between the bridges
+      const vib = Math.sin(u * Math.PI) * a * Math.sin(time * freq + u * 9 + s);
+      if (i) ctx.lineTo(x, y0 + bow + vib); else ctx.moveTo(x, y0 + bow + vib);
+    }
+    ctx.stroke();
+  }
+  ctx.fillStyle = `rgba(${MELODIC_CORE}, ${alpha})`;      // bridges at both ends
+  ctx.fillRect(cx - width / 2 - 2, cy - 8, 3, 44);
+  ctx.fillRect(cx + width / 2 - 1, cy - 8, 3, 44);
+  ctx.restore();
+}
+function drawNoteGlyphs(ctx, pts, alpha) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.font = '700 17px Georgia, serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (const [x, y, glyph, color, a] of pts) {
+    ctx.globalAlpha = Math.min(1, alpha * a);
+    ctx.fillStyle = color;
+    ctx.fillText(NOTE_GLYPHS[glyph % NOTE_GLYPHS.length], x, y);
+  }
+  ctx.restore();
+}
+
+function drawMelodicGather(ctx, cx, cy, prog, size) {
+  const now = performance.now() / 1000, appear = Math.min(1, prog / 0.2);
+  dimFocus(ctx, size, cx, cy, 0.45 * Math.min(1, prog / 0.25));
+  additiveGlow(ctx, cx, cy, 48 + 44 * prog, MELODIC_RGB, 0.2 + 0.5 * prog);
+  ctx.save();                                              // sound rings contracting toward the Saint
+  ctx.globalCompositeOperation = 'lighter';
+  for (let r = 0; r < 3; r++) {
+    const ph = (now * 1.4 + r / 3) % 1, rad = 130 - ph * 105;
+    ctx.strokeStyle = `rgba(${MELODIC_RGB}, ${ph * 0.55 * appear})`;
+    ctx.lineWidth = 1.5 + ph * 1.5;
+    ctx.beginPath(); ctx.ellipse(cx, cy + 10, rad, rad * 0.45, 0, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.restore();
+  guqinStrings(ctx, cx, cy, 150, 1 + prog * 6, appear * 0.9, now);
+  const notes = [];                                         // notes orbiting, drawing in and rising
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 + now * 1.8;
+    notes.push([cx + Math.cos(a) * (62 - prog * 14), cy - 6 + Math.sin(a) * 24 - prog * 10 + Math.sin(now * 5 + i) * 3, i, i % 2 ? '#c7d2fe' : '#fde68a', 0.55 + 0.45 * (Math.sin(a) + 1) / 2]);
+  }
+  drawNoteGlyphs(ctx, notes, appear);
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.font = '700 11px system-ui, -apple-system, sans-serif';
+  ctx.fillStyle = '#a5b4fc';
+  ctx.fillText('🎵 THIÊN LÃI CỘNG HƯỞNG', cx, cy - 80);
+  const barW = 96, barH = 5;
+  ctx.fillStyle = '#1e1b4b';
+  ctx.fillRect(cx - barW / 2, cy - 72, barW, barH);
+  ctx.fillStyle = '#818cf8';
+  ctx.fillRect(cx - barW / 2, cy - 72, barW * Math.min(1, prog), barH);
+  ctx.restore();
+}
+
+function drawMelodicResonance(ctx, f, size) {
+  const t = (f.maxTtl || 2.4) - f.ttl;                      // seconds since release, engine time
+  const sch = f.schedule || { hits: [], start: 0.12, waveSpeed: 5 };
+  const o = routePoint(f.x, f.y, size), ox1 = routePoint(f.x + 1, f.y, size), oy1 = routePoint(f.x, f.y + 1, size);
+  const pxX = ox1.x - o.x, pxY = oy1.y - o.y;               // pixels per grid tile, so the wave meets enemies on time
+  const now = performance.now() / 1000;
+  f._landed ??= {};
+  const waveR = Math.max(0, (t - sch.start) * sch.waveSpeed), maxR = 4.6;
+
+  // Dim lifts once the wave passes the edge of the track
+  dimFocus(ctx, size, o.x, o.y, 0.45 * Math.max(0, 1 - Math.max(0, waveR - 2.2) / 2.4));
+
+  // Pluck: the strings snap bright and settle
+  if (t < 0.5) {
+    const k = Math.min(1, t / 0.12), fade = 1 - t / 0.5;
+    guqinStrings(ctx, o.x, o.y, 150, 8 * fade, fade, now, 1 - k);
+    additiveGlow(ctx, o.x, o.y, 70 + 60 * k, MELODIC_CORE, 0.85 * fade);
+  }
+
+  // The sound wave: a rippling front with three fading echoes behind it
+  if (waveR > 0 && waveR < maxR + 1.1) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineJoin = 'round';
+    const ring = (r, wob) => {
+      ctx.beginPath();
+      for (let i = 0; i <= 120; i++) {
+        const th = (i / 120) * Math.PI * 2, rr = r * (1 + wob * Math.sin(th * 26 + t * 40));
+        const x = o.x + Math.cos(th) * rr * pxX, y = o.y + Math.sin(th) * rr * pxY;
+        if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+      }
+    };
+    for (let e = 0; e < 4; e++) {
+      const r = waveR - e * 0.35;
+      if (r <= 0.05 || r > maxR) continue;
+      const fade = Math.max(0, 1 - r / maxR);
+      if (e === 0) {
+        ring(r, 0.022);                                      // the front: wide indigo glow, then a thin bright core
+        ctx.strokeStyle = `rgba(${MELODIC_RGB}, ${0.22 * fade})`; ctx.lineWidth = 20; ctx.stroke();
+        ctx.strokeStyle = `rgba(${MELODIC_RGB}, ${0.6 * fade})`; ctx.lineWidth = 6; ctx.stroke();
+        ctx.strokeStyle = `rgba(${MELODIC_CORE}, ${0.95 * fade})`; ctx.lineWidth = 1.8; ctx.stroke();
+      } else {
+        ring(r, 0.012);
+        ctx.strokeStyle = `rgba(${MELODIC_RGB}, ${(0.5 / e) * fade})`; ctx.lineWidth = 2.5; ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  // Hits: a burst of notes where the wave meets each enemy, then notes circle its head while stunned
+  for (const h of sch.hits) {
+    if (t < h.at) continue;
+    const p = swordTorrentTarget(f, h.uid, size, null);
+    if (!p) continue;
+    if (!f._landed[h.uid]) {
+      f._landed[h.uid] = true;
+      for (let i = 0; i < 7; i++) {
+        const a = -Math.PI * (0.15 + Math.random() * 0.7), v = 50 + Math.random() * 70;
+        const n = emitParticle(4, p.x, p.y - 10, Math.cos(a) * v, Math.sin(a) * v, 0.8 + Math.random() * 0.5, 0.7 + Math.random() * 0.5, i % 3 ? '#c7d2fe' : '#fde68a');
+        if (n) n.glyph = i % NOTE_GLYPHS.length;
+      }
+      const dx = p.x - o.x, dy = p.y - o.y, d = Math.hypot(dx, dy) || 1;
+      nudgeEnemy(h.uid, (dx / d) * 7, (dy / d) * 7, 0.45);
+    }
+    const since = t - h.at;
+    if (since < 0.35) {                                      // resonance ring on the enemy
+      const q = since / 0.35;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = `rgba(${MELODIC_CORE}, ${(1 - q) * 0.9})`;
+      ctx.lineWidth = 2.5 * (1 - q);
+      ctx.beginPath(); ctx.ellipse(p.x, p.y, 8 + q * 26, 3 + q * 10, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+      additiveGlow(ctx, p.x, p.y - 6, 26, MELODIC_RGB, 0.6 * (1 - q));
+    }
+    const e = battle.enemies.find(v => v.uid === h.uid);
+    if (e && !e.gone && e.hp > 0 && (e.frozenUntil || 0) > battle.time) {
+      const pts = [];
+      for (let i = 0; i < 3; i++) {
+        const a = now * 4 + i * 2.094;
+        pts.push([p.x + Math.cos(a) * 15, p.y - 32 + Math.sin(a) * 5, i + h.uid, i === 1 ? '#fde68a' : '#c7d2fe', 0.55 + 0.45 * (Math.sin(a) + 1) / 2]);
+      }
+      drawNoteGlyphs(ctx, pts, 0.95);
+      ctx.save();                                              // faint bell ring at the feet
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = `rgba(${MELODIC_RGB}, ${0.35 + 0.2 * Math.sin(now * 8)})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.ellipse(p.x, p.y + 6, 15, 5, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
+  }
+}
+
 
 function drawCultivationSword(ctx, x0, y0, tx, ty, curve, prog, pal) {
   const dx = tx - x0, dy = ty - y0;
@@ -1943,7 +2127,9 @@ function draw() {
   // The channelling Sword Immortal lifts and glows (DOM card over the canvas)
   for (const u of battle.units) {
     const card = document.querySelector(`.field-card[data-id="${u.uid}"]`);
-    if (card) card.classList.toggle('channeling-sword', !u.removed && u.channeling?.type === 'sword-torrent');
+    if (!card) continue;
+    card.classList.toggle('channeling-sword', !u.removed && u.channeling?.type === 'sword-torrent');
+    card.classList.toggle('channeling-melodic', !u.removed && u.channeling?.type === 'melodic-resonance');
   }
 
   // Ecosystem grounds
@@ -2155,6 +2341,7 @@ function draw() {
       const pt = routePoint(u.x + 1, u.y + 1, size);
       const chProg = Math.min(1, Math.max(0, 1 - (u.channeling.remaining / (u.channeling.duration || 1.2))));
       if (u.channeling.type === 'sword-torrent') drawSwordGather(ctx, pt.x, pt.y, chProg, size);
+      else if (u.channeling.type === 'melodic-resonance') drawMelodicGather(ctx, pt.x, pt.y, chProg, size);
       else drawSwordTorrentChannel(ctx, pt.x, pt.y, chProg, size, u.channeling.type);
     }
   }
@@ -2174,6 +2361,8 @@ function draw() {
       if (!(chU && chU.channeling)) drawSwordTorrentChannel(ctx, x, y, prog, size);
     } else if (f.type === 'sword-torrent' || kind === 'sword-torrent') {
       drawSwordTorrent(ctx, f, size);
+    } else if (f.type === 'melodic-resonance') {
+      drawMelodicResonance(ctx, f, size);
     } else if (kind === 'sword' || (f.genre === 'Cultivation' && ['shot', 'spell', 'sword'].includes(kind))) {
       drawCultivationSword(ctx, x, y, tx, ty, f.curve, prog, pal);
     } else if (kind === 'claw' || (f.genre === 'Bloodline' && ['slash', 'claw'].includes(kind))) {
@@ -2230,7 +2419,7 @@ function draw() {
 
     if (f.type === 'colossal-dmg') {
       drawColossalNumber(ctx, tx, ty, f);
-    } else if (f.text && f.type !== 'sword-torrent') {
+    } else if (f.text && f.type !== 'sword-torrent' && f.type !== 'melodic-resonance') {
       ctx.save();
       ctx.globalAlpha = Math.min(1, f.ttl * 2.2);
       const breakthrough = ['FOUNDATION ESTABLISHMENT', 'GOLDEN CORE', 'NASCENT SOUL'].includes(String(f.text).toUpperCase());

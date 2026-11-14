@@ -112,9 +112,14 @@ test('Melodic Saint: Harmony chord buffs attack speed, Dissonance slows, 10th ch
   assert.strictEqual(saint.channeling.type, 'melodic-resonance');
 
   saint.channeling.remaining = 0.05;
+  const preHp = e1.hp;
   G.step(b, 0.1);
   assert.strictEqual(saint.channeling, null);
+  // The resonance wave reaches the enemy after the 0.12s pluck plus its travel time (5 tiles/s)
+  for (let i = 0; i < 10; i++) G.step(b, 0.1);
+  assert.ok(e1.hp <= preHp - 200, 'Celestial Resonance deals 200% ATK');
   assert.ok(e1.frozenUntil > b.time, 'Enemy stunned (frozenUntil) by Celestial Resonance');
+  assert.ok(!b.pendingHits.length, 'All wave hits resolved');
 });
 
 test('Formation Master: Black Stone (120%), White Stone (80% + 30% slow), 10th channels Star-River warp', () => {

@@ -2972,11 +2972,22 @@ function fx(b, type, u, e, text, extra = {}) {
       interact(b, u, prio || u, 'sword-torrent', 'Ten-Thousand Sword Torrent: sword rain on all tiles + Colossal Sword on ' + (prio?.boss ? 'Boss' : prio?.elite ? 'Elite' : 'leader'));
      }
      else if (chType === 'melodic-resonance') {
-      for (const e of living(b)) {
-       damage(b, e, rawAtk(u) * 2.0, u, 'ability');
-       status(b, e, 'stun', 1.5, 0, u);
-      }
-      fx(b, 'pulse', u, null, 'CELESTIAL RESONANCE');
+      // A sound wave spreads from the Saint after a 0.12s pluck; each enemy is hit and stunned
+      // when the wavefront reaches it (WAVE_SPEED grid tiles per second), matching the renderer.
+      const t0 = b.time, power = rawAtk(u), ox = u.x + 1, oy = u.y + 1, START = 0.12, WAVE_SPEED = 5;
+      const hits = living(b).map(e => { const p = track(e.p); return { e, uid: e.uid, at: START + Math.hypot(p.x - ox, p.y - oy) / WAVE_SPEED }; });
+      b.pendingHits ??= [];
+      for (const h of hits) b.pendingHits.push({ at: t0 + h.at, fn: bb => {
+       const e = h.e;
+       if (e.hp <= 0 || e.gone) return;
+       const hp0 = e.hp;
+       damage(bb, e, power * 2.0, u, 'ability');
+       status(bb, e, 'stun', 1.5, 0, u);
+       const dealt = hp0 - Math.max(0, e.hp);
+       if (dealt > 0) fx(bb, 'impact', u, e, String(Math.round(dealt)), { vfxKind: 'impact', ttl: 0.5 });
+      } });
+      b.shake = { ttl: 0.16, mag: 3, x: ox, y: oy }; // the pluck
+      fx(b, 'melodic-resonance', u, null, 'CELESTIAL RESONANCE', { ttl: 2.4, schedule: { hits: hits.map(h => ({ uid: h.uid, at: h.at })), start: START, waveSpeed: WAVE_SPEED } });
       interact(b, u, u, 'melodic-resonance', 'Celestial Resonance: 200% ATK + 1.5s stun to all enemies');
      }
      else if (chType === 'formation-star-river') {
