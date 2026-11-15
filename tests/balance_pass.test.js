@@ -80,3 +80,22 @@ test('Haunted B Mythics channel a 1.2s 10th ability (Penrose on its 10th trap)',
  const b = battle(['livingTaboo']), e = enemy(b); G.resolveChaosUlt(b, b.units[0], 'livingTaboo', 100);
  assert.ok(e.tabooForcedUntil > b.time); assert.ok(b.effects.some(f => f.ult === 'livingTaboo'));
 });
+
+test('32-stage map: act bosses at 10/21/31, at least 3 shops, a Champion before each boss', () => {
+ for (const seed of [1, 2, 3, 4, 5]) {
+  const r = G.newRun('shen', seed); assert.equal(r.map.length, 32);
+  for (const row of [10, 21, 31]) assert.deepEqual(r.map[row].map(n => n.type), ['boss']);
+  assert.ok(r.map.flat().filter(n => n.type === 'shop').length >= 3);
+  for (const [lo, hi] of [[4, 10], [11, 21], [22, 31]]) assert.ok(r.map.slice(lo, hi).flat().some(n => n.type === 'champion'), `seed ${seed} act ${lo}`);
+ }
+});
+
+test('shop: buy a card, buy a general relic, remove one card, then return to the map', () => {
+ const r = G.newRun('shen', 9); r.roster = ['practitioner', 'lotusRoot', 'herbGrass', 'cauldron'].map(id => G.instance(r, id)); r.coins = 1000; r.phase = 'map';
+ const shop = r.map.flat().find(n => n.type === 'shop'); r.depth = shop.row - 1; r.lane = shop.lane; r.node = r.map[r.depth][0];
+ assert.ok(G.chooseNode(r, shop.id)); assert.equal(r.phase, 'event'); assert.equal(r.shop.cards.length, 3);
+ const card = r.shop.cards[0]; assert.ok(G.shopBuyCard(r, card.id)); assert.equal(r.roster.at(-1).id, card.id); assert.ok(!G.shopBuyCard(r, card.id));
+ const relic = r.shop.relics[0]; assert.ok(G.shopBuyRelic(r, relic.id)); assert.ok(r.relics.includes(relic.id));
+ assert.ok(G.shopRemove(r, r.roster[1].uid)); assert.ok(!G.shopRemove(r, r.roster[1].uid), 'one removal per visit');
+ assert.ok(G.leaveShop(r)); assert.equal(r.phase, 'map');
+});

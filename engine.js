@@ -13,21 +13,33 @@ const Game = (() => {
  function newRun(leader, seed = Date.now() >>> 0) {
   const health = 100 + (D.LEADERS.find(l => l.id === leader)?.mods?.health || 0);
   const r = { version: 5, leader, seed, uid: 0, roster: [], health, maxHealth: health, phase: 'draft', draftReason: 'first', coins: 0, depth: -1, lane: 1, visited: [], relics: [], breakthroughPills: 0, cleared: 0, stats: { kills: 0, leaks: 0, growth: 0 }, map: [] };
-  for (let row = 0; row < 16; row++) {
-   r.map.push(Array.from({ length: row === 15 ? 1 : 3 }, (_, lane) => {
+  // 32 stages in three acts: act bosses at rows 10 and 21, the final boss at 31. Event rows carry rest/cache/event
+  // with a Fate Workshop in the middle lane; Champions (Harbinger battles) and shops are scattered at random.
+  const BOSS_ROWS = [10, 21, 31], EVENT_ROWS = [3, 7, 14, 18, 25, 28], WORKSHOP_ROWS = [7, 18, 28];
+  for (let row = 0; row < 32; row++) {
+   const single = BOSS_ROWS.includes(row);
+   r.map.push(Array.from({ length: single ? 1 : 3 }, (_, lane) => {
     let type = 'battle';
-    if (row === 15) type = 'boss';
+    if (single) type = 'boss';
     else if (row > 1) {
-     let n = rand(r);
-     type = [3, 7, 11].includes(row) ? ['rest', 'cache', 'event'][(lane + Math.floor(n * 3)) % 3] : n < .28 ? 'elite' : 'battle'
+     const n = rand(r);
+     if (EVENT_ROWS.includes(row)) type = WORKSHOP_ROWS.includes(row) && lane === 1 ? 'workshop' : ['rest', 'cache', 'event'][(lane + Math.floor(n * 3)) % 3];
+     else type = n < .07 ? 'shop' : row >= 4 && n < .17 ? 'champion' : n < .40 ? 'elite' : 'battle';
     }
-    if ([3, 7, 11].includes(row) && lane === 1) type = 'workshop';
-    return { id: `${row}-${lane}`, row, lane: row === 15 ? 1 : lane, type }
-   }))
+    return { id: `${row}-${lane}`, row, lane: single ? 1 : lane, type };
+   }));
   }
+  // At least 3 shops, and a Champion before each boss, wherever the dice put them.
+  const pool = (lo, hi, t) => r.map.slice(lo, hi).flat().filter(n => n.type === t);
+  while (r.map.flat().filter(n => n.type === 'shop').length < 3) { const c = pool(4, 30, 'battle'); if (!c.length) break; c[Math.floor(rand(r) * c.length)].type = 'shop'; }
+  for (const [lo, hi] of [[4, 10], [11, 21], [22, 31]]) if (!pool(lo, hi, 'champion').length) { const c = pool(lo, hi, 'battle'); if (c.length) c[Math.floor(rand(r) * c.length)].type = 'champion'; }
   r.offers = offers(r, true); return r;
  }
- function rewardWeights(r, first = false) { let stage = first ? 1 : Math.min(16, r.depth + 2), elite = !first && r.node?.type === 'elite'; return stage < 5 ? [72, 28, 0, 0, 0] : stage < 10 ? (elite ? [40, 40, 20, 0, 0] : [55, 35, 10, 0, 0]) : elite ? [35, 35, 24, 6, 0] : [50, 32, 15, 3, 0] }
+ // Difficulty stage: the 32-stage map stretches the old 16-stage curve and ends a little harder (stage 17).
+ const stageOf = r => r.map?.length > 16 ? r.depth * 17 / (r.map.length - 1) : r.depth;
+ const finalRow = r => (r.map?.length || 16) - 1;
+ const ELITE_NODES = ['elite', 'boss', 'champion'];
+ function rewardWeights(r, first = false) { let stage = first ? 1 : Math.min(16, stageOf(r) + 2), elite = !first && ['elite', 'champion'].includes(r.node?.type); return stage < 5 ? [72, 28, 0, 0, 0] : stage < 10 ? (elite ? [40, 40, 20, 0, 0] : [55, 35, 10, 0, 0]) : elite ? [35, 35, 24, 6, 0] : [50, 32, 15, 3, 0] }
  function offers(r, first = false, exclude = []) {
   let weights = rewardWeights(r, first), pool = D.CARDS.filter(c => (!first || c.baseAtk > 0) && weights[tier(c.id)] > 0 && !exclude.includes(c.id)), out = [];
   while (out.length < 3 && pool.length) {
@@ -42,10 +54,20 @@ const Game = (() => {
   return out;
  }
 
- function draft(r, id) { if (r.phase !== 'draft' || !r.offers.includes(id)) return false; r.roster.push(instance(r, id)); r.offers = []; r.phase = r.depth === 15 ? 'won' : 'map'; return true }
- function available(r) { if (r.phase !== 'map') return []; return (r.map[r.depth + 1] || []).filter(n => r.depth < 0 || n.row === 15 || Math.abs(n.lane - r.lane) <= 1) }
- function chooseNode(r, id) { const n = available(r).find(n => n.id === id); if (!n) return false; r.depth = n.row; r.lane = n.lane; r.node = n; r.visited.push(id); r.phase = ['battle', 'elite', 'boss'].includes(n.type) ? 'ready' : 'event'; return true }
- function skipDraft(r) { if (r.phase !== 'draft' || r.draftReason === 'first') return false; r.offers = []; r.phase = r.depth === 15 ? 'won' : 'map'; return true }
+ function draft(r, id) { if (r.phase !== 'draft' || !r.offers.includes(id)) return false; r.roster.push(instance(r, id)); r.offers = []; r.phase = r.depth === finalRow(r) ? 'won' : 'map'; return true }
+ function available(r) { if (r.phase !== 'map') return []; return (r.map[r.depth + 1] || []).filter(n => r.depth < 0 || r.map[n.row].length === 1 || r.map[r.depth].length === 1 || Math.abs(n.lane - r.lane) <= 1) }
+ function chooseNode(r, id) { const n = available(r).find(n => n.id === id); if (!n) return false; r.depth = n.row; r.lane = n.lane; r.node = n; r.visited.push(id); r.phase = ['battle', 'elite', 'boss', 'champion'].includes(n.type) ? 'ready' : 'event'; if (n.type === 'shop') openShop(r); return true }
+ function skipDraft(r) { if (r.phase !== 'draft' || r.draftReason === 'first') return false; r.offers = []; r.phase = r.depth === finalRow(r) ? 'won' : 'map'; return true }
+ // Shop: remove a card, buy one of three cards, or buy a general (non-genre) relic. Leaving returns to the map.
+ const SHOP_PRICE = { Normal: 60, Rare: 110, Epic: 190, Legendary: 320 }, SHOP_RELIC_PRICE = 160, SHOP_REMOVE_PRICE = 90;
+ function openShop(r) {
+  const cards = offers({ ...r, phase: 'draft', draftReason: 'reward' }), relics = shuffle(r, D.RELICS.filter(v => !r.relics.includes(v.id))).slice(0, 2).map(v => v.id);
+  r.shop = { cards: cards.map(id => ({ id, price: SHOP_PRICE[D.CARD[id]?.rarity] || 110, sold: false })), relics: relics.map(id => ({ id, price: SHOP_RELIC_PRICE, sold: false })), removed: false };
+ }
+ function shopBuyCard(r, id) { const o = r.shop?.cards.find(c => c.id === id && !c.sold); if (!o || (r.coins || 0) < o.price) return false; r.coins -= o.price; o.sold = true; r.roster.push(instance(r, id)); return true }
+ function shopBuyRelic(r, id) { const o = r.shop?.relics.find(c => c.id === id && !c.sold); if (!o || (r.coins || 0) < o.price) return false; r.coins -= o.price; o.sold = true; addRelic(r, id); return true }
+ function shopRemove(r, uid) { if (!r.shop || r.shop.removed || (r.coins || 0) < SHOP_REMOVE_PRICE || r.roster.length <= 3) return false; const u = r.roster.find(v => String(v.uid) === String(uid)); if (!u) return false; r.coins -= SHOP_REMOVE_PRICE; r.roster = r.roster.filter(v => v !== u); r.shop.removed = true; return true }
+ function leaveShop(r) { if (r.node?.type !== 'shop') return false; r.shop = null; r.phase = 'map'; return true }
  // Saves may hold cards a redesign deleted: drop them and refund 10 coins (one reroll) each.
  // Cut Cyberdeck Mythics keep their arm and move to the Sandevistan Mythic; a Cyberdeck OS socket is freed.
  const RENAMED = { glitchAssassin: 'chronoPhantom', empBreaker: 'gravitonColossus', networkReaper: 'razorPhantom' };
@@ -69,7 +91,7 @@ const Game = (() => {
  const heatDamage=u=>heatUser(u)?{redline:1.35,warm:1.15,cold:1}[heatBand(u)]*(1+(u.tuning||0)):1;
  const heatSpeed=u=>heatUser(u)&&u.state==='active'&&heatBand(u)==='redline'?1.15:1;
  function cyberTrialCandidate(b,u){
-  if(!b||!u||u.removed||token(u)||u.id!=='eliteSolo'||!['elite','boss'].includes(b.run?.node?.type))return null;
+  if(!b||!u||u.removed||token(u)||u.id!=='eliteSolo'||!ELITE_NODES.includes(b.run?.node?.type))return null;
   if((u.chrome||0)<120||!CYBER_MATRIX[u.arm]?.[u.os])return null;
   return {unit:u,apexId:CYBER_MATRIX[u.arm][u.os]};
  }
@@ -647,7 +669,7 @@ const Game = (() => {
   persist(b,u);
  }
   function scrapworkTrialCandidate(b){
-   if(!b||!['elite','boss'].includes(b.run?.node?.type)||(b.metrics?.leaks||0)>0)return null;
+   if(!b||!ELITE_NODES.includes(b.run?.node?.type)||(b.metrics?.leaks||0)>0)return null;
    for(const unit of b.units.filter(u=>!u.removed&&!token(u)&&isMech(u)&&u.id==='titanFrame'&&u.alloy>=120&&u.extraSlot!=null&&mechPath(u))
     .sort((a,z)=>a.slot-z.slot||a.uid-z.uid)){
     const reactor=neighbors(b,unit,false).filter(v=>!v.removed&&!token(v)&&v.id==='titanReactor').sort((a,z)=>a.slot-z.slot||a.uid-z.uid)[0];
@@ -679,7 +701,7 @@ const Game = (() => {
    interact(b,titan||null,reactor||null,'scrapwork-trial-failed',`TITAN FIELD TEST FAILED · ${reason}; Titan and Reactor Core lost`);fx(b,'impact',titan||null,null,'TITAN TRIAL FAILED');return true;
   }
   function passScrapworkTrial(b){
-   const t=b?.scrapworkTrial;if(!t||t.status!=='active'||!b.won||(b.metrics?.leaks||0)!==0||!['elite','boss'].includes(b.run?.node?.type)||!t.modules.every((m,i)=>t.moduleHits[`${m}:${i+1}`]))return false;
+   const t=b?.scrapworkTrial;if(!t||t.status!=='active'||!b.won||(b.metrics?.leaks||0)!==0||!ELITE_NODES.includes(b.run?.node?.type)||!t.modules.every((m,i)=>t.moduleHits[`${m}:${i+1}`]))return false;
    const titan=b.units.find(u=>u.uid===t.unitUid&&!u.removed),reactor=b.units.find(u=>u.uid===t.reactorUid&&!u.removed);
    if(!titan||!reactor)return failScrapworkTrial(b,'Titan or Reactor Core was removed');
    consume(b,titan,reactor,'Titan Field Test',0);evolve(b,titan,t.apexId);persist(b,titan);
@@ -1213,7 +1235,7 @@ function fx(b, type, u, e, text, extra = {}) {
   return neighbors(b, u, false).filter(v => !v.removed && (cultivationRelicApex[v.id] || v.id === 'soulBanner')).sort((a, z) => a.slot - z.slot)[0] || null;
  }
  function startHeavenlyTrial(b) {
-  if (!b || !['elite', 'boss'].includes(b.run.node?.type) || (b.metrics?.leaks || 0) > 0) return null;
+  if (!b || !ELITE_NODES.includes(b.run.node?.type) || (b.metrics?.leaks || 0) > 0) return null;
   if (b.heavenlyTrial) return b.heavenlyTrial;
   const candidates = b.units.filter(u => !u.removed && !token(u) && isPractitioner(u) && u.id === 'cultivationNascentSoul' && (u.qi || 0) >= 200)
    .map(u => ({ unit: u, relic: trialRelicFor(b, u) })).filter(v => v.relic)
@@ -1244,7 +1266,7 @@ function fx(b, type, u, e, text, extra = {}) {
  }
  function passHeavenlyTrial(b) {
   const trial = b?.heavenlyTrial;
-  if (!trial || trial.status !== 'active' || !b.won || (b.metrics?.leaks || 0) > 0 || !['elite', 'boss'].includes(b.run?.node?.type)) return false;
+  if (!trial || trial.status !== 'active' || !b.won || (b.metrics?.leaks || 0) > 0 || !ELITE_NODES.includes(b.run?.node?.type)) return false;
   const practitioner = b.units.find(u => u.uid === trial.unitUid && !u.removed);
   const relic = b.units.find(u => u.uid === trial.relicUid && !u.removed);
   if (!practitioner || !relic) return failHeavenlyTrial(b, 'Nascent Soul or matching relic was removed');
@@ -1318,7 +1340,7 @@ function fx(b, type, u, e, text, extra = {}) {
   startHeavenlyTrial(b);
  }
  function arcaneTrialCandidate(b) {
-  if(!b||!['elite','boss'].includes(b.run?.node?.type)||(b.metrics?.leaks||0)>0)return null;
+  if(!b||!ELITE_NODES.includes(b.run?.node?.type)||(b.metrics?.leaks||0)>0)return null;
   for(const unit of b.units.filter(u=>!u.removed&&!token(u)&&isApprentice(u)&&!isArchon(u))
     .sort((a,z)=>a.slot-z.slot||a.uid-z.uid)){
    const pair=unit.lockedPair||bestPair(unit),points=unit.synthesis?.[pair]||0;
@@ -1352,7 +1374,7 @@ function fx(b, type, u, e, text, extra = {}) {
  }
  function passArcaneTrial(b){
   const t=b?.arcaneTrial;
-  if(!t||t.status!=='active'||!t.featDone||!b.won||(b.metrics?.leaks||0)!==0||!['elite','boss'].includes(b.run?.node?.type))return false;
+  if(!t||t.status!=='active'||!t.featDone||!b.won||(b.metrics?.leaks||0)!==0||!ELITE_NODES.includes(b.run?.node?.type))return false;
   const unit=b.units.find(u=>u.uid===t.unitUid&&!u.removed),loom=b.units.find(u=>u.uid===t.loomUid&&!u.removed);
   if(!unit||!loom)return failArcaneTrial(b,'The Mage or Astral Loom was removed');
   unit.boundPair=t.pair;consume(b,unit,loom,'Astral Weaving Trial',0);evolve(b,unit,t.apexId);persist(b,unit);
@@ -1380,7 +1402,7 @@ function fx(b, type, u, e, text, extra = {}) {
   return startUrbanContainmentTrial(b);
  }
  function urbanTrialCandidate(b) {
-  if (!b || !['elite', 'boss'].includes(b.run?.node?.type) || (b.metrics?.leaks || 0) > 0) return null;
+  if (!b || !ELITE_NODES.includes(b.run?.node?.type) || (b.metrics?.leaks || 0) > 0) return null;
   const enforcers = b.units.filter(u => !u.removed && !token(u) && u.id === 'ruleEnforcer' && (u.dread || 0) >= 140)
     .sort((a,z)=>a.slot-z.slot||a.uid-z.uid);
   for (const enforcer of enforcers) {
@@ -1419,7 +1441,7 @@ function fx(b, type, u, e, text, extra = {}) {
   return trial;
  }
  function urbanLegendTrialCandidate(b) {
-  if (!b || !['elite', 'boss'].includes(b.run?.node?.type) || (b.metrics?.leaks || 0) > 0) return null;
+  if (!b || !ELITE_NODES.includes(b.run?.node?.type) || (b.metrics?.leaks || 0) > 0) return null;
   const devourers = b.units.filter(u => !u.removed && !token(u) && isUrbanLegend(u)
     && !APEX_FORMS.includes(u.id) && (u.violations || 0) >= 80)
     .sort((a,z)=>(z.violations||0)-(a.violations||0)||a.slot-z.slot||a.uid-z.uid);
@@ -1804,7 +1826,7 @@ function fx(b, type, u, e, text, extra = {}) {
  }
  function startXenoTrial(b) {
   if (!b || b.xenoTrial) return b?.xenoTrial || null;
-  if (!['elite', 'boss'].includes(b.run?.node?.type)) return null;
+  if (!ELITE_NODES.includes(b.run?.node?.type)) return null;
   const u = b.units.filter(v => !v.removed && !token(v) && isXenoSpecimen(v) && !isXenoApex(v) && (v.genome || 0) >= 130 && (v.strains || []).length === 2)
    .sort((a, z) => (z.genome || 0) - (a.genome || 0) || a.slot - z.slot)[0];
   const branch = u && XENO_BRANCHES[xenoPair(u.strains)];
@@ -1987,7 +2009,7 @@ function fx(b, type, u, e, text, extra = {}) {
  const insane=(b,e)=>(e.insaneUntil||0)>b.time;
  // The Summoning: a 154-Syllable Herald on an Elite/Boss node must drive 13 runners Insane (a Boss counts 3).
  function cosmicTrialCandidate(b){
-  if(!b||!['elite','boss'].includes(b.run?.node?.type))return null;
+  if(!b||!ELITE_NODES.includes(b.run?.node?.type))return null;
   for(const unit of cosmicUnits(b).filter(u=>!token(u)&&isIdol(u)&&!cosmicApex(u)).sort((a,z)=>a.uid-z.uid)){
    const pair=cosmicPair(unit.scripts),branch=COSMIC_BRANCHES[pair];if((unit.syllables||0)>=SUMMONING_SYLLABLES&&branch&&unit.id===branch[0])return{unit,pair,apexId:branch[1]};
   }return null;
@@ -2939,7 +2961,8 @@ function fx(b, type, u, e, text, extra = {}) {
   flushEvents(b); return true;
  }
 
- function trialFor(n) { if (!n || !['battle', 'elite'].includes(n.type)) return null; return ({ 5: { hp: 1800, leak: 10 }, 9: { hp: 4200, leak: 14 }, 13: { hp: 7000, leak: 18 } })[n.row] || null }
+ // Champion (Harbinger) battles: the old fixed rows 5/9/13 on 16-stage maps, Champion nodes on 32-stage maps.
+ function trialFor(n) { if (!n) return null; if (n.type === 'champion') { const st = n.row * 17 / 31; return { hp: Math.round(Math.max(1500, 1800 + (st - 5) * 650)), leak: Math.round(Math.max(8, 10 + (st - 5))) }; } if (!['battle', 'elite'].includes(n.type) || n.row > 15) return null; return ({ 5: { hp: 1800, leak: 10 }, 9: { hp: 4200, leak: 14 }, 13: { hp: 7000, leak: 18 } })[n.row] || null }
  function spreadRumor(b, source, onDeath = false) {
   if (!source.rumorInfected || (!onDeath && source.rumorContactSpread)) return;
   const target = living(b).find(e => e !== source && !e.rumorInfected && Math.min(Math.abs(e.p - source.p), 16 - Math.abs(e.p - source.p)) <= (onDeath ? 1.5 : .45));
@@ -2960,9 +2983,9 @@ function fx(b, type, u, e, text, extra = {}) {
  }
 
  function wavePlan(r) {
-  let d = r.depth, elite = r.node.type === 'elite', boss = r.node.type === 'boss';
+  let d = r.depth === 0 ? 0 : stageOf(r), elite = r.node.type === 'elite', boss = r.node.type === 'boss';
   const encounter = encounterFor(r.node);
-  const plan = { encounter: encounter?.id || null, count: d === 0 ? 5 : boss ? 42 : Math.min(36, 10 + d * 2), interval: d === 0 ? 2.5 : boss ? 1.4 : Math.max(1.5, 2.3 - d * .045), hp: d === 0 ? 9 : Math.round((17 + d * 8 + d * d * 1.5) * 1.8 * (1 + Math.max(0, d - 3) * .02) * (elite ? 1.25 : 1)), speed: boss ? .31 : elite ? .34 : .3, bossHp: 11000, trial: trialFor(r.node) };
+  const plan = { encounter: encounter?.id || null, count: d === 0 ? 5 : boss ? 42 : Math.min(36, 10 + d * 2), interval: d === 0 ? 2.5 : boss ? 1.4 : Math.max(1.5, 2.3 - d * .045), hp: d === 0 ? 9 : Math.round((17 + d * 8 + d * d * 1.5) * 1.8 * (1 + Math.max(0, d - 3) * .02) * (elite ? 1.25 : 1)), speed: boss ? .31 : elite ? .34 : .3, bossHp: r.depth >= finalRow(r) ? 11000 : r.depth >= 20 ? 7500 : 4000, trial: trialFor(r.node) };
   if (d > 0 && !boss) { plan.hp = Math.round(plan.hp * (1.12 + Math.min(d, 10) * .035)); plan.speed *= 1.12; }
   if (encounter?.id === 'packs') { plan.count = Math.ceil(plan.count * 1.5); plan.hp = Math.round(plan.hp * .62) }
   if (encounter?.id === 'armor') { plan.count = Math.ceil(plan.count * .8); plan.hp = Math.round(plan.hp * .85) }
@@ -2971,7 +2994,7 @@ function fx(b, type, u, e, text, extra = {}) {
  }
  function spawn(b) {
   let plan = b.plan, idx = b.spawned, boss = b.run.node.type === 'boss' && idx === plan.count - 1, champion = !!plan.trial && idx === plan.count - 1, elite = !boss && !champion && (b.run.node.type === 'elite' && idx % 4 === 0), armored = !boss && !champion && !elite && (plan.encounter === 'armor' ? idx % 3 !== 2 : !plan.encounter && b.run.depth > 3 && idx % 5 === 3), swift = !boss && !champion && !elite && !armored && (plan.encounter === 'fast' ? idx % 3 !== 2 : !plan.encounter && b.run.depth > 1 && idx % 4 === 2), hp = boss ? plan.bossHp : champion ? plan.trial.hp : plan.hp * (elite ? 2 : armored ? 1.45 : 1);
-  const newEnemy = { uid: ++b.enemyUid, p: 0, hp, maxHp: hp, speed: (champion ? .31 : plan.speed) * (boss ? .95 : swift ? 1.6 : armored ? .85 : 1), leak: boss ? b.run.maxHealth : champion ? plan.trial.leak : elite ? 6 : armored ? 3 : 2, defense: armored ? .4 : elite ? .25 : (boss || champion) ? .2 : 0, boss, champion, maxProgress: 0, elite, armored, swift, bornAt: b.time, enraged: false, gone: false, panic: false, panicUntil: 0, retreatingUntil: 0, slows: [], frozenUntil: 0, shredUntil: 0, bleeds: [], burns: [], venoms: [], vulnerableUntil: 0, vulnerability: 0, tabooMarks: { kuchisake: 0, nightBus: 0, payphone: 0, morgueMirror: 0, mannequin: 0, stair13: 0, redRaincoat: 0 } };
+  const newEnemy = { uid: ++b.enemyUid, p: 0, hp, maxHp: hp, speed: (champion ? .31 : plan.speed) * (boss ? .95 : swift ? 1.6 : armored ? .85 : 1), leak: boss ? (b.run.depth >= finalRow(b.run) ? b.run.maxHealth : 40) : champion ? plan.trial.leak : elite ? 6 : armored ? 3 : 2, defense: armored ? .4 : elite ? .25 : (boss || champion) ? .2 : 0, boss, champion, maxProgress: 0, elite, armored, swift, bornAt: b.time, enraged: false, gone: false, panic: false, panicUntil: 0, retreatingUntil: 0, slows: [], frozenUntil: 0, shredUntil: 0, bleeds: [], burns: [], venoms: [], vulnerableUntil: 0, vulnerability: 0, tabooMarks: { kuchisake: 0, nightBus: 0, payphone: 0, morgueMirror: 0, mannequin: 0, stair13: 0, redRaincoat: 0 } };
   b.enemies.push(newEnemy);
   const architect = b.units.find(v => !v.removed && v.id === 'ruleArchitect');
   if (architect) addRuleMark(b, newEnemy, 1, architect);
@@ -3476,7 +3499,7 @@ function fx(b, type, u, e, text, extra = {}) {
    if(won&&(b.metrics.leaks||0)===0&&proved)passScrapworkTrial(b);
    else failScrapworkTrial(b,(b.metrics.leaks||0)>0?'A runner leaked':!proved?'A locked module did not hit a priority target':'Elite/Boss node was not cleared');
   }
-  const coinsEarned = r.node?.type === 'boss' ? 500 : r.node?.type === 'elite' ? 200 : 100;
+  const coinsEarned = r.node?.type === 'boss' ? 500 : r.node?.type === 'champion' ? 300 : r.node?.type === 'elite' ? 200 : 100;
   r.coins = (r.coins || 0) + coinsEarned; b.metrics.coinsEarned = coinsEarned;
   for (const u of b.units.filter(u => !u.phantom)) {
    let src = r.roster.find(v => v.uid === u.uid); if (!src) continue;
@@ -3486,7 +3509,7 @@ function fx(b, type, u, e, text, extra = {}) {
   r.battleHistory ??= []; r.battleHistory.push({ stage: r.depth + 1, leaks: b.metrics.leaks, closeCalls: b.metrics.closeCalls || 0, trial: b.metrics.trial || null, xenoTrial: b.metrics.xenoTrial || null, cosmicTrial: b.metrics.cosmicTrial || null, heavenlyTribulation: b.metrics.heavenlyTribulation || null, bloodlineTrial: b.metrics.bloodlineTrial || null, arcaneTrial: b.metrics.arcaneTrial || null, scrapworkTrial: b.metrics.scrapworkTrial || null, cyberTrial: b.metrics.cyberTrial || null, urbanLegendTrial: b.metrics.urbanLegendTrial || null, huntTrial: b.metrics.huntTrial || null });
   r.battleHistory = r.battleHistory.slice(-16);
   if (won) {
-   r.cleared++; if (r.node.type === 'elite') { let options = D.RELICS.filter(v => !r.relics.includes(v.id)); if (options.length) { let item = options[Math.floor(rand(r) * options.length)]; addRelic(r, item.id); r.recap.relic = item.name } }
+   r.cleared++; if (['elite', 'champion'].includes(r.node.type)) { let options = D.RELICS.filter(v => !r.relics.includes(v.id)); if (options.length) { let item = options[Math.floor(rand(r) * options.length)]; addRelic(r, item.id); r.recap.relic = item.name } }
    reward(r)
   } else r.phase = 'lost';
  }
@@ -3645,7 +3668,7 @@ function fx(b, type, u, e, text, extra = {}) {
  const cubRelics = { dragon:'dragonPearl', tiger:'tigerSeal', xuanwu:'earthTablet', phoenix:'phoenixTree', monkey:'goldenStaff' };
  const lineageTierIds = Object.fromEntries(Object.entries(cubForms).flatMap(([path,ids])=>ids.map((id,i)=>[id,{path,tier:i+1}])));
  function bloodlineTrialCandidate(b) {
-  if (!b || !['elite', 'boss'].includes(b.run?.node?.type) || (b.metrics?.leaks || 0) > 0) return null;
+  if (!b || !ELITE_NODES.includes(b.run?.node?.type) || (b.metrics?.leaks || 0) > 0) return null;
   for (const u of b.units.filter(v => !v.removed && !token(v) && family(v) === 'cub' && lineageTierIds[v.id]?.tier === 3)
    .sort((a,z)=>a.slot-z.slot||a.uid-z.uid)) {
    const relicId = cubRelics[u.lineage];
@@ -3677,7 +3700,7 @@ function fx(b, type, u, e, text, extra = {}) {
  }
  function passBloodlineTrial(b) {
   const t=b?.bloodlineTrial;
-  if(!t||t.status!=='active'||!b.won||(b.metrics?.leaks||0)!==0||!['elite','boss'].includes(b.run?.node?.type)) return false;
+  if(!t||t.status!=='active'||!b.won||(b.metrics?.leaks||0)!==0||!ELITE_NODES.includes(b.run?.node?.type)) return false;
   const unit=b.units.find(u=>u.uid===t.unitUid&&!u.removed), relic=b.units.find(u=>u.uid===t.relicUid&&!u.removed);
   if(!unit||!relic) return failBloodlineTrial(b,'Tier 3 Bloodline or ancestral relic was removed');
   consume(b,unit,relic,'Ancestral Ascension',0); evolve(b,unit,t.apexId); persist(b,unit);
@@ -3923,7 +3946,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (abilityGauge(u) && u.threshold.current >= u.threshold.max) tick(b, u, 0);
  }
 
- return { migrateRun, CHAOS_ULTS, resolveChaosUlt, ORDER_ULTS, XENO_ULTS, pushGauge, triggerLightsOn, lightsOn, compliant, isOrderUnit, resolveOrderUlt, breakthroughPills: b => Math.max(0, Math.min(3, Math.floor(b?.run?.breakthroughPills || 0))), chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, addStrain, xenoStrainsFor, resolveXenoUlt, feedSpecimens, startXenoTrial, tickXenoTrial, failXenoTrial, passXenoTrial, addWeakpoint, addGenome, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, startCosmicTrial, finishCosmicTrial, updateIdol, writePage, addSyllables, decipherPage, addMadness, goInsane, insane, pages, resolveCosmicUlt, COSMIC_ULTS, SCRIPTS, cosmicPanic, cosmicStatus, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, cyberTrialCandidate, startCyberTrial, tickCyberTrial, finishCyberTrial, heatBand, heatDamage, heatSpeed, heatUser, resolveCyberUlt, CYBER_ULTS, netrunnerHack, augmented, berserkActive, updateCyber, installChrome, cyberZone, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, isApprentice, isArchon, isElemental, bestPair, receiveEssence, startArcaneTrial, failArcaneTrial, startScrapworkTrial, markScrapworkTrialHit, failScrapworkTrial, elementalLinks, arcaneReaction, elementalSpell, arcaneExtras, tickArcane, HUNT_APEX, isSlayer, isHunter, priority, executeThreshold, huntArmor, trophyPoints, carveTrophy, huntExtras, visceral, TROPHIES, TROPHY_NAMES, RITE_APEX, RACK_CAP, rack, bleedStacks, isBleeding, harvestTrophy, tickHunt, resolveHuntUlt, HUNT_ULTS, riteCandidate, performRite, riteSacrificable, startHuntBattle, slayerAttack, isMech, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, oilPool, tickOil, mechAttack, addQi, addDread, isCultivationApex, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, persist, event, flushEvents, evolve, evolutionProgress, consume, devour, spawnToken, dot, warp, extras, growth, teamPower, allies, support, trialFor, encounterFor, ENCOUNTERS, record, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, tick, trigger, status, attack, damage, hit, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, startUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, wavePlan, spawn, favored, rand, finish, processPractitionerBreakthroughs, isPractitioner, isBloodlineRelic, isUrbanInvestigator, isUrbanLegend, addRuleMark, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, triggerWeiqiCorner };
+ return { migrateRun, stageOf, finalRow, openShop, shopBuyCard, shopBuyRelic, shopRemove, leaveShop, SHOP_REMOVE_PRICE, CHAOS_ULTS, resolveChaosUlt, ORDER_ULTS, XENO_ULTS, pushGauge, triggerLightsOn, lightsOn, compliant, isOrderUnit, resolveOrderUlt, breakthroughPills: b => Math.max(0, Math.min(3, Math.floor(b?.run?.breakthroughPills || 0))), chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, addStrain, xenoStrainsFor, resolveXenoUlt, feedSpecimens, startXenoTrial, tickXenoTrial, failXenoTrial, passXenoTrial, addWeakpoint, addGenome, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, startCosmicTrial, finishCosmicTrial, updateIdol, writePage, addSyllables, decipherPage, addMadness, goInsane, insane, pages, resolveCosmicUlt, COSMIC_ULTS, SCRIPTS, cosmicPanic, cosmicStatus, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, cyberTrialCandidate, startCyberTrial, tickCyberTrial, finishCyberTrial, heatBand, heatDamage, heatSpeed, heatUser, resolveCyberUlt, CYBER_ULTS, netrunnerHack, augmented, berserkActive, updateCyber, installChrome, cyberZone, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, isApprentice, isArchon, isElemental, bestPair, receiveEssence, startArcaneTrial, failArcaneTrial, startScrapworkTrial, markScrapworkTrialHit, failScrapworkTrial, elementalLinks, arcaneReaction, elementalSpell, arcaneExtras, tickArcane, HUNT_APEX, isSlayer, isHunter, priority, executeThreshold, huntArmor, trophyPoints, carveTrophy, huntExtras, visceral, TROPHIES, TROPHY_NAMES, RITE_APEX, RACK_CAP, rack, bleedStacks, isBleeding, harvestTrophy, tickHunt, resolveHuntUlt, HUNT_ULTS, riteCandidate, performRite, riteSacrificable, startHuntBattle, slayerAttack, isMech, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, oilPool, tickOil, mechAttack, addQi, addDread, isCultivationApex, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, persist, event, flushEvents, evolve, evolutionProgress, consume, devour, spawnToken, dot, warp, extras, growth, teamPower, allies, support, trialFor, encounterFor, ENCOUNTERS, record, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, tick, trigger, status, attack, damage, hit, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, startUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, wavePlan, spawn, favored, rand, finish, processPractitionerBreakthroughs, isPractitioner, isBloodlineRelic, isUrbanInvestigator, isUrbanLegend, addRuleMark, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, triggerWeiqiCorner };
 })();
 if (typeof module !== 'undefined') module.exports = Game;
 

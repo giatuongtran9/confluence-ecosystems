@@ -2296,7 +2296,9 @@ const NODES = {
   "rest": { "name": "Campfire", "icon": "⛺", "desc": "Restore 25 health, or awaken a card for 12 permanent ATK. Then draft." },
   "cache": { "name": "Forgotten vault", "icon": "▧", "desc": "Choose a general relic, then draft a card." },
   "event": { "name": "Crossroads", "icon": "?", "desc": "Trade health for power, or take a safe blessing. Then draft." },
-  "boss": { "name": "The Unraveler", "icon": "♜", "desc": "The final siege. The boss must be defeated; its escape ends the run." },
+  "boss": { "name": "The Unraveler", "icon": "♜", "desc": "An act boss. Act bosses cost 40 health if they escape; the final Unraveler ends the run." },
+  "champion": { "name": "Champion", "icon": "♛", "desc": "A Harbinger closes the wave: armored, slow-resistant and enraged after 45s. Counts as an Elite for ascensions; relic and Elite-tier draft." },
+  "shop": { "name": "Wandering Merchant", "icon": "⚖", "desc": "Spend coins: remove one card, buy one of three cards, or buy a general relic. No free draft." },
   "workshop": { "name": "Fate Workshop", "icon": "✦", "desc": "Choose one roster card, then one of three upgrades or awakening paths for 10 health. Or pass and restore 3 health. Draft afterward." }
 };
 
