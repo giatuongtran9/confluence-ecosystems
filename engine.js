@@ -47,170 +47,167 @@ const Game = (() => {
  function chooseNode(r, id) { const n = available(r).find(n => n.id === id); if (!n) return false; r.depth = n.row; r.lane = n.lane; r.node = n; r.visited.push(id); r.phase = ['battle', 'elite', 'boss'].includes(n.type) ? 'ready' : 'event'; return true }
  function skipDraft(r) { if (r.phase !== 'draft' || r.draftReason === 'first') return false; r.offers = []; r.phase = r.depth === 15 ? 'won' : 'map'; return true }
  // Saves may hold cards a redesign deleted: drop them and refund 10 coins (one reroll) each.
- function migrateRun(r) { if (!r?.roster) return 0; const lost = r.roster.filter(u => !card(u.id)); if (lost.length) { r.roster = r.roster.filter(u => card(u.id)); r.coins = (r.coins || 0) + 10 * lost.length; } return lost.length; }
+ // Cut Cyberdeck Mythics keep their arm and move to the Sandevistan Mythic; a Cyberdeck OS socket is freed.
+ const RENAMED = { glitchAssassin: 'chronoPhantom', empBreaker: 'gravitonColossus', networkReaper: 'razorPhantom' };
+ function migrateRun(r) { if (!r?.roster) return 0; for (const u of r.roster) { if (RENAMED[u.id]) { u.id = RENAMED[u.id]; u.os = 'sandyOS'; } if (u.os === 'cyberdeckOS') delete u.os; } const lost = r.roster.filter(u => !card(u.id)); if (lost.length) { r.roster = r.roster.filter(u => card(u.id)); r.coins = (r.coins || 0) + 10 * lost.length; } return lost.length; }
  function rerollDraft(r) { if (r.phase !== 'draft' || (r.coins || 0) < 10) return false; const next = offers(r, r.draftReason === 'first', r.offers); if (next.length !== 3) return false; r.coins -= 10; r.offers = next; return true }
 
  function reward(r) { r.phase = 'draft'; r.draftReason = 'reward'; r.offers = offers(r) }
  function addRelic(r, id) { if (r.relics.includes(id)) return; r.relics.push(id); if (id === 'heart') { r.maxHealth += 20; r.health = Math.min(r.maxHealth, r.health + 10) } }
  function base(u) { return card(u.id).baseAtk + (u.permanentAtkBonus || 0) }
 
- // Ripperdoc Matrix: two locked hardware sockets; thermal/RAM state is battle-only.
- const CYBER_MATRIX={mantisImplant:{sandyOS:'chronoPhantom',berserkOS:'thermalRipper',cyberdeckOS:'glitchAssassin'},gorillaImplant:{sandyOS:'gravitonColossus',berserkOS:'juggernautSmasher',cyberdeckOS:'empBreaker'},monowireImplant:{sandyOS:'razorPhantom',berserkOS:'plasmaTempest',cyberdeckOS:'networkReaper'}};
+ // Ripperdoc Matrix: Arm × OS sockets. Heat is push-your-luck: run hot for damage, but don't melt.
+ const CYBER_MATRIX={mantisImplant:{sandyOS:'chronoPhantom',berserkOS:'thermalRipper'},gorillaImplant:{sandyOS:'gravitonColossus',berserkOS:'juggernautSmasher'},monowireImplant:{sandyOS:'razorPhantom',berserkOS:'plasmaTempest'}};
  const CYBER_APEX=Object.values(CYBER_MATRIX).flatMap(Object.values);
+ const CYBER_CREW=['streetSamurai','roninMerc','afterlifeLegend','netrunner'];
  const isCyber=u=>family(u)==='cyberSolo';
- const cyberApex=u=>CYBER_APEX.includes(u.id);
+ const cyberApex=u=>CYBER_APEX.includes(u?.id);
+ const heatUser=u=>!!u&&(isCyber(u)||CYBER_CREW.includes(u.id));
+ const REDLINE_PROOF=12;
+ const heatBand=u=>{const h=u?.heat||0;return h>=80?'redline':h>=50?'warm':'cold';};
+ // Warm +15% damage; Redline +35% damage and +15% attack speed. Each adjacent install adds +10% tuning.
+ const heatDamage=u=>heatUser(u)?{redline:1.35,warm:1.15,cold:1}[heatBand(u)]*(1+(u.tuning||0)):1;
+ const heatSpeed=u=>heatUser(u)&&u.state==='active'&&heatBand(u)==='redline'?1.15:1;
  function cyberTrialCandidate(b,u){
-  if(!b||!u||u.removed||token(u)||cyberApex(u)||!isCyber(u)||!['elite','boss'].includes(b.run?.node?.type)||(b.metrics?.leaks||0)>0)return null;
+  if(!b||!u||u.removed||token(u)||u.id!=='eliteSolo'||!['elite','boss'].includes(b.run?.node?.type))return null;
   if((u.chrome||0)<120||!CYBER_MATRIX[u.arm]?.[u.os])return null;
-  const reactor=neighbors(b,u,false).filter(v=>!v.removed&&!token(v)&&v.id==='cyberReactor').sort((a,z)=>a.slot-z.slot||a.uid-z.uid)[0];
-  return reactor?{unit:u,reactor,apexId:CYBER_MATRIX[u.arm][u.os]}:null;
+  return {unit:u,apexId:CYBER_MATRIX[u.arm][u.os]};
  }
  function startCyberTrial(b,u){
   if(!b||b.cyberTrial)return b?.cyberTrial||null;
   const c=cyberTrialCandidate(b,u);if(!c)return null;
-  const t=b.cyberTrial={status:'active',unitUid:c.unit.uid,reactorUid:c.reactor.uid,apexId:c.apexId,os:c.unit.os,arm:c.unit.arm,startedAt:b.time,nodeType:b.run.node.type};
-  b.metrics.cyberTrial={status:'active',unitUid:t.unitUid,reactorUid:t.reactorUid,apexId:t.apexId,os:t.os,arm:t.arm,startedAt:b.time,nodeType:t.nodeType};
-  interact(b,c.unit,c.reactor,'cyber-trial','OS OVERDRIVE TRIAL · signature proved; clear with zero leaks');
-  fx(b,'growth',c.unit,null,'CYBER TRIAL · ZERO-LEAK CLEAR');return t;
+  const t=b.cyberTrial={status:'active',unitUid:u.uid,apexId:c.apexId,os:u.os,arm:u.arm,redline:0,resets:0,startedAt:b.time,nodeType:b.run.node.type};
+  b.metrics.cyberTrial={...t};
+  interact(b,u,u,'cyber-trial',`REDLINE PROOF · hold 80–99°C for ${REDLINE_PROOF}s in total; overheating resets it`);
+  fx(b,'growth',u,null,'REDLINE PROOF · HOLD THE HEAT');return t;
  }
- function cyberTrialProof(b,u,kind){
-  if(!cyberTrialCandidate(b,u)||b.cyberTrial)return false;
-  if(kind==='sandy')u.cyberSandyProof=(u.cyberSandyProof||0)+1;
-  else if(kind==='berserk')u.cyberBerserkProof=(u.cyberBerserkProof||0)+1;
-  else if(kind==='shortCircuit')u.cyberShortProof=true;
-  else if(kind==='contagion')u.cyberContagionProof=true;
-  persist(b,u);
-  const complete=u.os==='sandyOS'?(u.cyberSandyProof||0)>=3:u.os==='berserkOS'?(u.cyberBerserkProof||0)>=3:!!u.cyberShortProof&&!!u.cyberContagionProof;
-  if(complete)startCyberTrial(b,u);
-  return complete;
+ function tickCyberTrial(b,dt=0){
+  if(!b?.units)return;
+  if(!b.cyberTrial)for(const u of b.units.filter(v=>!v.removed&&isCyber(v)).sort((a,z)=>a.uid-z.uid))if(startCyberTrial(b,u))break;
+  const t=b.cyberTrial;if(!t||t.status!=='active')return;
+  const u=b.units.find(v=>v.uid===t.unitUid&&!v.removed);
+  if(!u){t.status='failed';t.reason='The Operative was removed';b.metrics.cyberTrial={...t};return;}
+  if(u.state==='active'&&heatBand(u)==='redline'){
+   t.redline+=dt;
+   if(t.redline>=REDLINE_PROOF){t.redline=REDLINE_PROOF;t.status='proven';t.provenAt=b.time;fx(b,'growth',u,null,'REDLINE PROVEN · MYTHIC AT BATTLE END');interact(b,u,u,'cyber-trial-proven','Redline Proof complete; the Operative awakens when the battle ends');}
+  }
+  b.metrics.cyberTrial={...t};
  }
- function failCyberTrial(b,reason='A runner leaked'){
-  const t=b?.cyberTrial;if(!t||t.status!=='active')return false;
-  const unit=b.units.find(u=>u.uid===t.unitUid),reactor=b.units.find(u=>u.uid===t.reactorUid);
-  if(unit)unit.removed=true;if(reactor)reactor.removed=true;
-  const lost=new Set([t.unitUid,t.reactorUid]);b.run.roster=b.run.roster.filter(u=>!lost.has(u.uid));
-  t.status='failed';t.reason=reason;t.failedAt=b.time;b.metrics.cyberTrial={...b.metrics.cyberTrial,status:'failed',reason,failedAt:b.time};
-  interact(b,unit||null,reactor||null,'cyber-trial-failed',`OS OVERDRIVE FAILED · ${reason}; Operative and Reactor lost`);fx(b,'impact',unit||null,null,'CYBER TRIAL FAILED');return true;
+ function resetRedline(b,u){const t=b?.cyberTrial;if(t?.status==='active'&&t.unitUid===u.uid&&t.redline>0){t.redline=0;t.resets++;b.metrics.cyberTrial={...t};fx(b,'impact',u,null,'REDLINE RESET · OVERHEATED');}}
+ // Battle end: a proven Operative awakens if the battle was won. A failed proof costs nothing.
+ function finishCyberTrial(b,won){
+  const t=b?.cyberTrial;if(!t||!['active','proven'].includes(t.status))return false;
+  const u=b.units.find(v=>v.uid===t.unitUid&&!v.removed);
+  if(t.status==='proven'&&won&&u){evolve(b,u,t.apexId);persist(b,u);t.status='passed';t.passedAt=b.time;interact(b,u,u,'cyber-trial-passed',`REDLINE PROOF PASSED · ${card(t.apexId).name} awakened`);fx(b,'growth',u,null,'CYBER MYTHIC AWAKENED');}
+  else{t.reason=t.status==='proven'?'battle lost':`only ${t.redline.toFixed(1)}s at Redline`;t.status='failed';}
+  b.metrics.cyberTrial={...t};return t.status==='passed';
  }
- function passCyberTrial(b){
-  const t=b?.cyberTrial;if(!t||t.status!=='active'||!b.won||(b.metrics?.leaks||0)!==0||!['elite','boss'].includes(b.run?.node?.type))return false;
-  const unit=b.units.find(u=>u.uid===t.unitUid&&!u.removed),reactor=b.units.find(u=>u.uid===t.reactorUid&&!u.removed);
-  if(!unit||!reactor)return failCyberTrial(b,'The Operative or Reactor was removed');
-  consume(b,unit,reactor,'Cyber OS Overdrive Trial',0);evolve(b,unit,t.apexId);persist(b,unit);
-  t.status='passed';t.passedAt=b.time;b.metrics.cyberTrial={...b.metrics.cyberTrial,status:'passed',passedAt:b.time};
-  interact(b,unit,unit,'cyber-trial-passed',`OS OVERDRIVE PASSED · ${card(t.apexId).name} awakened`);fx(b,'growth',unit,null,'CYBER MYTHIC AWAKENED');return true;
- }
- function tickCyberTrial(b){const t=b?.cyberTrial;if(!t||t.status!=='active')return;if(!b.units.some(u=>u.uid===t.unitUid&&!u.removed)||!b.units.some(u=>u.uid===t.reactorUid&&!u.removed))failCyberTrial(b,'The Operative or Reactor was removed');}
  const augmented=u=>isCyber(u)&&!!(u.arm||u.os);
- const hasAccess=(b,u)=>neighbors(b,u).some(v=>v.id==='accessPoint');
- const ramCapacity=(b,u)=>hasAccess(b,u)?12:8;
- const berserkActive=u=>isCyber(u)&&!cyberApex(u)&&u.os==='berserkOS'&&(u.heat||0)>=80&&u.state==='active';
+ const berserkActive=u=>isCyber(u)&&u.os==='berserkOS'&&heatBand(u)==='redline'&&u.state==='active';
  function updateCyber(b,u){
   if(!isCyber(u)||token(u)||u.removed)return;
   if(!cyberApex(u)){
    const id=(u.chrome||0)>=65?'eliteSolo':(u.chrome||0)>=25?'chromedSolo':'cyberSolo';if(u.id!==id)evolve(b,u,id);
   }persist(b,u);
  }
+ // Installs into any Operative with the matching empty socket; an adjacent one is preferred and gains +10% tuning.
  function installChrome(b,module){
   const socket=card(module.id)?.cyberModule;if(!socket||module.removed||token(module))return false;
-  const u=neighbors(b,module).filter(v=>isCyber(v)&&!token(v)&&!v[socket]).sort((a,z)=>a.uid-z.uid)[0];if(!u)return false;
-  u[socket]=module.id;consume(b,u,module,'Chrome Installation',0);persist(b,u);updateCyber(b,u);return true;
+  const open=b.units.filter(v=>!v.removed&&isCyber(v)&&!token(v)&&!cyberApex(v)&&!v[socket]),near=neighbors(b,module);
+  const close=open.filter(v=>near.includes(v)),u=(close.length?close:open).sort((a,z)=>a.uid-z.uid)[0];if(!u)return false;
+  u[socket]=module.id;if(close.includes(u))u.tuning=Math.round(((u.tuning||0)+.1)*100)/100;
+  consume(b,u,module,'Chrome Installation',0);persist(b,u);updateCyber(b,u);return true;
  }
- function addChromeAttack(b,u){u.chromeAttackCharge=(u.chromeAttackCharge||0)+1;if(u.chromeAttackCharge>=4){u.chrome=(u.chrome||0)+1;u.chromeAttackCharge-=4;}persist(b,u);updateCyber(b,u);}
- function addRAM(b,u,n){u.ram=Math.min(ramCapacity(b,u),(u.ram||0)+n);}
- function cyberPoison(b,u,e,dps=24,seconds=4){
-  if(e.gone||e.hp<=0)return;e.venoms??=[];
-  // One Contagion per owner per victim; refresh instead of multiplying from viral kills.
-  e.venoms=e.venoms.filter(d=>d.cyberOwner!==u.uid);venom(b,e,dps,seconds,u);e.venoms.at(-1).cyberOwner=u.uid;
+ function addChromeAttack(b,u){if(!isCyber(u))return;u.chromeAttackCharge=(u.chromeAttackCharge||0)+1;if(u.chromeAttackCharge>=4){u.chrome=(u.chrome||0)+1;u.chromeAttackCharge-=4;}persist(b,u);updateCyber(b,u);}
+ // Netrunner: banks 1 RAM per Cyberpunk attack anywhere (max 8); every 2s spends 3 on Short Circuit.
+ function netrunnerHack(b){
+  for(const n of b.units.filter(v=>!v.removed&&v.id==='netrunner'&&v.state==='active')){
+   if(b.time<(n.hackAt??2)||(n.ram||0)<3||!living(b).length)continue;
+   n.ram-=3;n.hackAt=b.time+2;const e=living(b)[0];
+   trueHit(b,n,e,atk(b,n)*heatDamage(n),true);status(b,e,'stun',.5,0,n);fx(b,'spell',n,e,'SHORT CIRCUIT · −3 RAM');
+  }
  }
- function uploadHack(b,u){
-  if(u.os!=='cyberdeckOS'||u.state!=='active'||b.time<(u.hackUploadAt??0)||(u.ram||0)<3||!living(b).length)return false;
-  u.ram-=3;u.hackUploadAt=b.time+(u.id==='networkReaper'?1.5:3);
-  const target=living(b)[0],contagion=u.id!=='networkReaper'&&(u.hackIndex||0)%2===1;u.hackIndex=(u.hackIndex||0)+1;
-  if(contagion){for(const e of living(b).slice(0,3))cyberPoison(b,u,e,24+rawAtk(u)*.25,4);}
-  else trueHit(b,u,target,220+3*rawAtk(u));
-  if(isCyber(u)&&!cyberApex(u)&&u.os==='cyberdeckOS')cyberTrialProof(b,u,contagion?'contagion':'shortCircuit');
-  fx(b,'spell',u,target,contagion?'CONTAGION · −3 RAM':'SHORT CIRCUIT · −3 RAM');return true;
+ // One normal zone per owner (it moves with the target); storm zones sit on their own walls.
+ function cyberZone(b,u,type,p,dps,duration=4,storm=false){
+  b.cyberZones??=[];const wall=wallOf({p}),old=b.cyberZones.find(z=>z.owner===u.uid&&z.wall===wall&&z.until>b.time);
+  b.cyberZones=b.cyberZones.filter(z=>z.owner!==u.uid||(z.wall!==wall&&(storm||z.storm)));
+  b.cyberZones.push({owner:u.uid,type,wall,dps,until:b.time+duration,shredAt:old?.shredAt??b.time+1,storm});
  }
- function cyberDeath(b,e){
-  if(!e.viralOwner||e.viralExploded||!(e.bleeds||[]).some(d=>d.until>b.time))return;
-  const u=b.units.find(v=>!v.removed&&v.uid===e.viralOwner&&v.id==='glitchAssassin');if(!u)return;
-  e.viralExploded=true;for(const v of living(b).filter(v=>wallOf(v)===wallOf(e)))cyberPoison(b,u,v,24,4);
-  b.metrics.viralExplosions=(b.metrics.viralExplosions||0)+1;fx(b,'spell',u,e,'VIRAL WALL');
+ const CYBER_ULTS={chronoPhantom:'Time Stop',thermalRipper:'Meltdown',gravitonColossus:'Event Horizon',juggernautSmasher:'Orbital Punch',razorPhantom:'Thousand Cuts',plasmaTempest:'Plasma Storm'};
+ function resolveCyberUlt(b,u,id,power){
+  power*=heatDamage(u);
+  if(id==='chronoPhantom'){for(const e of living(b)){status(b,e,'freeze',2,0,u);hit(b,u,e,power*1.5,false);}}
+  else if(id==='thermalRipper'){for(const w of [0,1,2,3])cyberZone(b,u,'slag',w*4+2,power*.35,5,true);}
+  else if(id==='gravitonColossus'){for(const e of living(b)){warp(b,e,2,u);status(b,e,'freeze',2,0,u);hit(b,u,e,power*2,false);}}
+  else if(id==='juggernautSmasher'){const t=[...living(b)].sort((a,z)=>z.hp-a.hp)[0];if(t){hit(b,u,t,power*3,false,{ignoreArmor:true});for(const v of living(b).filter(v=>v!==t&&wallOf(v)===wallOf(t)))hit(b,u,v,power*1.5,false,{ignoreArmor:true});}for(const e of living(b).filter(e=>e.boss||e.champion))damage(b,e,e.hp*.15,u,'ability',true);}
+  else if(id==='razorPhantom'){for(const e of living(b))hit(b,u,e,power*1.3*critMultiplier(b,u,e),false);}
+  else if(id==='plasmaTempest'){for(const w of [0,1,2,3])cyberZone(b,u,'plasma',w*4+2,power*.25,4,true);}
+  fx(b,'pulse',u,null,CYBER_ULTS[id].toUpperCase());
  }
- function cyberZone(b,u,type,p,dps){b.cyberZones??=[];const wall=wallOf({p}),old=b.cyberZones.find(z=>z.owner===u.uid&&z.wall===wall&&z.until>b.time);b.cyberZones=b.cyberZones.filter(z=>z.owner!==u.uid);b.cyberZones.push({owner:u.uid,type,wall,dps,until:b.time+4,shredAt:old?.shredAt??b.time+1});}
- function clearSprint(e){e.speedBoostUntil=0;if(e.swift&&!e.cyberSprintSuppressed){e.speed/=1.6;e.cyberSprintSuppressed=true;}}
  function cyberAttack(b,u,target,power){
-  const overdrive=berserkActive(u),berserkProof=overdrive&&u.heat<86, sandyProof=u.os==='sandyOS'&&!cyberApex(u)&&u.sandyUntil>b.time,wall=wallOf(target),truePower=power/mod(b.run,'basicDamage');
+  power*=heatDamage(u);
+  const wall=wallOf(target),overdrive=berserkActive(u),apex=cyberApex(u);
+  const mantis=u.arm==='mantisImplant',gorilla=u.arm==='gorillaImplant',wire=u.arm==='monowireImplant';
+  if(u.id==='roninMerc')power*=1+Math.max(0,...b.units.filter(v=>!v.removed&&v!==u&&heatUser(v)).map(v=>v.heat||0))/100;
   let targets=[target];
   if(u.id==='thermalRipper')targets=living(b).slice(0,4);
-  else if(u.id==='razorPhantom')targets=living(b).slice(0,8);
-  else if(u.id==='empBreaker')targets=living(b).filter(e=>inArc(e,arcTiles(target.p,6)));
-  else if(u.arm==='mantisImplant')targets=[target,...living(b).filter(e=>e!==target).slice(0,2)];
-  else if(u.arm==='monowireImplant')targets=living(b).filter(e=>wallOf(e)===wall).slice(0,5);
+  else if(mantis)targets=[target,...living(b).filter(e=>e!==target).slice(0,2)];
+  else if(wire)targets=living(b).filter(e=>wallOf(e)===wall).slice(0,apex?5:3);
+  else if(u.id==='streetSamurai'&&heatBand(u)==='redline'){const extra=living(b).find(e=>e!==target);if(extra)targets.push(extra);}
   for(const [i,e] of targets.entries()){
-   if(e.gone)continue;
-   const mantis=u.arm==='mantisImplant',gorilla=u.arm==='gorillaImplant',wire=u.arm==='monowireImplant';
-   if(mantis){dot(b,e,'bleed',8,4,u);if(u.id==='glitchAssassin')e.viralOwner=u.uid;}
+   if(e.gone||e.hp<=0)continue;
+   const scale=mantis&&!apex&&i>0?.5:1; // Mythic blades cleave at full damage
+   hit(b,u,e,power*scale,true,{ignoreArmor:overdrive||u.id==='thermalRipper',armorFactor:wire?.5:1});
+   if(mantis)dot(b,e,'bleed',power*.1,2,u);
    if(gorilla)armorStrip(e,u.id==='juggernautSmasher'?1:.4);
-   if(wire||u.id==='empBreaker')e.shield=0;
-   if(u.id==='empBreaker')clearSprint(e);
-   const scale=mantis&&u.id!=='thermalRipper'&&i>0?.5:1;
-   const n=(u.id==='thermalRipper'?truePower:overdrive?truePower*2:power)*scale;
-   hit(b,u,e,n,true,{ignoreArmor:overdrive||u.id==='thermalRipper',armorFactor:wire?.5:1});
-   if(u.id==='networkReaper')addRAM(b,u,1);
+   if(wire)e.shield=0;
    if(gorilla&&u.attackCount%4===0)status(b,e,'stun',1,0,u);
+   if(u.id==='gravitonColossus'&&e===target){warp(b,e,1,u);for(const v of living(b).filter(v=>v!==e&&Math.abs(v.p-e.p)<=2)){hit(b,u,v,power*.5,false);warp(b,v,1,u);}} // gravity well
+   if(u.id==='juggernautSmasher'&&e===target)for(const v of living(b).filter(v=>v!==e&&wallOf(v)===wallOf(e)))hit(b,u,v,power,false,{ignoreArmor:true}); // shockwave
    if(u.id==='chronoPhantom'&&e.hp>0&&!e.boss&&!e.champion&&e.hp/e.maxHp<executeThreshold(b))damage(b,e,e.hp,u,'ability');
-   if(u.id==='juggernautSmasher'&&u.attackCount%3===0&&(e.boss||e.champion)&&e.hp>0)damage(b,e,e.hp*.15,u,'ability',true);
   }
-  if(overdrive)for(const e of living(b).filter(e=>wallOf(e)===wall)){e.burns=e.burns.filter(d=>d.berserkOwner!==u.uid);dot(b,e,'burn',12,2,u);e.burns.at(-1).berserkOwner=u.uid;}
-  if(u.id==='thermalRipper')cyberZone(b,u,'slag',target.p,50);
-  if(u.id==='plasmaTempest')cyberZone(b,u,'plasma',target.p,40);
-  if(u.id==='gravitonColossus'&&b.time>=(u.gravityAt||0)){
-   u.gravityAt=b.time+4;status(b,target,'freeze',2,0,u);
-   for(const e of living(b).filter(e=>e!==target&&Math.abs(e.p-target.p)<=2)){if(e.p>target.p)warp(b,e,Math.min(2,e.p-target.p),u);else if(!e.boss&&!e.champion)e.p=Math.min(target.p,e.p+2);status(b,e,'freeze',2,0,u);}
-   fx(b,'spell',u,target,'GRAVITY WELL');
-  }
-  if(u.os==='sandyOS'&&!cyberApex(u)){
-   if((u.sandyUntil||0)<=b.time){u.sandyCharge=(u.sandyCharge||0)+1;if(u.sandyCharge>=8){u.sandyCharge=0;u.sandyUntil=b.time+3.5;}}
-   if(sandyProof)cyberTrialProof(b,u,'sandy');
-  }
-  if(berserkProof)cyberTrialProof(b,u,'berserk');
-  if(u.os==='cyberdeckOS'&&u.id!=='networkReaper'){
-   u.ramAttacks=(u.ramAttacks||0)+1;const threshold=hasAccess(b,u)?2:3;
-   if(u.ramAttacks>=threshold){u.ramAttacks-=threshold;addRAM(b,u,1);}
-  }
+  if(overdrive)for(const e of living(b).filter(e=>wallOf(e)===wall)){e.burns=(e.burns||[]).filter(d=>d.berserkOwner!==u.uid);dot(b,e,'burn',power*.2,2,u);if(e.burns?.length)e.burns.at(-1).berserkOwner=u.uid;}
+  if(u.id==='thermalRipper')cyberZone(b,u,'slag',target.p,power*.3);
+  if(u.id==='plasmaTempest')cyberZone(b,u,'plasma',target.p,power*.5);
+  if(u.os==='sandyOS'&&!apex&&(u.sandyUntil||0)<=b.time){u.sandyCharge=(u.sandyCharge||0)+1;if(u.sandyCharge>=8){u.sandyCharge=0;u.sandyUntil=b.time+3.5;}}
   u.heat=(u.heat||0)+(u.os==='berserkOS'?14:8);
-  if(u.heat>=100){u.heat=40;u.sandyUntil=0;flip(b,u,'overheat',3);fx(b,'state',u,null,'THERMAL SHUTDOWN');}
-  addChromeAttack(b,u);uploadHack(b,u);
+  if(u.heat>=100){u.heat=40;u.sandyUntil=0;resetRedline(b,u);flip(b,u,'overheat',3);fx(b,'state',u,null,'THERMAL SHUTDOWN');}
+  for(const n of b.units.filter(v=>!v.removed&&v.id==='netrunner'))n.ram=Math.min(8,(n.ram||0)+1);
+  addChromeAttack(b,u);
+  if(CYBER_ULTS[u.id]&&u.attackCount%10===0){u.channeling={type:'cyber-'+u.id,duration:1.2,remaining:1.2};u.currentCooldown=Math.max(u.currentCooldown||0,1.2);fx(b,'pulse',u,u,'CHANNELING · '+CYBER_ULTS[u.id].toUpperCase());}
  }
  function pumpWall(u){const d=[u.y,2-u.x,2-u.y,u.x];return d.indexOf(Math.min(...d));}
  function cyberExtras(b,u,dt){
   if(card(u.id)?.cyberModule){installChrome(b,u);return;}
-  if(isCyber(u)){
-   u.heat=Math.max(0,(u.heat||0)-(4+(neighbors(b,u).some(v=>v.id==='vent')?15:0))*dt);
-   u.ram=Math.min(u.ram||0,ramCapacity(b,u));updateCyber(b,u);uploadHack(b,u);
+  if(heatUser(u)){
+   // Passive 4°C/s; any Vent adds 3°C/s for every Cyberpunk unit, an adjacent Vent 15°C/s more.
+   u.heat=Math.max(0,(u.heat||0)-(4+(support(b,'vent')?3:0)+(neighbors(b,u).some(v=>v.id==='vent')?15:0))*dt);updateCyber(b,u);
   }
   if(u.id==='cryoPump'&&b.time>=(u.pumpAt??6)){
-   u.pumpAt=b.time+6;for(const v of neighbors(b,u).filter(isCyber))v.heat=Math.max(0,(v.heat||0)-40);
+   u.pumpAt=b.time+6;const hot=b.units.filter(v=>!v.removed&&heatUser(v)).sort((a,z)=>(z.heat||0)-(a.heat||0))[0];if(hot)hot.heat=Math.max(0,(hot.heat||0)-40);
    for(const e of living(b).filter(e=>wallOf(e)===pumpWall(u)))status(b,e,'freeze',2,0,u);
    fx(b,'state',u,null,'COOLANT PURGE');
   }
   if(u.id==='biomonitor'&&b.time>=(u.monitorAt??1)){
-   u.monitorAt=b.time+1;const ns=neighbors(b,u).filter(isCyber);
+   u.monitorAt=b.time+1;const ns=b.units.filter(v=>!v.removed&&heatUser(v));
    if(ns.length>1){const mean=ns.reduce((n,v)=>n+(v.heat||0),0)/ns.length;for(const v of ns)v.heat=mean;}
+  }
+  if(u.id==='afterlifeLegend'&&u.state==='active'&&b.time>=(u.afterAt??5)&&living(b).length){
+   u.afterAt=b.time+5;const hot=b.units.filter(v=>!v.removed&&v!==u&&heatUser(v)).sort((a,z)=>(z.heat||0)-(a.heat||0))[0];if(hot)hot.heat=Math.max(0,(hot.heat||0)-30);
+   const e=living(b)[0];hit(b,u,e,atk(b,u)*heatDamage(u)*3,false);fx(b,'spell',u,e,'AFTERLIFE SHOT · −30°C');
   }
  }
  function tickCyber(b,dt){
-  const sources=b.units.filter(u=>!u.removed&&isCyber(u));
-  const slowPower=sources.some(u=>!cyberApex(u)&&u.sandyUntil>b.time)?.5:sources.some(u=>u.id==='chronoPhantom')?.4:0;
+  netrunnerHack(b);tickCyberTrial(b,dt);
+  const sources=b.units.filter(u=>!u.removed&&heatUser(u));
+  const slowPower=sources.some(u=>isCyber(u)&&!cyberApex(u)&&u.sandyUntil>b.time)?.5:sources.some(u=>u.id==='chronoPhantom')?.25:0;
   if(slowPower)for(const e of living(b)){
    const power=slowPower*((e.boss||e.champion)?.5:1),s=e.slows.find(s=>s.cyberTime);
    if(s){s.until=b.time+.2;s.power=power;}else{status(b,e,'slow',.2,slowPower,sources[0]);const added=e.slows.find(s=>s.power===power);if(added)added.cyberTime=true;}
   }
   b.cyberZones=(b.cyberZones||[]).filter(z=>z.until>b.time&&sources.some(u=>u.uid===z.owner));
   for(const z of b.cyberZones){const u=sources.find(u=>u.uid===z.owner),shred=z.type==='plasma'&&b.time>=z.shredAt;
-   for(const e of living(b).filter(e=>wallOf(e)===z.wall)){trueHit(b,u,e,z.dps*dt);if(shred)armorStrip(e,Math.min(1,(e.permanentShred||0)+.1));}
+   for(const e of living(b).filter(e=>wallOf(e)===z.wall)){trueHit(b,u,e,z.dps*dt,true);if(shred)armorStrip(e,Math.min(1,(e.permanentShred||0)+.1));}
    if(shred)z.shredAt=b.time+1;
   }
  }
@@ -1037,7 +1034,7 @@ function resolveAnimArchetype(u) {
  const d = card(u.id) || {}, g = d.genre || '', id = u.id || '';
  if (['railgun', 'plasma', 'nightBus', 'midnightExpress', 'phantomConductor', 'siegeTitan', 'flakBattery'].includes(id)) return 'recoil';
  if (g === 'Haunted' && !['investigator', 'occultDetective', 'anomalySpecialist', 'ruleEnforcer', 'coroner', 'decoder'].includes(id)) return 'glitch';
- if (g === 'Cyberpunk' && ['chronoPhantom', 'glitchAssassin', 'razorPhantom'].includes(id)) return 'glitch';
+ if (g === 'Cyberpunk' && ['chronoPhantom', 'razorPhantom', 'netrunner'].includes(id)) return 'glitch';
  if (['Cultivation', 'Arcane', 'Lovecraft'].includes(g) && !['demonBlade', 'bloodFiendMaster', 'mass'].includes(id)) return 'cast';
  if (g === 'SciFi' && ['sensor', 'core', 'hiveOvermind'].includes(id)) return 'cast';
  return 'lunge';
@@ -1147,7 +1144,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (b.metrics.urbanLegendTrial) notes.push(b.metrics.urbanLegendTrial.status === 'passed' ? `Folklore Merger trial passed with zero runner leaks; ${card(b.metrics.urbanLegendTrial.apexId).name} awakened with +${b.metrics.urbanLegendTrial.inheritedAtk} inherited ATK.` : b.metrics.urbanLegendTrial.status === 'failed' ? `Folklore Merger trial failed: ${b.metrics.urbanLegendTrial.reason}. The devourer was removed; its same-lineage prey was already consumed.` : `Folklore Merger trial active: clear the Elite/Boss node with zero leaks to earn Mythic.`);
   if (b.metrics.scrapworkTrial) notes.push(b.metrics.scrapworkTrial.status==='passed'?`Titan Field Test passed; ${card(b.metrics.scrapworkTrial.apexId).name} awakened and the Reactor Core was consumed.`:b.metrics.scrapworkTrial.status==='failed'?`Titan Field Test failed: ${b.metrics.scrapworkTrial.reason}. Titan and Reactor Core removed.`:'Titan Field Test active: prove both locked modules against priority enemies, then clear with zero leaks.');
   if (b.metrics.arcaneTrial) notes.push(b.metrics.arcaneTrial.status === 'passed' ? `Astral Weaving passed; ${card(b.metrics.arcaneTrial.apexId).name} awakened and the Loom was consumed.` : b.metrics.arcaneTrial.status === 'failed' ? `Astral Weaving failed: ${b.metrics.arcaneTrial.reason}. Mage and Astral Loom removed.` : `Astral Weaving active: prove ${b.metrics.arcaneTrial.pair} on a priority target, then clear with zero leaks.`);
-  if (b.metrics.cyberTrial) notes.push(b.metrics.cyberTrial.status==='passed'?`OS Overdrive passed; ${card(b.metrics.cyberTrial.apexId).name} awakened and the Reactor was consumed.`:b.metrics.cyberTrial.status==='failed'?`OS Overdrive failed: ${b.metrics.cyberTrial.reason}. Operative and Military Cyber-Reactor removed.`:'OS Overdrive active: clear the Elite/Boss node with zero leaks.');
+  if (b.metrics.cyberTrial) notes.push(b.metrics.cyberTrial.status==='passed'?`Redline Proof passed; ${card(b.metrics.cyberTrial.apexId).name} awakened.`:b.metrics.cyberTrial.status==='failed'?`Redline Proof failed: ${b.metrics.cyberTrial.reason}. Nothing was lost.`:`Redline Proof: ${b.metrics.cyberTrial.redline.toFixed(1)}/${REDLINE_PROOF}s at 80–99°C.`);
   if (dormant.length) notes.push(`${dormant.map(c => card(c.id).name + ' #' + c.uid).join(', ')} did not fill a trigger gauge.`);
   const originals = consumed.filter(c => !c.token).length, tokens = consumed.filter(c => c.token).length;
   if (originals) notes.push(`${originals} original cards permanently lost.`);
@@ -2206,7 +2203,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (neighbors(b, u, false).some(v => !v.removed && v.id === 'astralLoom')) n += 0.20;
   if (u.id === 'aeroMage') n += Math.min(0.3, Math.floor((u.mastery || 0) / 5) * 0.01); // capped at +30%
   n += (huntAura(b,u,'beast')?.2:0)+(relicAura(b,u,'beastRelic')?.25:0)+(u.huntFrenzy||0);
-  return n * (isCyber(u)&&!cyberApex(u)&&u.sandyUntil>b.time?2.5:1) * (1 + (u.permanentSpeed || 0)) * mod(b.run, 'speed')
+  return n * (isCyber(u)&&!cyberApex(u)&&u.sandyUntil>b.time?1.8:1) * heatSpeed(u) * (1 + (u.permanentSpeed || 0)) * mod(b.run, 'speed')
  }
 
  function sensor(b, u) { return support(b, 'sensor') && u.id !== 'sensor' ? 1 : 0 }
@@ -2221,7 +2218,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (u.id === 'livingTaboo' && b.curfewUntil > b.time) return 1.0;
   if (family(u) === 'mannequin' && allies(b, u).some(v => v.state !== 'active')) return 1.0;
   const manualCrit = (u.manualUntil && u.manualUntil > b.time) ? 0.15 : 0;
-  const rawCrit = Math.max(0, .1 + mod(b.run, 'crit', 0) + (b.run.relics.includes('lens') ? .1 : 0) + sensorCrit(b, u) + (support(b, 'core') && u.id !== 'core' ? .15 : 0) + (augmented(u)&&neighbors(b,u).some(v=>v.id==='biomonitor')?.15:0) + lineageCrit + manualCrit + (huntAura(b,u,'witch')?.25:0)+(relicAura(b,u,'witchRelic')?.2:0) + ((e?.weakpoints||0)*.05) + (b.units.some(v=>!v.removed&&v.id==='hiveOvermind')?.20:0) + (allies(b,u).some(v=>v.id==='synapseNexus')?.20:0) + (neighbors(b, u, false).some(v => !v.removed && v.id === 'tigerSeal') ? 0.20 : 0));
+  const rawCrit = Math.max(0, .1 + mod(b.run, 'crit', 0) + (b.run.relics.includes('lens') ? .1 : 0) + sensorCrit(b, u) + (support(b, 'core') && u.id !== 'core' ? .15 : 0) + (augmented(u)&&support(b,'biomonitor')?(neighbors(b,u).some(v=>v.id==='biomonitor')?.15:.1):0) + lineageCrit + manualCrit + (huntAura(b,u,'witch')?.25:0)+(relicAura(b,u,'witchRelic')?.2:0) + ((e?.weakpoints||0)*.05) + (b.units.some(v=>!v.removed&&v.id==='hiveOvermind')?.20:0) + (allies(b,u).some(v=>v.id==='synapseNexus')?.20:0) + (neighbors(b, u, false).some(v => !v.removed && v.id === 'tigerSeal') ? 0.20 : 0));
   return isSciFi(u) ? rawCrit : Math.min(1.0, rawCrit);
  }
  function critMultiplier(b, u, e = null) {
@@ -2326,7 +2323,7 @@ function fx(b, type, u, e, text, extra = {}) {
      }
     }
    }
-   harvestTrophy(b,e);cyberDeath(b,e);cosmicDeath(b,e,source);
+   harvestTrophy(b,e);cosmicDeath(b,e,source);
    if (e.rumorInfected) spreadRumor(b, e, true);
 
    // Soul Banner captures souls track-wide on any enemy death
@@ -2471,7 +2468,7 @@ function fx(b, type, u, e, text, extra = {}) {
   }
 
   if(card(u.id).genre==='Lovecraft'&&u.id!=='herald'){cosmicAttack(b,u,target,power);}
-  else if(isCyber(u)){cyberAttack(b,u,target,power);}
+  else if(heatUser(u)){cyberAttack(b,u,target,power);}
   else if(isArchon(u)){archonAttack(b,u,target,power);}
   else if(u.id==='aeroMage'){
    for(const e of living(b).slice(0,2))hit(b,u,e,power);
@@ -2964,7 +2961,7 @@ function fx(b, type, u, e, text, extra = {}) {
   tickUrbanContainmentTrial(b);
   tickArcaneTrial(b);
   tickScrapworkTrial(b);
-  tickCyberTrial(b);
+
   tickHuntTrial(b);
   tickCosmicTrial(b);
   if (!b.xenoTrial) startXenoTrial(b);
@@ -3004,6 +3001,7 @@ function fx(b, type, u, e, text, extra = {}) {
      const number = (bb, e, hp0) => { const dealt = hp0 - Math.max(0, e.hp); if (dealt > 0) fx(bb, 'impact', u, e, String(Math.round(dealt)), { vfxKind: 'impact', ttl: 0.5 }); };
      if (chType.startsWith('order-')) resolveOrderUlt(b, u, chType.slice(6), power);
      if (chType.startsWith('xeno-')) resolveXenoUlt(b, u, chType.slice(5), power);
+     if (chType.startsWith('cyber-')) resolveCyberUlt(b, u, chType.slice(6), power);
      if (chType === 'magmaLord') {
       // Lava erupts outward from the Magma Lord at 5 tiles/s; the 16-tile fissure starts now as before.
       const hits = queue(radial(0.15, 5), (bb, e) => { const hp0 = e.hp; hit(bb, u, e, power * 1.5, false, { noFx: true }); dot(bb, e, 'burn', hpPct(e), 1, u); number(bb, e, hp0); });
@@ -3364,7 +3362,6 @@ function fx(b, type, u, e, text, extra = {}) {
     if (!e.boss && !e.champion && guardian) { guardian.savedLeaks=(guardian.savedLeaks||0)+1; e.gone=true; interact(b,guardian,e,'save',`Xuanwu prevents leak ${guardian.savedLeaks}/2`); continue; }
     if (b.heavenlyTrial?.status === 'active') failHeavenlyTrial(b, e.boss ? 'boss escaped' : 'a runner escaped');
     if (b.cosmicTrial?.status === 'active') failCosmicTrial(b, e.boss ? 'Boss escaped' : 'A runner leaked');
-    if (b.cyberTrial?.status === 'active') failCyberTrial(b, e.boss ? 'boss escaped' : 'a runner escaped');
     if (b.xenoTrial?.status === 'active') failXenoTrial(b, e.boss ? 'Boss escaped' : 'A runner leaked');
     if (b.huntTrial?.status === 'active') failHuntTrial(b, e.boss ? 'Boss escaped' : 'A runner leaked');
     e.gone = true;
@@ -3390,10 +3387,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (b.done) return;
   if(won)for(const u of b.units.filter(v=>!v.removed&&!token(v)&&isMech(v)))addAlloy(b,u,5);
   b.done = true; b.won = won; let r = b.run;
-  if (b.cyberTrial?.status === 'active') {
-   if(won&&(b.metrics.leaks||0)===0)passCyberTrial(b);
-   else failCyberTrial(b,(b.metrics.leaks||0)>0?'A runner leaked':'Elite/Boss node was not cleared');
-  }
+  finishCyberTrial(b, won);
   if (b.xenoTrial?.status === 'active') {
    if (won && (b.metrics.leaks || 0) === 0) passXenoTrial(b);
    else failXenoTrial(b, (b.metrics.leaks || 0) > 0 ? 'A runner leaked' : 'Elite/Boss node was not cleared');
@@ -3454,7 +3448,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (token(u)) return;
   const src = b.run.roster.find(v => v.uid === u.uid);
   if (src) {
-   for (const k of ['id', 'syllables', 'scripts', 'pageRecipe', 'brainAbsorbed', 'arm', 'os', 'chrome', 'chromeAttackCharge', 'synthesis', 'essences', 'boundPair', 'trophyPoints', 'carvings', 'scrapIntake', 'savedWeapons', 'qiAttackCharge', 'alloy', 'alloyAttacks', 'modules', 'titanUnlocked', 'permanentAtkBonus', 'permanentSpeed', 'lineage', 'lineageStacks', 'meals', 'qiGrowth', 'returns', 'witnesses', 'qi', 'realm', 'swordQi', 'apexQi', 'apexDread', 'souls', 'bladeKills', 'demonAtkBonus', 'dread', 'violations', 'blackouts', 'mirrorQueenBonusGranted', 'genome', 'strains', 'strainScore', 'strainsLocked']) {
+   for (const k of ['id', 'syllables', 'scripts', 'pageRecipe', 'brainAbsorbed', 'arm', 'os', 'tuning', 'chrome', 'chromeAttackCharge', 'synthesis', 'essences', 'boundPair', 'trophyPoints', 'carvings', 'scrapIntake', 'savedWeapons', 'qiAttackCharge', 'alloy', 'alloyAttacks', 'modules', 'titanUnlocked', 'permanentAtkBonus', 'permanentSpeed', 'lineage', 'lineageStacks', 'meals', 'qiGrowth', 'returns', 'witnesses', 'qi', 'realm', 'swordQi', 'apexQi', 'apexDread', 'souls', 'bladeKills', 'demonAtkBonus', 'dread', 'violations', 'blackouts', 'mirrorQueenBonusGranted', 'genome', 'strains', 'strainScore', 'strainsLocked']) {
     if (u[k] !== undefined) src[k] = u[k];
    }
   }
@@ -3881,7 +3875,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (abilityGauge(u) && u.threshold.current >= u.threshold.max) tick(b, u, 0);
  }
 
- return { migrateRun, pushGauge, triggerLightsOn, lightsOn, compliant, isOrderUnit, resolveOrderUlt, breakthroughPills: b => Math.max(0, Math.min(3, Math.floor(b?.run?.breakthroughPills || 0))), chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, addStrain, xenoStrainsFor, resolveXenoUlt, feedSpecimens, startXenoTrial, tickXenoTrial, failXenoTrial, passXenoTrial, addWeakpoint, addGenome, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, startCosmicTrial, cosmicTrialProof, failCosmicTrial, passCosmicTrial, tickCosmicTrial, updateIdol, dropPage, addSyllables, forgeGrimoire, decipherPage, cosmicPanic, cosmicStatus, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, cyberTrialCandidate, cyberTrialProof, augmented, ramCapacity, berserkActive, updateCyber, installChrome, addRAM, uploadHack, cyberZone, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, isApprentice, isArchon, isElemental, bestPair, receiveEssence, startArcaneTrial, failArcaneTrial, startScrapworkTrial, markScrapworkTrialHit, failScrapworkTrial, elementalLinks, arcaneReaction, elementalSpell, arcaneExtras, tickArcane, HUNT_APEX, isSlayer, startHuntTrial, failHuntTrial, passHuntTrial, priority, trophyFamily, executeThreshold, huntArmor, trophyPoints, forgeHuntRelic, carveTrophy, huntExtras, visceral, isMech, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, oilPool, tickOil, mechAttack, addQi, addDread, isCultivationApex, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, persist, event, flushEvents, evolve, evolutionProgress, consume, devour, spawnToken, dot, warp, extras, growth, teamPower, allies, support, trialFor, encounterFor, ENCOUNTERS, record, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, tick, trigger, status, attack, damage, hit, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, startUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, wavePlan, spawn, favored, rand, finish, processPractitionerBreakthroughs, isPractitioner, isBloodlineRelic, isUrbanInvestigator, isUrbanLegend, addRuleMark, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, triggerWeiqiCorner };
+ return { migrateRun, pushGauge, triggerLightsOn, lightsOn, compliant, isOrderUnit, resolveOrderUlt, breakthroughPills: b => Math.max(0, Math.min(3, Math.floor(b?.run?.breakthroughPills || 0))), chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, addStrain, xenoStrainsFor, resolveXenoUlt, feedSpecimens, startXenoTrial, tickXenoTrial, failXenoTrial, passXenoTrial, addWeakpoint, addGenome, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, startCosmicTrial, cosmicTrialProof, failCosmicTrial, passCosmicTrial, tickCosmicTrial, updateIdol, dropPage, addSyllables, forgeGrimoire, decipherPage, cosmicPanic, cosmicStatus, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, cyberTrialCandidate, startCyberTrial, tickCyberTrial, finishCyberTrial, heatBand, heatDamage, heatSpeed, heatUser, resolveCyberUlt, CYBER_ULTS, netrunnerHack, augmented, berserkActive, updateCyber, installChrome, cyberZone, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, isApprentice, isArchon, isElemental, bestPair, receiveEssence, startArcaneTrial, failArcaneTrial, startScrapworkTrial, markScrapworkTrialHit, failScrapworkTrial, elementalLinks, arcaneReaction, elementalSpell, arcaneExtras, tickArcane, HUNT_APEX, isSlayer, startHuntTrial, failHuntTrial, passHuntTrial, priority, trophyFamily, executeThreshold, huntArmor, trophyPoints, forgeHuntRelic, carveTrophy, huntExtras, visceral, isMech, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, oilPool, tickOil, mechAttack, addQi, addDread, isCultivationApex, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, persist, event, flushEvents, evolve, evolutionProgress, consume, devour, spawnToken, dot, warp, extras, growth, teamPower, allies, support, trialFor, encounterFor, ENCOUNTERS, record, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, tick, trigger, status, attack, damage, hit, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, startUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, wavePlan, spawn, favored, rand, finish, processPractitionerBreakthroughs, isPractitioner, isBloodlineRelic, isUrbanInvestigator, isUrbanLegend, addRuleMark, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, triggerWeiqiCorner };
 })();
 if (typeof module !== 'undefined') module.exports = Game;
 

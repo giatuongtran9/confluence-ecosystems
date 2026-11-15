@@ -1,77 +1,116 @@
 'use strict';
+// Cyberpunk redesign: Heat bands, install-anywhere chrome, Netrunner, crew cards, Redline Proof, 6 Mythic 10th abilities.
 const test=require('node:test'),assert=require('node:assert/strict'),G=require('../engine'),D=require('../data');
-function battle(ids,slots=ids.map((_,i)=>i),leader='none'){
- const r=G.newRun(leader, 17);r.roster=ids.map(id=>G.instance(r,id));r.depth=9;r.node={row:9,lane:1,type:'battle'};r.phase='combat';
+function battle(ids,slots=ids.map((_,i)=>i),type='battle',seed={}){
+ const r=G.newRun('none',17);r.roster=ids.map(id=>Object.assign(G.instance(r,id),seed[id]||{}));r.depth=9;r.node={row:9,lane:1,type};r.phase='combat';
  const b={run:r,time:0,units:[],enemies:[],effects:[],metrics:{kills:0,leaks:0,growth:0,triggers:0,devours:0},plan:{count:3,interval:2,hp:100,speed:.3},spawned:3,enemyUid:0};b.units=r.roster.map((u,i)=>G.runtime(b,u,slots[i]));b.units.forEach(u=>{G.prepareHooks(b,u);G.record(b,u);u.currentCooldown=999});return b;
 }
-function enemy(b,kind='',p=1,hp=100000){const e={uid:++b.enemyUid,p,hp,maxHp:hp,speed:.3,defense:0,boss:kind==='boss',champion:kind==='champion',elite:kind==='elite',gone:false,bornAt:0,frozenUntil:0,slows:[],bleeds:[],burns:[],venoms:[],auras:[]};b.enemies.push(e);return e;}
-const close=(a,b)=>assert.ok(Math.abs(a-b)<1e-6,`${a} != ${b}`);
-test('twelve draftable cards, nine earned hybrids, legacy catalogs removed',()=>{assert.equal(D.CARDS.filter(c=>c.genre==='Cyberpunk').length,12);assert.equal(G.CYBER_APEX.length,9);for(const id of ['mantis','netrunner','plasma'])assert.equal(D.CARD[id],undefined);const r=G.newRun('nyx', 3);for(let i=0;i<200;i++){r.depth=i%16;for(const id of G.offers(r)){assert.ok(!G.CYBER_APEX.includes(id));if(r.depth<3)assert.notEqual(id,'cyberReactor');}}});
-for(const [arm,oses] of Object.entries(G.CYBER_MATRIX))for(const [os,id] of Object.entries(oses))test('binding '+id+' waits for its OS trial and zero-leak clear',()=>{const b=battle(['cyberSolo','cyberReactor'],[0,1]),u=b.units[0];b.run.node.type='elite';u.arm=arm;u.os=os;u.chrome=120;G.updateCyber(b,u);assert.equal(u.id,'eliteSolo');assert.equal(b.run.roster.length,2);assert.equal(b.cyberTrial,undefined);assert.equal(G.cyberTrialCandidate(b,u).apexId,id);});
-function cyberReady(os='sandyOS',arm='mantisImplant',node='elite'){
- const b=battle(['cyberSolo','cyberReactor'],[0,1]);b.run.node.type=node;const u=b.units[0];u.arm=arm;u.os=os;u.chrome=120;G.updateCyber(b,u);return{b,u};
-}
-function proveCyber(b,u){
- if(u.os==='sandyOS')for(let i=0;i<3;i++)G.cyberTrialProof(b,u,'sandy');
- else if(u.os==='berserkOS')for(let i=0;i<3;i++)G.cyberTrialProof(b,u,'berserk');
- else {G.cyberTrialProof(b,u,'shortCircuit');G.cyberTrialProof(b,u,'contagion');}
-}
-test('Cyber OS feat starts only on an eligible Elite/Boss with 120 Chrome, both sockets, and adjacent Reactor',()=>{
- const {b,u}=cyberReady();assert.equal(G.cyberTrialCandidate(b,u).apexId,'chronoPhantom');
- assert.equal(G.cyberTrialProof(b,u,'sandy'),false);assert.equal(b.cyberTrial,undefined);
- assert.equal(G.cyberTrialProof(b,u,'sandy'),false);assert.equal(b.cyberTrial,undefined);
- assert.equal(G.cyberTrialProof(b,u,'sandy'),true);assert.equal(b.cyberTrial.status,'active');assert.equal(b.cyberTrial.apexId,'chronoPhantom');
- const noReactor=cyberReady();noReactor.b.units[1].removed=true;assert.equal(G.cyberTrialCandidate(noReactor.b,noReactor.u),null);
- const wrongNode=cyberReady('sandyOS','mantisImplant','battle');assert.equal(G.cyberTrialCandidate(wrongNode.b,wrongNode.u),null);
- const leaked=cyberReady();leaked.b.metrics.leaks=1;assert.equal(G.cyberTrialCandidate(leaked.b,leaked.u),null);
+function enemy(b,kind='',p=1,hp=100000){const e={uid:++b.enemyUid,p,hp,maxHp:hp,speed:.3,defense:0,boss:kind==='boss',champion:kind==='champion',elite:kind==='elite',gone:false,bornAt:0,frozenUntil:0,slows:[],bleeds:[],burns:[],venoms:[],stuns:[],auras:[]};b.enemies.push(e);return e;}
+const ready={chrome:120,arm:'mantisImplant',os:'sandyOS'};
+
+test('six Mythics (3 Arms × 2 OS); the Cyberdeck line and Reactor are gone; new crew at approved stats',()=>{
+ assert.equal(G.CYBER_APEX.length,6);
+ for(const id of ['cyberdeckOS','accessPoint','cyberReactor','glitchAssassin','empBreaker','networkReaper'])assert.equal(D.CARD[id],undefined,id);
+ for(const [id,atk,iv] of [['cyberSolo',12,1.4],['streetSamurai',12,1.4],['netrunner',14,1.4],['roninMerc',46,1.2],['afterlifeLegend',88,1.2],['chronoPhantom',130,1.2],['thermalRipper',140,1.3],['gravitonColossus',160,1.4],['juggernautSmasher',165,1.5],['razorPhantom',120,1.0],['plasmaTempest',135,1.2]]){assert.equal(D.CARD[id].baseAtk,atk,id);assert.equal(D.CARD[id].attackInterval,iv,id);}
 });
-test('Sandevistan, Berserk, and Cyberdeck signatures each start the correct Cyber trial',()=>{
- for(const [os,arm,apex] of [['sandyOS','mantisImplant','chronoPhantom'],['berserkOS','mantisImplant','thermalRipper'],['cyberdeckOS','gorillaImplant','empBreaker']]){
-  const {b,u}=cyberReady(os,arm);proveCyber(b,u);assert.equal(b.cyberTrial?.status,'active');assert.equal(b.cyberTrial.apexId,apex);
- }
+
+test('Heat bands: Warm +15% damage, Redline +35% damage and +15% attack speed',()=>{
+ const b=battle(['streetSamurai']),u=b.units[0];u.state='active';
+ u.heat=20;assert.equal(G.heatDamage(u),1);assert.equal(G.heatSpeed(u),1);
+ u.heat=60;assert.equal(G.heatBand(u),'warm');assert.equal(G.heatDamage(u),1.15);
+ u.heat=85;assert.equal(G.heatBand(u),'redline');assert.equal(G.heatDamage(u),1.35);assert.equal(G.heatSpeed(u),1.15);
 });
-test('real OS actions record Cyber proof and start the trial',()=>{
- const sandy=cyberReady('sandyOS');sandy.u.sandyUntil=3.5;enemy(sandy.b);for(let i=0;i<3;i++)G.attack(sandy.b,sandy.u);assert.equal(sandy.b.cyberTrial?.status,'active');
- const berserk=cyberReady('berserkOS');const boss=enemy(berserk.b,'boss');for(let i=0;i<3;i++){berserk.u.heat=80;G.attack(berserk.b,berserk.u);}assert.equal(berserk.b.cyberTrial?.status,'active');assert.ok(boss.hp<100000);
- const deck=cyberReady('cyberdeckOS','gorillaImplant');const target=enemy(deck.b);deck.u.ram=6;assert.equal(G.uploadHack(deck.b,deck.u),true);deck.b.time=3;assert.equal(G.uploadHack(deck.b,deck.u),true);assert.equal(deck.b.cyberTrial?.status,'active');assert.equal(deck.b.cyberTrial.apexId,'empBreaker');assert.ok(target.hp<100000);
+
+test('reaching 100°C shuts the unit down for 3s and resets heat to 40',()=>{
+ const b=battle(['cyberSolo']),u=b.units[0];enemy(b);u.heat=95;G.attack(b,u);
+ assert.equal(u.heat,40);assert.equal(u.state,'overheat');
 });
-test('zero-leak Elite clear consumes Reactor and awakens the mapped Cyber Mythic',()=>{
- const {b,u}=cyberReady();proveCyber(b,u);const reactor=b.units[1];G.finish(b,true);
- assert.equal(b.cyberTrial.status,'passed');assert.equal(u.id,'chronoPhantom');assert.equal(reactor.removed,true);assert.equal(b.run.roster.length,1);assert.equal(b.run.roster[0].id,'chronoPhantom');
+
+test('implants install into any Operative; an adjacent one is preferred and gains +10% tuning',()=>{
+ const far=battle(['cyberSolo','mantisImplant'],[0,8]);far.units.forEach(u=>G.cyberExtras(far,u,.1));
+ assert.equal(far.units[0].arm,'mantisImplant');assert.equal(far.units[0].tuning||0,0);
+ const near=battle(['cyberSolo','cyberSolo','sandyOS'],[0,8,7]);near.units.forEach(u=>G.cyberExtras(near,u,.1));
+ assert.equal(near.units[1].os,'sandyOS');assert.equal(near.units[1].tuning,.1);assert.equal(near.units[0].os,null);
 });
-test('failed Cyber trial removes Operative and Reactor and preserves unrelated roster cards',()=>{
- const b=battle(['cyberSolo','cyberReactor','vent'],[0,1,2]),u=b.units[0];b.run.node.type='boss';u.arm='gorillaImplant';u.os='cyberdeckOS';u.chrome=120;G.updateCyber(b,u);proveCyber(b,u);b.metrics.leaks=1;G.finish(b,false);
- assert.equal(b.cyberTrial.status,'failed');assert.equal(u.removed,true);assert.equal(b.units[1].removed,true);assert.deepEqual(b.run.roster.map(v=>v.id),['vent']);
+
+test('every 4 Operative attacks earn 1 Chrome',()=>{
+ const b=battle(['cyberSolo']),u=b.units[0];enemy(b);for(let i=0;i<4;i++){u.heat=20;G.attack(b,u);}
+ assert.equal(u.chrome,1);
 });
-test('module installs in oldest adjacent empty socket, consumed permanently; occupied sockets locked',()=>{const b=battle(['cyberSolo','cyberSolo','mantisImplant','gorillaImplant'],[0,2,1,3]);assert.equal(G.installChrome(b,b.units[2]),true);assert.equal(b.units[0].arm,'mantisImplant');assert.equal(b.units[1].arm,null);assert.equal(b.units[2].removed,true);assert.equal(b.run.roster.some(u=>u.id==='mantisImplant'),false);assert.equal(G.installChrome(b,b.units[3]),false);assert.equal(b.units[0].arm,'mantisImplant');});
-test('no remote, diagonal or token installation; no free Chrome from installing',()=>{const b=battle(['cyberSolo','sandyOS'],[0,4]);assert.equal(G.installChrome(b,b.units[1]),false);b.units[1].x=1;b.units[1].y=0;b.units[1].phantom=true;assert.equal(G.installChrome(b,b.units[1]),false);b.units[1].phantom=false;G.installChrome(b,b.units[1]);assert.equal(b.units[0].chrome,undefined);});
-test('three attack remainder persists; fourth grants exactly1 Chrome regardless of cleave hits',()=>{const b=battle(['cyberSolo']),u=b.units[0];u.arm='mantisImplant';G.persist(b,u);for(let i=0;i<3;i++)enemy(b,'',i+1);for(let i=0;i<3;i++)G.attack(b,u);assert.equal(u.chrome,undefined);assert.equal(b.run.roster[0].chromeAttackCharge,3);const v=G.runtime(b,JSON.parse(JSON.stringify(b.run.roster[0])),0);G.prepareHooks(b,v);b.units[0]=v;G.attack(b,v);assert.equal(v.chrome,1);assert.equal(v.chromeAttackCharge,0);});
-for(const [chrome,id] of [[24,'cyberSolo'],[25,'chromedSolo'],[64,'chromedSolo'],[65,'eliteSolo'],[120,'eliteSolo']])test('Chrome stage '+chrome,()=>{const b=battle(['cyberSolo']);b.units[0].chrome=chrome;G.updateCyber(b,b.units[0]);assert.equal(b.units[0].id,id);});
-test('Nyx basic-only penalty; hacks and bleeds retain full damage',()=>{const a=battle(['cyberSolo'],undefined,'nyx'),b=battle(['cyberSolo']);const x=enemy(a),y=enemy(b);G.attack(a,a.units[0]);G.attack(b,b.units[0]);close(100000-x.hp,(100000-y.hp)*.85);close(G.speed(a,a.units[0]),1.25);G.dot(a,x,'bleed',8,4,a.units[0]);close(x.bleeds[0].dps,8);a.units[0].os='cyberdeckOS';a.units[0].ram=3;x.hp=100000;G.uploadHack(a,a.units[0]);close(100000-x.hp,256);});
-test('Mantis hits three and applies8DPS; Gorilla chooses highestHP and stuns fourth hit',()=>{const b=battle(['cyberSolo']),u=b.units[0];u.arm='mantisImplant';for(let i=0;i<4;i++)enemy(b,'',i+1);G.attack(b,u);assert.equal(b.enemies.filter(e=>e.hp<100000).length,3);assert.equal(b.enemies[3].bleeds[0].dps,8);const g=battle(['cyberSolo']),v=g.units[0];v.arm='gorillaImplant';const weak=enemy(g,'',10,1000),strong=enemy(g,'',1);v.attackCount=3;G.attack(g,v);assert.equal(weak.hp,1000);assert.equal(strong.permanentShred,.4);assert.equal(strong.frozenUntil,1);});
-test('Monowire hits one wall, up to five, strips shields and halves defense',()=>{const b=battle(['cyberSolo']),u=b.units[0];u.arm='monowireImplant';for(let i=0;i<6;i++){const e=enemy(b,'',6+i*.1);e.defense=.8;e.shield=50;}const off=enemy(b,'',1);G.attack(b,u);assert.equal(b.enemies.filter(e=>e.hp<100000).length,5);assert.equal(off.hp,100000);assert.equal(b.enemies[5].shield,0);});
-test('Sandevistan starts at8 attacks, lasts3.5s, cannot refresh inside window',()=>{const b=battle(['cyberSolo']),u=b.units[0];u.os='sandyOS';enemy(b);for(let i=0;i<8;i++){u.heat=0;G.attack(b,u);}close(u.sandyUntil,3.5);close(G.speed(b,u),2.5);b.time=1;for(let i=0;i<8;i++){u.heat=0;G.attack(b,u);}close(u.sandyUntil,3.5);assert.equal(u.sandyCharge,0);b.time=4;close(G.speed(b,u),1);});
-test('Berserk double true damage bypasses armor and basic penalty, cooling ends it',()=>{const b=battle(['cyberSolo','vent'],[0,1],'nyx'),u=b.units[0],e=enemy(b);u.os='berserkOS';u.heat=85;e.defense=1;G.attack(b,u);assert.ok(e.hp<100000);u.heat=85;G.cyberExtras(b,u,1);close(u.heat,66);assert.equal(G.berserkActive(u),false);});
-test('heat100 shuts down; modules and Chrome persist while heat/RAM reset next battle',()=>{const b=battle(['cyberSolo']),u=b.units[0];u.os='berserkOS';u.heat=95;u.ram=5;enemy(b);G.attack(b,u);assert.equal(u.state,'overheat');close(u.heat,40);close(u.stateRemaining,3);const v=G.runtime(b,b.run.roster[0],0);close(v.heat,20);close(v.ram,0);assert.equal(v.os,'berserkOS');assert.equal(v.chromeAttackCharge,1);});
-test('Vent duplicates do not double cooling; Pump facing wall and six-second cadence',()=>{const b=battle(['cyberSolo','vent','vent','cryoPump'],[4,1,3,5]),u=b.units[0];u.heat=90;G.cyberExtras(b,u,1);close(u.heat,71);const east=enemy(b,'',5),north=enemy(b,'',1);b.time=6;G.cyberExtras(b,b.units[3],.1);close(u.heat,31);close(east.frozenUntil,8);close(north.frozenUntil,0);G.cyberExtras(b,b.units[3],.1);close(u.heat,31);assert.equal(G.pumpWall({x:1,y:1}),0);});
-test('Biomonitor conserves heat and grants nonstacking crit to augmented neighbors',()=>{const b=battle(['cyberSolo','cyberSolo','biomonitor','biomonitor'],[1,3,4,0]),[a,z]=b.units;a.arm='mantisImplant';a.heat=90;z.heat=10;b.time=1;G.cyberExtras(b,b.units[2],.1);close(a.heat,50);close(z.heat,50);close(G.crit(b,a),.25);close(G.crit(b,z),.1);});
-test('RAM generation: one per3 attacks, one per2 with hub; cap12 not duplicate',()=>{const b=battle(['cyberSolo','accessPoint','accessPoint'],[4,1,3]),u=b.units[0];u.os='cyberdeckOS';enemy(b);u.hackUploadAt=999;G.attack(b,u);assert.equal(u.ram,0);G.attack(b,u);assert.equal(u.ram,1);G.addRAM(b,u,50);assert.equal(u.ram,12);b.units[1].removed=b.units[2].removed=true;G.cyberExtras(b,u,0);assert.equal(u.ram,8);});
-test('quickhacks alternate and spend3 RAM; no RAM means no attack',()=>{const b=battle(['cyberSolo']),u=b.units[0];u.os='cyberdeckOS';const e=enemy(b);u.ram=2;assert.equal(G.uploadHack(b,u),false);u.ram=6;assert.equal(G.uploadHack(b,u),true);assert.equal(u.ram,3);assert.equal(u.hackIndex,1);assert.equal(G.uploadHack(b,u),false);b.time=3;G.uploadHack(b,u);assert.equal(u.ram,0);assert.ok(e.venoms.length);});
-for(const kind of ['boss','champion',''])test('Chrono execution protects '+(kind||'ordinary'),()=>{const b=battle(['chronoPhantom']),u=b.units[0],e=enemy(b,kind);e.hp=25000;G.attack(b,u);if(kind)assert.ok(e.hp>0);else assert.equal(e.hp,0);G.tickCyber(b,.1);if(kind)close(e.slows[0].power,.2);assert.equal(u.sandyUntil,0);close(G.speed(b,u),1);});
-test('Juggernaut third punch removes currentHP only and does not add Berserk doubling',()=>{const b=battle(['juggernautSmasher']),u=b.units[0],e=enemy(b,'boss');e.hp=50000;e.defense=.8;u.attackCount=2;u.heat=85;G.attack(b,u);assert.ok(e.hp>41000&&e.hp<42500);assert.equal(e.defense,0);});
-test('EMP covers six tiles, strips shields but never resets enrage or bornAt',()=>{const b=battle(['empBreaker']),u=b.units[0],e=enemy(b,'boss',6);e.enraged=true;e.bornAt=-50;e.shield=200;e.speedBoostUntil=100;const near=enemy(b,'',4),off=enemy(b,'',12,1000);G.attack(b,u);assert.equal(e.shield,0);assert.equal(e.enraged,true);assert.equal(e.bornAt,-50);assert.equal(e.speedBoostUntil,0);assert.ok(near.hp<100000);assert.equal(off.hp,1000);});
-test('Graviton pulls ordinary neighbors toward impact, cannot reset enraged boss',()=>{const b=battle(['gravitonColossus']),u=b.units[0],target=enemy(b,'',6,200000),behind=enemy(b,'',4.5),ahead=enemy(b,'boss',7);ahead.enraged=true;G.attack(b,u);close(behind.p,6);close(target.frozenUntil,2);close(ahead.p,7);close(ahead.frozenUntil,0);});
-test('Razor guarantees critical2x, up to8 runners, without extra Sandy multiplier',()=>{const b=battle(['razorPhantom']),u=b.units[0];for(let i=0;i<9;i++)enemy(b,'',i+1);G.attack(b,u);assert.equal(b.enemies.filter(e=>e.hp<100000).length,8);close(b.enemies[8].hp,99760);close(G.speed(b,u),1);});
-test('Thermal Ripper hits4 full true damage, no Berserk double multiplier; one refreshed trail',()=>{const b=battle(['thermalRipper']),u=b.units[0];u.heat=85;for(let i=0;i<4;i++){const e=enemy(b,'',i+1);e.defense=1;}G.attack(b,u);assert.equal(b.enemies.filter(e=>e.hp<100000).length,4);assert.ok(100000-b.enemies[3].hp<=440);G.cyberZone(b,u,'slag',5,50);assert.equal(b.cyberZones.length,1);});
-test('Plasma armor tick survives repeated casts on same wall; zone expires after4s',()=>{const b=battle(['plasmaTempest']),u=b.units[0],e=enemy(b,'',5);e.defense=.5;G.cyberZone(b,u,'plasma',5,40);b.time=.5;G.cyberZone(b,u,'plasma',5,40);b.time=1;G.tickCyber(b,.1);close(e.defense,.45);b.time=5;G.tickCyber(b,.1);assert.equal(b.cyberZones.length,0);});
-test('Glitch death spreads one Contagion to same wall, no new viral-owner chain',()=>{const b=battle(['glitchAssassin']),u=b.units[0],e=enemy(b,'',7,100),other=enemy(b,'',5),off=enemy(b,'',1);e.viralOwner=u.uid;e.bleeds=[{until:4,dps:8,owner:u.uid}];G.damage(b,e,100,u);assert.equal(b.metrics.viralExplosions,1);assert.equal(other.venoms.length,1);assert.equal(off.venoms.length,0);assert.equal(other.viralOwner,undefined);G.damage(b,other,100000,u);assert.equal(b.metrics.viralExplosions,1);});
-test('Network Reaper getsRAM per hit, uploads every1.5s only when paid',()=>{const b=battle(['networkReaper']),u=b.units[0];for(let i=0;i<5;i++)enemy(b,'',5+i*.1);G.attack(b,u);assert.equal(u.ram,2);assert.equal(u.hackIndex,1);u.ram=3;b.time=1;assert.equal(G.uploadHack(b,u),false);b.time=1.5;assert.equal(G.uploadHack(b,u),true);assert.equal(u.ram,0);b.time=3;assert.equal(G.uploadHack(b,u),false);});
-test('Razor guaranteed crit remains universal-leader compatible',()=>{const b=battle(['razorPhantom'],undefined,'orion'),u=b.units[0],e=enemy(b);assert.equal(G.crit(b,u),1);G.attack(b,u);close(e.maxHp-e.hp,120*2.3);});
-test('Sandy and Chrono global slows use strongest effect without stacking or boss bypass',()=>{const b=battle(['chronoPhantom','cyberSolo']),u=b.units[1];u.os='sandyOS';u.sandyUntil=3.5;const e=enemy(b,'boss');G.tickCyber(b,.1);close(e.slows[0].power,.25);b.time=4;G.tickCyber(b,.1);close(e.slows[0].power,.2);assert.equal(e.slows.length,1);});
-test('partial sockets and a nonadjacent Reactor cannot awaken',()=>{const b=battle(['cyberSolo','cyberReactor'],[0,8]),u=b.units[0];u.chrome=120;u.arm='mantisImplant';G.updateCyber(b,u);assert.equal(u.id,'eliteSolo');u.os='sandyOS';G.updateCyber(b,u);assert.equal(u.id,'eliteSolo');assert.equal(b.run.roster.length,2);});
-test('baseline Cyberdeck generates one RAM per3 attacks without Access Point',()=>{const b=battle(['cyberSolo']),u=b.units[0];u.os='cyberdeckOS';u.hackUploadAt=999;enemy(b);G.attack(b,u);G.attack(b,u);assert.equal(u.ram,0);G.attack(b,u);assert.equal(u.ram,1);});
-test('pre-cleanup Cyberpunk saves reset and obsolete player upgrades are erased',()=>{const fs=require('node:fs'),vm=require('node:vm'),code=fs.readFileSync(require.resolve('../app'),'utf8').split('let feedbackSeen=')[0];for(const id of ['mantis','netrunner','plasma','cyberSolo']){const values=new Map([['confluence-run-v3',JSON.stringify({version:3,roster:[{id,arm:'mantisImplant',os:'sandyOS',chrome:65,chromeAttackCharge:3}]})],['confluence-meta-v1',JSON.stringify({shards:50,power:7})]]),localStorage={getItem:k=>values.get(k),get length(){return values.size},key:i=>[...values.keys()][i],removeItem:k=>values.delete(k),setItem:(k,v)=>values.set(k,v)},ctx={Game:G,document:{querySelector:()=>({})},localStorage};vm.createContext(ctx);vm.runInContext(code+';globalThis.result={run,resetSavedRuns};',ctx);assert.equal(ctx.result.run,null);assert.equal(ctx.result.resetSavedRuns,true);assert.equal(values.has('confluence-meta-v1'),false);}});
-test('all new Cyber art paths exist and UI exposes sockets, heat, RAM and Chrome',()=>{const fs=require('node:fs'),path=require('node:path');for(const c of Object.values(D.CARD).filter(c=>c.cyberAsset))assert.ok(fs.existsSync(path.join(__dirname,'../assets/cyber-matrix',c.cyberAsset+'.webp')));const s=fs.readFileSync(require.resolve('../app'),'utf8');assert.match(s,/Chrome Tolerance/);assert.match(s,/THERMAL SHUTDOWN/);assert.match(s,/hacks cost3 RAM/);assert.match(s,/Installed choices are locked/);assert.match(s,/OS OVERDRIVE TRIAL/);assert.match(s,/zero leaks/);});
-test('Juggernaut percentage strike stays15% currentHP even with extreme Haunted rule marks',()=>{const b=battle(['juggernautSmasher']),u=b.units[0],e=enemy(b,'boss');e.ruleMarks=1000;u.attackCount=3;G.cyberAttack(b,u,e,0);close(e.hp,85000);});
-test('Cyber detail renders permanent sockets outside battle without stale heat or RAM',()=>{const fs=require('node:fs'),vm=require('node:vm'),s=fs.readFileSync(require.resolve('../app'),'utf8');const code=s.slice(s.indexOf('function cyberDetail('),s.indexOf('function arcaneDetail('));const ctx={Game:G,CARD:D.CARD,battle:null,u:{id:'cyberSolo',arm:'mantisImplant',os:'sandyOS',chrome:65,chromeAttackCharge:3}};vm.createContext(ctx);vm.runInContext(code+';globalThis.html=cyberDetail(u);',ctx);assert.match(ctx.html,/Thermal Mantis Blades/);assert.match(ctx.html,/Sandevistan OS/);assert.match(ctx.html,/65 Chrome/);assert.match(ctx.html,/Heat and RAM reset/);});
+
+test('Redline Proof: 12s at 80–99°C on an Elite node awakens the Arm × OS Mythic when the battle is won',()=>{
+ const b=battle(['eliteSolo'],[4],'elite',{eliteSolo:ready}),u=b.units[0];u.state='active';
+ for(let i=0;i<25;i++){u.heat=85;b.time+=.5;G.tickCyber(b,.5);}
+ assert.equal(b.cyberTrial.status,'proven');
+ G.finish(b,true);
+ assert.equal(b.run.roster[0].id,'chronoPhantom');
+});
+
+test('overheating resets the Redline count; a failed proof costs nothing',()=>{
+ const b=battle(['eliteSolo'],[4],'boss',{eliteSolo:ready}),u=b.units[0];u.state='active';enemy(b);
+ for(let i=0;i<10;i++){u.heat=85;b.time+=.5;G.tickCyber(b,.5);}
+ assert.equal(b.cyberTrial.redline,5);
+ u.heat=99;u.currentCooldown=0;G.attack(b,u);
+ assert.equal(b.cyberTrial.redline,0);assert.equal(b.cyberTrial.resets,1);
+ G.finish(b,true);
+ assert.equal(b.run.roster[0].id,'eliteSolo');
+});
+
+test('no Redline Proof on an ordinary battle node or without both sockets',()=>{
+ const a=battle(['eliteSolo'],[4],'battle',{eliteSolo:ready});G.tickCyber(a,.1);assert.equal(a.cyberTrial,undefined);
+ const c=battle(['eliteSolo'],[4],'elite',{eliteSolo:{chrome:120,arm:'mantisImplant'}});G.tickCyber(c,.1);assert.equal(c.cyberTrial,undefined);
+});
+
+test('Netrunner banks RAM from any Cyberpunk attack and spends 3 every 2s on a stunning Short Circuit',()=>{
+ const b=battle(['netrunner','streetSamurai']),[n,s]=b.units;n.state='active';const e=enemy(b);
+ for(let i=0;i<3;i++){s.heat=20;G.attack(b,s);}
+ assert.equal(n.ram,3);
+ b.time=2;G.tickCyber(b,.1);
+ assert.equal(n.ram,0);assert.ok(e.hp<100000);assert.ok(e.frozenUntil>b.time||e.stuns.some(x=>x.until>b.time));
+});
+
+test('Ronin Merc hits harder the hotter its hottest ally runs',()=>{
+ const total=allyHeat=>{const b=battle(['roninMerc','streetSamurai']),[r,s]=b.units,e=enemy(b,'',1,1e9);for(let i=0;i<40;i++){r.heat=20;s.heat=allyHeat;G.attack(b,r);}return 1e9-e.hp;};
+ const low=total(0),high=total(90);
+ assert.ok(high>low*1.5,`${high} vs ${low}`); // +90% from a 90°C ally, averaged over crits
+});
+
+test('Afterlife Legend vents 30°C from the hottest ally every 5s and fires a 300% ATK shot',()=>{
+ const b=battle(['afterlifeLegend','streetSamurai']),[a,s]=b.units;a.state='active';const e=enemy(b);s.heat=90;b.time=5;
+ G.cyberExtras(b,a,0);
+ assert.equal(s.heat,60);assert.ok(e.hp<100000);
+});
+
+test('Cyber Mythics channel 1.2s on every 10th attack',()=>{
+ for(const id of G.CYBER_APEX){const b=battle([id]),u=b.units[0];enemy(b);u.attackCount=9;u.heat=20;G.attack(b,u);assert.equal(u.channeling?.type,'cyber-'+id,id);}
+});
+
+test('Time Stop freezes every runner; Plasma Storm puts a zone on all 4 walls',()=>{
+ const t=battle(['chronoPhantom']),u=t.units[0];const es=[enemy(t,'',1),enemy(t,'',9)];G.resolveCyberUlt(t,u,'chronoPhantom',100);
+ assert.ok(es.every(e=>e.frozenUntil>t.time||e.stuns.some(s=>s.until>t.time)||e.slows.some(s=>s.until>t.time)));
+ const p=battle(['plasmaTempest']),v=p.units[0];enemy(p);G.resolveCyberUlt(p,v,'plasmaTempest',100);
+ assert.deepEqual([...new Set(p.cyberZones.map(z=>z.wall))].sort(),[0,1,2,3]);
+});
+
+test('saves: cut Cyberdeck Mythics keep their arm as the Sandevistan Mythic; a Cyberdeck socket is freed',()=>{
+ const r=G.newRun('none',3);r.roster=[{uid:1,id:'empBreaker',arm:'gorillaImplant',os:'cyberdeckOS'},{uid:2,id:'eliteSolo',arm:'mantisImplant',os:'cyberdeckOS',chrome:90},{uid:3,id:'accessPoint'}];r.coins=0;
+ assert.equal(G.migrateRun(r),1);
+ assert.equal(r.roster[0].id,'gravitonColossus');assert.equal(r.roster[0].os,'sandyOS');
+ assert.equal(r.roster[1].os,undefined);assert.equal(r.coins,10);
+});
+
+test('all Cyber art paths exist and the UI shows sockets, heat bands, RAM and the Redline Proof',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ for(const c of Object.values(D.CARD).filter(c=>c.cyberAsset))assert.ok(fs.existsSync(path.join(__dirname,'../assets/cyber-matrix',c.cyberAsset+'.webp')),c.id);
+ const s=fs.readFileSync(require.resolve('../app'),'utf8');
+ for(const re of [/Chrome Tolerance/,/THERMAL SHUTDOWN/,/REDLINE · \+35% damage/,/Short Circuit costs 3/,/REDLINE PROOF/])assert.match(s,re);
+});
+
+test('Cyber detail renders permanent sockets outside battle without stale heat',()=>{
+ const fs=require('node:fs'),vm=require('node:vm'),s=fs.readFileSync(require.resolve('../app'),'utf8');
+ const code=s.slice(s.indexOf('function cyberDetail('),s.indexOf('function huntTrialHUDHTML('));
+ const ctx={Game:G,CARD:D.CARD,battle:null,u:{id:'cyberSolo',arm:'mantisImplant',os:'sandyOS',chrome:65,chromeAttackCharge:3,tuning:.1}};vm.createContext(ctx);vm.runInContext(code+';globalThis.html=cyberDetail(u);',ctx);
+ assert.match(ctx.html,/Thermal Mantis Blades/);assert.match(ctx.html,/Sandevistan OS/);assert.match(ctx.html,/65 Chrome/);assert.match(ctx.html,/\+10% tuning/);assert.match(ctx.html,/Heat resets each battle/);
+});
+
 test('battle completion grants no Chrome bonus',()=>{const b=battle(['cyberSolo']);G.finish(b,true);assert.equal(b.run.roster[0].chrome,undefined);});

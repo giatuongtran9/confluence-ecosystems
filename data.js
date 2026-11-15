@@ -2915,7 +2915,7 @@ CARDS.push({
   "genre": "Cyberpunk",
   "rarity": "Normal",
   "baseAtk": 12,
-  "attackInterval": 1.1,
+  "attackInterval": 1.4,
   "max": 0,
   "icon": "⌘",
   "fav": "neighbor",
@@ -2923,8 +2923,8 @@ CARDS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Two permanent sockets: one Arm, one OS. Every4 attacks earns1 Chrome across battles; cleaves count once. Evolves at25 and65. At120 Chrome with both sockets and an adjacent Military Cyber-Reactor, prove the OS signature on an Elite/Boss, then clear with zero leaks to awaken its matching Mythic; trial failure removes the Operative and Reactor. Sandevistan: land3 attacks during its window. Berserk: land3 attacks at80–99°C without shutdown. Cyberdeck: complete one Short Circuit and one Contagion. Base heat20°C; attacks generate8°C (14°C with Berserk), passive cooling4°C/s. At100°C shuts down for3s and purges to40°C.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
+  "rules": "The core. Two permanent sockets: one Arm, one OS. Every 4 attacks earns 1 Chrome across battles. Evolves at 25 and 65 Chrome. Base cooling 4°C/s; attacks add 8°C (14°C with Berserk). Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
   "cyberAsset": "cyberSolo"
 },
 {
@@ -2941,8 +2941,8 @@ CARDS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Automatically consumed into an adjacent Operative’s empty Arm socket; oldest eligible instance first. Locked for the run. Leading hit plus two50% cleaves. All hits inflict stacking Plasma Bleed:8 true DPS for4s.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
+  "rules": "Installs at battle start into any Operative with an empty socket of this type, preferring an adjacent one (+10% tuning). Locked for the run. Leading hit plus two 50% cleaves. All hits bleed for 20% ATK per second over 4s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
   "cyberAsset": "mantisImplant",
   "cyberModule": "arm"
 },
@@ -2960,8 +2960,8 @@ CARDS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Automatically consumed into an adjacent Operative’s empty Arm socket; oldest eligible instance first. Locked for the run. Targets the highest current HP runner. Strips40% armor; every fourth attack stuns1s.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
+  "rules": "Installs at battle start into any Operative with an empty socket of this type, preferring an adjacent one (+10% tuning). Locked for the run. Targets the highest current HP runner. Strips 40% armor; every fourth attack stuns 1s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
   "cyberAsset": "gorillaImplant",
   "cyberModule": "arm"
 },
@@ -2979,8 +2979,8 @@ CARDS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Automatically consumed into an adjacent Operative’s empty Arm socket; oldest eligible instance first. Locked for the run. Hits up to five runners on the leading target’s aligned4-tile wall; destroys shields and ignores50% defense.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
+  "rules": "Installs at battle start into any Operative with an empty socket of this type, preferring an adjacent one (+10% tuning). Locked for the run. Hits up to five runners on the leading target’s 4-tile wall; destroys shields and ignores 50% defense.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
   "cyberAsset": "monowireImplant",
   "cyberModule": "arm"
 },
@@ -2998,8 +2998,8 @@ CARDS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Automatically consumed into an adjacent Operative’s empty OS socket; oldest eligible instance first. Locked for the run. Every8 attacks opens a3.5s window:2.5× owner speed and50% track-wide slow. Boss slow resistance applies. Cannot retrigger during an active window.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
+  "rules": "Installs at battle start into any Operative with an empty socket of this type, preferring an adjacent one (+10% tuning). Locked for the run. Every 8 attacks opens a 3.5s window: 2.5× owner speed and a 50% track-wide slow (Bosses half). Cannot retrigger during an active window.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
   "cyberAsset": "sandyOS",
   "cyberModule": "os"
 },
@@ -3017,18 +3017,18 @@ CARDS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Automatically consumed into an adjacent Operative’s empty OS socket; oldest eligible instance first. Locked for the run. At80°C and above, attacks become double true damage and radiate12 true Burn DPS for2s on the target wall. Cooling below80°C ends Overdrive.100°C still shuts down.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
+  "rules": "Installs at battle start into any Operative with an empty socket of this type, preferring an adjacent one (+10% tuning). Locked for the run. Attacks add 14°C instead of 8°C. At Redline, attacks ignore armor and burn the target wall for 20% ATK per second over 2s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
   "cyberAsset": "berserkOS",
   "cyberModule": "os"
 },
 {
-  "id": "cyberdeckOS",
-  "name": "Combat Cyberdeck",
+  "id": "netrunner",
+  "name": "Netrunner",
   "genre": "Cyberpunk",
   "rarity": "Rare",
-  "baseAtk": 0,
-  "attackInterval": 0,
+  "baseAtk": 14,
+  "attackInterval": 1.4,
   "max": 0,
   "icon": "⌘",
   "fav": "neighbor",
@@ -3036,10 +3036,9 @@ CARDS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Automatically consumed into an adjacent Operative’s empty OS socket; oldest eligible instance first. Locked for the run. Earn1 RAM every3 attacks (every2 with adjacent Access Point). Capacity8 (+4 with Access Point). Every3s, spend3 RAM on alternating Short Circuit and Contagion.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
-  "cyberAsset": "cyberdeckOS",
-  "cyberModule": "os"
+  "rules": "Every attack by any Cyberpunk unit banks 1 RAM (max 8). Every 2s spends 3 RAM on Short Circuit: the leading runner takes 100% ATK true damage and is stunned 0.5s. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "cyberAsset": "cyberdeckOS"
 },
 {
   "id": "cryoPump",
@@ -3055,8 +3054,8 @@ CARDS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Every6s removes40°C from orthogonally adjacent Operatives and freezes its facing4-tile wall for2s. Interior center pumps face north; edge/corner pumps face the nearest outer wall (ties N/E/S/W). Boss resistance applies.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
+  "rules": "Support · does not attack. Every 6s removes 40°C from the hottest Cyberpunk unit anywhere on the grid and freezes its facing 4-tile wall for 2s. Interior pumps face north; edge/corner pumps face the nearest outer wall. Boss resistance applies.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
   "cyberAsset": "cryoPump"
 },
 {
@@ -3073,52 +3072,17 @@ CARDS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Every second equalizes heat between adjacent Operatives, preserving their total temperature. Grants adjacent augmented Operatives +15 percentage points of critical chance. Duplicate critical auras do not stack.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
+  "rules": "Support · does not attack. Every second evens out heat across all Cyberpunk units. Augmented Operatives gain +10% critical chance (+15% if adjacent).",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
   "cyberAsset": "biomonitor"
 },
-{
-  "id": "accessPoint",
-  "name": "Subnet Access Point",
-  "genre": "Cyberpunk",
-  "rarity": "Normal",
-  "baseAtk": 0,
-  "attackInterval": 0,
-  "max": 0,
-  "icon": "⌘",
-  "fav": "neighbor",
-  "tags": [
-    "chrome"
-  ],
-  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Adjacent Cyberdeck users have12 RAM capacity instead of8 and earn1 RAM per2 attacks instead of3. Duplicate hubs do not stack.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
-  "cyberAsset": "accessPoint"
-},
-{
-  "id": "cyberReactor",
-  "name": "Military Cyber-Reactor",
-  "genre": "Cyberpunk",
-  "rarity": "Epic",
-  "baseAtk": 0,
-  "attackInterval": 0,
-  "max": 0,
-  "icon": "⌘",
-  "fav": "neighbor",
-  "tags": [
-    "chrome"
-  ],
-  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Draftable from Crossing5. On an Elite/Boss, an adjacent120-Chrome Operative with both sockets filled must prove its OS signature and clear with zero leaks to consume this Reactor and awaken the matching Mythic. Failure removes the Operative and Reactor. One grid slot per Operative, including Mythics.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
-  "cyberAsset": "cyberReactor"
-});
+);
 FORMS.push({
   "id": "chromedSolo",
   "name": "Chromed Operative",
   "genre": "Cyberpunk",
   "rarity": "Rare",
-  "baseAtk": 26,
+  "baseAtk": 22,
   "attackInterval": 1.2,
   "max": 0,
   "icon": "⌘",
@@ -3127,8 +3091,8 @@ FORMS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Earned at25 Chrome. Retains installed modules. Four attacks earn1 Chrome. Heat and socket rules remain.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
+  "rules": "Earned at 25 Chrome. Keeps installed modules and tuning. Every 4 attacks earns 1 Chrome. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
   "cyberAsset": "chromedSolo",
   "evolvedFrom": "cyberSolo"
 },
@@ -3137,7 +3101,7 @@ FORMS.push({
   "name": "Elite Cyber-Operative",
   "genre": "Cyberpunk",
   "rarity": "Epic",
-  "baseAtk": 55,
+  "baseAtk": 48,
   "attackInterval": 1.1,
   "max": 0,
   "icon": "⌘",
@@ -3146,8 +3110,8 @@ FORMS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Earned at65 Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
+  "rules": "Earned at 65 Chrome. Redline Proof: at 120 Chrome with both sockets filled, on an Elite or Boss node, spend 12s in total at 80–99°C. Overheating resets the count. Awakens its Arm × OS Mythic when the battle is won; a failed proof costs nothing. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
   "cyberAsset": "eliteSolo",
   "evolvedFrom": "cyberSolo"
 },
@@ -3157,7 +3121,7 @@ FORMS.push({
   "genre": "Cyberpunk",
   "rarity": "Mythic",
   "baseAtk": 130,
-  "attackInterval": 0.7,
+  "attackInterval": 1.2,
   "max": 0,
   "icon": "⌘",
   "fav": "neighbor",
@@ -3165,8 +3129,8 @@ FORMS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Permanent40% track slow replaces Sandevistan windows. Mantis slashes execute ordinary runners below30% HP (35% with carved Witch Eye). Bosses/Harbingers cannot execute.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
+  "rules": "Mantis × Sandevistan. Permanent 25% track-wide slow (Bosses half). Leading hit plus two 50% cleaves that bleed for 20% ATK per second; slashes execute ordinary runners below 30% HP. Every 10th attack channels 1.2s: Time Stop — freezes every runner 2s, then slashes each for 150% ATK. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
   "cyberAsset": "chronoPhantom",
   "evolvedFrom": "cyberSolo",
   "cyberArm": "mantisImplant",
@@ -3177,8 +3141,8 @@ FORMS.push({
   "name": "Thermal Ripper Demon",
   "genre": "Cyberpunk",
   "rarity": "Mythic",
-  "baseAtk": 160,
-  "attackInterval": 0.8,
+  "baseAtk": 140,
+  "attackInterval": 1.3,
   "max": 0,
   "icon": "⌘",
   "fav": "neighbor",
@@ -3186,20 +3150,20 @@ FORMS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Four full-damage true-fire cleaves replace ordinary Mantis cleaves and Berserk doubling. Retains Plasma Bleed. Creates one4-tile slag trail for4s at50 true DPS; recasts refresh/replace, never stack.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
+  "rules": "Mantis × Berserk. Cleaves the 4 leading runners with armor-ignoring fire and leaves a 4-tile slag trail for 4s (30% ATK true per second). Every 10th attack channels 1.2s: Meltdown — slag on all 4 walls for 5s (35% ATK true per second). Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
   "cyberAsset": "thermalRipper",
   "evolvedFrom": "cyberSolo",
   "cyberArm": "mantisImplant",
   "cyberOS": "berserkOS"
 },
 {
-  "id": "glitchAssassin",
-  "name": "Glitch Infiltrator",
+  "id": "streetSamurai",
+  "name": "Street Samurai",
   "genre": "Cyberpunk",
-  "rarity": "Mythic",
-  "baseAtk": 140,
-  "attackInterval": 0.75,
+  "rarity": "Normal",
+  "baseAtk": 12,
+  "attackInterval": 1.4,
   "max": 0,
   "icon": "⌘",
   "fav": "neighbor",
@@ -3207,20 +3171,17 @@ FORMS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Mantis hits inject viral nanites. When an infected bleeding runner dies, infects its wall with Contagion at24 true DPS for4s. Viral death explosions occur once per victim and cannot propagate further death explosions. Retains RAM and regular paid hacks.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
-  "cyberAsset": "glitchAssassin",
-  "evolvedFrom": "cyberSolo",
-  "cyberArm": "mantisImplant",
-  "cyberOS": "cyberdeckOS"
+  "rules": "Strikes the leading runner. At Redline its katana cleaves 1 extra runner. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "cyberAsset": "glitchAssassin"
 },
 {
   "id": "gravitonColossus",
   "name": "Kinetic Graviton Colossus",
   "genre": "Cyberpunk",
   "rarity": "Mythic",
-  "baseAtk": 180,
-  "attackInterval": 0.9,
+  "baseAtk": 160,
+  "attackInterval": 1.4,
   "max": 0,
   "icon": "⌘",
   "fav": "neighbor",
@@ -3228,8 +3189,8 @@ FORMS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Every4s creates a gravity impact: freezes the target2s and pulls nearby runners within2 track tiles backward up to2 tiles. Replaces Sandevistan windows. Boss resistance/enrage remain.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
+  "rules": "Gorilla × Sandevistan. Punches the highest-HP runner, pulling it back 1 tile; a gravity well hits runners within 2 tiles for 50% ATK and drags them back 1 tile. Strips 40% armor; every 4th punch stuns 1s. Every 10th attack channels 1.2s: Event Horizon — pulls every runner back 2 tiles (Bosses 1), freezes them 2s and deals 200% ATK. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
   "cyberAsset": "gravitonColossus",
   "evolvedFrom": "cyberSolo",
   "cyberArm": "gorillaImplant",
@@ -3240,7 +3201,46 @@ FORMS.push({
   "name": "Apex Juggernaut Smasher",
   "genre": "Cyberpunk",
   "rarity": "Mythic",
-  "baseAtk": 200,
+  "baseAtk": 165,
+  "attackInterval": 1.5,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Gorilla × Berserk. Punches the highest-HP runner, removing all its armor, and the shockwave hits every runner on that wall for 100% ATK; every 4th punch stuns 1s. Every 10th attack channels 1.2s: Orbital Punch — 300% ATK armor-ignoring blow on the highest-HP runner and 150% to the rest of its wall, and every Boss or Champion loses 15% current HP. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "cyberAsset": "juggernautSmasher",
+  "evolvedFrom": "cyberSolo",
+  "cyberArm": "gorillaImplant",
+  "cyberOS": "berserkOS"
+},
+{
+  "id": "roninMerc",
+  "name": "Ronin Merc",
+  "genre": "Cyberpunk",
+  "rarity": "Epic",
+  "baseAtk": 46,
+  "attackInterval": 1.2,
+  "max": 0,
+  "icon": "⌘",
+  "fav": "neighbor",
+  "tags": [
+    "chrome"
+  ],
+  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
+  "rules": "Strikes the leading runner; its damage also grows +1% per °C of the hottest Cyberpunk ally. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "cyberAsset": "empBreaker"
+},
+{
+  "id": "razorPhantom",
+  "name": "Razor Phantom",
+  "genre": "Cyberpunk",
+  "rarity": "Mythic",
+  "baseAtk": 120,
   "attackInterval": 1,
   "max": 0,
   "icon": "⌘",
@@ -3249,50 +3249,8 @@ FORMS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Punches remove all target armor. Every third punch removes15% current boss/Harbinger HP. Signature replaces Berserk doubling; retains Gorilla targeting and fourth-hit stun.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
-  "cyberAsset": "juggernautSmasher",
-  "evolvedFrom": "cyberSolo",
-  "cyberArm": "gorillaImplant",
-  "cyberOS": "berserkOS"
-},
-{
-  "id": "empBreaker",
-  "name": "EMP Shockwave Breaker",
-  "genre": "Cyberpunk",
-  "rarity": "Mythic",
-  "baseAtk": 150,
-  "attackInterval": 0.85,
-  "max": 0,
-  "icon": "⌘",
-  "fav": "neighbor",
-  "tags": [
-    "chrome"
-  ],
-  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Punches strike a6-tile perimeter arc, erase shields and cancel temporary sprint boosts. Never resets boss enrage or its timer. Retains Gorilla priority, fourth-hit stun, RAM and paid hacks.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
-  "cyberAsset": "empBreaker",
-  "evolvedFrom": "cyberSolo",
-  "cyberArm": "gorillaImplant",
-  "cyberOS": "cyberdeckOS"
-},
-{
-  "id": "razorPhantom",
-  "name": "Razor Phantom",
-  "genre": "Cyberpunk",
-  "rarity": "Mythic",
-  "baseAtk": 120,
-  "attackInterval": 0.7,
-  "max": 0,
-  "icon": "⌘",
-  "fav": "neighbor",
-  "tags": [
-    "chrome"
-  ],
-  "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Whips up to eight leading runners track-wide with guaranteed criticals (normal critical multipliers apply). Retains shield stripping and50% defense ignore. Replaces Sandevistan windows.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
+  "rules": "Monowire × Sandevistan. Whips up to 5 runners on the target's wall with guaranteed critical hits, destroying shields. Every 10th attack channels 1.2s: Thousand Cuts — a guaranteed-crit whip on every runner for 130% ATK. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
   "cyberAsset": "razorPhantom",
   "evolvedFrom": "cyberSolo",
   "cyberArm": "monowireImplant",
@@ -3303,8 +3261,8 @@ FORMS.push({
   "name": "Plasma Whiplash Tempest",
   "genre": "Cyberpunk",
   "rarity": "Mythic",
-  "baseAtk": 160,
-  "attackInterval": 0.8,
+  "baseAtk": 135,
+  "attackInterval": 1.2,
   "max": 0,
   "icon": "⌘",
   "fav": "neighbor",
@@ -3312,20 +3270,20 @@ FORMS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Wire attacks create one4-tile blue-plasma zone for4s:40 true DPS and10% base armor stripped per second. Retains wire pattern; signature replaces Berserk doubling.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
+  "rules": "Monowire × Berserk. Whips up to 5 runners on the target wall and leaves a 4-tile plasma zone for 4s (25% ATK true per second, stripping 10% armor per second). Every 10th attack channels 1.2s: Plasma Storm — plasma zones on all 4 walls for 4s. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
   "cyberAsset": "plasmaTempest",
   "evolvedFrom": "cyberSolo",
   "cyberArm": "monowireImplant",
   "cyberOS": "berserkOS"
 },
 {
-  "id": "networkReaper",
-  "name": "Network Reaper",
+  "id": "afterlifeLegend",
+  "name": "Afterlife Legend",
   "genre": "Cyberpunk",
-  "rarity": "Mythic",
-  "baseAtk": 140,
-  "attackInterval": 0.8,
+  "rarity": "Legendary",
+  "baseAtk": 88,
+  "attackInterval": 1.2,
   "max": 0,
   "icon": "⌘",
   "fav": "neighbor",
@@ -3333,14 +3291,11 @@ FORMS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Wire hits generate1 RAM per runner hit instead of attack-count generation. Every1.5s spends3 RAM on Short Circuit. Retains RAM capacity and wire pattern; uploads are never free.",
-  "synergy": "Install one adjacent Arm and one OS into the oldest eligible Operative. Leave cooling near hot operatives. Every four attacks earn one Chrome. At120 Chrome with both sockets filled and an adjacent Military Cyber-Reactor, prove the installed OS signature on an Elite/Boss, then clear with zero leaks to awaken its Mythic. Failure removes the Operative and Reactor.",
-  "cyberAsset": "networkReaper",
-  "evolvedFrom": "cyberSolo",
-  "cyberArm": "monowireImplant",
-  "cyberOS": "cyberdeckOS"
+  "rules": "Every 5s vents 30°C from the hottest Cyberpunk ally and fires a shot at the leading runner for 200% ATK, keeping a teammate on the edge of Redline. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "cyberAsset": "networkReaper"
 });
-Object.assign(CARDS.find(c=>c.id==='vent'),{cyberAsset:'vent',rules:'Cool adjacent Operatives by15°C/s; duplicate Vents do not stack. Every8s freezes the two leading runners for1s, or2s if burning. Retains team-wide halved Overheat/Burnout shutdown duration. Cooling below80°C interrupts Berserk.'});
+Object.assign(CARDS.find(c=>c.id==='vent'),{cyberAsset:'vent',rules:'Support · does not attack. Every Cyberpunk unit cools 3°C/s faster; adjacent ones 15°C/s more. Halves Overheat and Burnout downtime team-wide. Every 8s freezes the two leading runners for 1s, or 2s if burning.'});
 // Forbidden Texts: earned forms and relics never enter the draft pool.
 const cosmicCard=(id,name,rarity,baseAtk,attackInterval,rules,extra={})=>({id,name,genre:'Lovecraft',rarity,baseAtk,attackInterval,max:0,icon:'◈',sprite:32,fav:'neighbor',tags:['forbidden'],ecosystem:'Forbidden Texts · three scripts, six awakenings',rules,synergy:'Chants advance deployed Idols. The oldest unsealed Idol receives the first two deciphered scripts. At154 Syllables, an adjacent matching Grimoire starts an Elite/Boss Forbidden Recitation: channel8 seconds, prove each script effect on a priority target, then clear with zero leaks. Failure removes the Herald and Grimoire. No Crossing gate.',...extra});
 CARDS.push(
