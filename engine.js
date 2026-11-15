@@ -981,6 +981,7 @@ const Game = (() => {
 
    // Lesser stairs rearm on their own interval and scale with ATK; the Penrose Mythic keeps its fixed trap.
    if (stair.id !== 'penroseLabyrinth') { if (b.time < (stair.trapReadyAt || 0)) continue; stair.trapReadyAt = b.time + (card(stair.id).attackInterval || 1.6); }
+   if (stair.id === 'penroseLabyrinth' && !stair.channeling) { stair.trapCount = (stair.trapCount || 0) + 1; if (stair.trapCount % 10 === 0) startChaosChannel(b, stair); }
    const baseDmg = stair.id === 'penroseLabyrinth' ? 180 : atk(b, stair) * (stair.id === 'infiniteStair' ? 2 : 1.5);
    if (inBlackout && blackoutStep4) {
     const isPanicked = e.panic || e.panicUntil > b.time;
@@ -1531,7 +1532,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (fam === 'redRaincoat') return fleeing || (e.slows || []).some(v => v.until > b.time);
   return false;
  }
- function isLegendTarget(b, u, e) { const fam = family(u); return !!e && !e.gone && e.hp > 0 && (hasLegendMark(e, fam) || breaksLegendNaturalRule(b, u, e)); }
+ function isLegendTarget(b, u, e) { const fam = family(u); return !!e && !e.gone && e.hp > 0 && ((e.tabooForcedUntil || 0) > b.time || hasLegendMark(e, fam) || breaksLegendNaturalRule(b, u, e)); }
  function markNaturalBreach(b, u, e) { const fam = family(u); return breaksLegendNaturalRule(b, u, e) ? addTabooMark(b, e, fam, 1, u) : 0 }
  function addTabooMark(b, e, fam, n = 1, source = null) {
   if (!e || e.gone || e.hp <= 0 || !urbanLegendFamilies.includes(fam) || n <= 0) return 0;
@@ -1612,6 +1613,20 @@ function fx(b, type, u, e, text, extra = {}) {
   b.metrics.lightsOn = (b.metrics.lightsOn || 0) + 1;
   for (const e of living(b)) { e.panicUntil = Math.min(e.panicUntil || 0, b.time); e.panic = false; }
   fx(b, 'pulse', null, null, 'LIGHTS ON · CONTAINMENT'); triggerShowstopper(b, null, 'LIGHTS ON · CONTAINMENT', 'lights-on');
+ }
+ // Chaos (Haunted B) Mythics: every 10th attack (Penrose: 10th trap) channels 1.2s into its legend's climax.
+ const CHAOS_ULTS = { slitMouthedSovereign: 'Am I Pretty?', terminusBus: 'Last Stop', midnightOperator: 'Collect Call', mirrorQueen: 'Shatter the Glass', livingTaboo: 'The Taboo Is Broken', crimsonHarbinger: 'Crimson Deluge', penroseLabyrinth: 'Endless Staircase' };
+ function startChaosChannel(b, u) { u.channeling = { type: 'chaos-' + u.id, duration: 1.2, remaining: 1.2 }; u.currentCooldown = Math.max(u.currentCooldown || 0, 1.2); fx(b, 'ult-channel', u, u, 'CHANNELING · ' + CHAOS_ULTS[u.id].toUpperCase()); }
+ function resolveChaosUlt(b, u, id, power) {
+  const all = living(b), ordinary = all.filter(e => !e.boss && !e.champion);
+  if (id === 'slitMouthedSovereign') { for (const e of [...all].sort((a, z) => z.speed - a.speed).slice(0, 5)) { hit(b, u, e, power * 1.5, false); dot(b, e, 'bleed', power * .2, 4, u); if (!e.boss && !e.champion && e.hp > 0 && e.hp / e.maxHp < .3) damage(b, e, e.hp, u, 'ability'); } }
+  else if (id === 'terminusBus') { for (const e of all) { hit(b, u, e, power, false); if ((e.ruleMarks || 0) + Object.values(e.tabooMarks || {}).reduce((n, v) => n + v, 0) >= 2) warp(b, e, 4, u); } }
+  else if (id === 'midnightOperator') { for (const e of all) { hit(b, u, e, power * 2, false); status(b, e, 'stun', 1.5, 0, u); } if (b.curfewUntil > b.time) b.curfewUntil += 2; }
+  else if (id === 'mirrorQueen') { for (let i = 0; i < 4; i++) spawnToken(b, u, 'mirrorClone', true, { tokenAtk: rawAtk(u), attackInterval: u.attackInterval, expiresAt: b.time + 6 * mod(b.run, 'buffDuration') }); for (const e of all) hit(b, u, e, power * 1.2, false); }
+  else if (id === 'livingTaboo') { for (const e of all) { e.tabooForcedUntil = b.time + 4; trueHit(b, u, e, power * .8); } }
+  else if (id === 'crimsonHarbinger') { for (const e of all) { hit(b, u, e, power * .6, false); status(b, e, 'slow', 2, .6, u); dot(b, e, 'bleed', power * .1, 4, u); } }
+  else if (id === 'penroseLabyrinth') { for (const e of ordinary) { warp(b, e, 3, u); status(b, e, 'stun', 1.5, 0, u); hit(b, u, e, power * .6, false); } }
+  ultFx(b, u, id, CHAOS_ULTS[id]);
  }
  const ORDER_ULTS = { ruleArchitect: 'Rule Zero Decree', allSeeingOverseer: 'Panopticon Lockdown', curfewDirector: 'Curfew Lockdown', forensicDemiurge: 'Living Autopsy', backroomsWarden: 'No Floor' };
  function resolveOrderUlt(b, u, id, power) {
@@ -2475,7 +2490,8 @@ function fx(b, type, u, e, text, extra = {}) {
   if (isUrbanLegend(u) && !token(u) && family(u) !== 'stair13' && !living(b).some(e => isLegendTarget(b, u, e))) {
    // Chaos legends never idle: with no taboo-breaker in reach they swipe the leading runner for 50% ATK.
    const lead = living(b)[0]; if (!lead) return false;
-   record(b, u).attacks++; u.flash = .18; hit(b, u, lead, atk(b, u) * 0.5, true); // swipes do not advance ability counters
+   record(b, u).attacks++; u.flash = .18; hit(b, u, lead, atk(b, u) * 0.5, true); // swipes only advance Chaos Mythic 10ths
+   if (CHAOS_ULTS[u.id] && ++u.attackCount % 10 === 0) startChaosChannel(b, u);
    return true;
   }
   const target = chooseTarget(b, u); if (!target) return false;
@@ -2491,6 +2507,7 @@ function fx(b, type, u, e, text, extra = {}) {
    return true;
   }
   u.attackCount++; record(b, u).attacks++; u.flash = .18; let power = atk(b, u);
+  if (CHAOS_ULTS[u.id] && u.attackCount % 10 === 0) startChaosChannel(b, u);
   if (neighbors(b, u, false).some(v => !v.removed && v.id === 'astralLoom')) tick(b, u, 1);
   for (const v of allies(b, u)) {
   }
@@ -3031,6 +3048,7 @@ function fx(b, type, u, e, text, extra = {}) {
      if (chType.startsWith('cyber-')) resolveCyberUlt(b, u, chType.slice(6), power);
      if (chType.startsWith('hunt-')) resolveHuntUlt(b, u, chType.slice(5), power);
      if (chType.startsWith('cosmic-')) resolveCosmicUlt(b, u, chType.slice(7), power);
+     if (chType.startsWith('chaos-')) resolveChaosUlt(b, u, chType.slice(6), power);
      if (chType === 'magmaLord') {
       // Lava erupts outward from the Magma Lord at 5 tiles/s; the 16-tile fissure starts now as before.
       const hits = queue(radial(0.15, 5), (bb, e) => { const hp0 = e.hp; hit(bb, u, e, power * 1.5, false, { noFx: true }); dot(bb, e, 'burn', hpPct(e), 1, u); number(bb, e, hp0); });
@@ -3303,7 +3321,7 @@ function fx(b, type, u, e, text, extra = {}) {
       for (const e of living(b).filter(e => seg.tiles.includes(Math.floor(e.p) % 16))) {
        damage(b, e, rawAtk(u) * 2.0, u, 'ability');
       }
-      fx(b, 'slash', u, null, 'BERSERKER COLOSSUS CLEAVE');
+      ultFx(b, u, 'berserkerColossus', 'Colossus Cleave');
       interact(b, u, u, 'berserker-cleave', `Berserker Greatsword Colossus: 200% ATK cleave across track segment [${seg.label}]`);
      }
      else if (chType === 'siege-bombardment') {
@@ -3312,7 +3330,7 @@ function fx(b, type, u, e, text, extra = {}) {
        e.shredUntil = Math.max(e.shredUntil || 0, b.time + 5);
        e.shredAmount = Math.max(e.shredAmount || 0, 0.50);
       }
-      fx(b, 'pulse', u, null, 'SIEGE TITAN BOMBARDMENT');
+      ultFx(b, u, 'siegeDreadnought', 'Siege Bombardment');
       interact(b, u, u, 'siege-bombardment', 'Siege Fortress Dreadnought: 200% ATK on all 16 tiles + 50% armor shred for 5s');
      }
      else if (chType === 'juggernaut-hellfire') {
@@ -3322,7 +3340,7 @@ function fx(b, type, u, e, text, extra = {}) {
       for (const e of living(b)) {
        status(b, e, 'slow', 5, 0.45, u);
       }
-      fx(b, 'beam', u, null, 'JUGGERNAUT OIL HELLFIRE');
+      ultFx(b, u, 'vanguardJuggernaut', 'Hellfire Barrage');
       interact(b, u, u, 'juggernaut-hellfire', 'Vanguard Gunblade Juggernaut: Stacking oil burn on all 16 tiles (1 stack/s for 5s) + 45% slow for 5s');
      }
     }
@@ -3896,7 +3914,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (abilityGauge(u) && u.threshold.current >= u.threshold.max) tick(b, u, 0);
  }
 
- return { migrateRun, ORDER_ULTS, XENO_ULTS, pushGauge, triggerLightsOn, lightsOn, compliant, isOrderUnit, resolveOrderUlt, breakthroughPills: b => Math.max(0, Math.min(3, Math.floor(b?.run?.breakthroughPills || 0))), chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, addStrain, xenoStrainsFor, resolveXenoUlt, feedSpecimens, startXenoTrial, tickXenoTrial, failXenoTrial, passXenoTrial, addWeakpoint, addGenome, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, startCosmicTrial, finishCosmicTrial, updateIdol, writePage, addSyllables, decipherPage, addMadness, goInsane, insane, pages, resolveCosmicUlt, COSMIC_ULTS, SCRIPTS, cosmicPanic, cosmicStatus, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, cyberTrialCandidate, startCyberTrial, tickCyberTrial, finishCyberTrial, heatBand, heatDamage, heatSpeed, heatUser, resolveCyberUlt, CYBER_ULTS, netrunnerHack, augmented, berserkActive, updateCyber, installChrome, cyberZone, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, isApprentice, isArchon, isElemental, bestPair, receiveEssence, startArcaneTrial, failArcaneTrial, startScrapworkTrial, markScrapworkTrialHit, failScrapworkTrial, elementalLinks, arcaneReaction, elementalSpell, arcaneExtras, tickArcane, HUNT_APEX, isSlayer, isHunter, priority, executeThreshold, huntArmor, trophyPoints, carveTrophy, huntExtras, visceral, TROPHIES, TROPHY_NAMES, RITE_APEX, RACK_CAP, rack, bleedStacks, isBleeding, harvestTrophy, tickHunt, resolveHuntUlt, HUNT_ULTS, riteCandidate, performRite, riteSacrificable, startHuntBattle, slayerAttack, isMech, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, oilPool, tickOil, mechAttack, addQi, addDread, isCultivationApex, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, persist, event, flushEvents, evolve, evolutionProgress, consume, devour, spawnToken, dot, warp, extras, growth, teamPower, allies, support, trialFor, encounterFor, ENCOUNTERS, record, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, tick, trigger, status, attack, damage, hit, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, startUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, wavePlan, spawn, favored, rand, finish, processPractitionerBreakthroughs, isPractitioner, isBloodlineRelic, isUrbanInvestigator, isUrbanLegend, addRuleMark, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, triggerWeiqiCorner };
+ return { migrateRun, CHAOS_ULTS, resolveChaosUlt, ORDER_ULTS, XENO_ULTS, pushGauge, triggerLightsOn, lightsOn, compliant, isOrderUnit, resolveOrderUlt, breakthroughPills: b => Math.max(0, Math.min(3, Math.floor(b?.run?.breakthroughPills || 0))), chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, addStrain, xenoStrainsFor, resolveXenoUlt, feedSpecimens, startXenoTrial, tickXenoTrial, failXenoTrial, passXenoTrial, addWeakpoint, addGenome, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, startCosmicTrial, finishCosmicTrial, updateIdol, writePage, addSyllables, decipherPage, addMadness, goInsane, insane, pages, resolveCosmicUlt, COSMIC_ULTS, SCRIPTS, cosmicPanic, cosmicStatus, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, cyberTrialCandidate, startCyberTrial, tickCyberTrial, finishCyberTrial, heatBand, heatDamage, heatSpeed, heatUser, resolveCyberUlt, CYBER_ULTS, netrunnerHack, augmented, berserkActive, updateCyber, installChrome, cyberZone, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, isApprentice, isArchon, isElemental, bestPair, receiveEssence, startArcaneTrial, failArcaneTrial, startScrapworkTrial, markScrapworkTrialHit, failScrapworkTrial, elementalLinks, arcaneReaction, elementalSpell, arcaneExtras, tickArcane, HUNT_APEX, isSlayer, isHunter, priority, executeThreshold, huntArmor, trophyPoints, carveTrophy, huntExtras, visceral, TROPHIES, TROPHY_NAMES, RITE_APEX, RACK_CAP, rack, bleedStacks, isBleeding, harvestTrophy, tickHunt, resolveHuntUlt, HUNT_ULTS, riteCandidate, performRite, riteSacrificable, startHuntBattle, slayerAttack, isMech, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, oilPool, tickOil, mechAttack, addQi, addDread, isCultivationApex, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, persist, event, flushEvents, evolve, evolutionProgress, consume, devour, spawnToken, dot, warp, extras, growth, teamPower, allies, support, trialFor, encounterFor, ENCOUNTERS, record, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, tick, trigger, status, attack, damage, hit, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, startUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, wavePlan, spawn, favored, rand, finish, processPractitionerBreakthroughs, isPractitioner, isBloodlineRelic, isUrbanInvestigator, isUrbanLegend, addRuleMark, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, triggerWeiqiCorner };
 })();
 if (typeof module !== 'undefined') module.exports = Game;
 

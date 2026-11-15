@@ -65,9 +65,18 @@ test('saves holding deleted cards drop them and refund 10 coins each', () => {
 test('every redesign 10th ability has a VFX style and resolves through an ult-burst effect', () => {
  const src = require('node:fs').readFileSync(require.resolve('../app'), 'utf8');
  const table = src.slice(src.indexOf('const RD_ULTS = {'), src.indexOf('const RD_CHANNEL'));
- for (const id of [...Object.keys(G.ORDER_ULTS), ...Object.keys(G.XENO_ULTS), ...Object.keys(G.CYBER_ULTS), ...Object.keys(G.HUNT_ULTS), ...Object.keys(G.COSMIC_ULTS)]) {
+ for (const id of ['berserkerColossus', 'siegeDreadnought', 'vanguardJuggernaut', ...Object.keys(G.CHAOS_ULTS), ...Object.keys(G.ORDER_ULTS), ...Object.keys(G.XENO_ULTS), ...Object.keys(G.CYBER_ULTS), ...Object.keys(G.HUNT_ULTS), ...Object.keys(G.COSMIC_ULTS)]) {
   assert.ok(table.includes(id + ':'), id);
  }
  const b = battle(['chronoPhantom']); enemy(b); G.resolveCyberUlt(b, b.units[0], 'chronoPhantom', 100);
  const f = b.effects.find(x => x.vfxKind === 'ult-burst'); assert.equal(f.ult, 'chronoPhantom'); assert.equal(f.text, 'TIME STOP');
+});
+
+test('Haunted B Mythics channel a 1.2s 10th ability (Penrose on its 10th trap)', () => {
+ for (const id of Object.keys(G.CHAOS_ULTS).filter(id => id !== 'penroseLabyrinth')) {
+  const b = battle([id]); const u = b.units[0]; enemy(b); u.attackCount = 9; G.attack(b, u);
+  assert.equal(u.channeling?.type, 'chaos-' + id, id);
+ }
+ const b = battle(['livingTaboo']), e = enemy(b); G.resolveChaosUlt(b, b.units[0], 'livingTaboo', 100);
+ assert.ok(e.tabooForcedUntil > b.time); assert.ok(b.effects.some(f => f.ult === 'livingTaboo'));
 });

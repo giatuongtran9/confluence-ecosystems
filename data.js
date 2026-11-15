@@ -1373,7 +1373,7 @@ const FORMS = [
     "boss-slayer"
   ],
   "evolvedFrom": "kuchisake",
-  "rules": "'Am I Pretty?' Reacts to fast, marked, panicked, or retreating runners and otherwise swipes the leading runner for 50% ATK. Strikes against marked violators critically hit for 3.5× damage and apply Bleed (20% ATK per second for 4s). Instantly executes ordinary runners below 30% HP. Every 6th attack shreds 15% current HP from Bosses and Harbingers. Triggers Rule Resonance when adjacent to another Urban Legend. Harbingers are also immune to execution.",
+  "rules": "'Am I Pretty?' Reacts to fast, marked, panicked, or retreating runners and otherwise swipes the leading runner for 50% ATK. Strikes against marked violators critically hit for 3.5× damage and apply Bleed (20% ATK per second for 4s). Instantly executes ordinary runners below 30% HP. Every 6th attack shreds 15% current HP from Bosses and Harbingers. Triggers Rule Resonance when adjacent to another Urban Legend. Harbingers are also immune to execution. Every 10th attack channels 1.2s: Am I Pretty? — slashes the 5 fastest runners for 150% ATK, bleeds them for 20% ATK per second and executes ordinary runners below 30% HP.",
   "synergy": "Bosses, Harbingers, and Rule Resonance."
 },
   // Lineage 2: Midnight Bus 44
@@ -1412,7 +1412,7 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "urban-apex", "abduction"],
     "evolvedFrom": "nightBus",
-    "rules": "Reacts only to marked, panicked, fleeing, or unnaturally fast runners; with none in reach, swipes the leading runner for 50% ATK. Its attack pierces 4 violators and adds 1 Violation Mark to surviving targets. Every 8s, sweeps the leading runner's 4-tile edge, warping runners with 2+ marks back 5 tiles. Every 6s, applies Bleed (60% ATK per second) for 3s (modified by buff duration) to the 2 leading runners and warps them back 5 tiles. Triggers Relic Resonance beside a relic.",
+    "rules": "Reacts only to marked, panicked, fleeing, or unnaturally fast runners; with none in reach, swipes the leading runner for 50% ATK. Its attack pierces 4 violators and adds 1 Violation Mark to surviving targets. Every 8s, sweeps the leading runner's 4-tile edge, warping runners with 2+ marks back 5 tiles. Every 6s, applies Bleed (60% ATK per second) for 3s (modified by buff duration) to the 2 leading runners and warps them back 5 tiles. Triggers Relic Resonance beside a relic. Every 10th attack channels 1.2s: Last Stop — the bus runs the whole track for 100% ATK; runners with 2+ marks are thrown back 4 tiles.",
     "synergy": "Track control, Warps, and Rule Resonance."
   },
   // Lineage 3: The Midnight Payphone
@@ -1447,7 +1447,7 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "urban-apex", "infinite-redial"],
     "evolvedFrom": "payphone",
-    "rules": "'Infinite Redial.' Reacts only to taboo-breaking runners; with none in reach, swipes the leading runner for 50% ATK. Every 2nd triggered attack rings all 16 perimeter tiles for 180% ATK damage, stunning marked runners for 1.2s and extending active Blackout by 1.5s. Triggers Rule Resonance when adjacent to another Urban Legend.",
+    "rules": "'Infinite Redial.' Reacts only to taboo-breaking runners; with none in reach, swipes the leading runner for 50% ATK. Every 2nd triggered attack rings all 16 perimeter tiles for 180% ATK damage, stunning marked runners for 1.2s and extending active Blackout by 1.5s. Triggers Rule Resonance when adjacent to another Urban Legend. Every 10th attack channels 1.2s: Collect Call — every phone rings: 200% ATK and a 1.5s stun on every runner; an active Blackout lasts 2s longer.",
     "synergy": "16 tiles, Blackout extension, and Rule Resonance."
   },
   // Lineage 4: Morgue Mirror
@@ -1482,7 +1482,7 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "urban-apex", "mirror-realm"],
     "evolvedFrom": "morgueMirror",
-    "rules": "'Glass Domain.' Reacts to taboo-breaking runners and those approaching its reflective angle; every runner counts as staring into the glass; each strike reflects onto 2 more runners at full damage. Permanently adds 100% of the highest ally raw ATK on the grid to her own. During Blackout, fills available adjacent orthogonal slots with 100%-ATK Mirror Clones for 6s × buffDuration. Outside Blackout, reflects 2 clones every 12s. Triggers Rule Resonance when adjacent to another Urban Legend.",
+    "rules": "'Glass Domain.' Reacts to taboo-breaking runners and those approaching its reflective angle; every runner counts as staring into the glass; each strike reflects onto 2 more runners at full damage. Permanently adds 100% of the highest ally raw ATK on the grid to her own. During Blackout, fills available adjacent orthogonal slots with 100%-ATK Mirror Clones for 6s × buffDuration. Outside Blackout, reflects 2 clones every 12s. Triggers Rule Resonance when adjacent to another Urban Legend. Every 10th attack channels 1.2s: Shatter the Glass — 4 Mirror Clones step out for 6s and every runner takes 120% ATK.",
     "synergy": "All allies, Mirror Clones, and Rule Resonance."
   },
   // Lineage 5: Window Mannequin
@@ -1521,7 +1521,7 @@ const FORMS = [
     "berserk"
   ],
   "evolvedFrom": "mannequin",
-  "rules": "The apex manifestation of taboo. Reacts only to taboo-breaking runners; with none in reach, it swipes the leading runner for 50% ATK. During Blackout, attacks at 3.0× speed with 100% critical chance. Once per battle, if an ordinary runner reaches tile 15, instantly ambushes and executes it before it can leak. Triggers Rule Resonance when adjacent to another Urban Legend. Bosses and Harbingers cannot be executed.",
+  "rules": "The apex manifestation of taboo. Reacts only to taboo-breaking runners; with none in reach, it swipes the leading runner for 50% ATK. During Blackout, attacks at 3.0× speed with 100% critical chance. Once per battle, if an ordinary runner reaches tile 15, instantly ambushes and executes it before it can leak. Triggers Rule Resonance when adjacent to another Urban Legend. Bosses and Harbingers cannot be executed. Every 10th attack channels 1.2s: The Taboo Is Broken — every runner counts as a taboo-breaker for 4s and takes 80% ATK true damage.",
   "synergy": "Blackouts and Rule Resonance."
 },
   // Lineage 6: Red Raincoat Specter
@@ -1556,7 +1556,7 @@ const FORMS = [
     "fav": "team",
     "tags": ["apex", "urban-apex", "crimson-deluge"],
     "evolvedFrom": "redRaincoat",
-    "rules": "'The Crimson Deluge.' Reactive slashes critically hit for 3.0× damage. During Blackout, sudden turns or running within 2 tiles of another runner triggers lethal dismemberment; fleeing or panicked victims take 2.5× damage and unleash a crimson mist slowing nearby runners by 60%. Triggers Rule Resonance when adjacent to another Urban Legend.",
+    "rules": "'The Crimson Deluge.' Reactive slashes critically hit for 3.0× damage. During Blackout, sudden turns or running within 2 tiles of another runner triggers lethal dismemberment; fleeing or panicked victims take 2.5× damage and unleash a crimson mist slowing nearby runners by 60%. Triggers Rule Resonance when adjacent to another Urban Legend. Every 10th attack channels 1.2s: Crimson Deluge — blood rain deals 60% ATK to every runner, slows them 60% for 2s and bleeds them for 10% ATK per second.",
     "synergy": "Bleed, Panic, and Rule Resonance."
   },
   // Lineage 7: The 13th Step
@@ -1595,7 +1595,7 @@ const FORMS = [
     "endless-drop"
   ],
   "evolvedFrom": "stair13",
-  "rules": "'The Endless Drop.' Corner and step traps inflict severe Vertigo and warp violators back 4 tiles. During Blackout, every 4th step triggers Penrose Trapdoor: victims vanish for 2.0s taking continuous crushing void damage; panicked or fleeing victims suffer Terminal Descent execution. Triggers Rule Resonance when adjacent to another Urban Legend. Executions and direct trapdoor position resets exclude bosses and Harbingers.",
+  "rules": "'The Endless Drop.' Corner and step traps inflict severe Vertigo and warp violators back 4 tiles. During Blackout, every 4th step triggers Penrose Trapdoor: victims vanish for 2.0s taking continuous crushing void damage; panicked or fleeing victims suffer Terminal Descent execution. Triggers Rule Resonance when adjacent to another Urban Legend. Executions and direct trapdoor position resets exclude bosses and Harbingers. Every 10th trap channels 1.2s: Endless Staircase — every ordinary runner is sent back 3 tiles, stunned 1.5s and takes 60% ATK.",
   "synergy": "Warps, Panicked runners, and Rule Resonance."
 },
 
