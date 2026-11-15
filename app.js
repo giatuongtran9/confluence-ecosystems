@@ -138,7 +138,7 @@ const bloodlineSprites={
   monkeyCubT3:'assets/bloodline-sprites-webp/monkey-cub-t3.webp',
   monkeyCubApex:'assets/bloodline-sprites-webp/monkey-cub-apex.webp',
   altar:'assets/bloodline-sprites-webp/blood-altar.webp',
-  broodkeeper:'assets/bloodline-sprites-webp/crimson-broodkeeper.webp',
+  beastTamer:'assets/bloodline-sprites-webp/crimson-broodkeeper.webp', broodkeeper:'assets/bloodline-sprites-webp/crimson-broodkeeper.webp',
   matriarch:'assets/bloodline-sprites-webp/brood-matriarch.webp'
 };
 const hauntedSprites={
@@ -332,7 +332,7 @@ function board(){const field=battlefield();return `<div class="board" style="--b
 function cosmicDetail(u){
  if(CARD[u.id].genre!=='Lovecraft')return '';
  let lines=[];
- if(Game.isIdol(u)){const scripts=u.scripts||[],branch=Game.COSMIC_BRANCHES[Game.cosmicPair(scripts)];lines.push('Locked scripts: '+(scripts.join(' + ')||'awaiting the first deciphered page'));if(branch)lines.push('Old One: '+CARD[branch[1]].name);lines.push(Game.cosmicApex(u)?'The Old One has answered.':scripts.length<2?'The oldest Idol missing a script learns the next deciphered page.':'At 154 Syllables on an Elite or Boss node: drive 13 runners Insane (a Boss counts 3).');}
+ if(Game.isIdol(u)){const scripts=u.scripts||[],branch=Game.COSMIC_BRANCHES[Game.cosmicPair(scripts)];lines.push('Locked scripts: '+(scripts.join(' + ')||'awaiting the first deciphered page'));if(branch)lines.push('Old One: '+CARD[branch[1]].name);lines.push(Game.cosmicApex(u)?'The Old One has answered.':scripts.length<2?'The oldest Idol missing a script learns the next deciphered page.':'At 154 Syllables on an Elite or Boss node: drive 16 runners Insane (a Boss counts 3).');}
  if(u.id==='archivist')lines.push('Pages in the pool: '+(Game.pages(run).join(', ')||'none')+' (max 6)');
  return lines.map(t=>`<p class="hint">${t}</p>`).join('');
 }
@@ -342,13 +342,13 @@ function cyberDetail(u){
  const bandText={redline:'REDLINE · +35% damage, +15% attack speed',warm:'WARM · +15% damage',cold:'COLD'}[band];
  const sockets=Game.isCyber(u)?`<p class="hint">Arm: ${arm?CARD[arm].name:'empty'} · OS: ${os?CARD[os].name:'empty'}${u.tuning?` · +${Math.round(u.tuning*100)}% tuning`:''}<br>Implants install into any Operative with a free socket; an adjacent install adds +10% tuning.</p>`:'';
  const heat=live?`<p class="hint">Heat: ${(u.heat||0).toFixed(0)}°C / 100°C · ${u.state==='overheat'?'THERMAL SHUTDOWN':bandText}${u.id==='netrunner'?`<br>RAM: ${Math.floor(u.ram||0)} / 8 · Short Circuit costs 3`:''}</p>`:'<p class="hint">Heat resets each battle. Installed hardware, tuning and Chrome persist.</p>';
- const proof=t&&t.unitUid===u.uid?`<p class="hint">Redline Proof: ${t.redline.toFixed(1)}/12s · ${t.status}</p>`:'';
+ const proof=t&&t.unitUid===u.uid?`<p class="hint">Redline Proof: ${t.redline.toFixed(1)}/8s · ${t.status}</p>`:'';
  const chrome=Game.isCyber(u)?`<p class="hint">${u.chrome||0} Chrome · ${u.chromeAttackCharge||0}/4 attacks toward the next point</p>`:'';
  return sockets+heat+proof+chrome;
 }
 const rackSummary=r=>{const n={};for(const t of Game.rack(r))n[t.type]=(n[t.type]||0)+1;return Game.TROPHIES.map(t=>Game.TROPHY_NAMES[t]+' '+(n[t]||0)).join(' · ')};
 function huntTrialHUDHTML(b){const r=b?.run;if(!r||!b.units.some(u=>!u.removed&&Game.isHunter(u)))return '';const n=Game.rack(r).length;return `<div class="hunt-trial-hud active"><div class="urban-trial-head"><b>⚔ TROPHY RACK</b><span>${n}/${Game.RACK_CAP}</span></div><p>${rackSummary(r)}</p></div>`}
-function cyberTrialHUDHTML(b){const t=b?.cyberTrial;if(!t)return '';const name=CARD[t.apexId]?.name||'Cyber Mythic',pct=Math.min(100,t.redline/12*100);if(t.status==='active'||t.status==='proven')return `<div class="cyber-trial-hud active"><div class="urban-trial-head"><b>⌘ REDLINE PROOF</b><span>${t.nodeType.toUpperCase()} · ${t.redline.toFixed(1)}/12s</span></div><div class="blackout-meter"><i style="width:${pct}%"></i></div><p>${t.status==='proven'?`Proven. Win this battle to awaken ${name}.`:`Hold the Operative at 80–99°C for 12s in total to awaken ${name}. Overheating resets the count (${t.resets} so far).`}</p></div>`;if(t.status==='passed')return `<div class="cyber-trial-hud passed"><b>✦ REDLINE PROOF PASSED</b><span>${name} awakened</span></div>`;return `<div class="cyber-trial-hud failed"><b>REDLINE PROOF FAILED</b><span>${t.reason||''} · nothing was lost</span></div>`;}
+function cyberTrialHUDHTML(b){const t=b?.cyberTrial;if(!t)return '';const name=CARD[t.apexId]?.name||'Cyber Mythic',pct=Math.min(100,t.redline/8*100);if(t.status==='active'||t.status==='proven')return `<div class="cyber-trial-hud active"><div class="urban-trial-head"><b>⌘ REDLINE PROOF</b><span>${t.nodeType.toUpperCase()} · ${t.redline.toFixed(1)}/8s</span></div><div class="blackout-meter"><i style="width:${pct}%"></i></div><p>${t.status==='proven'?`Proven. Win this battle to awaken ${name}.`:`Hold the Operative at 80–99°C for 8s in total to awaken ${name}. Overheating costs 4s (${t.resets} so far).`}</p></div>`;if(t.status==='passed')return `<div class="cyber-trial-hud passed"><b>✦ REDLINE PROOF PASSED</b><span>${name} awakened</span></div>`;return `<div class="cyber-trial-hud failed"><b>REDLINE PROOF FAILED</b><span>${t.reason||''} · nothing was lost</span></div>`;}
 function arcaneDetail(u){
  if(CARD[u.id].genre!=='Arcane')return '';
  const names=p=>p.split('+').join(' + ');
@@ -428,7 +428,7 @@ function blackoutHUDHTML(b){
  if(!hasUrban && !hasOrder && !inCurfew && !inLockout && !lit && gauge === 0)return '';
  if(lit){
   const rem = Math.max(0, b.lightsOnUntil - b.time);
-  return `<div class="blackout-banner state-lights"><div class="blackout-header"><span class="blackout-badge lights-badge">☀ LIGHTS ON</span><span class="blackout-timer">${rem.toFixed(1)}s</span></div><div class="blackout-meter"><i style="width:${Math.min(100,rem/6*100)}%"></i></div><div class="blackout-sub">Runners Compliant · Order +30% speed, +20% damage · Chaos goes quiet</div></div>`;
+  return `<div class="blackout-banner state-lights"><div class="blackout-header"><span class="blackout-badge lights-badge">☀ LIGHTS ON</span><span class="blackout-timer">${rem.toFixed(1)}s</span></div><div class="blackout-meter"><i style="width:${Math.min(100,rem/6*100)}%"></i></div><div class="blackout-sub">Runners Compliant · Order +30% speed, +10% damage · Chaos goes quiet</div></div>`;
  }
 
  if(inCurfew){

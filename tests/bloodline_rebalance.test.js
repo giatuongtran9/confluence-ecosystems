@@ -32,15 +32,15 @@ function enemy(b, p = 4, hp = 100000, maxHp = 100000, defense = 0) {
 
 test('Bloodline card base stats match requested values', () => {
   const expectedCards = {
-    cub: { atk: 12, interval: 1.5 },
+    cub: { atk: 14, interval: 1.5 },
     altar: { atk: 0, interval: 0 },
-    broodkeeper: { atk: 20, interval: 1.4 },
+    broodkeeper: { atk: 23, interval: 1.4 },
     matriarch: { atk: 45, interval: 1.3 },
-    serpentFodder: { atk: 12, interval: 1.5 },
-    hound: { atk: 12, interval: 1.5 },
-    scuttler: { atk: 12, interval: 1.5 },
-    flameToad: { atk: 12, interval: 1.5 },
-    peachFodder: { atk: 12, interval: 1.5 },
+    serpentFodder: { atk: 14, interval: 1.5 },
+    hound: { atk: 14, interval: 1.5 },
+    scuttler: { atk: 14, interval: 1.5 },
+    flameToad: { atk: 14, interval: 1.5 },
+    peachFodder: { atk: 14, interval: 1.5 },
     dragonPearl: { atk: 0, interval: 0 },
     tigerSeal: { atk: 0, interval: 0 },
     earthTablet: { atk: 0, interval: 0 },
@@ -58,27 +58,27 @@ test('Bloodline card base stats match requested values', () => {
 
 test('Bloodline forms base stats match requested values', () => {
   const expectedForms = {
-    dragonCubT1: { atk: 25, interval: 1.4 },
+    dragonCubT1: { atk: 29, interval: 1.4 },
     dragonCubT2: { atk: 48, interval: 1.3 },
     dragonCubT3: { atk: 85, interval: 1.2 },
     dragonCubApex: { atk: 150, interval: 1.0 },
 
-    tigerCubT1: { atk: 24, interval: 1.3 },
+    tigerCubT1: { atk: 28, interval: 1.3 },
     tigerCubT2: { atk: 45, interval: 1.2 },
     tigerCubT3: { atk: 80, interval: 1.1 },
     tigerCubApex: { atk: 150, interval: 0.9 },
 
-    xuanwuCubT1: { atk: 20, interval: 1.5 },
+    xuanwuCubT1: { atk: 23, interval: 1.5 },
     xuanwuCubT2: { atk: 45, interval: 1.4 },
     xuanwuCubT3: { atk: 90, interval: 1.4 },
     xuanwuCubApex: { atk: 150, interval: 1.3 },
 
-    phoenixCubT1: { atk: 22, interval: 1.4 },
+    phoenixCubT1: { atk: 25, interval: 1.4 },
     phoenixCubT2: { atk: 46, interval: 1.3 },
     phoenixCubT3: { atk: 86, interval: 1.2 },
     phoenixCubApex: { atk: 130, interval: 1.0 },
 
-    monkeyCubT1: { atk: 29, interval: 1.4 },
+    monkeyCubT1: { atk: 33, interval: 1.4 },
     monkeyCubT2: { atk: 54, interval: 1.3 },
     monkeyCubT3: { atk: 111, interval: 1.2 },
     monkeyCubApex: { atk: 169, interval: 1.0 }

@@ -46,12 +46,12 @@ test('Redline Proof: 12s at 80–99°C on an Elite node awakens the Arm × OS My
  assert.equal(b.run.roster[0].id,'chronoPhantom');
 });
 
-test('overheating resets the Redline count; a failed proof costs nothing',()=>{
+test('overheating costs 4s of Redline proof; a failed proof costs nothing',()=>{
  const b=battle(['eliteSolo'],[4],'boss',{eliteSolo:ready}),u=b.units[0];u.state='active';enemy(b);
  for(let i=0;i<10;i++){u.heat=85;b.time+=.5;G.tickCyber(b,.5);}
  assert.equal(b.cyberTrial.redline,5);
  u.heat=99;u.currentCooldown=0;G.attack(b,u);
- assert.equal(b.cyberTrial.redline,0);assert.equal(b.cyberTrial.resets,1);
+ assert.equal(b.cyberTrial.redline,1);assert.equal(b.cyberTrial.resets,1);
  G.finish(b,true);
  assert.equal(b.run.roster[0].id,'eliteSolo');
 });
@@ -75,10 +75,10 @@ test('Ronin Merc hits harder the hotter its hottest ally runs',()=>{
  assert.ok(high>low*1.5,`${high} vs ${low}`); // +90% from a 90°C ally, averaged over crits
 });
 
-test('Afterlife Legend vents 30°C from the hottest ally every 5s and fires a 300% ATK shot',()=>{
+test('Afterlife Legend vents 20°C from an ally at 90°C+ every 5s and fires a 300% ATK shot',()=>{
  const b=battle(['afterlifeLegend','streetSamurai']),[a,s]=b.units;a.state='active';const e=enemy(b);s.heat=90;b.time=5;
  G.cyberExtras(b,a,0);
- assert.equal(s.heat,60);assert.ok(e.hp<100000);
+ assert.equal(s.heat,70);assert.ok(e.hp<100000);
 });
 
 test('Cyber Mythics channel 1.2s on every 10th attack',()=>{

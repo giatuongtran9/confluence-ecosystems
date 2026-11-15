@@ -24,8 +24,8 @@ test('forged weapons add ATK and Titan Reactor buffs adjacent units', () => {
   const b = battle(['scrapFrame', 'titanReactor'], [4, 1]);
   const frame = b.units[0];
   frame.modules = ['blade', 'blade'];
-  assert.equal(G.rawAtk(frame), 115);
-  assert.equal(G.atk(b, frame), 138);
+  assert.equal(G.rawAtk(frame), 117);
+  assert.equal(G.atk(b, frame), 140.4);
   assert.equal(G.speed(b, frame), 1.2);
 });
 

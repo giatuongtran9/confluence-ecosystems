@@ -687,7 +687,7 @@ const CARDS = [
     "name": "Crimson Hound",
     "vn": "Xích Huyết Khuyển",
     "genre": "Bloodline",
-    "baseAtk": 12,
+    "baseAtk": 14,
     "attackInterval": 1.5,
     "sprite": 10,
     "icon": "爪",
@@ -949,7 +949,7 @@ const CARDS = [
     "vn": "Xích Huyết Dục Trùng Giả",
     "genre": "Bloodline",
     "rarity": "Rare",
-    "baseAtk": 20,
+    "baseAtk": 23,
     "attackInterval": 1.4,
     "max": 0,
     "asset": "atlasCreature",
@@ -983,7 +983,7 @@ const CARDS = [
   "vn": "Thái Cổ Ấu Thú",
   "genre": "Bloodline",
   "rarity": "Normal",
-  "baseAtk": 12,
+  "baseAtk": 14,
   "attackInterval": 1.5,
   "max": 0,
   "asset": "atlasCaster",
@@ -1003,7 +1003,7 @@ const CARDS = [
   "vn": "Giao Xà",
   "genre": "Bloodline",
   "rarity": "Normal",
-  "baseAtk": 12,
+  "baseAtk": 14,
   "attackInterval": 1.5,
   "max": 0,
   "asset": "atlasCreature",
@@ -1023,7 +1023,7 @@ const CARDS = [
   "vn": "Thiết Giáp Miêu",
   "genre": "Bloodline",
   "rarity": "Normal",
-  "baseAtk": 12,
+  "baseAtk": 14,
   "attackInterval": 1.5,
   "max": 0,
   "asset": "atlasMachineC",
@@ -1043,7 +1043,7 @@ const CARDS = [
   "vn": "Hỏa Diệm Thiềm Thừ",
   "genre": "Bloodline",
   "rarity": "Normal",
-  "baseAtk": 12,
+  "baseAtk": 14,
   "attackInterval": 1.5,
   "max": 0,
   "asset": "atlasMachineB",
@@ -1063,7 +1063,7 @@ const CARDS = [
   "vn": "Linh Đào",
   "genre": "Bloodline",
   "rarity": "Normal",
-  "baseAtk": 12,
+  "baseAtk": 14,
   "attackInterval": 1.5,
   "max": 0,
   "asset": "lotus",
@@ -1797,7 +1797,7 @@ const FORMS = [
   "vn": "Horned Drake Cub",
   "genre": "Bloodline",
   "rarity": "Rare",
-  "baseAtk": 25,
+  "baseAtk": 29,
   "attackInterval": 1.4,
   "max": 0,
   "asset": "atlasCaster",
@@ -1885,7 +1885,7 @@ const FORMS = [
   "vn": "Fanged Tiger Cub",
   "genre": "Bloodline",
   "rarity": "Rare",
-  "baseAtk": 24,
+  "baseAtk": 28,
   "attackInterval": 1.3,
   "max": 0,
   "asset": "atlasCaster",
@@ -1973,7 +1973,7 @@ const FORMS = [
   "vn": "Xuanwu Hatchling",
   "genre": "Bloodline",
   "rarity": "Rare",
-  "baseAtk": 20,
+  "baseAtk": 23,
   "attackInterval": 1.5,
   "max": 0,
   "asset": "atlasCaster",
@@ -2061,7 +2061,7 @@ const FORMS = [
   "vn": "Fire-Fledged Chick",
   "genre": "Bloodline",
   "rarity": "Rare",
-  "baseAtk": 22,
+  "baseAtk": 25,
   "attackInterval": 1.4,
   "max": 0,
   "asset": "atlasCaster",
@@ -2149,7 +2149,7 @@ const FORMS = [
   "vn": "Stone Simian Cub",
   "genre": "Bloodline",
   "rarity": "Rare",
-  "baseAtk": 29,
+  "baseAtk": 33,
   "attackInterval": 1.4,
   "max": 0,
   "asset": "atlasCaster",
@@ -2162,7 +2162,7 @@ const FORMS = [
   "evolvedFrom": "cub",
   "lineage": "monkey",
   "lineageTier": 1,
-  "rules": "Normal attack deals 100% ATK damage. Passively gains +15% ATK (base 25 → 29 ATK).",
+  "rules": "Normal attack deals 100% ATK damage. Passively gains +15% ATK (base 29 → 33 ATK).",
   "synergy": "Primordial Blood Cub and matching prey/relics."
 },
 {
@@ -2277,7 +2277,7 @@ const TOKENS = [
     "vn": "Hound Phantom",
     "genre": "Bloodline",
     "rarity": "Normal",
-    "baseAtk": 12,
+    "baseAtk": 14,
     "attackInterval": 1.5,
     "asset": "hound",
     "tags": ["token", "fodder"],
@@ -2318,7 +2318,7 @@ CARDS.push(...[
     "name": "Scavenged Frame",
     "genre": "PostApoc",
     "rarity": "Normal",
-    "baseAtk": 15,
+    "baseAtk": 17,
     "attackInterval": 1.8,
     "max": 0,
     "icon": "⚙",
@@ -2336,7 +2336,7 @@ CARDS.push(...[
     "name": "Junk Scavenger",
     "genre": "PostApoc",
     "rarity": "Normal",
-    "baseAtk": 12,
+    "baseAtk": 14,
     "attackInterval": 1.5,
     "max": 0,
     "icon": "⚙",
@@ -2372,7 +2372,7 @@ CARDS.push(...[
     "name": "Hydraulic Riveter",
     "genre": "PostApoc",
     "rarity": "Normal",
-    "baseAtk": 7,
+    "baseAtk": 8,
     "attackInterval": 2.0,
     "max": 0,
     "icon": "⚙",
@@ -2410,7 +2410,7 @@ FORMS.push(...[
     "name": "Reinforced Walker",
     "genre": "PostApoc",
     "rarity": "Rare",
-    "baseAtk": 30,
+    "baseAtk": 35,
     "attackInterval": 1.7,
     "max": 0,
     "icon": "⚙",
@@ -2563,12 +2563,12 @@ TOKENS.push(...[
 
 // Urban Legend progression is described on each card form; do not append shared or Blackout-based Mythic shortcuts.
 
-CARDS.push({"id":"mercenary","name":"Sellsword","genre":"Grimdark","rarity":"Normal","baseAtk":12,"attackInterval":1.5,"max":0,"icon":"⚔","fav":"neighbor","tags":["hunter"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"The core hunter. Attacks the leading runner and inflicts 1 Bleed stack. Gains 3 Trophy Points per Alpha Quarry, Elite or Boss kill and 10 per carving. Evolves at 25 / 60 / 100 points. 1 Bleed stack = 1% of max HP over 1s; more stacks extend the bleed (Bosses take half).","synergy":"Kill the Alpha Quarry, Elites, armored runners, Bosses and executions for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"mercenary"}, {"id":"witchHunter","name":"Witch Hunter","genre":"Grimdark","rarity":"Rare","baseAtk":24,"attackInterval":1.4,"max":0,"icon":"⚔","fav":"neighbor","tags":["hunter"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Deals double damage to armored runners, so it farms Witch Eyes. While any hunter is deployed, the healthiest ordinary runner becomes the Alpha Quarry once 3 runners have spawned.","synergy":"Kill the Alpha Quarry, Elites, armored runners, Bosses and executions for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"witchHunter"}, {"id":"trophyStake","name":"Trophy Stake","genre":"Grimdark","rarity":"Normal","baseAtk":0,"attackInterval":0,"max":0,"icon":"⚔","fav":"neighbor","tags":["support"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Support · does not attack. Projects the newest trophy in the Rack to every hunter: Beast +15% attack speed, Fiend 20% armor penetration, Witch +15% crit chance, Wyrm +10% damage, Hollow +25% damage to runners below 30% HP. Adjacent hunters get double.","synergy":"Kill the Alpha Quarry, Elites, armored runners, Bosses and executions for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"trophyStake"}, {"id":"taxidermist","name":"Taxidermist","genre":"Grimdark","rarity":"Rare","baseAtk":0,"attackInterval":0,"max":0,"icon":"⚔","fav":"neighbor","tags":["support"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Support · does not attack. Every 6s carves the newest uncarved trophy in the Rack, wherever it is; carving does not consume it. Beast: hunters +15% attack speed next battle. Fiend: −10% enemy armor (max 30%). Witch: execute threshold 35%. Wyrm: +5 permanent ATK to the highest-ATK hunter. Hollow: +3 permanent ATK to the lowest-ATK ally. Adjacent hunters gain +3 permanent ATK per carving; every hunter gains 10 Trophy Points.","synergy":"Kill the Alpha Quarry, Elites, armored runners, Bosses and executions for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"taxidermist"});
-FORMS.push({"id":"oathboundHunter","name":"Oathbound Hunter","genre":"Grimdark","rarity":"Rare","baseAtk":24,"attackInterval":1.4,"max":0,"icon":"⚔","fav":"neighbor","tags":["hunter"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Earned at 25 Trophy Points. Attacks inflict 1 Bleed stack; hits on the Alpha Quarry deal double damage. Gains 3 Trophy Points per Alpha Quarry, Elite or Boss kill and 10 per carving. Evolves at 25 / 60 / 100 points.","synergy":"Kill the Alpha Quarry, Elites, armored runners, Bosses and executions for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"oathboundHunter","evolvedFrom":"mercenary"}, {"id":"blackIronSlayer","name":"Black-Iron Slayer","genre":"Grimdark","rarity":"Epic","baseAtk":48,"attackInterval":1.3,"max":0,"icon":"⚔","fav":"neighbor","tags":["hunter"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Earned at 60 Trophy Points. Cleaves 1 extra runner; every hit inflicts 1 Bleed stack. Gains 3 Trophy Points per Alpha Quarry, Elite or Boss kill and 10 per carving. Evolves at 25 / 60 / 100 points.","synergy":"Kill the Alpha Quarry, Elites, armored runners, Bosses and executions for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"blackIronSlayer","evolvedFrom":"mercenary"}, {"id":"brandedBerserker","name":"Branded Berserker","genre":"Grimdark","rarity":"Legendary","baseAtk":88,"attackInterval":1.2,"max":0,"icon":"⚔","fav":"neighbor","tags":["hunter"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Earned at 100 Trophy Points. Cleaves 1 extra runner; every hit inflicts 1 Bleed stack and deals +2% damage per trophy in the Rack. At a Campfire with 3 trophies of one type (Wyrm: 2) it performs the Eclipse Rite: the trophies and one random card are sacrificed and it becomes that trophy's Mythic.","synergy":"Kill the Alpha Quarry, Elites, armored runners, Bosses and executions for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"brandedBerserker","evolvedFrom":"mercenary"}, {"id":"dragonSlayer","name":"Dragon Slayer Berserker","genre":"Grimdark","rarity":"Mythic","baseAtk":160,"attackInterval":1.4,"max":0,"icon":"⚔","fav":"neighbor","tags":["hunter"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Wyrm Heart. Awakened by the Eclipse Rite. Each swing hits every runner on the target's wall, ignoring armor, stripping shields and inflicting 1 Bleed stack. Every 10th attack channels 1.2s: Dragonfall Cleave — the densest wall takes 300% ATK and every Boss or Champion loses 15% current HP.","synergy":"Kill the Alpha Quarry, Elites, armored runners, Bosses and executions for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"dragonSlayer","evolvedFrom":"mercenary"}, {"id":"witcherGrandmaster","name":"Grandmaster Witcher","genre":"Grimdark","rarity":"Mythic","baseAtk":150,"attackInterval":1.1,"max":0,"icon":"⚔","fav":"neighbor","tags":["hunter"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Witch Eye. Awakened by the Eclipse Rite. Silver strikes deal 2.5× to Elites, Champions and Bosses and inflict 1 Bleed stack. Every 4th attack casts a Sign on the target's wall: 50% armor strip, 100% ATK and a 3-tile knockback (Bosses 1). Every 10th attack channels 1.2s: Sign Mastery — every runner is knocked back 3 tiles, loses 50% armor and burns for 30% ATK per second over 4s.","synergy":"Kill the Alpha Quarry, Elites, armored runners, Bosses and executions for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"witcherGrandmaster","evolvedFrom":"mercenary"}, {"id":"bloodDrunkHunter","name":"Blood-Drunk Abyssal Hunter","genre":"Grimdark","rarity":"Mythic","baseAtk":145,"attackInterval":1,"max":0,"icon":"⚔","fav":"neighbor","tags":["hunter"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Fiend Horn. Awakened by the Eclipse Rite. Twin blades strike the target and the next runner, applying Hemorrhage (50% ATK per second for 4s). A hemorrhaging ordinary runner below the execute threshold is decapitated, and its wall takes 100% ATK true damage. Every 10th attack channels 1.2s: Blood Moon Feast — every hemorrhaging ordinary runner below 35% HP is executed; Bosses lose 10% current HP.","synergy":"Kill the Alpha Quarry, Elites, armored runners, Bosses and executions for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"bloodDrunkHunter","evolvedFrom":"mercenary"}, {"id":"lycanLord","name":"Moonbound Lycan Lord","genre":"Grimdark","rarity":"Mythic","baseAtk":150,"attackInterval":1,"max":0,"icon":"⚔","fav":"neighbor","tags":["hunter"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Beast Head. Awakened by the Eclipse Rite. Hunts the Alpha Quarry first; claws strike 2 runners and inflict 1 Bleed stack. Each kill grants Frenzy: +10% attack speed for the battle (max 5). Every 10th attack channels 1.2s: Wild Hunt Howl — every runner flees for 1s and 3 spectral wolves hunt for 6s, each biting a bleeding runner for 50% ATK every 0.6s.","synergy":"Kill the Alpha Quarry, Elites, armored runners, Bosses and executions for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"beastRelic","evolvedFrom":"mercenary"}, {"id":"gallowsHeadsman","name":"Black Gallows Headsman","genre":"Grimdark","rarity":"Mythic","baseAtk":160,"attackInterval":1.4,"max":0,"icon":"⚔","fav":"neighbor","tags":["hunter"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Hollow Skull. Awakened by the Eclipse Rite. Each swing hits the target and the 2 runners behind it, inflicting 1 Bleed stack and executing ordinary runners below 30% HP (Bosses immune); each execution grants +2% damage for the battle. Every 10th attack channels 1.2s: Mass Hanging — every ordinary runner below 40% HP is executed, the rest take 200% ATK, and Bosses lose 12% current HP.","synergy":"Kill the Alpha Quarry, Elites, armored runners, Bosses and executions for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"fiendRelic","evolvedFrom":"mercenary"});
+CARDS.push({"id":"mercenary","name":"Sellsword","genre":"Grimdark","rarity":"Normal","baseAtk":12,"attackInterval":1.5,"max":0,"icon":"⚔","fav":"neighbor","tags":["hunter"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"The core hunter. Attacks the leading runner and inflicts 1 Bleed stack. Gains 3 Trophy Points per Alpha Quarry, Elite or Boss kill and 10 per carving. Evolves at 25 / 60 / 100 points. 1 Bleed stack = 1% of max HP over 1s; more stacks extend the bleed (Bosses take half).","synergy":"Kill the Alpha Quarry, Elites (30% Wyrm), armored runners, Bosses and executions (every Executioner kill) for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"mercenary"}, {"id":"witchHunter","name":"Witch Hunter","genre":"Grimdark","rarity":"Rare","baseAtk":24,"attackInterval":1.4,"max":0,"icon":"⚔","fav":"neighbor","tags":["hunter"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Deals double damage to armored runners, so it farms Witch Eyes. While any hunter is deployed, the healthiest ordinary runner becomes the Alpha Quarry once 3 runners have spawned.","synergy":"Kill the Alpha Quarry, Elites (30% Wyrm), armored runners, Bosses and executions (every Executioner kill) for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"witchHunter"}, {"id":"trophyStake","name":"Trophy Stake","genre":"Grimdark","rarity":"Normal","baseAtk":0,"attackInterval":0,"max":0,"icon":"⚔","fav":"neighbor","tags":["support"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Support · does not attack. Projects the newest trophy in the Rack to every hunter: Beast +15% attack speed, Fiend 20% armor penetration, Witch +15% crit chance, Wyrm +10% damage, Hollow +25% damage to runners below 30% HP. Adjacent hunters get double.","synergy":"Kill the Alpha Quarry, Elites (30% Wyrm), armored runners, Bosses and executions (every Executioner kill) for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"trophyStake"}, {"id":"taxidermist","name":"Taxidermist","genre":"Grimdark","rarity":"Rare","baseAtk":0,"attackInterval":0,"max":0,"icon":"⚔","fav":"neighbor","tags":["support"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Support · does not attack. Every 6s carves the newest uncarved trophy in the Rack, wherever it is; carving does not consume it. Beast: hunters +15% attack speed next battle. Fiend: −10% enemy armor (max 30%). Witch: execute threshold 35%. Wyrm: +5 permanent ATK to the highest-ATK hunter. Hollow: +3 permanent ATK to the lowest-ATK ally. Adjacent hunters gain +3 permanent ATK per carving; every hunter gains 10 Trophy Points.","synergy":"Kill the Alpha Quarry, Elites (30% Wyrm), armored runners, Bosses and executions (every Executioner kill) for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"taxidermist"});
+FORMS.push({"id":"oathboundHunter","name":"Oathbound Hunter","genre":"Grimdark","rarity":"Rare","baseAtk":24,"attackInterval":1.4,"max":0,"icon":"⚔","fav":"neighbor","tags":["hunter"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Earned at 25 Trophy Points. Attacks inflict 1 Bleed stack; hits on the Alpha Quarry deal double damage. Gains 3 Trophy Points per Alpha Quarry, Elite or Boss kill and 10 per carving. Evolves at 25 / 60 / 100 points.","synergy":"Kill the Alpha Quarry, Elites (30% Wyrm), armored runners, Bosses and executions (every Executioner kill) for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"oathboundHunter","evolvedFrom":"mercenary"}, {"id":"blackIronSlayer","name":"Black-Iron Slayer","genre":"Grimdark","rarity":"Epic","baseAtk":48,"attackInterval":1.3,"max":0,"icon":"⚔","fav":"neighbor","tags":["hunter"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Earned at 60 Trophy Points. Cleaves 1 extra runner; every hit inflicts 1 Bleed stack. Gains 3 Trophy Points per Alpha Quarry, Elite or Boss kill and 10 per carving. Evolves at 25 / 60 / 100 points.","synergy":"Kill the Alpha Quarry, Elites (30% Wyrm), armored runners, Bosses and executions (every Executioner kill) for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"blackIronSlayer","evolvedFrom":"mercenary"}, {"id":"brandedBerserker","name":"Branded Berserker","genre":"Grimdark","rarity":"Legendary","baseAtk":88,"attackInterval":1.2,"max":0,"icon":"⚔","fav":"neighbor","tags":["hunter"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Earned at 100 Trophy Points. Cleaves 1 extra runner; every hit inflicts 1 Bleed stack and deals +2% damage per trophy in the Rack. At a Campfire with 3 trophies of one type (Wyrm: 2) it performs the Eclipse Rite: the trophies and one random card are sacrificed and it becomes that trophy's Mythic.","synergy":"Kill the Alpha Quarry, Elites (30% Wyrm), armored runners, Bosses and executions (every Executioner kill) for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"brandedBerserker","evolvedFrom":"mercenary"}, {"id":"dragonSlayer","name":"Dragon Slayer Berserker","genre":"Grimdark","rarity":"Mythic","baseAtk":160,"attackInterval":1.4,"max":0,"icon":"⚔","fav":"neighbor","tags":["hunter"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Wyrm Heart. Awakened by the Eclipse Rite. Each swing hits every runner on the target's wall, ignoring armor, stripping shields and inflicting 1 Bleed stack. Every 10th attack channels 1.2s: Dragonfall Cleave — the densest wall takes 300% ATK and every Boss or Champion loses 15% current HP.","synergy":"Kill the Alpha Quarry, Elites (30% Wyrm), armored runners, Bosses and executions (every Executioner kill) for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"dragonSlayer","evolvedFrom":"mercenary"}, {"id":"witcherGrandmaster","name":"Grandmaster Witcher","genre":"Grimdark","rarity":"Mythic","baseAtk":150,"attackInterval":1.1,"max":0,"icon":"⚔","fav":"neighbor","tags":["hunter"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Witch Eye. Awakened by the Eclipse Rite. Silver strikes deal 2.5× to Elites, Champions and Bosses and inflict 1 Bleed stack. Every 4th attack casts a Sign on the target's wall: 50% armor strip, 100% ATK and a 3-tile knockback (Bosses 1). Every 10th attack channels 1.2s: Sign Mastery — every runner is knocked back 3 tiles, loses 50% armor and burns for 30% ATK per second over 4s.","synergy":"Kill the Alpha Quarry, Elites (30% Wyrm), armored runners, Bosses and executions (every Executioner kill) for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"witcherGrandmaster","evolvedFrom":"mercenary"}, {"id":"bloodDrunkHunter","name":"Blood-Drunk Abyssal Hunter","genre":"Grimdark","rarity":"Mythic","baseAtk":145,"attackInterval":1,"max":0,"icon":"⚔","fav":"neighbor","tags":["hunter"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Fiend Horn. Awakened by the Eclipse Rite. Twin blades strike the target and the next runner, applying Hemorrhage (50% ATK per second for 4s). A hemorrhaging ordinary runner below the execute threshold is decapitated, and its wall takes 100% ATK true damage. Every 10th attack channels 1.2s: Blood Moon Feast — every hemorrhaging ordinary runner below 35% HP is executed; Bosses lose 10% current HP.","synergy":"Kill the Alpha Quarry, Elites (30% Wyrm), armored runners, Bosses and executions (every Executioner kill) for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"bloodDrunkHunter","evolvedFrom":"mercenary"}, {"id":"lycanLord","name":"Moonbound Lycan Lord","genre":"Grimdark","rarity":"Mythic","baseAtk":150,"attackInterval":1,"max":0,"icon":"⚔","fav":"neighbor","tags":["hunter"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Beast Head. Awakened by the Eclipse Rite. Hunts the Alpha Quarry first; claws strike 2 runners and inflict 1 Bleed stack. Each kill grants Frenzy: +10% attack speed for the battle (max 5). Every 10th attack channels 1.2s: Wild Hunt Howl — every runner flees for 1s and 3 spectral wolves hunt for 6s, each biting a bleeding runner for 50% ATK every 0.6s.","synergy":"Kill the Alpha Quarry, Elites (30% Wyrm), armored runners, Bosses and executions (every Executioner kill) for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"beastRelic","evolvedFrom":"mercenary"}, {"id":"gallowsHeadsman","name":"Black Gallows Headsman","genre":"Grimdark","rarity":"Mythic","baseAtk":160,"attackInterval":1.4,"max":0,"icon":"⚔","fav":"neighbor","tags":["hunter"],"ecosystem":"Eclipse Hunt · trophies and the Eclipse Rite","rules":"Hollow Skull. Awakened by the Eclipse Rite. Each swing hits the target and the 2 runners behind it, inflicting 1 Bleed stack and executing ordinary runners below 30% HP (Bosses immune); each execution grants +2% damage for the battle. Every 10th attack channels 1.2s: Mass Hanging — every ordinary runner below 40% HP is executed, the rest take 200% ATK, and Bosses lose 12% current HP.","synergy":"Kill the Alpha Quarry, Elites (30% Wyrm), armored runners, Bosses and executions (every Executioner kill) for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.","huntAsset":"fiendRelic","evolvedFrom":"mercenary"});
 // Eclipse Hunt trophies live in the run's Trophy Rack, not on the grid.
-Object.assign(CARDS.find(c=>c.id==='executioner'),{baseAtk:48,attackInterval:1.5,ecosystem:'Eclipse Hunt · trophies and the Eclipse Rite',rules:'Prioritizes the Alpha Quarry, Elites, Champions and Bosses. Deals 3× damage to targets below 30% HP; kills on those count as executions (Hollow Skull).',synergy:'Kill the Alpha Quarry, Elites, armored runners, Bosses and executions for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.',huntAsset:'executioner',tags:['hunter']});
-Object.assign(CARDS.find(c=>c.id==='leech'),{name:'Grave Leech',baseAtk:12,attackInterval:1.4,ecosystem:'Eclipse Hunt · trophies and the Eclipse Rite',rules:'Deals 2.5× damage to bleeding runners.',synergy:'Kill the Alpha Quarry, Elites, armored runners, Bosses and executions for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.',huntAsset:'leech'});
-Object.assign(CARDS.find(c=>c.id==='totem'),{name:'Blood Totem',ecosystem:'Eclipse Hunt · trophies and the Eclipse Rite',rules:'Support · does not attack. Adjacent allies\' attacks gain 25% armor penetration and inflict 1 Bleed stack (1% of max HP over 1s; more stacks extend the bleed).',synergy:'Kill the Alpha Quarry, Elites, armored runners, Bosses and executions for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.',huntAsset:'totem'});
+Object.assign(CARDS.find(c=>c.id==='executioner'),{baseAtk:48,attackInterval:1.5,ecosystem:'Eclipse Hunt · trophies and the Eclipse Rite',rules:'Prioritizes the Alpha Quarry, Elites, Champions and Bosses. Deals 3× damage to targets below 30% HP; kills on those count as executions (Hollow Skull).',synergy:'Kill the Alpha Quarry, Elites (30% Wyrm), armored runners, Bosses and executions (every Executioner kill) for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.',huntAsset:'executioner',tags:['hunter']});
+Object.assign(CARDS.find(c=>c.id==='leech'),{name:'Grave Leech',baseAtk:12,attackInterval:1.4,ecosystem:'Eclipse Hunt · trophies and the Eclipse Rite',rules:'Deals 2.5× damage to bleeding runners.',synergy:'Kill the Alpha Quarry, Elites (30% Wyrm), armored runners, Bosses and executions (every Executioner kill) for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.',huntAsset:'leech'});
+Object.assign(CARDS.find(c=>c.id==='totem'),{name:'Blood Totem',ecosystem:'Eclipse Hunt · trophies and the Eclipse Rite',rules:'Support · does not attack. Adjacent allies\' attacks gain 25% armor penetration and inflict 1 Bleed stack (1% of max HP over 1s; more stacks extend the bleed).',synergy:'Kill the Alpha Quarry, Elites (30% Wyrm), armored runners, Bosses and executions (every Executioner kill) for Beast, Fiend, Witch, Wyrm and Hollow trophies (Trophy Rack, max 8, kept between battles). A Branded Berserker with 100 Trophy Points and 3 trophies of one type (Wyrm: 2) performs the Eclipse Rite at a Campfire, sacrificing one random card.',huntAsset:'totem'});
 
 // Arcane Loom: primary mages and earned synthesis forms.
 CARDS.push({
@@ -2923,8 +2923,8 @@ CARDS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "The core. Two permanent sockets: one Arm, one OS. Every 4 attacks earns 1 Chrome across battles. Evolves at 25 and 65 Chrome. Base cooling 4°C/s; attacks add 8°C (14°C with Berserk). Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
-  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "rules": "The core. Two permanent sockets: one Arm, one OS. Every 4 attacks earns 1 Chrome across battles. Evolves at 25 and 65 Chrome. Base cooling 4°C/s; attacks add 10°C (14°C with Berserk). Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed (attacks add half heat while in Redline), 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 8s in total on an Elite/Boss node.",
   "cyberAsset": "cyberSolo"
 },
 {
@@ -2942,7 +2942,7 @@ CARDS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Installs at battle start into any Operative with an empty socket of this type, preferring an adjacent one (+10% tuning). Locked for the run. Leading hit plus two 50% cleaves. All hits bleed for 20% ATK per second over 4s.",
-  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 8s in total on an Elite/Boss node.",
   "cyberAsset": "mantisImplant",
   "cyberModule": "arm"
 },
@@ -2961,7 +2961,7 @@ CARDS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Installs at battle start into any Operative with an empty socket of this type, preferring an adjacent one (+10% tuning). Locked for the run. Targets the highest current HP runner. Strips 40% armor; every fourth attack stuns 1s.",
-  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 8s in total on an Elite/Boss node.",
   "cyberAsset": "gorillaImplant",
   "cyberModule": "arm"
 },
@@ -2980,7 +2980,7 @@ CARDS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Installs at battle start into any Operative with an empty socket of this type, preferring an adjacent one (+10% tuning). Locked for the run. Hits up to five runners on the leading target’s 4-tile wall; destroys shields and ignores 50% defense.",
-  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 8s in total on an Elite/Boss node.",
   "cyberAsset": "monowireImplant",
   "cyberModule": "arm"
 },
@@ -2999,7 +2999,7 @@ CARDS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Installs at battle start into any Operative with an empty socket of this type, preferring an adjacent one (+10% tuning). Locked for the run. Every 8 attacks opens a 3.5s window: 2.5× owner speed and a 50% track-wide slow (Bosses half). Cannot retrigger during an active window.",
-  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 8s in total on an Elite/Boss node.",
   "cyberAsset": "sandyOS",
   "cyberModule": "os"
 },
@@ -3018,7 +3018,7 @@ CARDS.push({
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
   "rules": "Installs at battle start into any Operative with an empty socket of this type, preferring an adjacent one (+10% tuning). Locked for the run. Attacks add 14°C instead of 8°C. At Redline, attacks ignore armor and burn the target wall for 20% ATK per second over 2s.",
-  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 8s in total on an Elite/Boss node.",
   "cyberAsset": "berserkOS",
   "cyberModule": "os"
 },
@@ -3036,8 +3036,8 @@ CARDS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Every attack by any Cyberpunk unit banks 1 RAM (max 8). Every 2s spends 3 RAM on Short Circuit: the leading runner takes 100% ATK true damage and is stunned 0.5s. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
-  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "rules": "Every attack by any Cyberpunk unit banks 1 RAM (max 8). Every 2s spends 3 RAM on Short Circuit: the leading runner takes 100% ATK true damage and is stunned 0.5s. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed (attacks add half heat while in Redline), 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 8s in total on an Elite/Boss node.",
   "cyberAsset": "cyberdeckOS"
 },
 {
@@ -3054,8 +3054,8 @@ CARDS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Support · does not attack. Every 6s removes 40°C from the hottest Cyberpunk unit anywhere on the grid and freezes its facing 4-tile wall for 2s. Interior pumps face north; edge/corner pumps face the nearest outer wall. Boss resistance applies.",
-  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "rules": "Support · does not attack. Every 6s purges 25°C from any Cyberpunk unit at 90°C or more (the hottest first), wherever it is, and freezes its facing 4-tile wall for 2s. Interior pumps face north; edge/corner pumps face the nearest outer wall. Boss resistance applies.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 8s in total on an Elite/Boss node.",
   "cyberAsset": "cryoPump"
 },
 {
@@ -3072,8 +3072,8 @@ CARDS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Support · does not attack. Every second evens out heat across all Cyberpunk units. Augmented Operatives gain +10% critical chance (+15% if adjacent).",
-  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "rules": "Support · does not attack. Heat sink: every second, any Cyberpunk unit at 95°C or more dumps 20°C into the coldest Cyberpunk ally. Augmented Operatives gain +10% critical chance (+15% if adjacent).",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 8s in total on an Elite/Boss node.",
   "cyberAsset": "biomonitor"
 },
 );
@@ -3091,8 +3091,8 @@ FORMS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Earned at 25 Chrome. Keeps installed modules and tuning. Every 4 attacks earns 1 Chrome. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
-  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "rules": "Earned at 25 Chrome. Keeps installed modules and tuning. Every 4 attacks earns 1 Chrome. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed (attacks add half heat while in Redline), 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 8s in total on an Elite/Boss node.",
   "cyberAsset": "chromedSolo",
   "evolvedFrom": "cyberSolo"
 },
@@ -3110,8 +3110,8 @@ FORMS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Earned at 65 Chrome. Redline Proof: at 120 Chrome with both sockets filled, on an Elite or Boss node, spend 12s in total at 80–99°C. Overheating resets the count. Awakens its Arm × OS Mythic when the battle is won; a failed proof costs nothing. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
-  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "rules": "Earned at 65 Chrome. Redline Proof: at 120 Chrome with both sockets filled, on an Elite or Boss node, spend 8s in total at 80–99°C. Overheating costs 4s of that progress. Awakens its Arm × OS Mythic when the battle is won; a failed proof costs nothing. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed (attacks add half heat while in Redline), 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 8s in total on an Elite/Boss node.",
   "cyberAsset": "eliteSolo",
   "evolvedFrom": "cyberSolo"
 },
@@ -3129,8 +3129,8 @@ FORMS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Mantis × Sandevistan. Permanent 25% track-wide slow (Bosses half). Leading hit plus two 50% cleaves that bleed for 20% ATK per second; slashes execute ordinary runners below 30% HP. Every 10th attack channels 1.2s: Time Stop — freezes every runner 2s, then slashes each for 150% ATK. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
-  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "rules": "Mantis × Sandevistan. Permanent 25% track-wide slow (Bosses half). Leading hit plus two 50% cleaves that bleed for 20% ATK per second; slashes execute ordinary runners below 30% HP. Every 10th attack channels 1.2s: Time Stop — freezes every runner 2s, then slashes each for 150% ATK. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed (attacks add half heat while in Redline), 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 8s in total on an Elite/Boss node.",
   "cyberAsset": "chronoPhantom",
   "evolvedFrom": "cyberSolo",
   "cyberArm": "mantisImplant",
@@ -3150,8 +3150,8 @@ FORMS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Mantis × Berserk. Cleaves the 4 leading runners with armor-ignoring fire and leaves a 4-tile slag trail for 4s (30% ATK true per second). Every 10th attack channels 1.2s: Meltdown — slag on all 4 walls for 5s (35% ATK true per second). Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
-  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "rules": "Mantis × Berserk. Cleaves the 4 leading runners with armor-ignoring fire and leaves a 4-tile slag trail for 4s (30% ATK true per second). Every 10th attack channels 1.2s: Meltdown — slag on all 4 walls for 5s (35% ATK true per second). Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed (attacks add half heat while in Redline), 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 8s in total on an Elite/Boss node.",
   "cyberAsset": "thermalRipper",
   "evolvedFrom": "cyberSolo",
   "cyberArm": "mantisImplant",
@@ -3171,8 +3171,8 @@ FORMS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Strikes the leading runner. At Redline its katana cleaves 1 extra runner. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
-  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "rules": "Strikes the leading runner. At Redline its katana cleaves 1 extra runner. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed (attacks add half heat while in Redline), 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 8s in total on an Elite/Boss node.",
   "cyberAsset": "glitchAssassin"
 },
 {
@@ -3189,8 +3189,8 @@ FORMS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Gorilla × Sandevistan. Punches the highest-HP runner, pulling it back 1 tile; a gravity well hits runners within 2 tiles for 50% ATK and drags them back 1 tile. Strips 40% armor; every 4th punch stuns 1s. Every 10th attack channels 1.2s: Event Horizon — pulls every runner back 2 tiles (Bosses 1), freezes them 2s and deals 200% ATK. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
-  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "rules": "Gorilla × Sandevistan. Punches the highest-HP runner, pulling it back 1 tile; a gravity well hits runners within 2 tiles for 50% ATK and drags them back 1 tile. Strips 40% armor; every 4th punch stuns 1s. Every 10th attack channels 1.2s: Event Horizon — pulls every runner back 2 tiles (Bosses 1), freezes them 2s and deals 200% ATK. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed (attacks add half heat while in Redline), 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 8s in total on an Elite/Boss node.",
   "cyberAsset": "gravitonColossus",
   "evolvedFrom": "cyberSolo",
   "cyberArm": "gorillaImplant",
@@ -3210,8 +3210,8 @@ FORMS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Gorilla × Berserk. Punches the highest-HP runner, removing all its armor, and the shockwave hits every runner on that wall for 100% ATK; every 4th punch stuns 1s. Every 10th attack channels 1.2s: Orbital Punch — 300% ATK armor-ignoring blow on the highest-HP runner and 150% to the rest of its wall, and every Boss or Champion loses 15% current HP. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
-  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "rules": "Gorilla × Berserk. Punches the highest-HP runner, removing all its armor, and the shockwave hits every runner on that wall for 100% ATK; every 4th punch stuns 1s. Every 10th attack channels 1.2s: Orbital Punch — 300% ATK armor-ignoring blow on the highest-HP runner and 150% to the rest of its wall, and every Boss or Champion loses 15% current HP. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed (attacks add half heat while in Redline), 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 8s in total on an Elite/Boss node.",
   "cyberAsset": "juggernautSmasher",
   "evolvedFrom": "cyberSolo",
   "cyberArm": "gorillaImplant",
@@ -3231,8 +3231,8 @@ FORMS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Strikes the leading runner; its damage also grows +1% per °C of the hottest Cyberpunk ally. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
-  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "rules": "Strikes the leading runner; its damage also grows +1% per °C of the hottest Cyberpunk ally. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed (attacks add half heat while in Redline), 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 8s in total on an Elite/Boss node.",
   "cyberAsset": "empBreaker"
 },
 {
@@ -3249,8 +3249,8 @@ FORMS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Monowire × Sandevistan. Whips up to 5 runners on the target's wall with guaranteed critical hits, destroying shields. Every 10th attack channels 1.2s: Thousand Cuts — a guaranteed-crit whip on every runner for 130% ATK. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
-  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "rules": "Monowire × Sandevistan. Whips up to 5 runners on the target's wall with guaranteed critical hits, destroying shields. Every 10th attack channels 1.2s: Thousand Cuts — a guaranteed-crit whip on every runner for 130% ATK. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed (attacks add half heat while in Redline), 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 8s in total on an Elite/Boss node.",
   "cyberAsset": "razorPhantom",
   "evolvedFrom": "cyberSolo",
   "cyberArm": "monowireImplant",
@@ -3270,8 +3270,8 @@ FORMS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Monowire × Berserk. Whips up to 5 runners on the target wall and leaves a 4-tile plasma zone for 4s (25% ATK true per second, stripping 10% armor per second). Every 10th attack channels 1.2s: Plasma Storm — plasma zones on all 4 walls for 4s. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
-  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "rules": "Monowire × Berserk. Whips up to 5 runners on the target wall and leaves a 4-tile plasma zone for 4s (25% ATK true per second, stripping 10% armor per second). Every 10th attack channels 1.2s: Plasma Storm — plasma zones on all 4 walls for 4s. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed (attacks add half heat while in Redline), 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 8s in total on an Elite/Boss node.",
   "cyberAsset": "plasmaTempest",
   "evolvedFrom": "cyberSolo",
   "cyberArm": "monowireImplant",
@@ -3291,13 +3291,13 @@ FORMS.push({
     "chrome"
   ],
   "ecosystem": "Ripperdoc Matrix · arms × operating systems",
-  "rules": "Every 5s vents 30°C from the hottest Cyberpunk ally and fires a shot at the leading runner for 200% ATK, keeping a teammate on the edge of Redline. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed, 100°C shuts down for 3s.",
-  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 12s in total on an Elite/Boss node.",
+  "rules": "Every 5s vents 20°C from a Cyberpunk ally at 90°C or more and fires a shot at the leading runner for 300% ATK, keeping a teammate on the edge of Redline. Uses the Heat bands: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed (attacks add half heat while in Redline), 100°C shuts down for 3s.",
+  "synergy": "Implants and OS chips install into any Operative with a free socket (an adjacent install adds +10% tuning). Run hot: Warm 50–79°C +15% damage, Redline 80–99°C +35% damage and +15% attack speed; 100°C shuts down for 3s. An Elite Operative with 120 Chrome and both sockets awakens its Mythic by holding Redline for 8s in total on an Elite/Boss node.",
   "cyberAsset": "networkReaper"
 });
 Object.assign(CARDS.find(c=>c.id==='vent'),{cyberAsset:'vent',rules:'Support · does not attack. Every Cyberpunk unit cools 3°C/s faster; adjacent ones 15°C/s more. Halves Overheat and Burnout downtime team-wide. Every 8s freezes the two leading runners for 1s, or 2s if burning.'});
 // Forbidden Texts: earned forms and relics never enter the draft pool.
-const COSMIC_SYN='Cosmic hits add Madness; any ally slow, reverse or warp adds 2. At 10 Madness a runner goes Insane for 3s: it walks backward and everything within 1 tile loses 2% of its own max HP per second (Bosses instead take +20% damage for 3s). Pages (pool of 6, kept between battles) carry a random script; the Archivist deciphers them into the Idol. A 154-Syllable Herald on an Elite/Boss node performs the Summoning: drive 13 runners Insane (a Boss counts 3) and its Old One manifests at battle end.';
+const COSMIC_SYN='Cosmic hits add Madness; any ally slow, reverse or warp adds 2. At 10 Madness a runner goes Insane for 3s: it walks backward and everything within 1 tile loses 2% of its own max HP per second (Bosses instead take +20% damage for 3s). Pages (pool of 6, kept between battles) carry a random script; the Archivist deciphers them into the Idol. A 154-Syllable Herald on an Elite/Boss node performs the Summoning: drive 16 runners Insane (a Boss counts 3) and its Old One manifests at battle end.';
 const cosmicCard=(id,name,rarity,baseAtk,attackInterval,rules,extra={})=>({id,name,genre:'Lovecraft',rarity,baseAtk,attackInterval,max:0,icon:'◈',sprite:32,fav:'neighbor',tags:['forbidden'],ecosystem:'Forbidden Texts · Madness and the Summoning',rules,synergy:COSMIC_SYN,...extra});
 CARDS.push(
  cosmicCard('slumberingIdol','Slumbering Idol','Normal',12,1.5,'The core. Absorbs every Syllable the team chants or deciphers. At 25 Syllables its first deciphered script picks a Rare Idol; at 65 its first two scripts pick a Herald. At 154 on an Elite or Boss node it begins the Summoning.'),
@@ -3338,12 +3338,12 @@ CARDS.push(
 );
 
 const XENO_BRANCH_DATA = [
-  ['chitin+chitin', 'impalerMorph', 'Sub-Orbital Impaler', 32, 1.2, 'keratinSerum', 'Hyper-Keratin Vial', 'impalerApex', 'Apex Impaler Behemoth', 245, 1.5, 'Pierces 3 runners in a line; critical hits ricochet bone shards to 2 nearby runners.', 'Relativistic Bone-Railgun: Sweeps an entire 4-tile perimeter track wall, ignoring 100% of armor. Against Weakpoint-marked runners, guaranteed critical hits deal 260%+ damage, knock targets backward 2 tiles, and ricochet splinter volleys to 3 additional runners. Grants +50% bonus permanent ATK transfer to any deployed Vector Railgun.'],
-  ['acid+acid', 'acidBrood', 'Royal Acid-Brood', 50, 1.0, 'royalSerum', 'Xenomorph Royal Jelly', 'xenoQueen', 'Sovereign Xenomorph Queen', 170, 1, 'Critical hits strip 60% armor and leave 3-tile acid puddles dealing 40% ATK true per second.', 'Molecular Dissolution: Critical strikes permanently dissolve 100% of runner armor and coat a 4-tile track edge in pressurized Molecular Acid (65 true DPS for 5s). Every 4th critical hit against an Elite, Harbinger, or Boss dissolves 14% of its current HP directly.'],
-  ['psionic+psionic', 'synapseNexus', 'Synaptic Nexus', 46, 0.8, 'cortexSerum', 'Overmind Cortex Vial', 'hiveOvermind', 'Cerebral Hive-Overmind', 140, 0.9, 'Grants all allies +20% crit chance; fires a bonus psychic ray whenever an adjacent ally crits.', 'Hive-Mind Telemetry Synchronization: Grants +30% Critical Strike Chance and +30% Critical Hit Damage across the entire 3×3 grid. Synchronized Fire: Whenever any allied card lands a Critical Hit, immediately fires a coordinated psionic lance at that target for 75% ATK true damage.'],
-  ['chitin+acid', 'ravagerMorph', 'Caustic Ravager', 54, 1.05, 'ordnanceSerum', 'Bio-Ordnance Vial', 'causticRavager', 'Caustic Ravager Titan', 190, 1.1, 'Launches barbed acid pods that explode on critical hit for 75% splash damage within 2 tiles.', 'Living Bio-Artillery: Launches clusters of Barbed Acid-Pods into the densest runner group. On Critical Hit, detonates in a 5-tile radius, dealing 220% Crit Damage, shredding 50% defense, and inflicting stacking acid bleed (40 DPS).'],
-  ['chitin+psionic', 'stalkerMorph', 'Phase-Chitin Hunter', 52, 0.75, 'phaseSerum', 'Phase-Chitin Vial', 'phaseStalker', 'Quantum Phase-Stalker', 180, 0.8, 'Prioritizes Elites/Harbingers; crits deal double damage to targets below 35% HP.', 'Predatory Phase-Execution: Prioritizes Elites/Harbingers/Bosses; attacks always critically strike Weakpoint-marked targets. Instantly executes non-boss runners below 35% HP. Against Bosses and Harbingers, every 5th critical slash phases inside their hull to deal 450 true damage and stun for 1.2s.'],
-  ['acid+psionic', 'siphonMorph', 'Bio-Plasma Leech', 48, 0.85, 'metroidSerum', 'Metroid Siphon Vial', 'metroidLeviathan', 'Parasitic Metroid Leviathan', 160, 0.9, 'Drains bio-energy from runners, granting +2 ticks to Singularity Core and allied ability gauges every 4th hit.', 'Bio-Electric Life Drain: Latches bio-electric tendrils onto the 2 highest-HP runners, slowing them by 45% and draining 8% of Max HP every 3 seconds as true damage. Reactor Siphon: Every 3rd attack charges Singularity Core and all allied ability gauges by +2 ticks and grants +2 permanent ATK.']
+  ['chitin+chitin', 'impalerMorph', 'Sub-Orbital Impaler', 29, 1.2, 'keratinSerum', 'Hyper-Keratin Vial', 'impalerApex', 'Apex Impaler Behemoth', 245, 1.5, 'Pierces 3 runners in a line; critical hits ricochet bone shards to 2 nearby runners.', 'Relativistic Bone-Railgun: Sweeps an entire 4-tile perimeter track wall, ignoring 100% of armor. Against Weakpoint-marked runners, guaranteed critical hits deal 260%+ damage, knock targets backward 2 tiles, and ricochet splinter volleys to 3 additional runners. Grants +50% bonus permanent ATK transfer to any deployed Vector Railgun.'],
+  ['acid+acid', 'acidBrood', 'Royal Acid-Brood', 45, 1.0, 'royalSerum', 'Xenomorph Royal Jelly', 'xenoQueen', 'Sovereign Xenomorph Queen', 170, 1, 'Critical hits strip 60% armor and leave 3-tile acid puddles dealing 40% ATK true per second.', 'Molecular Dissolution: Critical strikes permanently dissolve 100% of runner armor and coat a 4-tile track edge in pressurized Molecular Acid (65 true DPS for 5s). Every 4th critical hit against an Elite, Harbinger, or Boss dissolves 14% of its current HP directly.'],
+  ['psionic+psionic', 'synapseNexus', 'Synaptic Nexus', 41, 0.8, 'cortexSerum', 'Overmind Cortex Vial', 'hiveOvermind', 'Cerebral Hive-Overmind', 140, 0.9, 'Grants all allies +20% crit chance; fires a bonus psychic ray whenever an adjacent ally crits.', 'Hive-Mind Telemetry Synchronization: Grants +30% Critical Strike Chance and +30% Critical Hit Damage across the entire 3×3 grid. Synchronized Fire: Whenever any allied card lands a Critical Hit, immediately fires a coordinated psionic lance at that target for 75% ATK true damage.'],
+  ['chitin+acid', 'ravagerMorph', 'Caustic Ravager', 49, 1.05, 'ordnanceSerum', 'Bio-Ordnance Vial', 'causticRavager', 'Caustic Ravager Titan', 190, 1.1, 'Launches barbed acid pods that explode on critical hit for 75% splash damage within 2 tiles.', 'Living Bio-Artillery: Launches clusters of Barbed Acid-Pods into the densest runner group. On Critical Hit, detonates in a 5-tile radius, dealing 220% Crit Damage, shredding 50% defense, and inflicting stacking acid bleed (40 DPS).'],
+  ['chitin+psionic', 'stalkerMorph', 'Phase-Chitin Hunter', 47, 0.75, 'phaseSerum', 'Phase-Chitin Vial', 'phaseStalker', 'Quantum Phase-Stalker', 180, 0.8, 'Prioritizes Elites/Harbingers; crits deal double damage to targets below 35% HP.', 'Predatory Phase-Execution: Prioritizes Elites/Harbingers/Bosses; attacks always critically strike Weakpoint-marked targets. Instantly executes non-boss runners below 35% HP. Against Bosses and Harbingers, every 5th critical slash phases inside their hull to deal 450 true damage and stun for 1.2s.'],
+  ['acid+psionic', 'siphonMorph', 'Bio-Plasma Leech', 43, 0.85, 'metroidSerum', 'Metroid Siphon Vial', 'metroidLeviathan', 'Parasitic Metroid Leviathan', 160, 0.9, 'Drains bio-energy from runners, granting +2 ticks to Singularity Core and allied ability gauges every 4th hit.', 'Bio-Electric Life Drain: Latches bio-electric tendrils onto the 2 highest-HP runners, slowing them by 45% and draining 8% of Max HP every 3 seconds as true damage. Reactor Siphon: Every 3rd attack charges Singularity Core and all allied ability gauges by +2 ticks and grants +2 permanent ATK.']
 ];
 
 for (const [strain, id, name, atk, interval] of [
@@ -3385,7 +3385,7 @@ for (const [id, fields] of Object.entries({
   geneSplicer: { baseAtk: 0, attackInterval: 0, rules: 'Support · does not attack. The Specimen eats twice as fast: 8 Biomass every 5s for +6 Genome. Adjacent to the Specimen: +2 permanent ATK per meal instead of +1.' },
   sensor: { rules: 'Support. All other allies gain +10% critical chance (+15% if adjacent). Sci-Fi critical damage from all sources is capped at 250%.' },
   nanite: { baseAtk: 20, attackInterval: 1.1, rules: 'Critical hits shred runner defense by 25% for 3s (feeds Acid). Every 6 critical hits across battles grant +1 permanent ATK.' },
-  railgun: { baseAtk: 54, attackInterval: 1.6, rules: 'Pierces 3 runners in a line (5 with Telemetry Sensor and knocks back 1 tile), ignoring armor. Gains bonus attack damage equal to 100% of the single highest permanent ATK bonus among other allies.' },
+  railgun: { baseAtk: 49, attackInterval: 1.6, rules: 'Pierces 3 runners in a line (5 with Telemetry Sensor and knocks back 1 tile), ignoring armor. Gains bonus attack damage equal to 100% of the single highest permanent ATK bonus among other allies.' },
   impalerApex: { baseAtk: 150, attackInterval: 1.3, rules: 'Chitin + Chitin. Pierces the 4 leading runners, ignoring armor. Critical hits ricochet to 2 more runners for 50% of the hit. Every 10th attack channels 1.2s: Relativistic Volley — every runner takes 300% ATK ignoring armor and gains 2 Weakpoints.' },
   xenoQueen: { baseAtk: 130, attackInterval: 1.0, rules: 'Acid + Acid. Critical hits strip 50% armor and leave a 3-tile acid pool (50% ATK true per second for 3s). Every 10th attack channels 1.2s: Hive Swarm — acid on all 4 walls for 5s (40% ATK per second) and 14% current HP off every Elite, Champion and Boss.' },
   hiveOvermind: { baseAtk: 130, attackInterval: 1.0, rules: 'Psionic + Psionic. Attacks lance the 3 leading runners. All allies gain +20% critical chance. When an ally crits, fires a psychic ray for 70% ATK (at most once per 0.5s). Every 10th attack channels 1.2s: Synaptic Storm — every ally\'s next 3 attacks crit, and a psionic lance hits every runner for 120% ATK.' },
@@ -3394,6 +3394,8 @@ for (const [id, fields] of Object.entries({
   metroidLeviathan: { baseAtk: 145, attackInterval: 1.2, rules: 'Acid + Psionic. Attacks latch onto a second runner for 50% ATK. Every 4th hit, all allies move 1 attack closer to their 10th attack. Every 10th attack channels 1.2s: Singularity Feast — drains 10% max HP from every ordinary runner and 4% from Elites, Champions and Bosses, and moves all allies 2 attacks closer to their 10th attack.' }
 })) Object.assign([...CARDS, ...FORMS].find(c => c.id === id), fields);
 
+// Rare attackers added after the 2026-11 play-test: PostApoc and Bloodline lacked early damage.
+CARDS.push({"id":"salvageGunner","name":"Salvage Gunner","genre":"PostApoc","rarity":"Rare","baseAtk":26,"attackInterval":1.3,"max":0,"icon":"⚙","fav":"neighbor","tags":["scrap"],"ecosystem":"Scrapwork Colossus · scrap and forging","rules":"A scavenger with a scrap shotgun: hits the 2 leading runners. Each kill has a 30% chance to salvage a Rust Sword or Rust Gun onto the grid.","synergy":"Junk Smelter and Scrap Frames: more salvage means more forged weapons.","scrapworkAsset":"junkScavenger"}, {"id":"beastTamer","name":"Crimson Beast-Tamer","genre":"Bloodline","rarity":"Rare","baseAtk":26,"attackInterval":1.3,"max":0,"asset":"atlasCreature","icon":"✧","fav":"neighbor","tags":[],"ecosystem":"Predation · recycling","rules":"Lashes the 2 leading runners, each hit applying 1 Bleed stack (1% max HP over 1s). Adjacent Bloodline allies gain +15% attack speed.","synergy":"Primordial Blood Cub and the Bloodline fodders."});
 const CARD = Object.fromEntries([...CARDS, ...FORMS, ...TOKENS].map(c => [c.id, c]));
 if (typeof module !== 'undefined') module.exports = { GENRES, LEADERS, CARDS, CARD, NODES, RELICS, FORMS, TOKENS };
 

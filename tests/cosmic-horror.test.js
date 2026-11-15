@@ -43,10 +43,10 @@ test('Archivist deciphers the oldest page: the Idol learns the script and gains 
  assert.deepEqual(idol.scripts,['astral']);assert.equal(idol.syllables,18);assert.deepEqual(G.pages(b.run),['flesh']);
 });
 
-test('the Summoning: a 154-Syllable Herald on an Elite node needs 13 Insane runners (a Boss counts 3); the Old One manifests at battle end',()=>{
+test('the Summoning: a 154-Syllable Herald on an Elite node needs 16 Insane runners (a Boss counts 3); the Old One manifests at battle end',()=>{
  const b=battle(['slumberingIdol'],[4],'elite'),u=b.units[0];Object.assign(u,{scripts:['abyss','abyss'],syllables:154});G.updateIdol(b,u);
  assert.equal(u.id,'rlyehHerald');assert.equal(b.cosmicTrial.status,'active');
- G.goInsane(b,enemy(b,'boss'));for(let i=0;i<10;i++)G.goInsane(b,enemy(b));
+ G.goInsane(b,enemy(b,'boss'));for(let i=0;i<12;i++)G.goInsane(b,enemy(b));assert.equal(b.cosmicTrial.status,'active');G.goInsane(b,enemy(b));
  assert.equal(b.cosmicTrial.status,'proven');
  G.finish(b,true);assert.equal(b.run.roster[0].id,'cthulhu');
 });

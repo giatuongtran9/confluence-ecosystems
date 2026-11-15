@@ -63,7 +63,7 @@ const Game = (() => {
  const isCyber=u=>family(u)==='cyberSolo';
  const cyberApex=u=>CYBER_APEX.includes(u?.id);
  const heatUser=u=>!!u&&(isCyber(u)||CYBER_CREW.includes(u.id));
- const REDLINE_PROOF=12;
+ const REDLINE_PROOF=8, REDLINE_PENALTY=4; // overheating costs 4s of proof instead of wiping it
  const heatBand=u=>{const h=u?.heat||0;return h>=80?'redline':h>=50?'warm':'cold';};
  // Warm +15% damage; Redline +35% damage and +15% attack speed. Each adjacent install adds +10% tuning.
  const heatDamage=u=>heatUser(u)?{redline:1.35,warm:1.15,cold:1}[heatBand(u)]*(1+(u.tuning||0)):1;
@@ -93,7 +93,7 @@ const Game = (() => {
   }
   b.metrics.cyberTrial={...t};
  }
- function resetRedline(b,u){const t=b?.cyberTrial;if(t?.status==='active'&&t.unitUid===u.uid&&t.redline>0){t.redline=0;t.resets++;b.metrics.cyberTrial={...t};fx(b,'impact',u,null,'REDLINE RESET · OVERHEATED');}}
+ function resetRedline(b,u){const t=b?.cyberTrial;if(t?.status==='active'&&t.unitUid===u.uid&&t.redline>0){t.redline=Math.max(0,t.redline-REDLINE_PENALTY);t.resets++;b.metrics.cyberTrial={...t};fx(b,'impact',u,null,'OVERHEATED · −'+REDLINE_PENALTY+'s PROOF');}}
  // Battle end: a proven Operative awakens if the battle was won. A failed proof costs nothing.
  function finishCyberTrial(b,won){
   const t=b?.cyberTrial;if(!t||!['active','proven'].includes(t.status))return false;
@@ -170,7 +170,8 @@ const Game = (() => {
   if(u.id==='thermalRipper')cyberZone(b,u,'slag',target.p,power*.3);
   if(u.id==='plasmaTempest')cyberZone(b,u,'plasma',target.p,power*.5);
   if(u.os==='sandyOS'&&!apex&&(u.sandyUntil||0)<=b.time){u.sandyCharge=(u.sandyCharge||0)+1;if(u.sandyCharge>=8){u.sandyCharge=0;u.sandyUntil=b.time+3.5;}}
-  u.heat=(u.heat||0)+(u.os==='berserkOS'?14:8);
+  // Redline governor: in the band each attack adds half heat, so a unit can ride the redline instead of spiking through it.
+  const gain=u.os==='berserkOS'?14:isCyber(u)?10:8;u.heat=(u.heat||0)+(heatBand(u)==='redline'?gain/2:gain);
   if(u.heat>=100){u.heat=40;u.sandyUntil=0;resetRedline(b,u);flip(b,u,'overheat',3);fx(b,'state',u,null,'THERMAL SHUTDOWN');}
   for(const n of b.units.filter(v=>!v.removed&&v.id==='netrunner'))n.ram=Math.min(8,(n.ram||0)+1);
   addChromeAttack(b,u);
@@ -184,16 +185,18 @@ const Game = (() => {
    u.heat=Math.max(0,(u.heat||0)-(4+(support(b,'vent')?3:0)+(neighbors(b,u).some(v=>v.id==='vent')?15:0))*dt);updateCyber(b,u);
   }
   if(u.id==='cryoPump'&&b.time>=(u.pumpAt??6)){
-   u.pumpAt=b.time+6;const hot=b.units.filter(v=>!v.removed&&heatUser(v)).sort((a,z)=>(z.heat||0)-(a.heat||0))[0];if(hot)hot.heat=Math.max(0,(hot.heat||0)-40);
+   // Emergency purge: only a unit at 90°C+ is cooled, so the Pump saves Redline runs instead of killing them.
+   u.pumpAt=b.time+6;const hot=b.units.filter(v=>!v.removed&&heatUser(v)&&(v.heat||0)>=90).sort((a,z)=>(z.heat||0)-(a.heat||0))[0];if(hot)hot.heat=Math.max(0,(hot.heat||0)-25);
    for(const e of living(b).filter(e=>wallOf(e)===pumpWall(u)))status(b,e,'freeze',2,0,u);
    fx(b,'state',u,null,'COOLANT PURGE');
   }
   if(u.id==='biomonitor'&&b.time>=(u.monitorAt??1)){
    u.monitorAt=b.time+1;const ns=b.units.filter(v=>!v.removed&&heatUser(v));
-   if(ns.length>1){const mean=ns.reduce((n,v)=>n+(v.heat||0),0)/ns.length;for(const v of ns)v.heat=mean;}
+   // Heat sink: a unit about to overheat (95°C+) dumps 20°C into the coldest Cyberpunk ally.
+   for(const v of ns.filter(v=>(v.heat||0)>=95)){const cold=ns.filter(w=>w!==v).sort((a,z)=>(a.heat||0)-(z.heat||0))[0];if(cold){v.heat-=20;cold.heat=(cold.heat||0)+20;}}
   }
   if(u.id==='afterlifeLegend'&&u.state==='active'&&b.time>=(u.afterAt??5)&&living(b).length){
-   u.afterAt=b.time+5;const hot=b.units.filter(v=>!v.removed&&v!==u&&heatUser(v)).sort((a,z)=>(z.heat||0)-(a.heat||0))[0];if(hot)hot.heat=Math.max(0,(hot.heat||0)-30);
+   u.afterAt=b.time+5;const hot=b.units.filter(v=>!v.removed&&v!==u&&heatUser(v)&&(v.heat||0)>=90).sort((a,z)=>(z.heat||0)-(a.heat||0))[0];if(hot)hot.heat=Math.max(0,(hot.heat||0)-20);
    const e=living(b)[0];hit(b,u,e,atk(b,u)*heatDamage(u)*3,false);fx(b,'spell',u,e,'AFTERLIFE SHOT · −30°C');
   }
  }
@@ -516,7 +519,8 @@ const Game = (() => {
   for(const u of b.units.filter(v=>!v.removed&&!token(v)&&isSlayer(v))){u.trophyPoints=(u.trophyPoints||0)+n;updateSlayer(b,u);}
  }
  function huntExecute(b,u,e){if(e.gone||e.hp<=0||e.boss||e.champion)return false;e.huntExecuted=true;damage(b,e,e.hp,u,'ability');return true;}
- function trophyFor(e){return e.boss||e.champion?'wyrm':e.elite?'fiend':e.alphaQuarry?'beast':e.armored?'witch':e.huntExecuted?'hollow':null;}
+ // Elites also yield a Wyrm Heart 30% of the time (bosses are rare); Executioner kills always count as executions.
+ function trophyFor(b,e,source){return e.boss||e.champion?'wyrm':e.elite?(rand(b.run)<.3?'wyrm':'fiend'):e.alphaQuarry?'beast':e.armored?'witch':(e.huntExecuted||source?.id==='executioner')?'hollow':null;}
  function addTrophy(b,type,e){
   const r=rack(b.run);if(r.length>=RACK_CAP){b.metrics.trophiesLost=(b.metrics.trophiesLost||0)+1;return false;}
   r.push({type,carved:false});b.metrics.trophiesHarvested=(b.metrics.trophiesHarvested||0)+1;fx(b,'state',null,e,TROPHY_NAMES[type].toUpperCase());return true;
@@ -525,7 +529,7 @@ const Game = (() => {
   if(source?.id==='lycanLord')source.huntFrenzy=Math.min(.5,(source.huntFrenzy||0)+.1);
   if(!b.units.some(u=>!u.removed&&!token(u)&&isHunter(u)))return;
   if(priority(e))trophyPoints(b,3);
-  const t=trophyFor(e);if(t)addTrophy(b,t,e);
+  const t=trophyFor(b,e,source);if(t)addTrophy(b,t,e);
  }
  // Taxidermist: carves the newest uncarved trophy anywhere every 6s; the trophy stays in the Rack.
  function carveTrophy(b,u){
@@ -708,8 +712,8 @@ const Game = (() => {
   return {picked,placements};
  }
  function salvage(b) {
-  for(const scavenger of b.units.filter(u=>!u.removed&&!token(u)&&u.id==='junkScavenger')){
-   if(rand(b.run)>=.5)continue;
+  for(const scavenger of b.units.filter(u=>!u.removed&&!token(u)&&['junkScavenger','salvageGunner'].includes(u.id))){
+   if(rand(b.run)>=(scavenger.id==='salvageGunner'?.3:.5))continue;
    const id=rand(b.run)<.5?'rustSword':'rustGun';
    const scrap=spawnToken(b,scavenger,id,true,{origin:id,tokenAtk:0,attackInterval:0});
    if(scrap){b.metrics.salvaged=(b.metrics.salvaged||0)+1;interact(b,scavenger,scrap,'salvage',id==='rustSword'?'Rust Sword salvaged':'Rust Gun salvaged');}
@@ -1973,7 +1977,7 @@ function fx(b, type, u, e, text, extra = {}) {
   'astral+flesh':['chaosHerald','azathoth']
  };
  const SCRIPTS=['abyss','astral','flesh'];
- const PAGE_CAP=6,MADNESS_CAP=10,SUMMONING_NEED=13,SUMMONING_SYLLABLES=154;
+ const PAGE_CAP=6,MADNESS_CAP=10,SUMMONING_NEED=16,SUMMONING_SYLLABLES=154;
  const cosmicPair=s=>s?.length>=2?[...s.slice(0,2)].sort().join('+'):null;
  const isIdol=u=>family(u)==='slumberingIdol';
  const cosmicApex=u=>isIdol(u)&&card(u.id).rarity==='Mythic';
@@ -2251,6 +2255,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (neighbors(b, u, false).some(v => !v.removed && v.id === 'astralLoom')) n += 0.20;
   if (u.id === 'aeroMage') n += Math.min(0.3, Math.floor((u.mastery || 0) / 5) * 0.01); // capped at +30%
   n += huntSpeed(b,u);
+  if (card(u.id)?.genre === 'Bloodline' && u.id !== 'beastTamer' && neighbors(b, u, false).some(v => !v.removed && v.id === 'beastTamer')) n += .15;
   return n * (isCyber(u)&&!cyberApex(u)&&u.sandyUntil>b.time?1.8:1) * heatSpeed(u) * (1 + (u.permanentSpeed || 0)) * mod(b.run, 'speed')
  }
 
@@ -2333,7 +2338,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (b.units.some(u => !u.removed && u.id === 'inkBrush')) n *= 1.10;
   if(!exact){n*=yellowDamage(b,e);if(channel==='ability'&&e.abyssDreadUntil>b.time)n*=1.1;}
   if (e.ruleMarks && !exact) n *= (1 + e.ruleMarks * 0.08);
-  if (!exact && source && lightsOn(b) && isOrderUnit(source)) n *= 1.2;
+  if (!exact && source && lightsOn(b) && isOrderUnit(source)) n *= 1.1;
   if (!exact && source && (e.elite || e.champion || e.boss) && isOrderUnit(source) && neighbors(b, source, false).some(v => v.id === 'boneSaw')) n *= 1.5;
   if(n>0&&source&&card(source.id).genre==='Lovecraft')e.cosmicCursed=source.uid;
   if (e.preyMarkUntil > b.time && source && card(species(source))?.genre === 'Bloodline') n *= 1.20;
@@ -2426,7 +2431,7 @@ function fx(b, type, u, e, text, extra = {}) {
    if (support(b, 'core') && normal) for (const v of allies(b, u).filter(v => v.id === 'core')) tick(b, v, 1, u);
    if (support(b, 'sensor') && normal) addWeakpoint(b, e, 1);
    if (u.id === 'nanite') { e.nanoUntil = b.time + 3; u.naniteCrits = (u.naniteCrits || 0) + 1; if (u.naniteCrits % 6 === 0) grantGrowth(b, u, 1); }
-   if (isSciFi(u)) addStrain(b, 'chitin', 1);
+   if (isSciFi(u)) addStrain(b, 'chitin', 0.5); // crits are common, so they feed Chitin at half rate
    if (['nanite', 'acidBrood', 'xenoQueen', 'bileSpitter', 'causticRavager'].includes(u.id)) addStrain(b, 'acid', 1);
    if (u.id === 'alphaSpecimen' && (e.weakpoints || 0) > 0) status(b, e, 'stun', 0.5, 0, u);
    if (u.id === 'impalerMorph') { for (const near of living(b).filter(v => v !== e).slice(0, 2)) hit(b, u, near, n * 0.6, false); }
@@ -2515,6 +2520,10 @@ function fx(b, type, u, e, text, extra = {}) {
   if(card(u.id).genre==='Lovecraft'){cosmicAttack(b,u,target,power);}
   else if(heatUser(u)){cyberAttack(b,u,target,power);}
   else if(isArchon(u)){archonAttack(b,u,target,power);}
+  else if(u.id==='salvageGunner'||u.id==='beastTamer'){
+   // Rare attackers added for PostApoc and Bloodline: both strike the 2 leading runners.
+   for(const e of living(b).slice(0,2)){hit(b,u,e,power);if(u.id==='beastTamer')dot(b,e,'bleed',hpPct(e),1,u);}
+  }
   else if(u.id==='aeroMage'){
    for(const e of living(b).slice(0,2))hit(b,u,e,power);
   }

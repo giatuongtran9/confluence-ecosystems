@@ -26,7 +26,7 @@ test('Crane moves scrap beside Smelter without entering Titan slot',()=>{const b
 test('retired draft cards stay out and Reactor begins at crossing five',()=>{const r=G.newRun('none', 2);for(let depth=-1;depth<16;depth++){r.depth=depth;for(let i=0;i<100;i++){const ids=G.offers(r);assert.ok(ids.every(id=>!['cannon','bellows','behemoth'].includes(id)));if(depth<3)assert.ok(!ids.includes('titanReactor'));}}assert.equal(D.CARD.titanReactor.rarity,'Epic');});
 test('global kills can salvage zero-attack scrap and full board cannot overflow',()=>{const b=battle(['junkScavenger'],[8]);for(let i=0;i<40;i++){const e=enemy(b,0,1);G.damage(b,e,2,b.units[0]);}const tokens=b.units.filter(x=>x.token);assert.ok(tokens.length>0);assert.ok(tokens.every(x=>x.attackInterval===0&&x.tokenAtk===0));assert.ok(b.units.filter(x=>!x.removed).length<=9);assert.equal(new Set(b.units.filter(x=>!x.removed).map(x=>x.slot)).size,b.units.filter(x=>!x.removed).length);});
 test('alloy attack remainder and five-clear reward survive reload',()=>{const b=battle(['scrapFrame']),u=b.units[0],e=enemy(b);G.mechAttack(b,u,e,0);G.mechAttack(b,u,e,0);const restored=G.runtime(b,b.run.roster[0],0);assert.equal(restored.alloyAttacks,2);G.mechAttack(b,restored,e,0);assert.equal(restored.alloy,1);b.units=[restored];G.finish(b,true);assert.equal(b.run.roster[0].alloy,6);});
-test('Riveter welds every six seconds and Reactor aura does not stack',()=>{const b=battle(['scrapFrame','hydraulicRiveter','titanReactor','titanReactor'],[4,1,3,5]),u=b.units[0];const base=G.atk(b,u);assert.equal(base,18);b.time=6;G.scrapworkExtras(b,b.units[1]);assert.equal(u.permanentAtkBonus,3);G.scrapworkExtras(b,b.units[1]);assert.equal(u.permanentAtkBonus,3);});
+test('Riveter welds every six seconds and Reactor aura does not stack',()=>{const b=battle(['scrapFrame','hydraulicRiveter','titanReactor','titanReactor'],[4,1,3,5]),u=b.units[0];const base=G.atk(b,u);assert.equal(base,20.4);b.time=6;G.scrapworkExtras(b,b.units[1]);assert.equal(u.permanentAtkBonus,3);G.scrapworkExtras(b,b.units[1]);assert.equal(u.permanentAtkBonus,3);});
 test('Titan HTML merges horizontal and vertical cells with working new art',()=>{
  const fs=require('node:fs'),vm=require('node:vm'),source=fs.readFileSync(require.resolve('../app'),'utf8');
  const code=source.slice(source.indexOf('function fieldUnit('),source.indexOf('function board('));
@@ -42,7 +42,7 @@ test('legacy Post-Apocalypse catalogs and mechanics are removed',()=>{
   assert.equal(D.CARD[id],undefined);
   assert.ok(!fs.readFileSync(require.resolve('../engine'),'utf8').includes("'"+id+"'"));
  }
- assert.equal(D.CARDS.filter(c=>c.genre==='PostApoc').length,6);
+ assert.equal(D.CARDS.filter(c=>c.genre==='PostApoc').length,7);
  assert.ok(!fs.existsSync(require('node:path').join(__dirname,'../assets/scrapwork/armamentPod.webp')));
  for(const c of Object.values(D.CARD))assert.ok(!/Scrap Autocannon|Thermal Bellows|Doomsday Behemoth|Secondary Armament Pod/.test(JSON.stringify(c)));
 });
