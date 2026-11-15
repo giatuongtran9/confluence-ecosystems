@@ -1161,7 +1161,7 @@ function fx(b, type, u, e, text, extra = {}) {
   let notes = [];
   if (b.metrics.leaks) notes.push(`${b.metrics.leaks} runners escaped.`); else notes.push('No runners escaped. Formation held.');
   if(b.metrics.xenoTrial)notes.push(b.metrics.xenoTrial.status==='passed'?`Xeno Leviathan trial passed; ${card(b.metrics.xenoTrial.apexId).name} awakened and the matching Serum was consumed.`:b.metrics.xenoTrial.status==='failed'?`Xeno Leviathan trial failed: ${b.metrics.xenoTrial.reason}. Candidate and matching Serum removed.`:'Xeno Leviathan trial active: clear this Elite/Boss with zero leaks.');
-  if(b.metrics.cosmicTrial)notes.push(b.metrics.cosmicTrial.status==='passed'?`Forbidden Recitation passed; ${card(b.metrics.cosmicTrial.apexId).name} awakened and the Grimoire was consumed.`:b.metrics.cosmicTrial.status==='failed'?`Forbidden Recitation failed: ${b.metrics.cosmicTrial.reason}. Herald and Grimoire removed.`:'Forbidden Recitation active: complete the 8-second recitation, prove each script on a priority target, then clear with zero leaks.');
+  if(b.metrics.cosmicTrial)notes.push(b.metrics.cosmicTrial.status==='passed'?`The Summoning succeeded; ${card(b.metrics.cosmicTrial.apexId).name} manifested.`:b.metrics.cosmicTrial.status==='failed'?`The Summoning failed: ${b.metrics.cosmicTrial.reason}. Nothing was lost.`:`The Summoning: ${b.metrics.cosmicTrial.insane}/${b.metrics.cosmicTrial.need} runners driven Insane.`);
   if (b.metrics.heavenlyTribulation) notes.push(b.metrics.heavenlyTribulation.status === 'passed' ? 'Heavenly Tribulation passed; the matching relic was consumed and a Mythic Immortal awakened.' : b.metrics.heavenlyTribulation.status === 'failed' ? `Heavenly Tribulation failed: ${b.metrics.heavenlyTribulation.reason}. The Nascent Soul and matching relic were removed from the roster.` : 'Heavenly Tribulation is active: clear the Elite/Boss node with zero leaks.');
   if (b.metrics.urbanContainmentTrial) notes.push(b.metrics.urbanContainmentTrial.status === 'passed' ? `Subject Zero contained with ${b.metrics.urbanContainmentTrial.finalMarks}/5 marks; the Relic was consumed and ${card(b.metrics.urbanContainmentTrial.apexId).name} awakened.` : b.metrics.urbanContainmentTrial.status === 'failed' ? `Subject Zero trial failed: ${b.metrics.urbanContainmentTrial.reason}. The Rule Enforcer and Relic were removed from the roster.` : `Subject Zero trial active: apply 5 Violation Marks and defeat it before it escapes.`);
   if (b.metrics.urbanLegendTrial) notes.push(b.metrics.urbanLegendTrial.status === 'passed' ? `Folklore Merger trial passed with zero runner leaks; ${card(b.metrics.urbanLegendTrial.apexId).name} awakened with +${b.metrics.urbanLegendTrial.inheritedAtk} inherited ATK.` : b.metrics.urbanLegendTrial.status === 'failed' ? `Folklore Merger trial failed: ${b.metrics.urbanLegendTrial.reason}. The devourer was removed; its same-lineage prey was already consumed.` : `Folklore Merger trial active: clear the Elite/Boss node with zero leaks to earn Mythic.`);
@@ -1945,87 +1945,75 @@ function fx(b, type, u, e, text, extra = {}) {
   }
  }
 
-// Forbidden Texts: persistent progression is separate from temporary combat effects.
+// Forbidden Texts: Madness turns runners on each other; the Summoning awakens the Old One the book chose.
  const COSMIC_BRANCHES={
-  'abyss+abyss':['rlyehHerald','deepGrimoire','cthulhu'],
-  'astral+astral':['gateHerald','astralGrimoire','yogSothoth'],
-  'flesh+flesh':['broodHerald','fleshGrimoire','shubNiggurath'],
-  'abyss+astral':['yellowHerald','yellowGrimoire','kingInYellow'],
-  'abyss+flesh':['brainHerald','brainGrimoire','elderBrain'],
-  'astral+flesh':['chaosHerald','chaosGrimoire','azathoth']
+  'abyss+abyss':['rlyehHerald','cthulhu'],
+  'astral+astral':['gateHerald','yogSothoth'],
+  'flesh+flesh':['broodHerald','shubNiggurath'],
+  'abyss+astral':['yellowHerald','kingInYellow'],
+  'abyss+flesh':['brainHerald','elderBrain'],
+  'astral+flesh':['chaosHerald','azathoth']
  };
+ const SCRIPTS=['abyss','astral','flesh'];
+ const PAGE_CAP=6,MADNESS_CAP=10,SUMMONING_NEED=13,SUMMONING_SYLLABLES=154;
  const cosmicPair=s=>s?.length>=2?[...s.slice(0,2)].sort().join('+'):null;
  const isIdol=u=>family(u)==='slumberingIdol';
  const cosmicApex=u=>isIdol(u)&&card(u.id).rarity==='Mythic';
  const cosmicUnits=b=>b.units.filter(u=>!u.removed&&card(u.id).genre==='Lovecraft');
  const deployedIdols=b=>cosmicUnits(b).filter(u=>isIdol(u)&&!token(u)).sort((a,z)=>a.uid-z.uid);
- const pageAura=(b,u,script)=>neighbors(b,u).some(v=>v.id===script+'Page');
- const cosmicTrialScripts=pair=>[...new Set((pair||'').split('+').filter(Boolean))];
+ const pages=r=>(r.forbiddenPages??=[]);
+ const insane=(b,e)=>(e.insaneUntil||0)>b.time;
+ // The Summoning: a 154-Syllable Herald on an Elite/Boss node must drive 13 runners Insane (a Boss counts 3).
  function cosmicTrialCandidate(b){
-  if(!b||!['elite','boss'].includes(b.run?.node?.type)||(b.metrics?.leaks||0)>0)return null;
-  for(const unit of cosmicUnits(b).filter(u=>!token(u)&&isIdol(u)&&u.id!=='slumberingIdol').sort((a,z)=>a.slot-z.slot||a.uid-z.uid)){
-   const pair=cosmicPair(unit.scripts),branch=COSMIC_BRANCHES[pair];if((unit.syllables||0)<154||!branch)continue;
-   const relic=neighbors(b,unit,false).find(v=>!v.removed&&!token(v)&&v.id===branch[1]);if(relic)return{unit,relic,pair,apexId:branch[2]};
+  if(!b||!['elite','boss'].includes(b.run?.node?.type))return null;
+  for(const unit of cosmicUnits(b).filter(u=>!token(u)&&isIdol(u)&&!cosmicApex(u)).sort((a,z)=>a.uid-z.uid)){
+   const pair=cosmicPair(unit.scripts),branch=COSMIC_BRANCHES[pair];if((unit.syllables||0)>=SUMMONING_SYLLABLES&&branch&&unit.id===branch[0])return{unit,pair,apexId:branch[1]};
   }return null;
  }
  function startCosmicTrial(b){
   if(!b||b.cosmicTrial)return b?.cosmicTrial||null;const c=cosmicTrialCandidate(b);if(!c)return null;
-  const scripts=cosmicTrialScripts(c.pair),proof=Object.fromEntries(scripts.map(x=>[x,false]));
-  const t=b.cosmicTrial={status:'active',unitUid:c.unit.uid,relicUid:c.relic.uid,relicId:c.relic.id,apexId:c.apexId,pair:c.pair,scripts,scriptProof:proof,startedAt:b.time,recitationEndsAt:b.time+8,nodeType:b.run.node.type};
-  b.metrics.cosmicTrial={...t,scriptProof:{...proof}};interact(b,c.unit,c.relic,'cosmic-trial','FORBIDDEN RECITATION · prove each script effect on a priority target, then clear with zero leaks');fx(b,'pulse',c.unit,null,'FORBIDDEN RECITATION · 8s');return t;
+  const t=b.cosmicTrial={status:'active',unitUid:c.unit.uid,apexId:c.apexId,pair:c.pair,insane:0,need:SUMMONING_NEED,startedAt:b.time,nodeType:b.run.node.type};
+  b.metrics.cosmicTrial={...t};interact(b,c.unit,c.unit,'cosmic-trial',`THE SUMMONING · drive ${SUMMONING_NEED} runners Insane this battle`);fx(b,'pulse',c.unit,null,'THE CIRCLE OPENS');return t;
  }
- function cosmicTrialProof(b,source,e,type){
-  const t=b?.cosmicTrial;if(!t||t.status!=='active'||!priority(e)||b.time>t.recitationEndsAt||!source||card(source.id).genre!=='Lovecraft')return false;
-  const script=type==='warp'?'astral':type==='bleed'?'flesh':['slow','panic'].includes(type)?'abyss':null;if(!script||!(script in t.scriptProof)||t.scriptProof[script])return false;
-  t.scriptProof[script]=true;b.metrics.cosmicTrial.scriptProof={...t.scriptProof};interact(b,source,e,'cosmic-script-proof',`${script.toUpperCase()} SCRIPT PROVED`);fx(b,'spell',source,e,`${script.toUpperCase()} SCRIPT`);return true;
+ function finishCosmicTrial(b,won){
+  const t=b?.cosmicTrial;if(!t||!['active','proven'].includes(t.status))return false;
+  const unit=b.units.find(u=>u.uid===t.unitUid&&!u.removed);
+  if(t.status==='proven'&&won&&unit){evolve(b,unit,t.apexId);persist(b,unit);(b.metrics.cosmicAwakenings??=[]).push({id:unit.id,stage:b.run.depth+1,time:b.time});t.status='passed';interact(b,unit,unit,'cosmic-trial-passed',`THE SUMMONING · ${card(t.apexId).name} manifests`);fx(b,'growth',unit,null,'THE OLD ONE ANSWERS');}
+  else{t.reason=t.status==='proven'?'battle lost':`only ${t.insane}/${t.need} runners went Insane`;t.status='failed';}
+  b.metrics.cosmicTrial={...t};return t.status==='passed';
  }
- function failCosmicTrial(b,reason='A runner leaked'){
-  const t=b?.cosmicTrial;if(!t||t.status!=='active')return false;const unit=b.units.find(u=>u.uid===t.unitUid),relic=b.units.find(u=>u.uid===t.relicUid);
-  if(unit)unit.removed=true;if(relic)relic.removed=true;const lost=new Set([t.unitUid,t.relicUid]);b.run.roster=b.run.roster.filter(u=>!lost.has(u.uid));
-  t.status='failed';t.reason=reason;t.failedAt=b.time;b.metrics.cosmicTrial={...b.metrics.cosmicTrial,status:'failed',reason,failedAt:b.time,scriptProof:{...t.scriptProof}};
-  interact(b,unit||null,relic||null,'cosmic-trial-failed',`FORBIDDEN RECITATION FAILED · ${reason}; Herald and Grimoire lost`);fx(b,'impact',unit||null,null,'FORBIDDEN RECITATION FAILED');return true;
+ // Madness: +1 per Cosmic hit, +2 per ally slow/reverse/warp. At 10 a runner goes Insane for 3s.
+ function addMadness(b,e,n){
+  if(!e||e.gone||e.hp<=0||insane(b,e)||!cosmicUnits(b).length)return;
+  e.madness=(e.madness||0)+n;if(e.madness>=MADNESS_CAP)goInsane(b,e);
  }
- function passCosmicTrial(b){
-  const t=b?.cosmicTrial;if(!t||t.status!=='active'||!b.won||(b.metrics?.leaks||0)!==0||b.time<t.recitationEndsAt||!t.scripts.every(x=>t.scriptProof[x])||!['elite','boss'].includes(b.run?.node?.type))return false;
-  const unit=b.units.find(u=>u.uid===t.unitUid&&!u.removed),relic=b.units.find(u=>u.uid===t.relicUid&&!u.removed);if(!unit||!relic)return failCosmicTrial(b,'Herald or matching Grimoire was removed');
-  const absorption=t.apexId==='elderBrain'?cosmicUnits(b).filter(v=>v!==unit).reduce((n,v)=>n+rawAtk(v)*.5,0):0;
-  consume(b,unit,relic,'Forbidden Recitation',0);evolve(b,unit,t.apexId);
-  if(unit.id==='elderBrain'&&!unit.brainAbsorbed){unit.brainAbsorbed=true;unit.permanentAtkBonus=(unit.permanentAtkBonus||0)+absorption;persist(b,unit);}
-  if(unit.id==='shubNiggurath'){spawnYoung(b,unit);unit.youngAt=b.time+6;}(b.metrics.cosmicAwakenings??=[]).push({id:unit.id,stage:b.run.depth+1,time:b.time});persist(b,unit);
-  t.status='passed';t.passedAt=b.time;b.metrics.cosmicTrial={...b.metrics.cosmicTrial,status:'passed',passedAt:b.time,scriptProof:{...t.scriptProof}};interact(b,unit,unit,'cosmic-trial-passed',`FORBIDDEN RECITATION PASSED · ${card(t.apexId).name} awakened`);fx(b,'growth',unit,null,'COSMIC MYTHIC AWAKENED');return true;
+ function goInsane(b,e,seconds=3){
+  e.madness=0;const brain=cosmicUnits(b).some(u=>u.id==='elderBrain');
+  if(e.boss||e.champion){e.vulnerableUntil=b.time+3;e.vulnerability=Math.max(e.vulnerability||0,.2);}
+  else{e.insaneUntil=b.time+seconds+(brain?2:0);e.retreatingUntil=Math.max(e.retreatingUntil||0,e.insaneUntil);e.panicUntil=e.retreatingUntil;e.panic=true;}
+  b.metrics.insane=(b.metrics.insane||0)+1;
+  const king=e.yellowBrand&&cosmicUnits(b).find(u=>u.id==='kingInYellow'&&u.uid===e.yellowBrand);if(king)trueHit(b,king,e,atk(b,king)*1.2); // madness detonates the Yellow Sign
+  for(const h of cosmicUnits(b).filter(u=>u.id==='herald'))h.madnessCharges=(h.madnessCharges||0)+1;
+  const t=b.cosmicTrial;if(t?.status==='active'){t.insane+=(e.boss||e.champion)?3:1;if(t.insane>=t.need){t.status='proven';fx(b,'growth',b.units.find(u=>u.uid===t.unitUid)||null,null,'THE SUMMONING IS COMPLETE · AT BATTLE END');}b.metrics.cosmicTrial={...t};}
+  fx(b,'state',null,e,(e.boss||e.champion)?'MADDENED · +20% DAMAGE TAKEN':'INSANE');
  }
- function tickCosmicTrial(b){const t=b?.cosmicTrial;if(!t||t.status!=='active')return;if(!b.units.some(u=>u.uid===t.unitUid&&!u.removed)){failCosmicTrial(b,'Herald was removed');return;}if(!b.units.some(u=>u.uid===t.relicUid&&!u.removed)){failCosmicTrial(b,'matching Grimoire was removed');return;}if(b.time>=t.recitationEndsAt&&!t.recitationComplete){t.recitationComplete=true;b.metrics.cosmicTrial.recitationComplete=true;interact(b,b.units.find(u=>u.uid===t.unitUid),b.units.find(u=>u.uid===t.relicUid),'cosmic-recitation','8-SECOND RECITATION COMPLETE');}}
  function updateIdol(b,u){
-  if(!isIdol(u)||token(u)||u.removed||cosmicApex(u))return;const scripts=u.scripts||[],p=u.syllables||0,pair=cosmicPair(scripts),branch=COSMIC_BRANCHES[pair];let id='slumberingIdol';
-  if(p>=25&&scripts[0])id={abyss:'drownedIdol',astral:'keyIdol',flesh:'wombIdol'}[scripts[0]];if(p>=65&&branch)id=branch[0];if(u.id!==id)evolve(b,u,id);if(p>=154&&branch)startCosmicTrial(b);persist(b,u);
+  if(!isIdol(u)||token(u)||u.removed||cosmicApex(u))return;const scripts=u.scripts||[],p=u.syllables||0,branch=COSMIC_BRANCHES[cosmicPair(scripts)];let id='slumberingIdol';
+  if(p>=25&&scripts[0])id={abyss:'drownedIdol',astral:'keyIdol',flesh:'wombIdol'}[scripts[0]];if(p>=65&&branch)id=branch[0];if(u.id!==id)evolve(b,u,id);if(p>=SUMMONING_SYLLABLES&&branch)startCosmicTrial(b);persist(b,u);
  }
- function dropPage(b,source,script){
-  if(!source||source.removed)return null;
-  script=script||['abyss','astral','flesh'][Math.floor(rand(b.run)*3)];
-  const v=spawnToken(b,source,script+'Page',true,{tokenAtk:0,attackInterval:0,origin:script+'Page'});
-  b.metrics[v?'pagesDropped':'pagesLost']=(b.metrics[v?'pagesDropped':'pagesLost']||0)+1;return v;
+ // Forbidden Pages: a run-wide pool (max 6); each page's script is rolled when it is written.
+ function writePage(b,source){
+  const r=pages(b.run);if(r.length>=PAGE_CAP){b.metrics.pagesLost=(b.metrics.pagesLost||0)+1;return null;}
+  const script=SCRIPTS[Math.floor(rand(b.run)*3)];r.push(script);b.metrics.pagesWritten=(b.metrics.pagesWritten||0)+1;
+  if(source)fx(b,'spell',source,null,script.toUpperCase()+' PAGE');return script;
  }
- function addSyllables(b,n,source,script=null,chant=false){
-  for(const u of deployedIdols(b)){u.syllables=(u.syllables||0)+n;persist(b,u);updateIdol(b,u);}
-  if(chant){b.run.cosmicChantRemainder=(b.run.cosmicChantRemainder||0)+n;while(b.run.cosmicChantRemainder>=10){b.run.cosmicChantRemainder-=10;dropPage(b,source,script);}}
- }
- function forgeGrimoire(b,u){
-  const pair=cosmicPair(u.pageRecipe),branch=COSMIC_BRANCHES[pair];if(!branch)return false;
-  const slot=[0,1,2,3,4,5,6,7,8].find(s=>!slotOccupied(b,s));if(slot==null)return false;
-  const src=instance(b.run,branch[1]);b.run.roster.push(src);const v=runtime(b,src,slot);prepareHooks(b,v);b.units.push(v);record(b,v);
-  u.pageRecipe=[];persist(b,u);b.metrics.grimoiresForged=(b.metrics.grimoiresForged||0)+1;
-  interact(b,u,v,'forge','Two forbidden pages → '+card(v.id).name);for(const idol of deployedIdols(b))updateIdol(b,idol);return true;
- }
+ function addSyllables(b,n,source){for(const u of deployedIdols(b)){u.syllables=(u.syllables||0)+n;persist(b,u);updateIdol(b,u);}}
  function decipherPage(b,u){
-  if((u.pageRecipe||[]).length>=2){forgeGrimoire(b,u);if(u.pageRecipe.length>=2)return false;}
-  const page=neighbors(b,u).filter(v=>['abyssPage','astralPage','fleshPage'].includes(v.id)).sort((a,z)=>a.slot-z.slot)[0];if(!page)return false;
-  const script=card(page.id).cosmicScript;consume(b,u,page,'Decipher',0);
+  const script=pages(b.run).shift();if(!script)return false;
   const idol=deployedIdols(b).find(v=>(v.scripts||[]).length<2);if(idol){idol.scripts=[...(idol.scripts||[]),script];persist(b,idol);}
-  u.pageRecipe=[...(u.pageRecipe||[]),script];persist(b,u);addSyllables(b,12,u,script,false);
-  if(script==='abyss')for(const e of living(b).slice(0,2))cosmicPanic(b,u,e,1.5);
-  if(script==='astral')for(const e of living(b).slice(0,2))warp(b,e,3,u);
-  if(script==='flesh'){const v=neighbors(b,u).filter(v=>!token(v)).sort((a,z)=>rawAtk(a)-rawAtk(z)||a.uid-z.uid)[0];if(v)growth(b,v,3);}
-  forgeGrimoire(b,u);return true;
+  addSyllables(b,neighbors(b,u).some(isIdol)?18:12,u);
+  for(const e of living(b).slice(0,2)){if(script==='abyss')status(b,e,'slow',2,.3,u);else if(script==='astral')warp(b,e,2,u);else bleedStacks(b,e,2,u);}
+  interact(b,u,u,'decipher',`${script.toUpperCase()} PAGE DECIPHERED`);return true;
  }
  function cosmicPanic(b,u,e,seconds){
   if(e.gone||e.hp<=0||((e.boss||e.champion)&&e.enraged))return;
@@ -2033,70 +2021,89 @@ function fx(b, type, u, e, text, extra = {}) {
   e.retreatingUntil=Math.max(e.retreatingUntil||0,b.time+seconds);e.panicUntil=e.retreatingUntil;e.panic=true;
   cosmicStatus(b,e,'panic',u);
  }
+ const yellowDamage=(b,e)=>e.yellowBrand&&cosmicUnits(b).some(u=>u.id==='kingInYellow'&&u.uid===e.yellowBrand)?1.25:1;
  function cosmicStatus(b,e,type,source){
   if(e.gone||e.hp<=0)return;
-  cosmicTrialProof(b,source,e,type);
   if(b.cosmicReaction)return;
   e.cosmicStatusAt??={};if(b.time<(e.cosmicStatusAt[type]??-Infinity))return;e.cosmicStatusAt[type]=b.time+1;
   b.cosmicReaction=true;
   try{
    // Cast-generated statuses never feed the casting Eye back into itself.
    if(source?.id!=='eye')for(const eye of cosmicUnits(b).filter(v=>v.id==='eye'&&!token(v)))tick(b,eye,1,source);
-   if(source&&['slow','stun','freeze','warp','panic'].includes(type)&&b.time>=(e.yellowReactionAt??-Infinity)){
-    const king=cosmicUnits(b).find(v=>v.id==='kingInYellow');
-    const herald=cosmicUnits(b).find(v=>v.id==='yellowHerald'&&e.yellowBrand===v.uid);
-    if(king||herald){e.yellowReactionAt=b.time+1;const u=king||herald,targets=king?[e,...living(b).filter(v=>v!==e&&Math.abs(v.p-e.p)<=2.5).slice(0,2)]:[e];for(const v of targets)trueHit(b,u,v,king?180+1.5*rawAtk(u):140);}
+   if(source&&['slow','warp','panic'].includes(type))addMadness(b,e,2);
+   if(source&&['slow','stun','freeze','warp','panic'].includes(type)&&e.yellowBrand&&b.time>=(e.yellowReactionAt??-Infinity)){
+    const u=cosmicUnits(b).find(v=>v.uid===e.yellowBrand&&['kingInYellow','yellowHerald'].includes(v.id));
+    if(u){e.yellowReactionAt=b.time+1;trueHit(b,u,e,atk(b,u)*(u.id==='kingInYellow'?1.2:1.5));}
    }
   }finally{b.cosmicReaction=false;}
  }
- function cosmicReward(b){if(!cosmicUnits(b).some(u=>u.id==='shubNiggurath'))return;for(const v of cosmicUnits(b).filter(u=>!token(u)))growth(b,v,2);}
  function cosmicDeath(b,e,source){
-  cosmicReward(b);
-  if(e.cosmicCursed&&priority(e)){const u=cosmicUnits(b).find(v=>v.uid===e.cosmicCursed)||cosmicUnits(b).find(v=>!token(v));if(u)dropPage(b,u);}
-  if(source?.id==='mass'&&cosmicPrimary(b)==='flesh')spawnToken(b,source,'mindLarvaToken',true,{tokenAtk:11,attackInterval:1,origin:'larva'});
+  if(e.cosmicCursed&&priority(e)){const u=cosmicUnits(b).find(v=>v.uid===e.cosmicCursed);if(u)writePage(b,u);}
+  const shub=cosmicUnits(b).find(u=>u.id==='shubNiggurath');
+  if(shub&&insane(b,e))(b.cosmicYoung??=[]).push({owner:shub.uid,count:1,until:b.time+4,next:b.time});
  }
- function cosmicPrimary(b){const u=deployedIdols(b)[0];return u?.scripts?.[0]||card(u?.id||'slumberingIdol').cosmicScript||card(u?.id||'slumberingIdol').cosmicPair?.split('+')[0];}
- function spawnYoung(b,u){for(let i=0;i<4;i++)if(!spawnToken(b,u,'darkYoung',true,{tokenAtk:rawAtk(u)*.75,attackInterval:.5,origin:'darkYoung'}))break;}
+ const COSMIC_ULTS={cthulhu:"R'lyeh Rises",yogSothoth:'The Gate Opens',shubNiggurath:'Thousand Young',kingInYellow:'The Yellow Sign',elderBrain:'Mind Hijack',azathoth:'Nuclear Chaos'};
+ function resolveCosmicUlt(b,u,id,power){
+  if(id==='cthulhu'){for(const e of living(b).filter(e=>!e.boss&&!e.champion)){cosmicPanic(b,u,e,3);e.psychicDread={owner:u.uid,until:b.time+3};}}
+  else if(id==='yogSothoth'){for(const e of living(b).filter(e=>!e.boss&&!e.champion)){warp(b,e,3,u);trueHit(b,u,e,power*2);}}
+  else if(id==='shubNiggurath'){(b.cosmicYoung??=[]).push({owner:u.uid,count:6,until:b.time+6,next:b.time});}
+  else if(id==='kingInYellow'){for(const e of living(b).filter(e=>e.yellowBrand===u.uid))trueHit(b,u,e,power*1.8);}
+  else if(id==='elderBrain'){for(const e of living(b).filter(e=>!e.boss&&!e.champion).sort((a,z)=>z.hp-a.hp).slice(0,2)){goInsane(b,e,4);e.hijack={owner:u.uid,until:b.time+4,at:b.time};}}
+  else if(id==='azathoth'){for(const e of living(b)){trueHit(b,u,e,power*2);if((e.boss||e.champion)&&e.hp>0){damage(b,e,e.hp*.15,u,'ability',true);warp(b,e,3,u);}}}
+  fx(b,'pulse',u,null,COSMIC_ULTS[id].toUpperCase());
+ }
  function cosmicAttack(b,u,target,power){
   const id=u.id;target.cosmicCursed=u.uid;
-  if(id==='blindAstrologer'){for(const e of living(b).slice(0,2))hit(b,u,e,power);if(u.attackCount%4===0&&!token(u)){addSyllables(b,4,u,null,true);if(rand(b.run)<.45)dropPage(b,u);}return;}
-  if(family(u)==='larva'){hit(b,u,target,power*(u.attackCount%5===0?2:1));status(b,target,'slow',3,.2,u);if(u.attackCount%5===0&&!token(u))addSyllables(b,3,u,'flesh',true);return;}
-  if(id==='darkYoung'){armorStrip(target,.25);hit(b,u,target,power);status(b,target,'slow',3,.2,u);return;}
-  if(id==='mass'){const script=cosmicPrimary(b);for(const e of living(b).slice(0,script==='flesh'?3:1))hit(b,u,e,power);if(script==='abyss')status(b,target,'slow',3,.35,u);if(script==='astral'&&u.attackCount%4===0)warp(b,target,2,u);return;}
-  if(id==='drownedIdol'){for(const e of living(b).slice(0,2))hit(b,u,e,power);if(u.attackCount%6===0)cosmicPanic(b,u,target,1.2);return;}
-  if(id==='keyIdol'){hit(b,u,target,power,true,{ignoreArmor:true});if(u.attackCount%5===0)warp(b,target,2.5,u);return;}
-  if(id==='wombIdol'){hit(b,u,target,power);dot(b,target,'bleed',8,4,u);return;}
-  if(id==='yellowHerald')target.yellowBrand=u.uid;
+  const strike=(e,n,opts)=>{hit(b,u,e,n,true,opts);addMadness(b,e,id==='mass'||id==='cthulhu'?2:id==='azathoth'?1+Math.floor(rand(b.run)*3):1);};
+  if(COSMIC_ULTS[id]&&u.attackCount%10===0){u.channeling={type:'cosmic-'+id,duration:1.2,remaining:1.2};u.currentCooldown=Math.max(u.currentCooldown||0,1.2);fx(b,'pulse',u,u,'CHANNELING · '+COSMIC_ULTS[id].toUpperCase());}
+  if(id==='blindAstrologer'){for(const e of living(b).slice(0,2))strike(e,power);if(u.attackCount%4===0&&!token(u)){addSyllables(b,4,u);writePage(b,u);}return;}
+  if(family(u)==='larva'){strike(target,power);status(b,target,'slow',3,.2,u);if(u.attackCount%5===0&&!token(u))addSyllables(b,3,u);return;}
+  if(id==='drownedIdol'){for(const e of living(b).slice(0,2))strike(e,power);if(u.attackCount%6===0)cosmicPanic(b,u,target,1.2);return;}
+  if(id==='keyIdol'){strike(target,power,{ignoreArmor:true});if(u.attackCount%5===0)warp(b,target,2,u);return;}
+  if(id==='wombIdol'){strike(target,power);dot(b,target,'bleed',power*.25,4,u);return;}
+  if(id==='yellowHerald'||id==='kingInYellow')target.yellowBrand=u.uid;
   if(id==='brainHerald')target.neuralInfection={owner:u.uid,until:b.time+4,at:target.neuralInfection?.at??b.time+1};
-  if(id==='chaosHerald'){const e=living(b).find(priority)||target;if(priority(e))armorStrip(e,.4);hit(b,u,e,power*(priority(e)?2:1));return;}
-  if(id==='azathoth'){for(const e of living(b).slice(0,6)){trueHit(b,u,e,rawAtk(u));if(u.attackCount%4===0&&(e.boss||e.champion)&&e.hp>0){damage(b,e,e.hp*.15,u,'ability',true);warp(b,e,3,u);}}return;}
-  hit(b,u,target,power);
+  if(id==='chaosHerald'){const e=living(b).find(priority)||target;if(priority(e))armorStrip(e,.4);strike(e,power*(priority(e)?2:1));return;}
+  if(id==='azathoth'){for(const e of living(b).slice(0,3))strike(e,power);return;}
+  // Old Ones reach further than a single runner.
+  if(id==='cthulhu'){for(const e of [target,living(b).find(e=>e!==target)].filter(Boolean))strike(e,power);return;}
+  if(id==='shubNiggurath'||id==='kingInYellow'){for(const e of [target,...living(b).filter(e=>e!==target).slice(0,2)]){if(id==='kingInYellow')e.yellowBrand=u.uid;strike(e,power);}return;}
+  if(id==='yogSothoth'){for(const e of [target,living(b).find(e=>e!==target)].filter(Boolean))strike(e,power);return;}
+  strike(target,power);
  }
  function cosmicExtras(b,u){
   if(isIdol(u))updateIdol(b,u);
-  if(u.id==='archivist'){if((u.pageRecipe||[]).length>=2)forgeGrimoire(b,u);if(b.time>=(u.decipherAt??5)){u.decipherAt=b.time+5;decipherPage(b,u);}}
+  if(u.id==='archivist'&&b.time>=(u.decipherAt??5)){u.decipherAt=b.time+5;decipherPage(b,u);}
   if(['wombIdol','broodHerald'].includes(u.id))u.mimic=Math.max(0,...neighbors(b,u).map(v=>base(v)))*(u.id==='wombIdol'?.3:.5);
-  if(u.id==='broodHerald'&&b.time>=(u.broodAt??8)){u.broodAt=b.time+8;spawnToken(b,u,'mindLarvaToken',true,{tokenAtk:11,attackInterval:1,origin:'larva'});}
-  if(u.id==='shubNiggurath'&&b.time>=(u.youngAt??0)){u.youngAt=b.time+6;spawnYoung(b,u);}
-  if(['rlyehHerald','cthulhu'].includes(u.id)&&b.time>=(u.roarAt??6)){u.roarAt=b.time+6;for(const e of (u.id==='cthulhu'?living(b).filter(e=>!e.boss&&!e.champion):living(b).slice(0,2))){cosmicPanic(b,u,e,u.id==='cthulhu'?3:2);if(u.id==='cthulhu')e.psychicDread={owner:u.uid,until:b.time+3};}}
-  if(u.id==='elderBrain'&&b.time>=(u.hijackAt??5)){u.hijackAt=b.time+5;const e=[...living(b)].sort((a,z)=>z.hp-a.hp)[0];if(e){status(b,e,'stun',4,0,u);e.hijack={owner:u.uid,until:b.time+4,at:b.time+1};}}
+  if(u.id==='broodHerald'&&b.time>=(u.broodAt??8)&&b.units.filter(v=>!v.removed&&v.summonerUid===u.uid).length<2){u.broodAt=b.time+8;spawnToken(b,u,'mindLarvaToken',true,{tokenAtk:11,attackInterval:1,origin:'larva',expiresAt:b.time+6});}
+  if(u.id==='rlyehHerald'&&b.time>=(u.roarAt??6)){u.roarAt=b.time+6;for(const e of living(b).slice(0,2))cosmicPanic(b,u,e,2);}
+  if(u.id==='herald'&&b.time>=(u.madnessAt??8)){
+   // Herald of the Outer Dark: each Insane runner is a charge; every 8s they burst as true damage.
+   u.madnessAt=b.time+8;const n=u.madnessCharges||0;u.madnessCharges=0;
+   if(n)for(const e of living(b)){const late=e.p>=12;trueHit(b,u,e,atk(b,u)*.5*n);if(late)warp(b,e,2,u);}
+   if(n)fx(b,'pulse',u,null,`OUTER DARK · ${n} CHARGES`);
+  }
  }
  function tickCosmic(b,dt){
   const sources=cosmicUnits(b),cthulhu=sources.find(u=>u.id==='cthulhu'),rlyeh=sources.filter(u=>u.id==='rlyehHerald');
+  const blame=sources[0]||null;
   for(const e of living(b)){
-   const slowSource=cthulhu||rlyeh.find(u=>wallOf(e)===pumpWall(u));if(slowSource){let s=e.slows.find(s=>s.cosmicWater);const power=(slowSource.id==='cthulhu'?.35:.4)*((e.boss||e.champion)?.5:1);if(s){s.power=power;s.until=b.time+.2;}else e.slows.push({cosmicWater:true,power,until:b.time+.2});}
-   const dread=e.psychicDread;if(dread?.until>b.time){const u=sources.find(u=>u.uid===dread.owner);if(u)trueHit(b,u,e,150*dt);}
-   for(const key of ['neuralInfection','hijack']){const effect=e[key];if(!effect||effect.until<b.time||effect.at>b.time)continue;effect.at=b.time+1;const u=sources.find(u=>u.uid===effect.owner);if(u)for(const v of living(b).filter(v=>Math.abs(v.p-e.p)<=2.5))trueHit(b,u,v,rawAtk(u)*(key==='hijack'?2:.5));}
+   const slowSource=(cthulhu&&wallOf(e)===pumpWall(cthulhu)?cthulhu:null)||rlyeh.find(u=>wallOf(e)===pumpWall(u));
+   if(slowSource){let s=e.slows.find(s=>s.cosmicWater);const power=(slowSource.id==='cthulhu'?.25:.4)*((e.boss||e.champion)?.5:1);if(s){s.power=power;s.until=b.time+.2;}else e.slows.push({cosmicWater:true,power,until:b.time+.2});}
+   const dread=e.psychicDread;if(dread?.until>b.time){const u=sources.find(u=>u.uid===dread.owner);if(u)trueHit(b,u,e,atk(b,u)*.4*dt,true);}
+   // Insane runners tear at neighbours: everything within 1 tile loses 2% of its own max HP per second.
+   if(insane(b,e))for(const v of living(b).filter(v=>v!==e&&Math.abs(v.p-e.p)<=1))damage(b,v,hpPct(v,.02)*dt,blame,'dot');
+   for(const key of ['neuralInfection','hijack']){const effect=e[key];if(!effect||effect.until<b.time||effect.at>b.time)continue;effect.at=b.time+1;const u=sources.find(u=>u.uid===effect.owner);if(u)for(const v of living(b).filter(v=>v!==e&&Math.abs(v.p-e.p)<=2.5))trueHit(b,u,v,atk(b,u)*(key==='hijack'?1:.5),true);}
   }
+  b.cosmicYoung=(b.cosmicYoung||[]).filter(y=>y.until>b.time);
+  for(const y of b.cosmicYoung){if(b.time<y.next)continue;y.next=b.time+1;const u=sources.find(v=>v.uid===y.owner);if(!u)continue;const prey=living(b);for(let i=0;i<y.count&&prey.length;i++)hit(b,u,prey[i%prey.length],atk(b,u)*.5,false);}
  }
+ // Yog-Sothoth / Gate Herald: the first forward crossing of Tile 8 warps the runner back 2 and deals 100% ATK true.
  function cosmicCrossing(b,e,from){
   if(e.gone||e.hp<=0||e.p<=from)return;
-  const yog=cosmicUnits(b).find(u=>u.id==='yogSothoth'),gate=cosmicUnits(b).find(u=>u.id==='gateHerald');
-  const u=yog||gate;if(!u)return;e.cosmicGates??={};
-  for(const corner of yog?[8,12]:[8])if(from<corner&&e.p>=corner&&!e.cosmicGates[corner]){e.cosmicGates[corner]=true;trueHit(b,u,e,yog?220+teamPower(b):120);warp(b,e,yog?5:3,u);break;}
-  if(yog&&!b.cosmicRewindUsed&&!e.boss&&!e.champion&&e.hp>0&&e.p>=15.5){b.cosmicRewindUsed=true;e.p=8;status(b,e,'stun',2.5,0,yog);}
+  const u=cosmicUnits(b).find(u=>u.id==='yogSothoth')||cosmicUnits(b).find(u=>u.id==='gateHerald');if(!u)return;e.cosmicGates??={};
+  if(from<8&&e.p>=8&&!e.cosmicGates[8]){e.cosmicGates[8]=true;trueHit(b,u,e,atk(b,u));warp(b,e,2,u);}
  }
-
  function runtime(b, u, slot, phantom = false) {
   const d = card(u.id), pos = xy(slot);
   let baseAtk = d.baseAtk;
@@ -2170,7 +2177,8 @@ function fx(b, type, u, e, text, extra = {}) {
  function startAbilities(b) {
   if (b.openingResolved) return; b.openingResolved = true;
   const snap = new Map(b.units.map(u => [u.uid, base(u)]));
-  for (const u of b.units.filter(u => u.id === 'mass')) u.mimic = Math.max(0, ...neighbors(b, u).map(v => snap.get(v.uid) - base(u)));
+  // Shoggoth Mass copies 50% of the highest ally base ATK, 100% when that ally is adjacent.
+  for (const u of b.units.filter(u => u.id === 'mass')) { const best = b.units.filter(v => v !== u && !v.removed && !token(v)).sort((a, z) => snap.get(z.uid) - snap.get(a.uid))[0]; u.mimic = best ? snap.get(best.uid) * (neighbors(b, u).includes(best) ? 1 : .5) : 0; }
   // Only cards with an explicit opening-summon rule create a token here.
   for (const u of [...b.units].filter(v => !v.removed && !token(v) && family(v) === 'cub')) devour(b, u);
   startBloodlineTrial(b);
@@ -2221,7 +2229,6 @@ function fx(b, type, u, e, text, extra = {}) {
   if (family(u) === 'mannequin' && (inBlackout || allies(b, u).some(v => v.state !== 'active'))) {
    n *= (u.id === 'livingTaboo' && inBlackout ? 3.0 : 2.5);
   }
-  if(pageAura(b,u,'flesh'))n+=.15;
   n += u.arcaneHasteUntil>b.time?.2:0;
   if (neighbors(b, u, false).some(v => !v.removed && v.id === 'astralLoom')) n += 0.20;
   if (u.id === 'aeroMage') n += Math.min(0.3, Math.floor((u.mastery || 0) / 5) * 0.01); // capped at +30%
@@ -2270,7 +2277,7 @@ function fx(b, type, u, e, text, extra = {}) {
  function tick(b, u, n, source = null) {
   if (u.removed || token(u) || !u.threshold.max) return;
 
-  u.threshold.current += n * (abilityGauge(u) ? mod(b.run, 'gauge')*(pageAura(b,u,'astral')?1.2:1) : 1);
+  u.threshold.current += n * (abilityGauge(u) ? mod(b.run, 'gauge') : 1);
   let guard = 0;
   while (u.threshold.current >= u.threshold.max && u.threshold.max && guard++ < 2) {
    if (u.nextTrigger > b.time || u.state !== 'active') break;
@@ -2285,7 +2292,7 @@ function fx(b, type, u, e, text, extra = {}) {
   for (const v of allies(b, u)) { v.onAdjacentTrigger(u); }
   if(arcaneGauge(u)){elementalSpell(b,u);return;}
   switch (family(u)) {
-   case 'eye': u.nextTrigger = b.time + 4; addSyllables(b,8,u,'astral',true); for (const e of living(b).slice(0, 2)) status(b, e, 'vulnerable', 4, .15, u); interact(b, u.triggerSource || u, u, 'warp', 'control gauge filled · Warp'); for (const e of living(b).slice(0, 2)) { trueHit(b, u, e, 150 + teamPower(b) * .75); warp(b, e, 4, u); fx(b, 'warp', u, e, (e.boss || e.champion) ? (e.enraged ? 'RESIST' : 'WARP −2') : 'WARP −4') } break;
+   case 'eye': u.nextTrigger = b.time + 4; addSyllables(b,8,u,'astral',true); for (const e of living(b).slice(0, 2)) status(b, e, 'vulnerable', 4, .15, u); interact(b, u.triggerSource || u, u, 'warp', 'control gauge filled · Warp'); for (const e of living(b).slice(0, 2)) { trueHit(b, u, e, 150 + teamPower(b) * .75); warp(b, e, 2, u); fx(b, 'warp', u, e, (e.boss || e.champion) ? (e.enraged ? 'RESIST' : 'WARP −1') : 'WARP −2') } break;
    case 'core': u.nextTrigger = b.time + 6; for (const e of living(b)) { trueHit(b, u, e, 240 + teamPower(b) * 2); warp(b, e, 2.5, u); } interact(b, u, u, 'singularity', '8 critical hits → collapse'); break;
   }
  }
@@ -2306,7 +2313,7 @@ function fx(b, type, u, e, text, extra = {}) {
  function damage(b, e, n, source = null, channel = 'direct', exact = false) {
   if (e.hp <= 0 || e.gone) return 0;
   if (b.units.some(u => !u.removed && u.id === 'inkBrush')) n *= 1.10;
-  if(!exact){if(b.units.some(u=>!u.removed&&u.id==='kingInYellow'))n*=1.35;if(channel==='ability'&&e.abyssDreadUntil>b.time)n*=1.1;}
+  if(!exact){n*=yellowDamage(b,e);if(channel==='ability'&&e.abyssDreadUntil>b.time)n*=1.1;}
   if (e.ruleMarks && !exact) n *= (1 + e.ruleMarks * 0.08);
   if (!exact && source && lightsOn(b) && isOrderUnit(source)) n *= 1.2;
   if (!exact && source && (e.elite || e.champion || e.boss) && isOrderUnit(source) && neighbors(b, source, false).some(v => v.id === 'boneSaw')) n *= 1.5;
@@ -2426,15 +2433,12 @@ function fx(b, type, u, e, text, extra = {}) {
   if (e.shredUntil > b.time) defense *= (1 - (e.shredAmount || 0));
   defense *= options.armorFactor??1;
   if (neighbors(b, u, false).some(v => v.id === 'flyingSword')) defense *= .5;
-  if(pageAura(b,u,'astral'))defense*=.7;
   defense *= huntPen(b,u);
   e.lastHitCrit = Boolean(critical); damage(b, e, n * (normal ? 1 : mod(b.run, 'damage')) * mod(b.run, priority(e) ? 'eliteDamage' : 'normalDamage') * (1 - defense * (torment ? .75 : 1)) * (e.vulnerableUntil > b.time ? 1 + e.vulnerability : 1), u, normal ? 'direct' : 'ability');
   if (u.id === 'phaseStalker' && !e.boss && !e.champion && e.hp > 0 && e.hp / e.maxHp < 0.35) damage(b, e, e.hp, u, 'ability');
   if (u.id === 'alphaSpecimen' && normal) { const sp = b.units.find(v => !v.removed && isXenoSpecimen(v) && !isXenoApex(v) && !v.strainsLocked); if (sp) addStrain(b, xenoStrainsFor(sp)[0], 1); b.biomass = (b.biomass || 0) + 1; }
   if (normal && neighbors(b, u, false).some(v => v.id === 'demonBlade')) dot(b, e, 'bleed', hpPct(e), 1, u);
   if (normal && (e.ruleMarks || 0) > 0 && isOrderUnit(u) && neighbors(b, u, false).some(v => v.id === 'boneSaw')) dot(b, e, 'bleed', hpPct(e), 1, u);
-  if(normal&&pageAura(b,u,'abyss')){e.abyssDreadUntil=b.time+3;status(b,e,'slow',3,.2,u);}
-  if(normal&&pageAura(b,u,'flesh'))dot(b,e,'bleed',6,4,u);
   if (species(u) === 'flameToad') dot(b,e,'burn',hpPct(e),1,u);
   if (species(u) === 'scuttler') status(b,e,'slow',2,.15,u);
   if (torment && e.hp > 0) bleedStacks(b, e, 1, u);
@@ -2488,7 +2492,7 @@ function fx(b, type, u, e, text, extra = {}) {
   for (const v of allies(b, u)) {
   }
 
-  if(card(u.id).genre==='Lovecraft'&&u.id!=='herald'){cosmicAttack(b,u,target,power);}
+  if(card(u.id).genre==='Lovecraft'){cosmicAttack(b,u,target,power);}
   else if(heatUser(u)){cyberAttack(b,u,target,power);}
   else if(isArchon(u)){archonAttack(b,u,target,power);}
   else if(u.id==='aeroMage'){
@@ -2984,7 +2988,6 @@ function fx(b, type, u, e, text, extra = {}) {
   tickScrapworkTrial(b);
 
   tickHunt(b, dt);
-  tickCosmicTrial(b);
   if (!b.xenoTrial) startXenoTrial(b);
   tickXenoTrial(b);
   if (b.spawned < b.plan.count && b.time >= b.spawnAt) { spawn(b); b.spawnAt += b.plan.encounter === 'packs' ? (b.spawned % 3 === 0 ? b.plan.interval * 2 : .18) : b.plan.interval }
@@ -3024,6 +3027,7 @@ function fx(b, type, u, e, text, extra = {}) {
      if (chType.startsWith('xeno-')) resolveXenoUlt(b, u, chType.slice(5), power);
      if (chType.startsWith('cyber-')) resolveCyberUlt(b, u, chType.slice(6), power);
      if (chType.startsWith('hunt-')) resolveHuntUlt(b, u, chType.slice(5), power);
+     if (chType.startsWith('cosmic-')) resolveCosmicUlt(b, u, chType.slice(7), power);
      if (chType === 'magmaLord') {
       // Lava erupts outward from the Magma Lord at 5 tiles/s; the 16-tile fissure starts now as before.
       const hits = queue(radial(0.15, 5), (bb, e) => { const hp0 = e.hp; hit(bb, u, e, power * 1.5, false, { noFx: true }); dot(bb, e, 'burn', hpPct(e), 1, u); number(bb, e, hp0); });
@@ -3383,7 +3387,6 @@ function fx(b, type, u, e, text, extra = {}) {
     const guardian=b.units.find(v=>!v.removed&&v.lineage==='xuanwu'&&(lineageTierIds[v.id]?.tier||0)>=4&&(v.savedLeaks||0)<2);
     if (!e.boss && !e.champion && guardian) { guardian.savedLeaks=(guardian.savedLeaks||0)+1; e.gone=true; interact(b,guardian,e,'save',`Xuanwu prevents leak ${guardian.savedLeaks}/2`); continue; }
     if (b.heavenlyTrial?.status === 'active') failHeavenlyTrial(b, e.boss ? 'boss escaped' : 'a runner escaped');
-    if (b.cosmicTrial?.status === 'active') failCosmicTrial(b, e.boss ? 'Boss escaped' : 'A runner leaked');
     if (b.xenoTrial?.status === 'active') failXenoTrial(b, e.boss ? 'Boss escaped' : 'A runner leaked');
     e.gone = true;
     const leakLoss=e.boss ? b.run.maxHealth : Math.max(1, e.leak + mod(b.run, 'leak', 0) - (b.run.relics.includes('mercy') ? 1 : 0));
@@ -3412,7 +3415,7 @@ function fx(b, type, u, e, text, extra = {}) {
    if (won && (b.metrics.leaks || 0) === 0) passXenoTrial(b);
    else failXenoTrial(b, (b.metrics.leaks || 0) > 0 ? 'A runner leaked' : 'Elite/Boss node was not cleared');
   }
-  if(b.cosmicTrial?.status==='active'){const t=b.cosmicTrial,missing=t.scripts.filter(x=>!t.scriptProof[x]);if(won&&(b.metrics.leaks||0)===0&&b.time>=t.recitationEndsAt&&!missing.length)passCosmicTrial(b);else failCosmicTrial(b,(b.metrics.leaks||0)>0?'A runner leaked':b.time<t.recitationEndsAt?'The 8-second recitation was interrupted by the node ending':missing.length?`Missing ${missing.join(' and ')} script effect on a priority target`:'Elite/Boss node was not cleared');}
+  finishCosmicTrial(b, won);
   if (b.heavenlyTrial?.status === 'active') {
    if (won && (b.metrics.leaks || 0) === 0) passHeavenlyTrial(b);
    else failHeavenlyTrial(b, (b.metrics.leaks || 0) > 0 ? 'A runner leaked' : 'Elite/Boss node was not cleared');
@@ -3481,7 +3484,6 @@ function fx(b, type, u, e, text, extra = {}) {
     if (++count > 2000) throw Error('Combat event cycle exceeded limit');
     const ev = b.events.shift();
     for (const u of [...b.units].filter(v => !v.removed && !token(v))) {
-     if (u.id === 'herald' && ev.type === 'consumed' && ev.consumer===u) { u.madnessPower = (u.madnessPower || 0) + 100; interact(b, ev.consumer, u, 'madness-feed', 'consumption → +100 next Madness damage'); }
      if (u.id === 'broodkeeper' && ev.type === 'consumed' && BLOODLINE_FODDER.includes(species(ev.unit))) {
       const preySpecies = species(ev.unit);
       const cub = b.units.find(v => !v.removed && family(v) === 'cub');
@@ -3572,7 +3574,6 @@ function fx(b, type, u, e, text, extra = {}) {
   (b.metrics.consumed ??= []).push(item);
   interact(b, victim, consumer, 'devour', `${isToken ? 'TOKEN CONSUMED · parent safe' : 'ORIGINAL PERMANENTLY LOST'}; +${item.bonus} ATK`);
   
-  if(isToken)cosmicReward(b);
   event(b, 'consumed', { unit: victim, consumer, reason });
   return true;
  }
@@ -3688,7 +3689,6 @@ function fx(b, type, u, e, text, extra = {}) {
  function teamCharge(b, u, n) { for (const v of allies(b, u).filter(v => abilityGauge(v) && !token(v))) { tick(b, v, n, u); interact(b, u, v, 'charge', `+${n} ability progress`); } }
 
  function warp(b, e, tiles, source = null) { if (e.gone || e.hp <= 0 || ((e.boss||e.champion)&&e.enraged)) return; const before = e.p; e.p = Math.max(0, e.p - ((e.boss || e.champion) ? e.enraged ? 0 : tiles * .5 : tiles)); e.retreatingUntil = Math.max(e.retreatingUntil || 0, b.time + ((e.boss||e.champion)?1.25:2.5)); e.panicUntil = Math.max(e.panicUntil || 0, e.retreatingUntil); e.panic = true; if(before>e.p){cosmicStatus(b,e,'warp',source);if(source)event(b, 'displaced', { source, tiles: before - e.p });} }
- function pulseMadness(b, u) { const stored = u.madnessPower || 0; u.madnessPower = 0; for (const e of living(b)) { const late = e.p >= 12; trueHit(b, u, e, stored); if (late) warp(b, e, 5); } u.madnessAt = b.time + 8; interact(b, u, u, 'madness', `MADNESS → +${Math.round(stored)} stored damage released`); fx(b, 'pulse', u, null, 'MADNESS'); }
  // 1 stack = 1% max HP per second; Bosses take half from every %-max-HP effect.
  const hpPct = (e, p = .01) => Math.max(1, e.maxHp * p) * (e.boss ? 0.5 : 1);
  function dot(b, e, type, dps, seconds, u) { if (e.hp <= 0 || e.gone) return; cosmicStatus(b,e,type,u); const key = type === 'burn' ? 'burns' : 'bleeds'; e[key] ??= []; e[key] = e[key].filter(x => x.until > b.time); if (type === 'bleed' && card(species(u))?.genre === 'Bloodline' && support(b, 'matriarch')) seconds += b.units.filter(v => !v.removed && BLOODLINE_FODDER.includes(species(v))).length * .5; e[key].push({ until: b.time + seconds, dps: dps * mod(b.run, 'damage') * mod(b.run, priority(e) ? 'eliteDamage' : 'normalDamage'), owner: u.uid }); }
@@ -3803,12 +3803,11 @@ function fx(b, type, u, e, text, extra = {}) {
    }
   }
   if (u.resonanceLevel && b.time >= (u.resonateAt || 6)) { u.resonateAt = b.time + 6; teamCharge(b, u, u.resonanceLevel); }
-  if (['cub', 'herald'].includes(family(u)) && b.time >= (u.feedAt || 6)) { devour(b, u); u.feedAt = b.time + (u.id === 'herald' ? 12 : 6); }
+  if (family(u) === 'cub' && b.time >= (u.feedAt || 6)) { devour(b, u); u.feedAt = b.time + 6; }
   if (u.lineage === 'dragon' && (lineageTierIds[u.id]?.tier || 0) >= 4 && living(b).length && b.time >= (u.dragonPulseAt || 8)) { u.dragonPulseAt=b.time+8; for(const e of living(b)) warp(b,e,2,u); }
   if (u.lineage === 'phoenix' && (lineageTierIds[u.id]?.tier || 0) >= 3 && living(b).length && b.time >= (u.phoenixPulseAt || 8)) { u.phoenixPulseAt=b.time+8; for(const e of living(b)){const total=(e.burns||[]).filter(d=>d.until>b.time).reduce((n,d)=>n+d.dps*Math.max(0,d.until-b.time),0); if(total){damage(b,e,total,u,'ability');e.burns=e.burns.filter(d=>d.until<=b.time);}} interact(b,u,u,'flare','Phoenix detonation → active Burns consumed'); }
   if (family(u) === 'cub' && (lineageTierIds[u.id]?.tier || 0) === 3) startBloodlineTrial(b);
   if (u.id === 'core' && living(b).length && b.time >= (u.gravityAt || 2)) { u.gravityAt = b.time + 2; tick(b, u, 1, u); }
-  if (u.id === 'herald' && b.time >= (u.madnessAt ?? 8)) pulseMadness(b, u);
 
   // --- CULTIVATION ECOSYSTEM TICKS ---
   // 1. Spirit Lotus Root blooms Lotus Blossom token every 8s
@@ -3894,7 +3893,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (abilityGauge(u) && u.threshold.current >= u.threshold.max) tick(b, u, 0);
  }
 
- return { migrateRun, pushGauge, triggerLightsOn, lightsOn, compliant, isOrderUnit, resolveOrderUlt, breakthroughPills: b => Math.max(0, Math.min(3, Math.floor(b?.run?.breakthroughPills || 0))), chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, addStrain, xenoStrainsFor, resolveXenoUlt, feedSpecimens, startXenoTrial, tickXenoTrial, failXenoTrial, passXenoTrial, addWeakpoint, addGenome, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, startCosmicTrial, cosmicTrialProof, failCosmicTrial, passCosmicTrial, tickCosmicTrial, updateIdol, dropPage, addSyllables, forgeGrimoire, decipherPage, cosmicPanic, cosmicStatus, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, cyberTrialCandidate, startCyberTrial, tickCyberTrial, finishCyberTrial, heatBand, heatDamage, heatSpeed, heatUser, resolveCyberUlt, CYBER_ULTS, netrunnerHack, augmented, berserkActive, updateCyber, installChrome, cyberZone, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, isApprentice, isArchon, isElemental, bestPair, receiveEssence, startArcaneTrial, failArcaneTrial, startScrapworkTrial, markScrapworkTrialHit, failScrapworkTrial, elementalLinks, arcaneReaction, elementalSpell, arcaneExtras, tickArcane, HUNT_APEX, isSlayer, isHunter, priority, executeThreshold, huntArmor, trophyPoints, carveTrophy, huntExtras, visceral, TROPHIES, TROPHY_NAMES, RITE_APEX, RACK_CAP, rack, bleedStacks, isBleeding, harvestTrophy, tickHunt, resolveHuntUlt, HUNT_ULTS, riteCandidate, performRite, riteSacrificable, startHuntBattle, slayerAttack, isMech, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, oilPool, tickOil, mechAttack, addQi, addDread, isCultivationApex, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, persist, event, flushEvents, evolve, evolutionProgress, consume, devour, spawnToken, dot, warp, extras, growth, teamPower, allies, support, trialFor, encounterFor, ENCOUNTERS, record, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, tick, trigger, status, attack, damage, hit, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, startUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, wavePlan, spawn, favored, rand, finish, processPractitionerBreakthroughs, isPractitioner, isBloodlineRelic, isUrbanInvestigator, isUrbanLegend, addRuleMark, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, triggerWeiqiCorner };
+ return { migrateRun, pushGauge, triggerLightsOn, lightsOn, compliant, isOrderUnit, resolveOrderUlt, breakthroughPills: b => Math.max(0, Math.min(3, Math.floor(b?.run?.breakthroughPills || 0))), chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, addStrain, xenoStrainsFor, resolveXenoUlt, feedSpecimens, startXenoTrial, tickXenoTrial, failXenoTrial, passXenoTrial, addWeakpoint, addGenome, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, startCosmicTrial, finishCosmicTrial, updateIdol, writePage, addSyllables, decipherPage, addMadness, goInsane, insane, pages, resolveCosmicUlt, COSMIC_ULTS, SCRIPTS, cosmicPanic, cosmicStatus, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, cyberTrialCandidate, startCyberTrial, tickCyberTrial, finishCyberTrial, heatBand, heatDamage, heatSpeed, heatUser, resolveCyberUlt, CYBER_ULTS, netrunnerHack, augmented, berserkActive, updateCyber, installChrome, cyberZone, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, isApprentice, isArchon, isElemental, bestPair, receiveEssence, startArcaneTrial, failArcaneTrial, startScrapworkTrial, markScrapworkTrialHit, failScrapworkTrial, elementalLinks, arcaneReaction, elementalSpell, arcaneExtras, tickArcane, HUNT_APEX, isSlayer, isHunter, priority, executeThreshold, huntArmor, trophyPoints, carveTrophy, huntExtras, visceral, TROPHIES, TROPHY_NAMES, RITE_APEX, RACK_CAP, rack, bleedStacks, isBleeding, harvestTrophy, tickHunt, resolveHuntUlt, HUNT_ULTS, riteCandidate, performRite, riteSacrificable, startHuntBattle, slayerAttack, isMech, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, oilPool, tickOil, mechAttack, addQi, addDread, isCultivationApex, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, persist, event, flushEvents, evolve, evolutionProgress, consume, devour, spawnToken, dot, warp, extras, growth, teamPower, allies, support, trialFor, encounterFor, ENCOUNTERS, record, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, tick, trigger, status, attack, damage, hit, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, startUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, wavePlan, spawn, favored, rand, finish, processPractitionerBreakthroughs, isPractitioner, isBloodlineRelic, isUrbanInvestigator, isUrbanLegend, addRuleMark, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, triggerWeiqiCorner };
 })();
 if (typeof module !== 'undefined') module.exports = Game;
 
