@@ -216,11 +216,11 @@ function arcaneTrialTarget(b,pair,kind='elite'){
  if(kind==='elite')e.elite=true;
  const [first]=pair.split('+');e.elements={[first]:b.time+4};return e;
 }
-test('Arcane Weaving trial starts on Elite/Boss whenever 80-point Mage has adjacent Loom',()=>{
+test('Arcane Weaving trial starts on Elite/Boss whenever 60-point Mage has adjacent Loom',()=>{
  for(const nodeType of ['elite','boss']){const b=arcaneTrialBattle('fire+water',nodeType);assert.equal(G.startArcaneTrial(b)?.apexId,'steamSovereign',nodeType);assert.equal(G.startArcaneTrial(b),b.arcaneTrial,nodeType);}
  const ordinary=arcaneTrialBattle();ordinary.run.node.type='battle';assert.equal(G.startArcaneTrial(ordinary),null);
  const early=arcaneTrialBattle();early.run.depth=0;assert.equal(G.startArcaneTrial(early)?.status,'active');
- const short=arcaneTrialBattle();short.units[0].synthesis['fire+water']=79;assert.equal(G.startArcaneTrial(short),null);
+ const short=arcaneTrialBattle();short.units[0].synthesis['fire+water']=59;assert.equal(G.startArcaneTrial(short),null);
  const far=arcaneTrialBattle();far.units[1].slot=6;Object.assign(far.units[1],G.xy(6));assert.equal(G.startArcaneTrial(far),null);
 });
 test('Arcane Weaving starts as soon as the 80-point gate is reached during an eligible node',()=>{

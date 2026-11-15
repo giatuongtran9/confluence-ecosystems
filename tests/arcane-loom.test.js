@@ -109,54 +109,54 @@ test('Phase 1: Card & Data Definitions - rarities, base stats, and support card 
   assert.equal(D.CARD.sandstormTitan.attackInterval, 1.0);
 });
 
-test('Phase 2: Apprentice Path Locking at 25 points and 2:1 off-pair conversion', () => {
+test('Phase 2: Apprentice Path Locking at 20 points and 2:1 off-pair conversion', () => {
   const b = battle(['elementalApprentice']), u = b.units[0];
   assert.equal(u.lockedPair, undefined);
 
-  // Feed 24 points to earth+fire
-  for (let i = 0; i < 24; i++) {
+  // Feed 19 points to earth+fire
+  for (let i = 0; i < 19; i++) {
     G.receiveEssence(b, u, 'earth');
     G.receiveEssence(b, u, 'fire');
   }
-  assert.equal(u.synthesis['earth+fire'], 24);
+  assert.equal(u.synthesis['earth+fire'], 19);
   assert.equal(u.lockedPair, undefined);
   assert.equal(u.id, 'elementalApprentice');
 
-  // 25th point locks the path to earth+fire and evolves to elementalAdept
+  // 20th point locks the path to earth+fire and evolves to elementalAdept
   G.receiveEssence(b, u, 'earth');
   G.receiveEssence(b, u, 'fire');
-  assert.equal(u.synthesis['earth+fire'], 25);
+  assert.equal(u.synthesis['earth+fire'], 20);
   assert.equal(u.lockedPair, 'earth+fire');
   assert.equal(u.id, 'elementalAdept');
 
   // Now feed an off-pair: water+wind (should convert 2:1 -> +0.5 to earth+fire)
   G.receiveEssence(b, u, 'water');
   G.receiveEssence(b, u, 'wind');
-  assert.equal(u.synthesis['earth+fire'], 25.5);
+  assert.equal(u.synthesis['earth+fire'], 20.5);
   assert.equal(u.synthesis['water+wind'], undefined);
 
-  // Feed more off-pair until 45 points -> evolves to elementalMage
-  for (let i = 0; i < 39; i++) {
+  // Feed more off-pair until 35 points -> evolves to elementalMage
+  for (let i = 0; i < 29; i++) {
     G.receiveEssence(b, u, 'water');
     G.receiveEssence(b, u, 'wind');
   }
-  // 25.5 + 39 * 0.5 = 25.5 + 19.5 = 45.0
-  close(u.synthesis['earth+fire'], 45.0);
+  // 20.5 + 29 * 0.5 = 35.0
+  close(u.synthesis['earth+fire'], 35.0);
   assert.equal(u.id, 'elementalMage');
 
-  // Feed to 65 points -> evolves to elementalArchmage
-  for (let i = 0; i < 40; i++) {
+  // Feed to 50 points -> evolves to elementalArchmage
+  for (let i = 0; i < 30; i++) {
     G.receiveEssence(b, u, 'water');
     G.receiveEssence(b, u, 'wind');
   }
-  // 45 + 20 = 65
-  close(u.synthesis['earth+fire'], 65.0);
+  // 35 + 15 = 50
+  close(u.synthesis['earth+fire'], 50.0);
   assert.equal(u.id, 'elementalArchmage');
 
   // Check evolution progress UI label
   const prog = G.evolutionProgress(u);
-  assert.equal(prog.current, 65);
-  assert.equal(prog.max, 80);
+  assert.equal(prog.current, 50);
+  assert.equal(prog.max, 60);
   assert.ok(prog.label.includes('Path Locked'));
 });
 

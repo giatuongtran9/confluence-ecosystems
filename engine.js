@@ -249,12 +249,12 @@ const Game = (() => {
  function updateApprentice(b,u){
   if(!isApprentice(u)||isArchon(u)||u.removed||token(u))return;
   const pair=u.lockedPair||bestPair(u),p=u.synthesis?.[pair]||0;
-  if(!u.lockedPair&&p>=25)u.lockedPair=pair;
-  const id=p>=65?'elementalArchmage':p>=45?'elementalMage':p>=25?'elementalAdept':'elementalApprentice';
+  if(!u.lockedPair&&p>=20)u.lockedPair=pair;
+  const id=p>=50?'elementalArchmage':p>=35?'elementalMage':p>=20?'elementalAdept':'elementalApprentice';
   if(id!==u.id&&u.id!=='elementalMaster')evolve(b,u,id);
   else if(u.id==='elementalMaster'&&id!=='elementalMage')evolve(b,u,id);
   else if(u.id==='elementalMaster'&&id==='elementalMage'){u.id='elementalMage';}
-  if(p>=80)startArcaneTrial(b);
+  if(p>=60)startArcaneTrial(b);
   persist(b,u);
  }
  function receiveEssence(b,u,element){
@@ -275,9 +275,9 @@ const Game = (() => {
    }else{
     u.synthesis[pair]=(u.synthesis[pair]||0)+1;
     interact(b,u,u,'synthesis',`${pair} · +1 synthesis`);
-    if(u.synthesis[pair]>=25){
+    if(u.synthesis[pair]>=20){
      u.lockedPair=pair;
-     interact(b,u,u,'path-lock',`PATH LOCKED to ${pair} at 25 points!`);
+     interact(b,u,u,'path-lock',`PATH LOCKED to ${pair} at 20 points!`);
      fx(b,'growth',u,null,`LOCKED: ${pair.toUpperCase()}`);
     }
    }
@@ -292,7 +292,8 @@ const Game = (() => {
  }
  function elementalLinks(b,u){
   const element=card(u.id).element;
-  if(element)for(const v of neighbors(b,u))receiveEssence(b,v,element);
+  // Every cast feeds every Apprentice on the grid; an adjacent caster feeds it twice.
+  if(element)for(const v of b.units.filter(v=>!v.removed&&v!==u&&isApprentice(v))){receiveEssence(b,v,element);if(neighbors(b,u).includes(v))receiveEssence(b,v,element);}
   const prisms=neighbors(b,u).filter(v=>v.id==='elementalPrism');
   // No time-based cooldown. Prevent only recursive Prism-created casts from feeding themselves forever.
   if(prisms.length&&!b.prismPulseDepth){
@@ -1416,7 +1417,7 @@ function fx(b, type, u, e, text, extra = {}) {
   for(const unit of b.units.filter(u=>!u.removed&&!token(u)&&isApprentice(u)&&!isArchon(u))
     .sort((a,z)=>a.slot-z.slot||a.uid-z.uid)){
    const pair=unit.lockedPair||bestPair(unit),points=unit.synthesis?.[pair]||0;
-   if(points<80)continue;
+   if(points<60)continue;
    const loom=neighbors(b,unit,false).filter(v=>!v.removed&&!token(v)&&v.id==='astralLoom')
     .sort((a,z)=>a.slot-z.slot||a.uid-z.uid)[0];
    if(loom)return{unit,loom,pair,apexId:ARCANE_PAIRS[pair]};
@@ -3676,13 +3677,13 @@ function fx(b, type, u, e, text, extra = {}) {
   const pair = u.lockedPair || bestPair(u);
   const p = u.synthesis?.[pair] || 0;
   const t = u.arcaneTrial;
-  const max = p < 25 ? 25 : p < 45 ? 45 : p < 65 ? 65 : 80;
+  const max = p < 20 ? 20 : p < 35 ? 35 : p < 50 ? 50 : 60;
   return {
     current: p,
     max,
     label: isArchon(u) ? 'Mythic · Astral Weaving complete' :
-      p < 80 ? `${pair} synthesis · ${p}/${max} · Adept(25) / Mage(45) / Archmage(65) / Mythic(80)${u.lockedPair ? ' [Path Locked · 2:1 off-pair]' : ''}` :
-      `${pair} · 80/80 · adjacent Astral Loom · Elite/Boss reaction trial${t?.unitUid===u.uid ? ` · ${t.status}${t.featDone ? ' · reaction proved' : ''}` : ''}`
+      p < 60 ? `${pair} synthesis · ${p}/${max} · Adept(20) / Mage(35) / Archmage(50) / Mythic(60)${u.lockedPair ? ' [Path Locked · 2:1 off-pair]' : ''}` :
+      `${pair} · 60/60 · adjacent Astral Loom · Elite/Boss reaction trial${t?.unitUid===u.uid ? ` · ${t.status}${t.featDone ? ' · reaction proved' : ''}` : ''}`
   };
 } case 'mercenary':return {current:u.trophyPoints||0,max:(u.trophyPoints||0)<25?25:(u.trophyPoints||0)<60?60:100}; case 'scrapFrame': return {current:u.alloy||0,max:(u.alloy||0)<25?25:(u.alloy||0)<65?65:120};case 'cub': { const current=u.lineageStacks||0, tier=lineageTierIds[u.id]?.tier||0, relic=cubRelics[u.lineage]; return { current, max:6, label:tier>=4?'Mythic · ancestral trial complete':tier===3?`Tier 3 · Elite/Boss zero-leak trial + adjacent ${card(relic)?.name||'ancestral relic'}`:'Tier 3 at 6 matching meals · then ancestral Elite/Boss trial' }; }
    case 'investigator': {
