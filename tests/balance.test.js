@@ -310,7 +310,7 @@ test('Ink Brush increases damage taken by every enemy by 10%',()=>{
  const b=battle(['inkBrush']),e=supportEnemy(b);G.damage(b,e,100,null,'direct',true);assert.equal(100000-e.hp,110);
 });
 test('Mountain-River Scroll gives adjacent attackers +15% ATK',()=>{
- const b=battle(['practitioner','mountainScroll'],[0,1]);assert.ok(Math.abs(G.atk(b,b.units[0])-13.8)<1e-9);
+ const b=battle(['practitioner','mountainScroll'],[0,1]);assert.ok(Math.abs(G.atk(b,b.units[0])-14*1.15)<1e-9);
 });
 test('Demon Blade grants adjacent attack speed and normal hits add a one-second 1%-max-HP bleed',()=>{
  const b=battle(['practitioner','demonBlade'],[0,1]),u=b.units[0],e=supportEnemy(b);assert.equal(G.speed(b,u),1.1);G.hit(b,u,e,100,true,{criticalMultiplier:1});assert.ok(e.bleeds.some(d=>d.dps===1000&&d.until===1));

@@ -1661,7 +1661,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (newRealm !== oldRealm || u.id !== urbanInvestigatorIds[newRealm]) {
    const nextId = urbanInvestigatorIds[newRealm];
    if (u.id !== nextId) evolve(b, u, nextId);
-   const stats = [[12, 1.5], [20, 1.4], [48, 1.3], [90, 1.2]][newRealm];
+   const stats = [[12, 1.5], [20, 1.4], [44, 1.3], [82, 1.2]][newRealm];
    u.baseAtk = stats[0]; u.attackInterval = stats[1];
    if (newRealm > oldRealm) {
     const title = ['Investigator', 'Occult Detective', 'Anomaly Specialist', 'Rule Enforcer'][newRealm];
@@ -1900,7 +1900,7 @@ function fx(b, type, u, e, text, extra = {}) {
  function startXenoTrial(b) {
   if (!b || b.xenoTrial) return b?.xenoTrial || null;
   if (!ELITE_NODES.includes(b.run?.node?.type)) return null;
-  const u = b.units.filter(v => !v.removed && !token(v) && isXenoSpecimen(v) && !isXenoApex(v) && (v.genome || 0) >= 130 && (v.strains || []).length === 2)
+  const u = b.units.filter(v => !v.removed && !token(v) && isXenoSpecimen(v) && !isXenoApex(v) && (v.genome || 0) >= 150 && (v.strains || []).length === 2)
    .sort((a, z) => (z.genome || 0) - (a.genome || 0) || a.slot - z.slot)[0];
   const branch = u && XENO_BRANCHES[xenoPair(u.strains)];
   if (!branch) return null;
@@ -1963,7 +1963,7 @@ function fx(b, type, u, e, text, extra = {}) {
    evolve(b, u, XENO_BRANCHES[xenoPair(u.strains)][0]);
   }
   persist(b, u);
-  if (g >= 130 && (u.strains || []).length === 2) startXenoTrial(b);
+  if (g >= 150 && (u.strains || []).length === 2) startXenoTrial(b);
  }
  // Biomass: every runner killed while Sci-Fi is deployed feeds the Specimen (4 per meal; 8 with a Gene-Splicer).
  function feedSpecimens(b, dt) {
@@ -2072,7 +2072,7 @@ function fx(b, type, u, e, text, extra = {}) {
   'astral+flesh':['chaosHerald','azathoth']
  };
  const SCRIPTS=['abyss','astral','flesh'];
- const PAGE_CAP=6,MADNESS_CAP=10,SUMMONING_NEED=16,SUMMONING_SYLLABLES=154;
+ const PAGE_CAP=6,MADNESS_CAP=10,SUMMONING_NEED=20,SUMMONING_SYLLABLES=154;
  const cosmicPair=s=>s?.length>=2?[...s.slice(0,2)].sort().join('+'):null;
  const isIdol=u=>family(u)==='slumberingIdol';
  const cosmicApex=u=>isIdol(u)&&card(u.id).rarity==='Mythic';
@@ -2228,7 +2228,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if ((d.evolvedFrom || d.id) === 'stair13') attackInterval = 0;
   if (isUrbanInvestigator(u)) {
    const r = urbanInvestigatorRealmForDread(u.dread || 0);
-   const stats = [[12, 1.5], [20, 1.4], [48, 1.3], [90, 1.2]][r];
+   const stats = [[12, 1.5], [20, 1.4], [44, 1.3], [82, 1.2]][r];
    baseAtk = stats[0]; attackInterval = stats[1];
   }
   if (isPractitioner(u)) {
@@ -2343,7 +2343,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (neighbors(b, u, false).some(v => v.id === 'demonBlade')) n += .10;
   const inBlackout = b.curfewUntil > b.time;
   const hasDirector = b.units.some(v => !v.removed && v.id === 'curfewDirector');
-  if (isOrderUnit(u)) { if (hasDirector) n *= 1.3; if (lightsOn(b)) n *= 1.3; if (neighbors(b, u, false).some(v => v.id === 'radioPA')) n += .15; }
+  if (isOrderUnit(u)) { if (hasDirector) n *= 1.3; if (lightsOn(b)) n *= 1.2; if (neighbors(b, u, false).some(v => v.id === 'radioPA')) n += .15; }
   else if (card(u.id).genre === 'Haunted' && inBlackout) n *= 1.4;
   if (family(u) === 'mannequin' && (inBlackout || allies(b, u).some(v => v.state !== 'active'))) {
    n *= (u.id === 'livingTaboo' && inBlackout ? 3.0 : 2.5);

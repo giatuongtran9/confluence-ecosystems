@@ -67,10 +67,10 @@ test('Security Monitor and Emergency Broadcast are 0/0 supports; ranks use the a
  assert.equal(G.rawAtk(b.units[2]), 12); assert.equal(b.units[2].attackInterval, 1.5);
 });
 
-test('Lights On: Order units +30% attack speed and +10% damage', () => {
+test('Lights On: Order units +20% attack speed and +10% damage', () => {
  const b = battle(['investigator']); const u = b.units[0], e = enemy(b);
  const base = G.speed(b, u); b.lightsOnUntil = 10;
- assert.ok(Math.abs(G.speed(b, u) - base * 1.3) < 1e-9);
+ assert.ok(Math.abs(G.speed(b, u) - base * 1.2) < 1e-9);
  G.damage(b, e, 100, u); assert.ok(Math.abs(e.maxHp - e.hp - 110) < 1e-9);
 });
 

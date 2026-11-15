@@ -8,7 +8,7 @@ function battle(ids,slots=ids.map((_,i)=>i),type='battle'){
 function enemy(b,kind='',p=1,hp=100000){const e={uid:++b.enemyUid,p,hp,maxHp:hp,speed:.3,defense:0,boss:kind==='boss',champion:kind==='champion',elite:kind==='elite',gone:false,bornAt:0,frozenUntil:0,slows:[],bleeds:[],burns:[],venoms:[],stuns:[],auras:[]};b.enemies.push(e);return e;}
 
 test('approved stats; Grimoires and page tokens are gone; Archivist and Eye are supports',()=>{
- for(const [id,atk,iv] of [['slumberingIdol',12,1.5],['blindAstrologer',12,1.5],['larva',12,1.4],['mass',24,1.4],['herald',85,1.2],['cthulhu',150,1.3],['yogSothoth',140,1.2],['shubNiggurath',135,1.1],['kingInYellow',140,1.2],['elderBrain',135,1.2],['azathoth',165,1.4]]){assert.equal(D.CARD[id].baseAtk,atk,id);assert.equal(D.CARD[id].attackInterval,iv,id);}
+ for(const [id,atk,iv] of [['slumberingIdol',12,1.5],['blindAstrologer',12,1.5],['larva',12,1.4],['mass',24,1.4],['herald',85,1.2],['cthulhu',150,1.3],['yogSothoth',140,1.2],['shubNiggurath',135,1.1],['kingInYellow',140,1.2],['elderBrain',135,1.2],['azathoth',165,1.4]]){assert.equal(D.CARD[id].baseAtk,Math.round(atk*0.9),id);assert.equal(D.CARD[id].attackInterval,iv,id);}
  for(const id of ['deepGrimoire','astralGrimoire','fleshGrimoire','yellowGrimoire','brainGrimoire','chaosGrimoire','abyssPage','astralPage','fleshPage'])assert.equal(D.CARD[id],undefined,id);
  assert.equal(D.CARD.archivist.attackInterval,0);assert.equal(D.CARD.eye.attackInterval,0);
 });
@@ -43,10 +43,10 @@ test('Archivist deciphers the oldest page: the Idol learns the script and gains 
  assert.deepEqual(idol.scripts,['astral']);assert.equal(idol.syllables,18);assert.deepEqual(G.pages(b.run),['flesh']);
 });
 
-test('the Summoning: a 154-Syllable Herald on an Elite node needs 16 Insane runners (a Boss counts 3); the Old One manifests at battle end',()=>{
+test('the Summoning: a 154-Syllable Herald on an Elite node needs 20 Insane runners (a Boss counts 3); the Old One manifests at battle end',()=>{
  const b=battle(['slumberingIdol'],[4],'elite'),u=b.units[0];Object.assign(u,{scripts:['abyss','abyss'],syllables:154});G.updateIdol(b,u);
  assert.equal(u.id,'rlyehHerald');assert.equal(b.cosmicTrial.status,'active');
- G.goInsane(b,enemy(b,'boss'));for(let i=0;i<12;i++)G.goInsane(b,enemy(b));assert.equal(b.cosmicTrial.status,'active');G.goInsane(b,enemy(b));
+ G.goInsane(b,enemy(b,'boss'));for(let i=0;i<16;i++)G.goInsane(b,enemy(b));assert.equal(b.cosmicTrial.status,'active');G.goInsane(b,enemy(b));
  assert.equal(b.cosmicTrial.status,'proven');
  G.finish(b,true);assert.equal(b.run.roster[0].id,'cthulhu');
 });

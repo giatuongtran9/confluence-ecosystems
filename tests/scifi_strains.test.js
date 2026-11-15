@@ -40,9 +40,9 @@ test('kills fill Biomass; the Specimen eats 4 every 5s, 8 with a Gene-Splicer', 
  assert.equal(lab.units[0].permanentAtkBonus, 2); // adjacent Splicer
 });
 
-test('Metamorphosis: a 130-Genome chrysalis cocoons 15s on an Elite node and hatches mid-battle', () => {
+test('Metamorphosis: a 150-Genome chrysalis cocoons 15s on an Elite node and hatches mid-battle', () => {
  const b = battle(['impalerMorph'], [4], 'elite'); const u = b.units[0];
- Object.assign(u, { genome: 130, strains: ['chitin', 'chitin'], strainsLocked: true });
+ Object.assign(u, { genome: 150, strains: ['chitin', 'chitin'], strainsLocked: true });
  const t = G.startXenoTrial(b); assert.ok(t);
  assert.ok(u.cocoonUntil > b.time);
  b.time = 15; G.tickXenoTrial(b);
@@ -51,7 +51,7 @@ test('Metamorphosis: a 130-Genome chrysalis cocoons 15s on an Elite node and hat
 
 test('a leak during the cocoon cracks it without removing the card', () => {
  const b = battle(['acidBrood'], [4], 'elite'); const u = b.units[0];
- Object.assign(u, { genome: 140, strains: ['acid', 'acid'], strainsLocked: true });
+ Object.assign(u, { genome: 150, strains: ['acid', 'acid'], strainsLocked: true });
  G.startXenoTrial(b); b.metrics.leaks = 1; b.time = 3; G.tickXenoTrial(b);
  assert.equal(b.xenoTrial.status, 'failed'); assert.equal(u.removed, false); assert.equal(u.id, 'acidBrood');
  assert.ok(b.run.roster.some(v => v.uid === u.uid));

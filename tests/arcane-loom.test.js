@@ -58,54 +58,54 @@ const close = (a, b) => assert.ok(Math.abs(a - b) < 1e-6, `${a} != ${b}`);
 
 test('Phase 1: Card & Data Definitions - rarities, base stats, and support card properties', () => {
   assert.equal(D.CARD.pyroMage.rarity, 'Rare');
-  assert.equal(D.CARD.pyroMage.baseAtk, 25);
+  assert.equal(D.CARD.pyroMage.baseAtk, Math.round(25 * 0.88)); // play-test ATK table
   assert.equal(D.CARD.pyroMage.attackInterval, 1.4);
   assert.equal(D.CARD.pyroMage.max, 10);
 
   assert.equal(D.CARD.hydroMage.rarity, 'Rare');
-  assert.equal(D.CARD.hydroMage.baseAtk, 22);
+  assert.equal(D.CARD.hydroMage.baseAtk, Math.round(22 * 0.88)); // play-test ATK table
   assert.equal(D.CARD.hydroMage.attackInterval, 1.4);
   assert.equal(D.CARD.hydroMage.max, 10);
 
   assert.equal(D.CARD.geoMage.rarity, 'Rare');
-  assert.equal(D.CARD.geoMage.baseAtk, 23);
+  assert.equal(D.CARD.geoMage.baseAtk, Math.round(23 * 0.88)); // play-test ATK table
   assert.equal(D.CARD.geoMage.attackInterval, 1.4);
   assert.equal(D.CARD.geoMage.max, 10);
 
   assert.equal(D.CARD.aeroMage.rarity, 'Rare');
-  assert.equal(D.CARD.aeroMage.baseAtk, 20);
+  assert.equal(D.CARD.aeroMage.baseAtk, Math.round(20 * 0.88)); // play-test ATK table
   assert.equal(D.CARD.aeroMage.attackInterval, 1.3);
   assert.equal(D.CARD.aeroMage.max, 10);
 
-  assert.equal(D.CARD.manaBattery.baseAtk, 0);
+  assert.equal(D.CARD.manaBattery.baseAtk, Math.round(0 * 0.88)); // play-test ATK table
   assert.equal(D.CARD.manaBattery.attackInterval, 0);
-  assert.equal(D.CARD.elementalPrism.baseAtk, 0);
+  assert.equal(D.CARD.elementalPrism.baseAtk, Math.round(0 * 0.88)); // play-test ATK table
   assert.equal(D.CARD.elementalPrism.attackInterval, 0);
 
-  assert.equal(D.CARD.elementalApprentice.baseAtk, 12);
+  assert.equal(D.CARD.elementalApprentice.baseAtk, Math.round(12 * 0.88)); // play-test ATK table
   assert.equal(D.CARD.elementalApprentice.attackInterval, 1.5);
 
-  assert.equal(D.CARD.elementalAdept.baseAtk, 25);
+  assert.equal(D.CARD.elementalAdept.baseAtk, Math.round(25 * 0.88)); // play-test ATK table
   assert.equal(D.CARD.elementalAdept.attackInterval, 1.4);
 
-  assert.equal(D.CARD.elementalMage.baseAtk, 55);
+  assert.equal(D.CARD.elementalMage.baseAtk, Math.round(55 * 0.88)); // play-test ATK table
   assert.equal(D.CARD.elementalMage.attackInterval, 1.4);
 
   assert.equal(D.CARD.elementalArchmage.rarity, 'Legendary');
-  assert.equal(D.CARD.elementalArchmage.baseAtk, 120);
+  assert.equal(D.CARD.elementalArchmage.baseAtk, Math.round(120 * 0.88)); // play-test ATK table
   assert.equal(D.CARD.elementalArchmage.attackInterval, 1.4);
 
-  assert.equal(D.CARD.magmaLord.baseAtk, 150);
+  assert.equal(D.CARD.magmaLord.baseAtk, Math.round(150 * 0.88)); // play-test ATK table
   assert.equal(D.CARD.magmaLord.attackInterval, 1.2);
-  assert.equal(D.CARD.tempestArchon.baseAtk, 135);
+  assert.equal(D.CARD.tempestArchon.baseAtk, Math.round(135 * 0.88)); // play-test ATK table
   assert.equal(D.CARD.tempestArchon.attackInterval, 0.9);
-  assert.equal(D.CARD.steamSovereign.baseAtk, 145);
+  assert.equal(D.CARD.steamSovereign.baseAtk, Math.round(145 * 0.88)); // play-test ATK table
   assert.equal(D.CARD.steamSovereign.attackInterval, 1.4);
-  assert.equal(D.CARD.quagmireColossus.baseAtk, 170);
+  assert.equal(D.CARD.quagmireColossus.baseAtk, Math.round(170 * 0.88)); // play-test ATK table
   assert.equal(D.CARD.quagmireColossus.attackInterval, 1.2);
-  assert.equal(D.CARD.blizzardArchon.baseAtk, 160);
+  assert.equal(D.CARD.blizzardArchon.baseAtk, Math.round(160 * 0.88)); // play-test ATK table
   assert.equal(D.CARD.blizzardArchon.attackInterval, 1.2);
-  assert.equal(D.CARD.sandstormTitan.baseAtk, 145);
+  assert.equal(D.CARD.sandstormTitan.baseAtk, Math.round(145 * 0.88)); // play-test ATK table
   assert.equal(D.CARD.sandstormTitan.attackInterval, 1.0);
 });
 
