@@ -47,8 +47,9 @@ const Game = (() => {
    let roll = rand(r) * available.reduce((a, v) => a + v, 0), chosen = 0;
    for (let i = 0; i < available.length; i++) { roll -= available[i]; if (roll < 0) { chosen = i; break } }
    let options = pool.filter(c => tier(c.id) === chosen), genre = D.LEADERS.find(l => l.id === r.leader)?.genre;
-   let total = options.reduce((n, c) => n + (c.genre === genre ? 1.5 : 1), 0), pickRoll = rand(r) * total, pick = options[options.length - 1];
-   for (const c of options) { pickRoll -= c.genre === genre ? 1.5 : 1; if (pickRoll < 0) { pick = c; break } }
+   const weight = c => (c.genre === genre ? 1.5 : 1) * (CULT_RELICS.includes(c.id) || c.id === 'bodhiBeads' ? .5 : 1);
+   let total = options.reduce((n, c) => n + weight(c), 0), pickRoll = rand(r) * total, pick = options[options.length - 1];
+   for (const c of options) { pickRoll -= weight(c); if (pickRoll < 0) { pick = c; break } }
    out.push(pick.id); pool = pool.filter(c => c.id !== pick.id)
   }
   return out;
@@ -1224,7 +1225,7 @@ function fx(b, type, u, e, text, extra = {}) {
   'swordImmortal', 'melodicSaint', 'formationMaster', 'talismanSovereign', 'landscapeSage', 'soulReapingDemon', 'bloodFiendMaster',
   'ruleArchitect', 'allSeeingOverseer', 'curfewDirector', 'forensicDemiurge', 'backroomsWarden',
   'slitMouthedSovereign', 'terminusBus', 'midnightOperator', 'mirrorQueen', 'livingTaboo',
-  'penroseLabyrinth', 'crimsonHarbinger'
+  'penroseLabyrinth', 'crimsonHarbinger', 'vajraBody', 'bodhisattva'
  ];
  const CULT_RELICS = ['flyingSword', 'guqin', 'weiqiBoard', 'inkBrush', 'mountainScroll', 'soulBanner', 'demonBlade'];
  const isCultivationRelic = u => CULT_RELICS.includes(u.id);
@@ -1316,7 +1317,76 @@ function fx(b, type, u, e, text, extra = {}) {
  const urbanInvestigatorIds = ['investigator', 'occultDetective', 'anomalySpecialist', 'ruleEnforcer'];
  const isUrbanAuthority = u => Object.values(urbanRelicMap).includes(u.id);
  const isCultivationApex = u => APEX_FORMS.includes(u.id) && card(u.id).genre === 'Cultivation';
- const acceptsQi = u => !token(u) && (isPractitioner(u) || isCultivationApex(u));
+ const acceptsQi = u => !token(u) && (isPractitioner(u) || isCultivationApex(u) || isBodyPath(u) || isMonkPath(u));
+ // ── Body Cultivation: tempered by kills (ordinary 1, Elite 3, Boss/Champion 5). Qi helps but never replaces the kill gates.
+ const BODY_FORMS = ['bodyDisciple', 'ironSkinWarrior', 'bronzeVajra', 'goldenArhat'], BODY_GATES = [12, 35, 70];
+ const MONK_FORMS = ['wanderingMonk', 'diamondMonk', 'arhatMonk'];
+ const MONK_GATES = [{ attacks: 80, finishes: 4, qi: 40 }, { attacks: 200, finishes: 10, qi: 100 }];
+ const isBodyPath = u => !!u && (BODY_FORMS.includes(u.id) || u.id === 'vajraBody');
+ const isMonkPath = u => !!u && (MONK_FORMS.includes(u.id) || u.id === 'bodhisattva');
+ const CULT_ULTS = { vajraBody: 'Mountain-Splitting Fist', bodhisattva: 'Thousand-Hand Palm' };
+ function updateBody(b, u) {
+  if (!BODY_FORMS.includes(u.id) || token(u)) return;
+  const kp = u.killPoints || 0, earned = kp >= 70 ? 'goldenArhat' : kp >= 35 ? 'bronzeVajra' : kp >= 12 ? 'ironSkinWarrior' : 'bodyDisciple';
+  const id = BODY_FORMS.indexOf(earned) > BODY_FORMS.indexOf(u.id) ? earned : u.id; // forms only ever advance
+  if (u.id !== id) { evolve(b, u, id); fx(b, 'growth', u, null, card(id).name.toUpperCase()); }
+  persist(b, u); if (u.id === 'goldenArhat' && kp >= 70) startBodyTrial(b);
+ }
+ // Every 10 Qi tempers 1 kill point, but Qi may fill at most a third of the current milestone; every 25 Qi is a 4s Blood Surge.
+ function temperBody(b, u, amount) {
+  u.qiTemper = (u.qiTemper || 0) + amount; u.qiSurge = (u.qiSurge || 0) + amount;
+  const i = BODY_GATES.findIndex(g => (u.killPoints || 0) < g), lo = i <= 0 ? 0 : BODY_GATES[i - 1], cap = i < 0 ? 0 : (BODY_GATES[i] - lo) / 3;
+  while (u.qiTemper >= 10 && (u.qiKillPoints || 0) < (u.qiCapAt === i ? cap : (u.qiKillPoints = 0, u.qiCapAt = i, cap))) { u.qiTemper -= 10; u.qiKillPoints = (u.qiKillPoints || 0) + 1; u.killPoints = (u.killPoints || 0) + 1; }
+  while (u.qiSurge >= 25) { u.qiSurge -= 25; u.surgeUntil = b.time + 4; fx(b, 'state', u, null, 'BLOOD SURGE'); }
+  updateBody(b, u);
+ }
+ function bodyKill(b, e, source) {
+  if (source && BODY_FORMS.includes(source.id) && !token(source)) { source.killPoints = (source.killPoints || 0) + (e.boss || e.champion ? 5 : e.elite ? 3 : 1); updateBody(b, source); }
+  if (source && MONK_FORMS.includes(source.id) && !token(source) && ((e.slows || []).some(s => s.until > b.time) || (e.ruleMarks || 0) > 0 || e.alphaQuarry || Object.values(e.tabooMarks || {}).some(v => v > 0))) { source.monkFinishes = (source.monkFinishes || 0) + 1; updateMonk(b, source); }
+ }
+ function updateMonk(b, u) {
+  if (!MONK_FORMS.includes(u.id) || token(u)) return;
+  const met = g => (u.monkAttacks || 0) >= g.attacks && (u.monkFinishes || 0) >= g.finishes && (u.qi || 0) >= g.qi;
+  const id = u.id === 'wanderingMonk' && met(MONK_GATES[0]) ? 'diamondMonk' : u.id === 'diamondMonk' && met(MONK_GATES[1]) ? 'arhatMonk' : u.id;
+  if (u.id !== id) { evolve(b, u, id); fx(b, 'growth', u, null, card(id).name.toUpperCase()); }
+  persist(b, u); if (u.id === 'arhatMonk') startMonkTrial(b);
+ }
+ // Body trial: no relic. The next Elite/Boss/Champion with a 70-point Golden-Body Arhat; failure removes only that card.
+ function startBodyTrial(b) {
+  if (!b || b.bodyTrial || !ELITE_NODES.includes(b.run?.node?.type) || (b.metrics?.leaks || 0) > 0) return b?.bodyTrial || null;
+  const u = b.units.find(v => !v.removed && !token(v) && v.id === 'goldenArhat' && (v.killPoints || 0) >= 70); if (!u) return null;
+  b.bodyTrial = { status: 'active', unitUid: u.uid, apexId: 'vajraBody', startedAt: b.time }; b.metrics.bodyTrial = { ...b.bodyTrial };
+  interact(b, u, u, 'tribulation', 'BODY TRIBULATION · clear this node with zero leaks'); fx(b, 'pulse', u, null, 'BODY TRIBULATION'); return b.bodyTrial;
+ }
+ // Monk trial: the Practitioner's stakes. Needs the Bodhi Prayer Beads adjacent; failure removes the Monk and the Beads.
+ function startMonkTrial(b) {
+  if (!b || b.monkTrial || !ELITE_NODES.includes(b.run?.node?.type) || (b.metrics?.leaks || 0) > 0) return b?.monkTrial || null;
+  const u = b.units.find(v => !v.removed && !token(v) && v.id === 'arhatMonk'); if (!u) return null;
+  const beads = neighbors(b, u, false).find(v => !v.removed && v.id === 'bodhiBeads'); if (!beads) return null;
+  b.monkTrial = { status: 'active', unitUid: u.uid, relicUid: beads.uid, apexId: 'bodhisattva', startedAt: b.time }; b.metrics.monkTrial = { ...b.monkTrial };
+  interact(b, u, beads, 'tribulation', 'BODHI TRIBULATION · clear this node with zero leaks'); fx(b, 'pulse', u, null, 'BODHI TRIBULATION'); return b.monkTrial;
+ }
+ function finishCultivationTrials(b, won) {
+  for (const key of ['bodyTrial', 'monkTrial']) {
+   const t = b[key]; if (!t || t.status !== 'active') continue;
+   const u = b.units.find(v => v.uid === t.unitUid && !v.removed), relic = t.relicUid ? b.units.find(v => v.uid === t.relicUid && !v.removed) : null;
+   if (won && (b.metrics.leaks || 0) === 0 && u && (!t.relicUid || relic)) {
+    if (relic) consume(b, u, relic, 'Bodhi Tribulation', 0);
+    evolve(b, u, t.apexId); u.realm = 4; persist(b, u); t.status = 'passed'; fx(b, 'growth', u, null, card(t.apexId).name.toUpperCase() + ' AWAKENED');
+   } else {
+    t.status = 'failed'; t.reason = (b.metrics.leaks || 0) > 0 ? 'A runner leaked' : 'The node was not cleared';
+    const lost = new Set([t.unitUid, t.relicUid].filter(Boolean)); for (const v of b.units) if (lost.has(v.uid)) v.removed = true; b.run.roster = b.run.roster.filter(v => !lost.has(v.uid));
+   }
+   b.metrics[key] = { ...t };
+  }
+ }
+ // Pill Alchemist: Lotus and Cauldron Qi gains +25%, doubled to +50% when the Alchemist stands beside the Cauldron.
+ const alchemyBonus = b => { const a = b.units.find(v => !v.removed && v.id === 'pillAlchemist'); if (!a) return 1; return neighbors(b, a, false).some(v => !v.removed && v.id === 'cauldron') ? 1.5 : 1.25; };
+ function resolveCultUlt(b, u, id, power) {
+  if (id === 'vajraBody') { const t = [...living(b)].sort((a, z) => z.hp - a.hp)[0]; if (t) for (const e of living(b).filter(e => [0, 1, 3].includes((wallOf(e) - wallOf(t) + 4) % 4))) { hit(b, u, e, power * (wallOf(e) === wallOf(t) ? 3 : 1.5), false); status(b, e, 'stun', 1.5, 0, u); } }
+  else if (id === 'bodhisattva') { for (const e of living(b)) { hit(b, u, e, power * 1.5, false); status(b, e, 'stun', 1, 0, u); } }
+  ultFx(b, u, id, CULT_ULTS[id]);
+ }
  const acceptsDread = u => !token(u) && (isUrbanInvestigator(u) || isUrbanAuthority(u));
  function addQi(b, u, amount) {
   if (!Number.isFinite(amount) || amount <= 0) return;
@@ -1335,6 +1405,8 @@ function fx(b, type, u, e, text, extra = {}) {
    if ((u.qi || 0) > gate) u.qi = gate;
   } else {
    u.qi = previousQi + amount;
+   if (BODY_FORMS.includes(u.id)) temperBody(b, u, amount);
+   if (MONK_FORMS.includes(u.id)) updateMonk(b, u);
   }
   persist(b, u);
   startHeavenlyTrial(b);
@@ -2211,6 +2283,8 @@ function fx(b, type, u, e, text, extra = {}) {
   startArcaneTrial(b);
   startScrapworkTrial(b);
   startHuntBattle(b);
+  startBodyTrial(b);
+  startMonkTrial(b);
   startAbilities(b);
   startCosmicTrial(b);
   startXenoTrial(b);
@@ -2277,6 +2351,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (neighbors(b, u, false).some(v => !v.removed && v.id === 'astralLoom')) n += 0.20;
   if (u.id === 'aeroMage') n += Math.min(0.3, Math.floor((u.mastery || 0) / 5) * 0.01); // capped at +30%
   n += huntSpeed(b,u);
+  if ((u.surgeUntil || 0) > b.time) n += .3;
   if (card(u.id)?.genre === 'Bloodline' && u.id !== 'beastTamer' && neighbors(b, u, false).some(v => !v.removed && v.id === 'beastTamer')) n += .15;
   return n * (isCyber(u)&&!cyberApex(u)&&u.sandyUntil>b.time?1.8:1) * heatSpeed(u) * (1 + (u.permanentSpeed || 0)) * mod(b.run, 'speed')
  }
@@ -2398,7 +2473,7 @@ function fx(b, type, u, e, text, extra = {}) {
      }
     }
    }
-   harvestTrophy(b,e,source);cosmicDeath(b,e,source);
+   harvestTrophy(b,e,source);bodyKill(b,e,source);cosmicDeath(b,e,source);
    if (e.rumorInfected) spreadRumor(b, e, true);
 
    // Soul Banner captures souls track-wide on any enemy death
@@ -2483,6 +2558,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (u.id === 'phaseStalker' && !e.boss && !e.champion && e.hp > 0 && e.hp / e.maxHp < 0.35) damage(b, e, e.hp, u, 'ability');
   if (u.id === 'alphaSpecimen' && normal) { const sp = b.units.find(v => !v.removed && isXenoSpecimen(v) && !isXenoApex(v) && !v.strainsLocked); if (sp) addStrain(b, xenoStrainsFor(sp)[0], 1); b.biomass = (b.biomass || 0) + 1; }
   if (normal && neighbors(b, u, false).some(v => v.id === 'demonBlade')) dot(b, e, 'bleed', hpPct(e), 1, u);
+  if (normal && e.hp > 0 && neighbors(b, u, false).some(v => v.id === 'bodhiBeads')) status(b, e, 'slow', 2, .15, u);
   if (normal && (e.ruleMarks || 0) > 0 && isOrderUnit(u) && neighbors(b, u, false).some(v => v.id === 'boneSaw')) dot(b, e, 'bleed', hpPct(e), 1, u);
   if (species(u) === 'flameToad') dot(b,e,'burn',hpPct(e),1,u);
   if (species(u) === 'scuttler') status(b,e,'slow',2,.15,u);
@@ -2542,6 +2618,14 @@ function fx(b, type, u, e, text, extra = {}) {
   if(card(u.id).genre==='Lovecraft'){cosmicAttack(b,u,target,power);}
   else if(heatUser(u)){cyberAttack(b,u,target,power);}
   else if(isArchon(u)){archonAttack(b,u,target,power);}
+  else if(isBodyPath(u)||isMonkPath(u)||u.id==='pillAlchemist'){
+   const hands=u.id==='bodhisattva'?4:u.id==='arhatMonk'?2:1;for(const e of [target,...living(b).filter(e=>e!==target).slice(0,hands-1)])hit(b,u,e,power);
+   // The fist's shockwave: 40% to runners within 1 tile (50% Epic, 60% Legendary); the Vajra Body's covers its whole wall at 100%.
+   if(isBodyPath(u)){const vajra=u.id==='vajraBody',k=vajra?1:u.id==='goldenArhat'?.6:u.id==='bronzeVajra'?.5:.4;for(const e of living(b).filter(e=>e!==target&&(vajra?wallOf(e)===wallOf(target):Math.abs(e.p-target.p)<=1)))hit(b,u,e,power*k,false);}
+   if(isMonkPath(u)){for(const e of living(b).slice(0,hands))status(b,e,'slow',2,.2,u);if(!token(u)){u.monkAttacks=(u.monkAttacks||0)+1;updateMonk(b,u);}}
+   if(u.id==='pillAlchemist'){const next=living(b).find(e=>e!==target);if(next)hit(b,u,next,power*.5,false);}
+   if(CULT_ULTS[u.id]&&u.attackCount%10===0){u.channeling={type:'cult-'+u.id,duration:1.2,remaining:1.2};u.currentCooldown=Math.max(u.currentCooldown||0,1.2);fx(b,'ult-channel',u,u,'CHANNELING · '+CULT_ULTS[u.id].toUpperCase());}
+  }
   else if(u.id==='salvageGunner'||u.id==='beastTamer'){
    // Rare attackers added for PostApoc and Bloodline: both strike the 2 leading runners.
    for(const e of living(b).slice(0,2)){hit(b,u,e,power);if(u.id==='beastTamer')dot(b,e,'bleed',hpPct(e),1,u);}
@@ -3081,6 +3165,7 @@ function fx(b, type, u, e, text, extra = {}) {
      if (chType.startsWith('hunt-')) resolveHuntUlt(b, u, chType.slice(5), power);
      if (chType.startsWith('cosmic-')) resolveCosmicUlt(b, u, chType.slice(7), power);
      if (chType.startsWith('chaos-')) resolveChaosUlt(b, u, chType.slice(6), power);
+     if (chType.startsWith('cult-')) resolveCultUlt(b, u, chType.slice(5), power);
      if (chType === 'magmaLord') {
       // Lava erupts outward from the Magma Lord at 5 tiles/s; the 16-tile fissure starts now as before.
       const hits = queue(radial(0.15, 5), (bb, e) => { const hp0 = e.hp; hit(bb, u, e, power * 1.5, false, { noFx: true }); dot(bb, e, 'burn', hpPct(e), 1, u); number(bb, e, hp0); });
@@ -3469,6 +3554,7 @@ function fx(b, type, u, e, text, extra = {}) {
    else failXenoTrial(b, (b.metrics.leaks || 0) > 0 ? 'A runner leaked' : 'Elite/Boss node was not cleared');
   }
   finishCosmicTrial(b, won);
+  finishCultivationTrials(b, won);
   if (b.heavenlyTrial?.status === 'active') {
    if (won && (b.metrics.leaks || 0) === 0) passHeavenlyTrial(b);
    else failHeavenlyTrial(b, (b.metrics.leaks || 0) > 0 ? 'A runner leaked' : 'Elite/Boss node was not cleared');
@@ -3523,7 +3609,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (token(u)) return;
   const src = b.run.roster.find(v => v.uid === u.uid);
   if (src) {
-   for (const k of ['id', 'syllables', 'scripts', 'pageRecipe', 'brainAbsorbed', 'arm', 'os', 'tuning', 'chrome', 'chromeAttackCharge', 'synthesis', 'essences', 'boundPair', 'trophyPoints', 'carvings', 'scrapIntake', 'savedWeapons', 'qiAttackCharge', 'alloy', 'alloyAttacks', 'modules', 'titanUnlocked', 'permanentAtkBonus', 'permanentSpeed', 'lineage', 'lineageStacks', 'meals', 'qiGrowth', 'returns', 'witnesses', 'qi', 'realm', 'swordQi', 'apexQi', 'apexDread', 'souls', 'bladeKills', 'demonAtkBonus', 'dread', 'violations', 'blackouts', 'mirrorQueenBonusGranted', 'genome', 'strains', 'strainScore', 'strainsLocked']) {
+   for (const k of ['id', 'syllables', 'scripts', 'pageRecipe', 'brainAbsorbed', 'arm', 'os', 'tuning', 'killPoints', 'qiTemper', 'qiSurge', 'qiKillPoints', 'qiCapAt', 'monkAttacks', 'monkFinishes', 'chrome', 'chromeAttackCharge', 'synthesis', 'essences', 'boundPair', 'trophyPoints', 'carvings', 'scrapIntake', 'savedWeapons', 'qiAttackCharge', 'alloy', 'alloyAttacks', 'modules', 'titanUnlocked', 'permanentAtkBonus', 'permanentSpeed', 'lineage', 'lineageStacks', 'meals', 'qiGrowth', 'returns', 'witnesses', 'qi', 'realm', 'swordQi', 'apexQi', 'apexDread', 'souls', 'bladeKills', 'demonAtkBonus', 'dread', 'violations', 'blackouts', 'mirrorQueenBonusGranted', 'genome', 'strains', 'strainScore', 'strainsLocked']) {
     if (u[k] !== undefined) src[k] = u[k];
    }
   }
@@ -3883,7 +3969,7 @@ function fx(b, type, u, e, text, extra = {}) {
    if (blossom && !cauldronWillBrew) {
     const apex = isCultivationApex(u);
     consume(b, u, blossom, 'Blossom Absorption', apex ? 0 : 1);
-    addQi(b, u, apex?15:5);
+    addQi(b, u, (apex?15:5) * alchemyBonus(b));
     interact(b, blossom, u, 'qi', apex ? '+15 Qi toward permanent growth' : '+5 Qi, +1 permanent ATK');
    }
   }
@@ -3899,7 +3985,7 @@ function fx(b, type, u, e, text, extra = {}) {
     const target = atCap ? overflowRecipient() : null;
     consume(b, u, grass, atCap ? 'Overflow Qi Brewing' : 'Breakthrough Pill Brewing', 0);
     if (atCap) {
-     addQi(b, target, 12);
+     addQi(b, target, 12 * alchemyBonus(b));
      interact(b, u, target, 'pill-overflow', '+12 Qi · full pill storage · Spirit Grass consumed');
     } else {
      b.run.breakthroughPills = Math.min(3, (b.run.breakthroughPills || 0) + 1);
@@ -3912,7 +3998,7 @@ function fx(b, type, u, e, text, extra = {}) {
     const target = blossomRecipient();
     if (target) {
      consume(b, u, blossom, 'Blossom Brewing', 0);
-     addQi(b, target, 6);
+     addQi(b, target, 6 * alchemyBonus(b));
      growth(b, target, 2);
      interact(b, u, target, 'blossom-brew', '+6 Qi and +2 permanent ATK · Lotus Blossom brewed');
      brewed = true;
@@ -3946,7 +4032,7 @@ function fx(b, type, u, e, text, extra = {}) {
   if (abilityGauge(u) && u.threshold.current >= u.threshold.max) tick(b, u, 0);
  }
 
- return { migrateRun, stageOf, finalRow, openShop, shopBuyCard, shopBuyRelic, shopRemove, leaveShop, SHOP_REMOVE_PRICE, CHAOS_ULTS, resolveChaosUlt, ORDER_ULTS, XENO_ULTS, pushGauge, triggerLightsOn, lightsOn, compliant, isOrderUnit, resolveOrderUlt, breakthroughPills: b => Math.max(0, Math.min(3, Math.floor(b?.run?.breakthroughPills || 0))), chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, addStrain, xenoStrainsFor, resolveXenoUlt, feedSpecimens, startXenoTrial, tickXenoTrial, failXenoTrial, passXenoTrial, addWeakpoint, addGenome, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, startCosmicTrial, finishCosmicTrial, updateIdol, writePage, addSyllables, decipherPage, addMadness, goInsane, insane, pages, resolveCosmicUlt, COSMIC_ULTS, SCRIPTS, cosmicPanic, cosmicStatus, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, cyberTrialCandidate, startCyberTrial, tickCyberTrial, finishCyberTrial, heatBand, heatDamage, heatSpeed, heatUser, resolveCyberUlt, CYBER_ULTS, netrunnerHack, augmented, berserkActive, updateCyber, installChrome, cyberZone, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, isApprentice, isArchon, isElemental, bestPair, receiveEssence, startArcaneTrial, failArcaneTrial, startScrapworkTrial, markScrapworkTrialHit, failScrapworkTrial, elementalLinks, arcaneReaction, elementalSpell, arcaneExtras, tickArcane, HUNT_APEX, isSlayer, isHunter, priority, executeThreshold, huntArmor, trophyPoints, carveTrophy, huntExtras, visceral, TROPHIES, TROPHY_NAMES, RITE_APEX, RACK_CAP, rack, bleedStacks, isBleeding, harvestTrophy, tickHunt, resolveHuntUlt, HUNT_ULTS, riteCandidate, performRite, riteSacrificable, startHuntBattle, slayerAttack, isMech, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, oilPool, tickOil, mechAttack, addQi, addDread, isCultivationApex, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, persist, event, flushEvents, evolve, evolutionProgress, consume, devour, spawnToken, dot, warp, extras, growth, teamPower, allies, support, trialFor, encounterFor, ENCOUNTERS, record, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, tick, trigger, status, attack, damage, hit, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, startUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, wavePlan, spawn, favored, rand, finish, processPractitionerBreakthroughs, isPractitioner, isBloodlineRelic, isUrbanInvestigator, isUrbanLegend, addRuleMark, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, triggerWeiqiCorner };
+ return { migrateRun, CULT_ULTS, resolveCultUlt, updateBody, updateMonk, bodyKill, temperBody, startBodyTrial, startMonkTrial, alchemyBonus, isBodyPath, isMonkPath, BODY_GATES, MONK_GATES, stageOf, finalRow, openShop, shopBuyCard, shopBuyRelic, shopRemove, leaveShop, SHOP_REMOVE_PRICE, CHAOS_ULTS, resolveChaosUlt, ORDER_ULTS, XENO_ULTS, pushGauge, triggerLightsOn, lightsOn, compliant, isOrderUnit, resolveOrderUlt, breakthroughPills: b => Math.max(0, Math.min(3, Math.floor(b?.run?.breakthroughPills || 0))), chooseTarget, XENO_BRANCHES, xenoPair, isXeno, isXenoSpecimen, addStrain, xenoStrainsFor, resolveXenoUlt, feedSpecimens, startXenoTrial, tickXenoTrial, failXenoTrial, passXenoTrial, addWeakpoint, addGenome, xenoAttack, xenoExtras, tickXeno, critMultiplier, COSMIC_BRANCHES, cosmicPair, isIdol, cosmicApex, startCosmicTrial, finishCosmicTrial, updateIdol, writePage, addSyllables, decipherPage, addMadness, goInsane, insane, pages, resolveCosmicUlt, COSMIC_ULTS, SCRIPTS, cosmicPanic, cosmicStatus, cosmicAttack, cosmicExtras, tickCosmic, cosmicCrossing, CYBER_MATRIX, CYBER_APEX, isCyber, cyberApex, cyberTrialCandidate, startCyberTrial, tickCyberTrial, finishCyberTrial, heatBand, heatDamage, heatSpeed, heatUser, resolveCyberUlt, CYBER_ULTS, netrunnerHack, augmented, berserkActive, updateCyber, installChrome, cyberZone, cyberAttack, pumpWall, cyberExtras, tickCyber, ARCANE_PAIRS, isApprentice, isArchon, isElemental, bestPair, receiveEssence, startArcaneTrial, failArcaneTrial, startScrapworkTrial, markScrapworkTrialHit, failScrapworkTrial, elementalLinks, arcaneReaction, elementalSpell, arcaneExtras, tickArcane, HUNT_APEX, isSlayer, isHunter, priority, executeThreshold, huntArmor, trophyPoints, carveTrophy, huntExtras, visceral, TROPHIES, TROPHY_NAMES, RITE_APEX, RACK_CAP, rack, bleedStacks, isBleeding, harvestTrophy, tickHunt, resolveHuntUlt, HUNT_ULTS, riteCandidate, performRite, riteSacrificable, startHuntBattle, slayerAttack, isMech, occupiedSlots, slotOccupied, touches, mechPath, updateMech, addAlloy, reserveDeployment, salvage, forge, scrapworkExtras, armorStrip, arcTiles, oilPool, tickOil, mechAttack, addQi, addDread, isCultivationApex, spreadRumor, cubForms, cubRelics, lineageTierIds, species, breed, workshopOptions, upgrade, family, token, persist, event, flushEvents, evolve, evolutionProgress, consume, devour, spawnToken, dot, warp, extras, growth, teamPower, allies, support, trialFor, encounterFor, ENCOUNTERS, record, newRun, draft, skipDraft, rerollDraft, offers, available, chooseNode, reward, addRelic, instance, deploy, step, base, atk, speed, crit, neighbors, kind, xy, track, ring, tick, trigger, status, attack, damage, hit, sensor, rawAtk, startAbilities, prepareHooks, runtime, startHeavenlyTrial, failHeavenlyTrial, passHeavenlyTrial, tickHeavenlyTrial, startBloodlineTrial, failBloodlineTrial, startUrbanContainmentTrial, startUrbanLegendTrial, failUrbanLegendTrial, passUrbanLegendTrial, wavePlan, spawn, favored, rand, finish, processPractitionerBreakthroughs, isPractitioner, isBloodlineRelic, isUrbanInvestigator, isUrbanLegend, addRuleMark, isApexImmortal, grantUrbanViolation, addTabooMark, getTabooMark, hasLegendMark, totalTabooMarks, isLegendTarget, triggerWeiqiCorner };
 })();
 if (typeof module !== 'undefined') module.exports = Game;
 
