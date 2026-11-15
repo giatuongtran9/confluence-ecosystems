@@ -96,7 +96,7 @@ test('shop: buy a card, buy a general relic, remove one card, then return to the
  assert.ok(G.chooseNode(r, shop.id)); assert.equal(r.phase, 'event'); assert.equal(r.shop.cards.length, 3);
  const card = r.shop.cards[0]; assert.ok(G.shopBuyCard(r, card.id)); assert.equal(r.roster.at(-1).id, card.id); assert.ok(!G.shopBuyCard(r, card.id));
  const relic = r.shop.relics[0]; assert.ok(G.shopBuyRelic(r, relic.id)); assert.ok(r.relics.includes(relic.id));
- assert.ok(G.shopRemove(r, r.roster[1].uid)); assert.ok(!G.shopRemove(r, r.roster[1].uid), 'one removal per visit');
+ assert.ok(G.shopRemove(r, r.roster[1].uid)); assert.ok(G.shopRemove(r, r.roster[1].uid)); assert.ok(!G.shopRemove(r, r.roster[1].uid), 'two removals per visit');
  assert.ok(G.leaveShop(r)); assert.equal(r.phase, 'map');
 });
 
