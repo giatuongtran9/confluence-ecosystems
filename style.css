@@ -1232,3 +1232,15 @@ body.has-dock .shell{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))
 .blackout-meter.gauge::after{content:'';position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:#cbd5e1aa}
 .blackout-meter.gauge i.order{margin-left:auto;margin-right:50%;background:linear-gradient(90deg,#f3c94b,#f8e7a0)}
 .blackout-meter.gauge i.chaos{margin-left:50%;background:linear-gradient(90deg,#b2304a,#ff4d64)}
+/* Redesign states: Cyberpunk heat band, Redline, Sci-Fi cocoon, redesign 10th-ability channel */
+.field-card .rd-heat{position:absolute;left:12%;right:12%;bottom:6px;height:4px;border-radius:2px;background:#0b1220d9;overflow:hidden;z-index:4;pointer-events:none}
+.field-card .rd-heat b{display:block;height:100%;width:0;background:#38bdf8;transition:width .15s linear}
+.field-card.rd-warm .rd-heat b{background:#ffb020}
+.field-card.rd-redline .rd-heat b{background:#ff3b3b}
+.in-combat .board .field-card.rd-redline,.field-card.rd-redline{filter:drop-shadow(0 0 10px #ff3b3b);animation:rdRedline .45s ease-in-out infinite alternate}
+@keyframes rdRedline{to{filter:drop-shadow(0 0 18px #ffd166)}}
+.field-card.rd-cocoon .sprite{filter:sepia(.7) hue-rotate(45deg) brightness(.55)}
+.field-card.rd-cocoon{filter:drop-shadow(0 0 12px #a3e635)}
+.field-card.rd-cocoon::after{content:'COCOON ' attr(data-cocoon);position:absolute;left:0;right:0;top:4px;text-align:center;font:800 10px system-ui,sans-serif;color:#bef264;text-shadow:0 0 4px #000;z-index:5;pointer-events:none}
+.field-card.rd-channel{filter:drop-shadow(0 0 16px rgb(var(--rd-rgb,226,232,240)))}
+@media (prefers-reduced-motion:reduce){.field-card.rd-redline{animation:none}}

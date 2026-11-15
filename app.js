@@ -449,7 +449,7 @@ function blackoutHUDHTML(b){
 function bloodlineTrialHUDHTML(b){const t=b?.bloodlineTrial;if(!t)return '';const name=CARD[t.apexId]?.name||'Bloodline Mythic';if(t.status==='active')return `<div class="bloodline-trial-hud active"><div class="urban-trial-head"><b>♜ ANCESTRAL ASCENSION TRIAL</b><span>${CARD[t.relicId]?.name||'Ancestral Relic'} · ${t.nodeType.toUpperCase()}</span></div><p>Clear this Elite/Boss node with zero runner leaks to awaken ${name}. Any leak removes the Tier 3 Bloodline and its relic.</p></div>`;if(t.status==='passed')return `<div class="bloodline-trial-hud passed"><b>✦ ANCESTRAL TRIAL PASSED</b><span>${name} awakened · relic consumed</span></div>`;return `<div class="bloodline-trial-hud failed"><b>♜ ANCESTRAL TRIAL FAILED</b><span>${t.reason||'A runner leaked'} · Tier 3 Bloodline and relic removed</span></div>`}
 function urbanLegendTrialHUDHTML(b){const t=b?.urbanLegendTrial;if(!t)return '';const dev=b.units.find(u=>u.uid===t.devourerUid);const name=dev?CARD[dev.id]?.name:'Urban Legend';if(t.status==='active')return `<div class="urban-legend-trial-hud active"><div class="urban-trial-head"><b>☒ FOLKLORE MERGER TRIAL · ${name}</b><span>80+ Violations · +${Number(t.inheritedAtk||0).toFixed(1)} inherited ATK</span></div><p>Same-lineage prey (45+ Violations) was consumed at trial start. Clear this Elite/Boss node with zero runner leaks to earn Mythic. Any leak removes the devourer from the roster.</p></div>`;if(t.status==='passed')return `<div class="urban-legend-trial-hud passed"><b>✦ ZERO-LEAK TRIAL PASSED</b><span>${CARD[t.apexId]?.name||'Mythic Urban Legend'} awakened · +${Number(t.inheritedAtk||0).toFixed(1)} ATK inherited</span></div>`;return `<div class="urban-legend-trial-hud failed"><b>☒ FOLKLORE TRIAL FAILED</b><span>${t.reason||'A runner leaked'} · devourer removed; prey was consumed</span></div>`}
 function urbanContainmentHUDHTML(b){const t=b?.urbanContainmentTrial;if(!t)return '';const zero=b.enemies.find(e=>e.uid===t.subjectZeroUid);if(t.status==='active'&&t.subjectZeroContained)return `<div class="urban-trial-hud active"><div class="urban-trial-head"><b>☒ SUBJECT ZERO CONTAINED</b><span>Zero-leak clear required</span></div><p>The containment feat is complete. Clear this Elite/Boss node with no runner leaks to bind the Relic into ${CARD[t.apexId]?.name||'its Mythic form'}; any leak removes the Rule Enforcer and Relic.</p></div>`;if(t.status==='active'){const marks=zero?.ruleMarks||0,hp=zero?Math.max(0,Math.ceil(zero.hp)).toLocaleString():'—',max=zero?zero.maxHp.toLocaleString():'—';return `<div class="urban-trial-hud active"><div class="urban-trial-head"><b>☒ SUBJECT ZERO CONTAINMENT</b><span>${marks}/5 Citations · ${hp}/${max} HP</span></div><p>Cite Subject Zero five times, then defeat it before it reaches the exit. Its escape or an under-marked kill permanently removes the Rule Enforcer and Relic. After containment, finish the Elite/Boss with zero leaks to earn Mythic.</p></div>`}if(t.status==='passed')return `<div class="urban-trial-hud passed"><b>✦ SUBJECT ZERO CONTAINED</b><span>${CARD[t.apexId]?.name||'Mythic Authority'} awakened · Relic consumed</span></div>`;return `<div class="urban-trial-hud failed"><b>☒ CONTAINMENT FAILED</b><span>${t.reason||'Trial failed'} · Rule Enforcer and Relic removed</span></div>`}
-function cosmicTrialHUDHTML(b){const t=b?.cosmicTrial;if(!t)return '';const name=CARD[t.apexId]?.name||'Cosmic Mythic',pct=Math.min(100,t.insane/t.need*100);if(t.status==='active'||t.status==='proven')return `<div class="cosmic-trial-hud active"><div class="urban-trial-head"><b>◈ THE SUMMONING</b><span>${t.nodeType.toUpperCase()} · ${t.insane}/${t.need} INSANE</span></div><div class="blackout-meter"><i style="width:${pct}%"></i></div><p>${t.status==='proven'?`Complete. ${name} manifests when the battle ends.`:`Drive runners Insane (a Boss counts 3) to summon ${name}.`}</p></div>`;if(t.status==='passed')return `<div class="cosmic-trial-hud passed"><b>✦ THE SUMMONING</b><span>${name} manifested</span></div>`;return `<div class="cosmic-trial-hud failed"><b>THE SUMMONING FAILED</b><span>${t.reason||''} · nothing was lost</span></div>`}
+function cosmicTrialHUDHTML(b){const t=b?.cosmicTrial;if(!t){if(!b?.units.some(u=>!u.removed&&CARD[u.id]?.genre==='Lovecraft'))return '';const p=Game.pages(b.run);return `<div class="cosmic-trial-hud active"><div class="urban-trial-head"><b>◈ FORBIDDEN PAGES</b><span>${p.length}/6 · ${b.metrics.insane||0} INSANE</span></div><p>${p.map(s=>s.toUpperCase()).join(' · ')||'No pages yet. Blind Astrologers write them.'}</p></div>`}const name=CARD[t.apexId]?.name||'Cosmic Mythic',pct=Math.min(100,t.insane/t.need*100);if(t.status==='active'||t.status==='proven')return `<div class="cosmic-trial-hud active"><div class="urban-trial-head"><b>◈ THE SUMMONING</b><span>${t.nodeType.toUpperCase()} · ${t.insane}/${t.need} INSANE</span></div><div class="blackout-meter"><i style="width:${pct}%"></i></div><p>${t.status==='proven'?`Complete. ${name} manifests when the battle ends.`:`Drive runners Insane (a Boss counts 3) to summon ${name}.`}</p></div>`;if(t.status==='passed')return `<div class="cosmic-trial-hud passed"><b>✦ THE SUMMONING</b><span>${name} manifested</span></div>`;return `<div class="cosmic-trial-hud failed"><b>THE SUMMONING FAILED</b><span>${t.reason||''} · nothing was lost</span></div>`}
 function xenoTrialHUDHTML(b){const t=b?.xenoTrial;if(!t)return '';const name=CARD[t.apexId]?.name||'Xeno-Leviathan';if(t.status==='active')return `<div class="xeno-trial-hud active"><div class="urban-trial-head"><b>⬡ METAMORPHOSIS · COCOON</b><span>${t.pair.split('+').join(' + ')} · hatches in ${Math.max(0,t.hatchAt-b.time).toFixed(1)}s</span></div><p>Hold the line: no leaks for 15s and the chrysalis hatches into ${name} mid-battle. A leak cracks the cocoon; it tries again next Elite/Boss.</p></div>`;if(t.status==='passed')return `<div class="xeno-trial-hud passed"><b>✦ HATCHED</b><span>${name} emerged mid-battle</span></div>`;return `<div class="xeno-trial-hud failed"><b>⬡ COCOON CRACKED</b><span>${t.reason||'A runner leaked'} · the chrysalis will try again</span></div>`}
 function combat(){return `${gamehead()}<div class="combat-layout"><section class="panel arena-panel"><div class="combat-toolbar"><div class="row">${btn('pause',paused?'▶ Resume':'Ⅱ Pause','small','id="pauseBtn"')}${[1,2,4].map(n=>btn('speed',n+'×',`small ${speed===n?'chosen':''}`,`data-id="${n}"`)).join('')}</div><div class="row">${btn('route','Map','small')}</div></div><div id="blackout-hud" class="blackout-hud">${blackoutHUDHTML(battle)}</div><div id="xeno-trial-hud">${xenoTrialHUDHTML(battle)}</div><div id="cosmic-trial-hud">${cosmicTrialHUDHTML(battle)}</div><div id="heavenly-trial-hud">${heavenlyTrialHUDHTML(battle)}</div><div id="arcane-trial-hud">${arcaneTrialHUDHTML(battle)}</div><div id="scrapwork-trial-hud">${scrapworkTrialHUDHTML(battle)}</div><div id="cyber-trial-hud">${cyberTrialHUDHTML(battle)}</div><div id="hunt-trial-hud">${huntTrialHUDHTML(battle)}</div><div id="bloodline-trial-hud">${bloodlineTrialHUDHTML(battle)}</div><div id="urban-trial-hud">${urbanContainmentHUDHTML(battle)}</div><div id="urban-legend-trial-hud">${urbanLegendTrialHUDHTML(battle)}</div>${board()}<div id="loss-strip">${lossNotice()}</div></section></div>`}
 function end(){return `${gamehead()}<section class="stage center"><div class="eyebrow">${run.phase==='won'?'The road holds':'The crossing falls'}</div><h1>${run.phase==='won'?'Worlds, united.':'A thread remains.'}</h1><p class="muted" style="margin-top:20px">Your next deck will tell a different story.</p><div class="summary-grid"><div><b>${run.cleared}</b><small>Battles cleared</small></div><div><b>${run.stats.kills}</b><small>Runners defeated</small></div><div><b>+${Math.round(run.stats.growth)}</b><small>ATK grown in combat</small></div><div><b>${run.coins||0}</b><small>Coins remaining</small></div></div><div class="actions">${btn('home','Choose a new leader','primary')}</div></section>${battleReport(run.recap)}`}
@@ -4067,6 +4067,196 @@ function drawScifiNeedle(ctx, x0, y0, tx, ty, prog, pal) {
   ctx.restore();
 }
 
+// ─── Redesign VFX: Haunted A Order, Sci-Fi, Cyberpunk, Dark Fantasy, Cosmic Horror ───
+// Each 10th ability has a colour, a glyph and a shape; channels, bursts and states are drawn from that table.
+const RD_ULTS = {
+  ruleArchitect:     { rgb: '241, 198, 110', glyph: '§', shape: 'marks' },
+  allSeeingOverseer: { rgb: '186, 230, 253', glyph: '◉', shape: 'nova' },
+  curfewDirector:    { rgb: '241, 198, 110', glyph: '‖', shape: 'walls' },
+  forensicDemiurge:  { rgb: '94, 234, 212', glyph: '✚', shape: 'marks' },
+  backroomsWarden:   { rgb: '234, 210, 120', glyph: '▤', shape: 'sweep' },
+  impalerApex:       { rgb: '250, 245, 230', glyph: '➶', shape: 'sweep' },
+  xenoQueen:         { rgb: '163, 230, 53', glyph: '☣', shape: 'walls' },
+  hiveOvermind:      { rgb: '192, 132, 252', glyph: '✺', shape: 'nova' },
+  causticRavager:    { rgb: '163, 230, 53', glyph: '☣', shape: 'walls' },
+  phaseStalker:      { rgb: '129, 140, 248', glyph: '✕', shape: 'strike' },
+  metroidLeviathan:  { rgb: '244, 114, 182', glyph: '◌', shape: 'drain' },
+  chronoPhantom:     { rgb: '0, 240, 255', glyph: '◷', shape: 'nova', tint: '125, 211, 252' },
+  thermalRipper:     { rgb: '249, 115, 22', glyph: '♨', shape: 'walls' },
+  gravitonColossus:  { rgb: '129, 140, 248', glyph: '◎', shape: 'drain' },
+  juggernautSmasher: { rgb: '255, 42, 109', glyph: '✊', shape: 'strike' },
+  razorPhantom:      { rgb: '0, 240, 255', glyph: '⟋', shape: 'sweep' },
+  plasmaTempest:     { rgb: '99, 211, 240', glyph: 'ϟ', shape: 'walls' },
+  dragonSlayer:      { rgb: '220, 38, 38', glyph: '⚔', shape: 'cleave' },
+  witcherGrandmaster:{ rgb: '251, 146, 60', glyph: '✧', shape: 'nova' },
+  bloodDrunkHunter:  { rgb: '220, 38, 38', glyph: '☾', shape: 'marks', moon: true },
+  lycanLord:         { rgb: '226, 232, 240', glyph: '☾', shape: 'nova', moon: true },
+  gallowsHeadsman:   { rgb: '168, 162, 158', glyph: '†', shape: 'marks' },
+  cthulhu:           { rgb: '45, 212, 191', glyph: '≋', shape: 'sweep' },
+  yogSothoth:        { rgb: '167, 139, 250', glyph: '◯', shape: 'nova' },
+  shubNiggurath:     { rgb: '74, 222, 128', glyph: 'Ψ', shape: 'marks' },
+  kingInYellow:      { rgb: '250, 204, 21', glyph: '✶', shape: 'marks' },
+  elderBrain:        { rgb: '244, 114, 182', glyph: '❂', shape: 'drain' },
+  azathoth:          { rgb: '233, 213, 255', glyph: '✹', shape: 'nova', chaos: true },
+};
+const RD_CHANNEL = /^(order|xeno|cyber|hunt|cosmic)-(.+)$/;
+const rdStyle = id => RD_ULTS[id] || { rgb: '226, 232, 240', glyph: '✦', shape: 'nova' };
+const rgbaOf = (rgb, a) => `rgba(${rgb}, ${Math.max(0, Math.min(1, a)).toFixed(3)})`;
+const rdNow = () => performance.now() / 1000;
+const rdRunnerPt = (e, size) => { const p = Game.track(visualTrackP(e)); return routePoint(p.x, p.y, size); };
+const rdTilePt = (i, size) => { const p = Game.track(i + 0.5); return routePoint(p.x, p.y, size); };
+function rdGlyph(ctx, ch, x, y, px, rgb, alpha) {
+  ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, alpha)); ctx.font = `800 ${px}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.strokeStyle = 'rgba(6, 8, 12, 0.85)'; ctx.lineWidth = 3; ctx.strokeText(ch, x, y); ctx.fillStyle = `rgb(${rgb})`; ctx.fillText(ch, x, y); ctx.restore();
+}
+function rdBanner(ctx, size, text, rgb, alpha) {
+  if (alpha <= 0 || !text) return;
+  ctx.save(); ctx.globalAlpha = Math.min(1, alpha); ctx.font = '900 22px system-ui, sans-serif'; ctx.textAlign = 'center';
+  const w = ctx.measureText(text).width + 40, y = 54;
+  ctx.fillStyle = 'rgba(6, 8, 12, 0.72)'; ctx.fillRect(size / 2 - w / 2, y - 22, w, 32);
+  ctx.fillStyle = rgbaOf(rgb, 0.9); ctx.fillRect(size / 2 - w / 2, y + 8, w, 3);
+  ctx.fillStyle = `rgb(${rgb})`; ctx.fillText(text, size / 2, y); ctx.restore();
+}
+// Channel (1.2s): glyphs spiral in, a progress arc closes and the ability name rises.
+function drawRedesignChannel(ctx, cx, cy, prog, size, id) {
+  const s = rdStyle(id), t = rdNow();
+  dimFocus(ctx, size, cx, cy, 0.18 * prog);
+  additiveGlow(ctx, cx, cy, 36 + 44 * prog, s.rgb, 0.2 + 0.4 * prog);
+  for (let i = 0; i < 8; i++) {
+    const a = t * 1.8 + i * Math.PI / 4, r = 26 + 70 * (1 - prog);
+    rdGlyph(ctx, s.glyph, cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.62, 13, s.rgb, 0.35 + 0.65 * prog);
+  }
+  ctx.save(); ctx.strokeStyle = rgbaOf(s.rgb, 0.9); ctx.lineWidth = 2 + 3 * prog; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(cx, cy, 34, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * prog); ctx.stroke(); ctx.restore();
+  const name = (ULT_NAMES[id] || '').toUpperCase();
+  if (name) channelLabel(ctx, cx, cy, name, prog, `rgb(${s.rgb})`, 'rgba(6, 8, 12, 0.75)');
+}
+const ULT_NAMES = Object.assign({}, Game.ORDER_ULTS, Game.XENO_ULTS, Game.CYBER_ULTS, Game.HUNT_ULTS, Game.COSMIC_ULTS);
+function rdDensestWall() {
+  const n = [0, 0, 0, 0]; for (const e of battle.enemies) if (!e.gone && e.hp > 0) n[Math.floor(((visualTrackP(e) % 16) + 16) % 16 / 4)]++;
+  return n.indexOf(Math.max(...n));
+}
+// Burst (1.6s): the ability lands. Shape decides the choreography; colour and glyph come from RD_ULTS.
+function drawUltBurst(ctx, f, size) {
+  const s = rdStyle(f.ult), prog = fxProg(f), o = routePoint(f.x, f.y, size), t = rdNow(), fade = Math.min(1, (1 - prog) * 3), live = battle.enemies.filter(e => !e.gone && e.hp > 0);
+  onceEach(f, 'shake', () => vfxShake(s.shape === 'strike' || s.shape === 'cleave' ? 7 : 4));
+  if (s.tint) { ctx.save(); ctx.fillStyle = rgbaOf(s.tint, 0.16 * fade); ctx.fillRect(0, 0, size, size); ctx.restore(); }
+  if (prog < 0.25) additiveGlow(ctx, o.x, o.y, 120, s.rgb, 0.7 * (1 - prog / 0.25));
+  if (s.moon) { const mx = size * 0.5, my = 96; additiveGlow(ctx, mx, my, 70, s.rgb, 0.5 * fade); ctx.save(); ctx.globalAlpha = 0.85 * fade; ctx.fillStyle = `rgb(${s.rgb})`; ctx.beginPath(); ctx.arc(mx, my, 26, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = 'rgba(6, 8, 12, 0.9)'; ctx.beginPath(); ctx.arc(mx + 10, my - 6, 22, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+  ctx.save();
+  if (s.shape === 'nova') {
+    for (let k = 0; k < 3; k++) {
+      const p = Math.max(0, Math.min(1, prog * 1.4 - k * 0.15)), r = p * size * 0.75;
+      ctx.strokeStyle = rgbaOf(s.rgb, (1 - p) * 0.9); ctx.lineWidth = 10 * (1 - p) + 2; ctx.beginPath(); ctx.ellipse(o.x, o.y, r, r * 0.62, 0, 0, Math.PI * 2); ctx.stroke();
+    }
+    for (let i = 0; i < 10; i++) { const a = i * Math.PI / 5 + t * (s.chaos ? 3.1 : 0.8), r = prog * size * 0.42; rdGlyph(ctx, s.glyph, o.x + Math.cos(a) * r, o.y + Math.sin(a) * r * 0.62, 18, s.rgb, fade); }
+    for (const e of live) { const p = rdRunnerPt(e, size); additiveGlow(ctx, p.x, p.y - 14, 26, s.rgb, 0.55 * fade); }
+  } else if (s.shape === 'walls') {
+    for (let i = 0; i < 16; i++) {
+      const p = rdTilePt(i, size), flick = 0.6 + 0.4 * Math.sin(t * 9 + i * 1.7), grow = Math.min(1, prog * 3);
+      ctx.fillStyle = rgbaOf(s.rgb, 0.38 * fade * flick); ctx.beginPath(); ctx.ellipse(p.x, p.y, 28 * grow, 16 * grow, 0, 0, Math.PI * 2); ctx.fill();
+      if (i % 2 === 0) rdGlyph(ctx, s.glyph, p.x, p.y - 18 - prog * 24, 15, s.rgb, fade * flick);
+    }
+  } else if (s.shape === 'marks') {
+    for (const e of live) {
+      const p = rdRunnerPt(e, size), drop = Math.min(1, prog * 2.5);
+      ctx.fillStyle = rgbaOf(s.rgb, 0.22 * fade); ctx.fillRect(p.x - 7, 0, 14, p.y - 18);
+      rdGlyph(ctx, s.glyph, p.x, p.y - 70 + 34 * drop, 24, s.rgb, fade);
+      ctx.strokeStyle = rgbaOf(s.rgb, fade); ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(p.x, p.y, 16 + 18 * prog, 8 + 9 * prog, 0, 0, Math.PI * 2); ctx.stroke();
+    }
+  } else if (s.shape === 'sweep') {
+    const head = prog * 16, pts = [];
+    for (let k = 0; k <= 24; k++) { const q = head - k * 0.25; if (q < 0) break; const tp = Game.track(q % 16); pts.push(routePoint(tp.x, tp.y, size)); }
+    if (pts.length > 1) { ctx.lineCap = 'round'; ctx.strokeStyle = rgbaOf(s.rgb, 0.85 * fade); ctx.lineWidth = 18; ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y); for (const p of pts) ctx.lineTo(p.x, p.y); ctx.stroke(); ctx.strokeStyle = rgbaOf('255, 255, 255', 0.7 * fade); ctx.lineWidth = 5; ctx.stroke(); additiveGlow(ctx, pts[0].x, pts[0].y, 50, s.rgb, fade); rdGlyph(ctx, s.glyph, pts[0].x, pts[0].y - 26, 22, s.rgb, fade); }
+  } else if (s.shape === 'strike' || s.shape === 'cleave') {
+    const targets = s.shape === 'cleave' ? live.filter(e => Math.floor(((visualTrackP(e) % 16) + 16) % 16 / 4) === rdDensestWall()) : [[...live].sort((a, z) => z.hp - a.hp)[0]].filter(Boolean);
+    const hitAt = 0.3;
+    for (const e of targets) {
+      const p = rdRunnerPt(e, size), k = Math.min(1, prog / hitAt);
+      if (prog < hitAt) { ctx.strokeStyle = rgbaOf(s.rgb, 0.9); ctx.lineWidth = 6 + 10 * k; ctx.beginPath(); ctx.moveTo(p.x, p.y - 260 * (1 - k) - 20); ctx.lineTo(p.x, p.y - 10); ctx.stroke(); }
+      else { onceEach(f, 'burst' + e.uid, () => burstImpact(p.x, p.y, 16, 10, 6, 1.4)); const q = (prog - hitAt) / (1 - hitAt); ctx.strokeStyle = rgbaOf(s.rgb, 1 - q); ctx.lineWidth = 8 * (1 - q) + 1; ctx.beginPath(); ctx.ellipse(p.x, p.y, 20 + 60 * q, 10 + 30 * q, 0, 0, Math.PI * 2); ctx.stroke(); additiveGlow(ctx, p.x, p.y, 60 * (1 - q) + 10, s.rgb, 1 - q); }
+      rdGlyph(ctx, s.glyph, p.x, p.y - 48, 26, s.rgb, fade);
+    }
+  } else if (s.shape === 'drain') {
+    for (const e of live) {
+      const p = rdRunnerPt(e, size), w = (t * 1.6 + e.uid * 0.37) % 1;
+      ctx.strokeStyle = rgbaOf(s.rgb, 0.45 * fade); ctx.lineWidth = 2; ctx.setLineDash([5, 7]); ctx.beginPath(); ctx.moveTo(p.x, p.y - 12); ctx.lineTo(o.x, o.y); ctx.stroke(); ctx.setLineDash([]);
+      additiveGlow(ctx, p.x + (o.x - p.x) * w, p.y - 12 + (o.y - p.y + 12) * w, 10, s.rgb, fade);
+      rdGlyph(ctx, s.glyph, p.x, p.y - 34, 16, s.rgb, fade);
+    }
+    additiveGlow(ctx, o.x, o.y, 50 + 30 * Math.sin(t * 6), s.rgb, 0.6 * fade);
+  }
+  ctx.restore();
+  rdBanner(ctx, size, f.text, s.rgb, prog < 0.75 ? 1 : (1 - prog) * 4);
+}
+// Order (Haunted A) normal attack: a flashlight cone and a citation stamp, instead of Chaos scissors.
+function drawOrderCitation(ctx, x, y, tx, ty, prog) {
+  const a = Math.atan2(ty - y, tx - x), d = Math.hypot(tx - x, ty - y), reach = Math.min(1, prog * 2.2);
+  ctx.save(); ctx.globalAlpha = Math.min(1, (1 - prog) * 2.5);
+  const g = ctx.createLinearGradient(x, y, tx, ty); g.addColorStop(0, 'rgba(255, 244, 214, 0.55)'); g.addColorStop(1, 'rgba(255, 244, 214, 0.05)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a - 0.16) * d * reach, y + Math.sin(a - 0.16) * d * reach); ctx.lineTo(x + Math.cos(a + 0.16) * d * reach, y + Math.sin(a + 0.16) * d * reach); ctx.closePath(); ctx.fill();
+  if (prog > 0.45) { const k = (prog - 0.45) / 0.55, s = 18 * (1.6 - 0.6 * Math.min(1, k * 3)); ctx.translate(tx, ty - 14); ctx.rotate(-0.25); ctx.strokeStyle = 'rgba(241, 198, 110, 0.95)'; ctx.lineWidth = 3; ctx.strokeRect(-s / 2, -s / 3, s, s * 0.66); ctx.font = '800 9px system-ui'; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(241, 198, 110, 0.95)'; ctx.fillText('CITED', 0, 3); }
+  ctx.restore();
+}
+// Cyberpunk attacks glow with the attacker's heat band.
+function heatPalette(f, pal) {
+  const u = battle.units.find(v => v.uid === f.uid); if (!u || !Game.heatUser(u)) return pal;
+  const band = Game.heatBand(u);
+  return band === 'redline' ? { ...pal, primary: '#ff3b3b', secondary: '#ffd166', glow: '#ff3b3b88', trail: '#ff8a3d' } : band === 'warm' ? { ...pal, primary: '#ffb020', secondary: '#ff2a6d', glow: '#ffb02088' } : pal;
+}
+// Runner states, drawn in the runner's local (translated) space.
+function drawRunnerStates(ctx, e, scale, r) {
+  const t = rdNow(), top = -scale - 16;
+  if ((e.ruleMarks || 0) > 0 && !e.subjectZero) for (let i = 0; i < e.ruleMarks; i++) { ctx.fillStyle = '#f1c66e'; ctx.fillRect(-12 + i * 5.5, top - 6, 4, 4); }
+  if (Game.compliant(battle, e)) { ctx.strokeStyle = 'rgba(186, 230, 253, 0.85)'; ctx.lineWidth = 2; ctx.setLineDash([4, 3]); ctx.beginPath(); ctx.ellipse(0, 2, scale * 0.42, scale * 0.18, 0, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); }
+  if ((e.weakpoints || 0) > 0) { const y = -scale * 0.5; ctx.strokeStyle = '#f87171'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, y, 7, 0, Math.PI * 2); ctx.moveTo(-10, y); ctx.lineTo(10, y); ctx.moveTo(0, y - 10); ctx.lineTo(0, y + 10); ctx.stroke(); ctx.font = 'bold 9px system-ui'; ctx.fillStyle = '#f87171'; ctx.fillText(e.weakpoints, 11, y - 6); }
+  if ((e.madness || 0) > 0 && !(e.insaneUntil > battle.time)) { const w = scale * 0.82; ctx.fillStyle = 'rgba(30, 16, 46, 0.9)'; ctx.fillRect(-w / 2, -scale - 1, w, 3); ctx.fillStyle = '#a78bfa'; ctx.fillRect(-w / 2, -scale - 1, w * Math.min(1, e.madness / 10), 3); }
+  if (e.insaneUntil > battle.time) {
+    for (let i = 0; i < 3; i++) { const a = t * 4 + i * 2.1; ctx.strokeStyle = `rgba(167, 139, 250, ${0.7 - i * 0.15})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, -scale * 0.45, scale * (0.42 + i * 0.1), a, a + 1.6); ctx.stroke(); }
+    ctx.font = '800 9px system-ui'; ctx.textAlign = 'center'; ctx.fillStyle = '#c4b5fd'; ctx.fillText('INSANE', 0, top - 10);
+  }
+  if ((e.huntBleed || 0) > 0) { ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.moveTo(r + 8, top - 4); ctx.quadraticCurveTo(r + 13, top + 4, r + 8, top + 6); ctx.quadraticCurveTo(r + 3, top + 4, r + 8, top - 4); ctx.fill(); ctx.font = 'bold 9px system-ui'; ctx.fillStyle = '#fca5a5'; ctx.fillText(Math.ceil(e.huntBleed), r + 15, top + 4); }
+  if (e.yellowBrand) rdGlyph(ctx, '✶', -r - 10, -scale * 0.55, 12, '250, 204, 21', 0.9);
+  if ((e.boss || e.champion) && e.vulnerableUntil > battle.time && (e.vulnerability || 0) >= 0.2) { ctx.strokeStyle = 'rgba(167, 139, 250, 0.8)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, -scale * 0.45, scale * 0.6, t * 3, t * 3 + 4); ctx.stroke(); }
+}
+// Spectral Wild Hunt wolves and Dark Young: they have no grid slot, so they are drawn at the runners they bite.
+function drawSpectrals(ctx, size) {
+  const t = rdNow(), live = battle.enemies.filter(e => !e.gone && e.hp > 0);
+  for (const [list, rgb, wolf] of [[battle.huntWolves || [], '226, 232, 240', true], [battle.cosmicYoung || [], '74, 222, 128', false]]) {
+    for (const w of list) {
+      const prey = wolf ? live.filter(e => (e.huntBleed || 0) > 0 || (e.bleeds || []).some(d => d.until > battle.time)) : live;
+      for (let i = 0; i < w.count && prey.length; i++) {
+        const p = rdRunnerPt(prey[i % prey.length], size), a = t * 3 + i * 2.1, x = p.x + Math.cos(a) * 22, y = p.y + Math.sin(a) * 10;
+        additiveGlow(ctx, x, y, 16, rgb, 0.55);
+        ctx.save(); ctx.globalAlpha = 0.8; ctx.fillStyle = `rgb(${rgb})`; ctx.beginPath(); ctx.ellipse(x, y, 9, 5, 0, 0, Math.PI * 2); ctx.fill();
+        if (wolf) { ctx.beginPath(); ctx.moveTo(x + 5, y - 3); ctx.lineTo(x + 8, y - 10); ctx.lineTo(x + 10, y - 3); ctx.fill(); } else { ctx.strokeStyle = `rgb(${rgb})`; ctx.lineWidth = 2; for (let k = -1; k <= 1; k++) { ctx.beginPath(); ctx.moveTo(x + k * 4, y + 3); ctx.lineTo(x + k * 6, y + 11); ctx.stroke(); } }
+        ctx.restore();
+      }
+    }
+  }
+}
+// Lights On: the Order pole floods the board with cold institutional light.
+function drawLightsOn(ctx, size) {
+  if (!Game.lightsOn(battle)) return;
+  ctx.save(); const g = ctx.createRadialGradient(size / 2, size / 2, size * 0.1, size / 2, size / 2, size * 0.75);
+  g.addColorStop(0, 'rgba(255, 250, 235, 0.16)'); g.addColorStop(1, 'rgba(186, 230, 253, 0.10)'); ctx.fillStyle = g; ctx.fillRect(0, 0, size, size);
+  for (let i = 0; i < 4; i++) { const x = size * (0.2 + i * 0.2); ctx.fillStyle = 'rgba(255, 250, 235, 0.05)'; ctx.beginPath(); ctx.moveTo(x - 12, 0); ctx.lineTo(x + 12, 0); ctx.lineTo(x + 70, size); ctx.lineTo(x - 70, size); ctx.fill(); }
+  ctx.restore();
+}
+// DOM card states: heat bar and band, Redline glow, Sci-Fi cocoon, redesign channel glow.
+function cardRedesignStates(el, u) {
+  const heat = Game.heatUser(u);
+  let bar = el.querySelector('.rd-heat');
+  if (heat && !bar) { el.insertAdjacentHTML('beforeend', '<i class="rd-heat"><b></b></i>'); bar = el.querySelector('.rd-heat'); }
+  if (bar) { bar.hidden = !heat; if (heat) bar.firstChild.style.width = Math.min(100, u.heat || 0) + '%'; }
+  const band = heat ? Game.heatBand(u) : 'cold';
+  el.classList.toggle('rd-warm', band === 'warm'); el.classList.toggle('rd-redline', band === 'redline' && u.state === 'active');
+  const cocoon = (u.cocoonUntil || 0) > battle.time;
+  el.classList.toggle('rd-cocoon', cocoon); if (cocoon) el.dataset.cocoon = Math.ceil(u.cocoonUntil - battle.time) + 's';
+  const m = RD_CHANNEL.exec(u.channeling?.type || '');
+  el.classList.toggle('rd-channel', !!m); if (m) el.style.setProperty('--rd-rgb', rdStyle(m[2]).rgb);
+}
+
 function draw() {
   let canvas = $('#arena');
   if (!canvas || !battle) return;
@@ -4099,6 +4289,7 @@ function draw() {
     if (!card) continue;
     const glow = !u.removed && CHANNEL_GLOW[u.channeling?.type];
     for (const cls of Object.values(CHANNEL_GLOW)) card.classList.toggle(cls, cls === glow);
+    if (!u.removed) cardRedesignStates(card, u);
   }
 
   drawInkPuddles(ctx, size);
@@ -4139,6 +4330,7 @@ function draw() {
     ctx.fillRect(0, 0, size, size);
     ctx.restore();
   }
+  drawLightsOn(ctx, size);
   if (battle.units.some(u => !u.removed && u.id === 'stair13')) {
     for (const i of [0, 4, 8, 12]) {
       const p = Game.ring[i], q = routePoint(p[0], p[1], size), pulse = 0.65 + 0.25 * Math.sin(battle.time * 5 + i);
@@ -4263,11 +4455,13 @@ function draw() {
       ctx.font = '10px system-ui';
       ctx.fillText(e.burns.length, -r - 9, -scale - 11);
     }
+    drawRunnerStates(ctx, e, scale, r);
     ctx.restore();
   }
 
   drawPersistentMarks(ctx, size);
   drawElementalMarks(ctx, size);
+  drawSpectrals(ctx, size);
 
   // Adjacency / Devour Link Visuals
   const seen = new Set();
@@ -4305,6 +4499,7 @@ function draw() {
       else if (u.channeling.type === 'soul-reap-detonation') drawSoulGather(ctx, pt.x, pt.y, chProg, size, u);
       else if (u.channeling.type === 'blood-domain') drawBloodGather(ctx, pt.x, pt.y, chProg, size);
       else if (ELEMENT_GATHER[u.channeling.type]) { drawEnvironment(ctx, size, CHANNEL_ENV[u.channeling.type], Math.min(1, chProg / 0.3)); ELEMENT_GATHER[u.channeling.type](ctx, pt.x, pt.y, chProg, size, u); }
+      else if (RD_CHANNEL.test(u.channeling.type)) drawRedesignChannel(ctx, pt.x, pt.y, chProg, size, RD_CHANNEL.exec(u.channeling.type)[2]);
       else drawSwordTorrentChannel(ctx, pt.x, pt.y, chProg, size, u.channeling.type);
     }
   }
@@ -4318,7 +4513,13 @@ function draw() {
     const pal = vfxPaletteFor(f.genre);
     const kind = f.vfxKind || 'projectile';
 
-    if (f.type === 'sword-channel' || kind === 'sword-channel') {
+    if (f.type === 'ult-channel') {
+      // drawn by the live channel pass above
+    } else if (kind === 'ult-burst') {
+      drawUltBurst(ctx, f, size);
+    } else if (kind === 'citation') {
+      drawOrderCitation(ctx, x, y, tx, ty, prog);
+    } else if (f.type === 'sword-channel' || kind === 'sword-channel') {
       // The live u.channeling pass above already draws an active channel; only draw orphaned ones
       const chU = battle.units.find(v => v.uid === f.uid);
       if (!(chU && chU.channeling)) drawSwordTorrentChannel(ctx, x, y, prog, size);
@@ -4366,7 +4567,7 @@ function draw() {
     } else if (kind === 'shell' || (f.genre === 'PostApoc' && ['shot', 'shell'].includes(kind))) {
       drawScrapworkShell(ctx, x, y, tx, ty, f.curve, prog, pal);
     } else if (kind === 'laser' || (f.genre === 'Cyberpunk' && ['beam', 'laser'].includes(kind))) {
-      drawCyberMonowire(ctx, x, y, tx, ty, prog, pal);
+      drawCyberMonowire(ctx, x, y, tx, ty, prog, heatPalette(f, pal));
     } else if (kind === 'orb' || (f.genre === 'Arcane' && ['spell', 'orb'].includes(kind))) {
       drawArcaneRunes(ctx, x, y, tx, ty, f.curve, prog, pal);
     } else if (kind === 'scissor' || (f.genre === 'Haunted' && ['slash', 'scissor'].includes(kind))) {
@@ -4415,7 +4616,7 @@ function draw() {
 
     if (f.type === 'big-dmg') {
       drawColossalNumber(ctx, tx, ty, f);
-    } else if (f.text && !['sword-torrent', 'melodic-resonance', 'formation-star-river', 'talisman-decree', 'landscape-dragon', 'soul-reap-detonation', 'blood-domain', ...ELEMENT_ULTS].includes(f.type)) {
+    } else if (f.text && !['sword-torrent', 'melodic-resonance', 'formation-star-river', 'talisman-decree', 'landscape-dragon', 'soul-reap-detonation', 'blood-domain', 'ult-burst', 'ult-channel', ...ELEMENT_ULTS].includes(f.type)) {
       ctx.save();
       ctx.globalAlpha = Math.min(1, f.ttl * 2.2);
       const breakthrough = ['FOUNDATION ESTABLISHMENT', 'GOLDEN CORE', 'NASCENT SOUL'].includes(String(f.text).toUpperCase());
