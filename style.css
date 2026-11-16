@@ -1251,3 +1251,19 @@ body.has-dock .shell{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))
 .in-combat .battle-stage>.board,.lab .battle-stage>.board{position:absolute!important;left:0;top:50%;transform:translateY(-50%);width:100%!important;max-width:none!important;height:auto!important;aspect-ratio:1/1;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;overflow:visible!important}
 .in-combat .combat-layout:has(.battle-stage),.in-combat .arena-panel:has(.battle-stage){max-width:none;width:100%}
 @media (max-width:720px){.battle-stage{width:100%;border-radius:0}}
+
+/* ==================== DESKTOP-FIRST LAYOUT (>= 1024px) ====================
+   The app began as a phone mockup (440px shell inside a device frame). On desktop it now uses the full window:
+   no device frame, a wide shell, the original multi-column grids, a two-column Ability Lab, centred dialogs. */
+@media (min-width: 1024px) {
+  body { padding: 0; }
+  .shell, .in-lab .shell { max-width: 1440px; border: 0; border-radius: 0; box-shadow: none; background: transparent; padding: 0 40px 110px; }
+  .lab .lab-layout { display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); gap: 14px 28px; align-items: start; }
+  .lab .lab-layout > * { grid-column: 1; }
+  .lab .lab-layout > .lab-arena { grid-column: 2; width: 100%; grid-row: 1 / span 8; position: sticky; top: 12px; }
+  .lab-list { max-height: 46vh; }
+  .draft-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start; }
+  .leaders { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  dialog#modal { top: 50%; bottom: auto; width: min(620px, 92vw); max-height: 86vh; border-radius: 18px; border-bottom: 1.5px solid var(--gold); transform: translate(-50%, -46%); opacity: 0; transition: transform .22s ease-out, opacity .22s ease-out; }
+  dialog#modal[open] { transform: translate(-50%, -50%); opacity: 1; }
+}

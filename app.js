@@ -228,8 +228,11 @@ const activeFieldGrid=()=>FIELD_GRIDS[fieldLeader()];
 // 2.5D: a theme's optional `view` ({image, aspect, corners}) is a perspective battlefield image; BattleView maps engine
 // coordinates onto its painted floor. Themes without one keep the flat top-down JPG and its FIELD_GRIDS calibration.
 const viewProjectors=new Map();
-// The Ability Lab's column is narrow, so it shows a square crop centred on the arena instead of the whole widescreen image.
-const stageAspect=v=>screen==='lab'?1:v.aspect;
+// On narrow screens the Ability Lab's single column shows a square crop centred on the arena; desktop has room for the
+// whole widescreen image (the Lab gets a wide right-hand column there). Crossing 1024px re-renders to switch.
+const desktopMQ=matchMedia('(min-width: 1024px)');
+desktopMQ.addEventListener?.('change',()=>render());
+const stageAspect=v=>screen==='lab'&&!desktopMQ.matches?1:v.aspect;
 const fieldProject=()=>{const f=battlefield();if(!f.view)return null;const S=stageAspect(f.view),k=f.view.image+S;if(!viewProjectors.has(k))viewProjectors.set(k,BattleView.projector(f.view,S));return viewProjectors.get(k)};
 // Board-percent box of grid cell (0–2): in 2.5D an upright square standing on the cell's front edge, else the flat cell.
 const cardCell=(x,y)=>{const P=fieldProject();if(P){const l=P(x+.5,y+1),r=P(x+1.5,y+1),f=P(x+1,y+1.5),w=(r.u-l.u)*100;return {left:l.u*100,top:f.v*100-w,width:w,height:w}}const g=activeFieldGrid(),cw=g.width/3,ch=g.height/3;return {left:g.left+x*cw,top:g.top+y*ch,width:cw,height:ch}};
