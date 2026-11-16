@@ -1,0 +1,22 @@
+// Shared mutable state. ES module imports are read-only, so everything one module changes and another reads lives on S.
+export const S = {
+  run: null,
+  screen: 'home',
+  battle: null,
+  selected: null,
+  paused: false,
+  speed: 1,
+  last: 0,
+  uiClock: 0,
+  filter: 'all',
+  feedbackSeen: 0,
+  visualEvents: [],
+  openingAt: 0,
+  labState: null,
+  labId: 'swordImmortal',
+  labFilter: 'all',
+  labQuery: '',
+  labPickerOpen: false,
+  labSpeed: 1,
+  DRAGON_PAL: null,
+};

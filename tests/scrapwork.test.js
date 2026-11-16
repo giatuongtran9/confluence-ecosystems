@@ -28,7 +28,7 @@ test('global kills can salvage zero-attack scrap and full board cannot overflow'
 test('alloy attack remainder and five-clear reward survive reload',()=>{const b=battle(['scrapFrame']),u=b.units[0],e=enemy(b);G.mechAttack(b,u,e,0);G.mechAttack(b,u,e,0);const restored=G.runtime(b,b.run.roster[0],0);assert.equal(restored.alloyAttacks,2);G.mechAttack(b,restored,e,0);assert.equal(restored.alloy,1);b.units=[restored];G.finish(b,true);assert.equal(b.run.roster[0].alloy,6);});
 test('Riveter welds every six seconds and Reactor aura does not stack',()=>{const b=battle(['scrapFrame','hydraulicRiveter','titanReactor','titanReactor'],[4,1,3,5]),u=b.units[0];const base=G.atk(b,u);assert.equal(base,25.2);b.time=6;G.scrapworkExtras(b,b.units[1]);assert.equal(u.permanentAtkBonus,3);G.scrapworkExtras(b,b.units[1]);assert.equal(u.permanentAtkBonus,3);});
 test('Titan HTML merges horizontal and vertical cells with working new art',()=>{
- const fs=require('node:fs'),vm=require('node:vm'),source=fs.readFileSync(require.resolve('../app'),'utf8');
+ const fs=require('node:fs'),vm=require('node:vm'),source=require('./app-source')();
  const code=source.slice(source.indexOf('function fieldUnit('),source.indexOf('function board('));
  for(const [a,z,w,h] of [[3,4,200/3,100/3],[1,4,100/3,200/3]]){
  const b=battle(['scrapFrame'],[a]),u=b.units[0];G.addAlloy(b,u,120);u.extraSlot=z;
@@ -47,10 +47,11 @@ test('legacy Post-Apocalypse catalogs and mechanics are removed',()=>{
  for(const c of Object.values(D.CARD))assert.ok(!/Scrap Autocannon|Thermal Bellows|Doomsday Behemoth|Secondary Armament Pod/.test(JSON.stringify(c)));
 });
 test('all pre-cleanup saved runs reset and player upgrades are removed',()=>{
- const fs=require('node:fs'),vm=require('node:vm'),code=fs.readFileSync(require.resolve('../app'),'utf8').split('let feedbackSeen=')[0];
+ const {loadSave}=require('../src/save.js');
  for(const id of ['cannon','bellows','behemoth','armamentPod','scrapFrame']){
-  const values=new Map([['confluence-run-v3',JSON.stringify({version:3,roster:[{id}]})],['confluence-meta-v1',JSON.stringify({power:7,shards:50})]]),localStorage={getItem:k=>values.get(k),get length(){return values.size},key:i=>[...values.keys()][i],removeItem:k=>values.delete(k),setItem:(k,v)=>values.set(k,v)},ctx={Game:G,document:{querySelector:()=>({})},localStorage};vm.createContext(ctx);vm.runInContext(code+';globalThis.result={run,resetSavedRuns};',ctx);
-  assert.equal(ctx.result.run,null);assert.equal(ctx.result.resetSavedRuns,true);assert.equal(values.has('confluence-meta-v1'),false);
+  const values=new Map([['confluence-run-v3',JSON.stringify({version:3,roster:[{id}]})],['confluence-meta-v1',JSON.stringify({power:7,shards:50})]]),storage={getItem:k=>values.has(k)?values.get(k):null,get length(){return values.size},key:i=>[...values.keys()][i],removeItem:k=>values.delete(k),setItem:(k,v)=>values.set(k,String(v))};
+  const result=loadSave(storage,G);
+  assert.equal(result.run,null);assert.equal(result.reset,true);assert.equal(values.has('confluence-meta-v1'),false);
  }
 });
 test('new armor removal triggers surviving armor-break synergies without double shred',()=>{

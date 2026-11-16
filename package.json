@@ -1,0 +1,15 @@
+{
+  "name": "confluence-ecosystems",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Confluence: a nine-genre roguelite auto-battler",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node -e \"require('fs').cpSync('assets','dist/assets',{recursive:true})\"",
+    "preview": "vite preview",
+    "test": "node --test tests/*.test.js"
+  },
+  "devDependencies": {
+    "vite": "^8.3.8"
+  }
+}

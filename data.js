@@ -3408,6 +3408,8 @@ const PLAYTEST_SKIP = new Set(['berserkerColossus', 'siegeDreadnought', 'vanguar
 for (const c of [...CARDS, ...FORMS]) { const m = PLAYTEST_ATK[c.genre]; if (m && c.baseAtk > 0 && !(m > 1 && PLAYTEST_SKIP.has(c.id))) c.baseAtk = Math.round(c.baseAtk * m); }
 const CARD = Object.fromEntries([...CARDS, ...FORMS, ...TOKENS].map(c => [c.id, c]));
 if (typeof module !== 'undefined') module.exports = { GENRES, LEADERS, CARDS, CARD, NODES, RELICS, FORMS, TOKENS };
+// Browser: src/lib.js imports this file (the bundler may wrap it as CommonJS, so this is not an else branch).
+if (typeof window !== 'undefined') Object.assign(window, { GENRES, LEADERS, CARDS, CARD, NODES, RELICS, FORMS, TOKENS });
 
 
 

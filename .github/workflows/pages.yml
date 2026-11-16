@@ -23,18 +23,23 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Prepare static game site
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Build the game
         run: |
-          mkdir -p public
-          cp index.html *.js style.css public/   # every root script, so new ones (e.g. battlefield-view.js) ship automatically
-          cp -R assets public/assets
-          touch public/.nojekyll
+          npm ci
+          npm test
+          npm run build
+          touch dist/.nojekyll
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: public
+          path: dist
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

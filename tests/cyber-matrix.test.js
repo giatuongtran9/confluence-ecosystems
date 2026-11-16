@@ -102,12 +102,12 @@ test('saves: cut Cyberdeck Mythics keep their arm as the Sandevistan Mythic; a C
 test('all Cyber art paths exist and the UI shows sockets, heat bands, RAM and the Redline Proof',()=>{
  const fs=require('node:fs'),path=require('node:path');
  for(const c of Object.values(D.CARD).filter(c=>c.cyberAsset))assert.ok(fs.existsSync(path.join(__dirname,'../assets/cyber-matrix',c.cyberAsset+'.webp')),c.id);
- const s=fs.readFileSync(require.resolve('../app'),'utf8');
+ const s=require('./app-source')();
  for(const re of [/Chrome Tolerance/,/THERMAL SHUTDOWN/,/REDLINE · \+35% damage/,/Short Circuit costs 3/,/REDLINE PROOF/])assert.match(s,re);
 });
 
 test('Cyber detail renders permanent sockets outside battle without stale heat',()=>{
- const fs=require('node:fs'),vm=require('node:vm'),s=fs.readFileSync(require.resolve('../app'),'utf8');
+ const fs=require('node:fs'),vm=require('node:vm'),s=require('./app-source')();
  const code=s.slice(s.indexOf('function cyberDetail('),s.indexOf('function huntTrialHUDHTML('));
  const ctx={Game:G,CARD:D.CARD,battle:null,u:{id:'cyberSolo',arm:'mantisImplant',os:'sandyOS',chrome:65,chromeAttackCharge:3,tuning:.1}};vm.createContext(ctx);vm.runInContext(code+';globalThis.html=cyberDetail(u);',ctx);
  assert.match(ctx.html,/Thermal Mantis Blades/);assert.match(ctx.html,/Sandevistan OS/);assert.match(ctx.html,/65 Chrome/);assert.match(ctx.html,/\+10% tuning/);assert.match(ctx.html,/Heat resets each battle/);

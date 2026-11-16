@@ -26,5 +26,6 @@
     return (x, y) => { const p = H(x, y); return { u: (p.U - .5) * A / S + .5, v: (p.V - .5) / S + .5 }; };
   }
   const api = { homography, projector };
-  if (typeof module !== 'undefined') module.exports = api; else root.BattleView = api;
+  if (typeof module !== 'undefined') module.exports = api;
+  if (root.document) root.BattleView = api; // browser (also when a bundler wraps this file as CommonJS)
 })(typeof window !== 'undefined' ? window : globalThis);

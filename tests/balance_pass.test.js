@@ -63,7 +63,7 @@ test('saves holding deleted cards drop them and refund 10 coins each', () => {
 });
 
 test('every redesign 10th ability has a VFX style and resolves through an ult-burst effect', () => {
- const src = require('node:fs').readFileSync(require.resolve('../app'), 'utf8');
+ const src = require('./app-source')();
  const table = src.slice(src.indexOf('const RD_ULTS = {'), src.indexOf('const RD_CHANNEL'));
  for (const id of ['berserkerColossus', 'siegeDreadnought', 'vanguardJuggernaut', ...Object.keys(G.CHAOS_ULTS), ...Object.keys(G.ORDER_ULTS), ...Object.keys(G.XENO_ULTS), ...Object.keys(G.CYBER_ULTS), ...Object.keys(G.HUNT_ULTS), ...Object.keys(G.COSMIC_ULTS)]) {
   assert.ok(table.includes(id + ':'), id);

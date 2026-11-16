@@ -1,7 +1,7 @@
 // Textured VFX layer: sprites and particles built from real effect textures (Kenney Particle Pack, CC0, assets/vfx),
 // tinted at runtime. It adds glow, sparks and light on top of the existing canvas animations; timing still comes from
 // the engine effect objects, so visuals stay on the damage beats.
-const VFX = (() => {
+export const VFX = (() => {
   const NAMES = ['circle_02', 'circle_03', 'light_02', 'magic_05', 'star_06', 'star_07', 'star_09', 'flare_01', 'trace_02',
     'twirl_01', 'twirl_02', 'spark_01', 'spark_02', 'smoke_05'];
   const IMG = {}, TINT = new Map();

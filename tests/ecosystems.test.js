@@ -159,15 +159,15 @@ test('removed cards and offspring are absent from every catalog',()=>{
  for(const c of Object.values(D.CARD))assert.ok(!/Blood Heir|Scarlet Familiar|Bloodline Progenitor/.test(JSON.stringify(c)),c.id);
 });
 test('pre-cleanup runs and player upgrades clear exactly once',()=>{
- const code=fs.readFileSync(require.resolve('../app'),'utf8').split('let feedbackSeen=')[0];
+ const {loadSave}=require('../src/save.js');
  for(const payload of [{version:4,roster:[{id:'practitioner'}]},{version:3,roster:[{id:'heir'}]},{version:3,roster:[{id:'cub'}]},{version:3,roster:[{id:'cultivationNascentSoul'}]}]){
   const values=new Map([['confluence-run-v3',JSON.stringify(payload)],['confluence-meta-v1',JSON.stringify({power:7,shards:50})]]);
-  const localStorage={getItem:k=>values.get(k),get length(){return values.size},key:i=>[...values.keys()][i],removeItem:k=>values.delete(k),setItem:(k,v)=>values.set(k,v)};
-  const ctx={Game:G,document:{querySelector:()=>({})},localStorage};vm.createContext(ctx);vm.runInContext(code+';globalThis.result={run,resetSavedRuns};',ctx);
-  assert.equal(ctx.result.run,null);assert.equal(ctx.result.resetSavedRuns,true);assert.equal(values.has('confluence-run-v3'),false);assert.equal(values.has('confluence-meta-v1'),false);
+  const storage={getItem:k=>values.has(k)?values.get(k):null,get length(){return values.size},key:i=>[...values.keys()][i],removeItem:k=>values.delete(k),setItem:(k,v)=>values.set(k,String(v))};
+  const first=loadSave(storage,G);
+  assert.equal(first.run,null);assert.equal(first.reset,true);assert.equal(values.has('confluence-run-v3'),false);assert.equal(values.has('confluence-meta-v1'),false);
   values.set('confluence-run-v5',JSON.stringify({version:5,leader:'none'}));
-  const ctx2={Game:G,document:{querySelector:()=>({})},localStorage};vm.createContext(ctx2);vm.runInContext(code+';globalThis.next={run,resetSavedRuns};',ctx2);
-  assert.equal(ctx2.next.resetSavedRuns,false);assert.equal(ctx2.next.run.version,5);
+  const next=loadSave(storage,G);
+  assert.equal(next.reset,false);assert.equal(next.run.version,5);
  }
 });
 test('new resource remainders persist across deployments, temporary pill haste does not',()=>{
@@ -178,7 +178,7 @@ test('new resource remainders persist across deployments, temporary pill haste d
  const oldSword=G.runtime(b,{...b.run.roster[0],apexQi:undefined,swordQi:15},0);assert.equal(oldSword.apexQi,15);
 });
 test('WebP maps cover every current Cultivation and Bloodline draft card and Apex',()=>{
- const source=fs.readFileSync(require.resolve('../app'),'utf8');
+ const source=require('./app-source')();
  const definitions=source.slice(source.indexOf('const cultivationRealmSprites='),source.indexOf('function art('));
  const ctx={};vm.createContext(ctx);vm.runInContext(definitions+';globalThis.maps={...cultivationRealmSprites,...bloodlineSprites};',ctx);
  for(const c of [...D.CARDS.filter(c=>!c.retired),...D.FORMS.filter(c=>G.isApexImmortal(c))].filter(c=>['Cultivation','Bloodline'].includes(c.genre)))assert.match(ctx.maps[c.id]||'',/-sprites-webp\/.*\.webp(?:\?.*)?$/);
@@ -281,7 +281,7 @@ test('Red Raincoat Specter triggers Blackout from 5 taboo look-back/retreat viol
 
 
 test('WebP maps cover Haunted evolutions, Arcane Loom, Cyber Matrix, and Scrapwork', () => {
-  const source = fs.readFileSync(require.resolve('../app'), 'utf8');
+  const source = require('./app-source')();
   const definitions = source.slice(source.indexOf('const cultivationRealmSprites='), source.indexOf('function art('));
   const ctx = {};
   vm.createContext(ctx);
