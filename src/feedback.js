@@ -1,8 +1,8 @@
 // Tiered combat feedback: one event -> one consistent bundle, picked by tier.
 //   small  = a normal hit:  3 sparks; the faintest shake (shake is trauma², so 0.1 trauma barely moves)
-//   medium = a critical:    flash + ring + 9 sparks, light shake, a 40 ms freeze (at most one per second)
+//   medium = a critical:    flash + ring + 9 sparks, light shake (no freeze)
 //   large  = an ultimate:   flare + shock rings + 30 sparks, heavy shake with a punch-in, 110 ms freeze, screen flash
-// Freezes are rationed (crit-heavy boards would otherwise lose a fifth of their battle time): ultimates released
+// Only ultimates freeze, and ultimates released
 // within 0.5 s of a freeze share it.
 // Renderer only: the camera, freezes and particles never change the simulation's results. Shake and freezes run on
 // real time; screen flashes are capped at 3 per second. With the OS "reduce motion" setting, shake and flashes drop.
@@ -14,7 +14,7 @@ import { VFX } from './vfx.js';
 
 const TIER = {
   small:  { trauma: 0.10, cap: 0.10, stop: 0 },
-  medium: { trauma: 0.20, cap: 0.50, stop: 0.04, gap: 1.0 },
+  medium: { trauma: 0.20, cap: 0.50, stop: 0 },
   large:  { trauma: 0.85, cap: 1.00, stop: 0.11, gap: 0.5, flash: 0.55 },
 };
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
