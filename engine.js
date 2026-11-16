@@ -1145,6 +1145,8 @@ function triggerShowstopper(b, u, label = 'MYTHIC AWAKENED', preset = 'mythic') 
 }
 // 10th-ability resolution: one 'ult-burst' effect that the renderer draws per ability (shape and colour live in app.js).
 function ultFx(b, u, id, name) { const focus = [...living(b)].sort((a, z) => z.hp - a.hp)[0] || null; fx(b, 'ult-burst', u, focus, name.toUpperCase(), { vfxKind: 'ult-burst', ult: id, ttl: 1.6 }); }
+// Plays the unit's attack animation (lunge/cast/glitch/recoil) toward a grid point.
+function animate(u, tx, ty) { u.animSeq = (u.animSeq || 0) + 1; u.animType = resolveAnimArchetype(u); u.animTarget = { x: tx, y: ty }; }
 function fx(b, type, u, e, text, extra = {}) {
  const d = u ? card(u.id) : null;
  const genre = extra.genre || d?.genre || 'Cultivation';
@@ -1152,11 +1154,7 @@ function fx(b, type, u, e, text, extra = {}) {
  const ttl = extra.ttl || (type === 'beam' ? 0.35 : (type && type.startsWith('sword-torrent')) ? 0.85 : vfxKind === 'slash' ? 0.28 : 0.65);
  const tx = (e && typeof e.p === 'number') ? track(e.p).x : (e && typeof e.x === 'number' ? e.x + 1 : (u ? u.x + 1 : 2));
  const ty = (e && typeof e.p === 'number') ? track(e.p).y : (e && typeof e.y === 'number' ? e.y + 1 : (u ? u.y + 1 : 2));
- if (u && e && (['shot', 'spell', 'beam', 'slash'].includes(type) || extra.attackAnim)) {
-  u.animSeq = (u.animSeq || 0) + 1;
-  u.animType = resolveAnimArchetype(u);
-  u.animTarget = { x: tx, y: ty };
- }
+ if (u && e && (['shot', 'spell', 'beam', 'slash'].includes(type) || extra.attackAnim)) animate(u, tx, ty);
  b.effects.push({
   type,
   vfxKind,
@@ -2782,6 +2780,7 @@ function fx(b, type, u, e, text, extra = {}) {
      hit(b, u, e, power * 0.5, true, { noFx: true });
      status(b, e, 'slow', 2, 0.45, u);
     }
+    if (foes[0]) { const p = track(foes[0].p); animate(u, p.x, p.y); } // the chord is an attack: the Saint plays it toward the lead foe
     fx(b, 'dissonance-chord', u, null, 'DISSONANCE CHORD (SLOW)', { vfxKind: 'dissonance-chord', ttl: 0.8, schedule: { hits: foes.map(e => e.uid) } });
    }
    if (u.attackCount % 10 === 0) {

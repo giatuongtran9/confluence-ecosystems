@@ -838,6 +838,10 @@ function drawEmeraldSwordBlade(ctx, x, y, ang, scale, alpha, isColossal = false)
   ctx.fill();
   ctx.stroke();
 
+  // Gold ferrules capping both ends of the grip
+  ctx.fillStyle = '#f59e0b';
+  for (const fx0 of [-len * 0.295, -len * 0.075]) ctx.fillRect(fx0, -gripW * 1.18, Math.max(1, len * 0.02), gripW * 2.36);
+
   // Criss-cross gold cord wrap on grip
   ctx.strokeStyle = '#fcd34d';
   ctx.lineWidth = (isColossal ? 1.5 : 0.8) * scale;
@@ -853,36 +857,22 @@ function drawEmeraldSwordBlade(ctx, x, y, ang, scale, alpha, isColossal = false)
     ctx.stroke();
   }
 
-  // 4. Double-Faceted Beveled Jian Blade (Upper & Lower Edges for 3D Metallic/Jade Sheen)
-  // Upper Blade Facet (Bright Crystalline Jade)
-  ctx.beginPath();
-  ctx.moveTo(0, 0); // Center spine at guard
-  ctx.lineTo(0, -w * 0.92); // Base edge at guard
-  ctx.lineTo(len * 0.14, -w * 0.72); // Ricasso notch
-  ctx.lineTo(len * 0.20, -w * 1.02); // Flare barb
-  ctx.lineTo(len * 0.78, -w * 0.78); // Straight taper toward tip
-  ctx.lineTo(len, 0); // Needle-sharp Jian point
-  ctx.closePath();
-
-  const upGrad = ctx.createLinearGradient(0, -w, len, 0);
+  // 4. Double-bevel Jian blade: straight, gently tapering edges into a smooth point (one edge path, both facets).
+  const edge = side => { // side -1 = upper (lit) edge, +1 = lower (shaded) edge
+    ctx.lineTo(0, side * w * 0.9);
+    ctx.lineTo(len * 0.8, side * w * 0.72);
+    ctx.quadraticCurveTo(len * 0.94, side * w * 0.55, len, 0);
+  };
+  ctx.beginPath(); ctx.moveTo(0, 0); edge(-1); ctx.closePath();
+  const upGrad = ctx.createLinearGradient(0, -w, len, 0);   // lit facet: bright crystalline jade
   upGrad.addColorStop(0, '#10b981');
-  upGrad.addColorStop(0.55, '#6ee7b7');
-  upGrad.addColorStop(0.9, '#d1fae5');
+  upGrad.addColorStop(0.5, '#6ee7b7');
+  upGrad.addColorStop(0.88, '#d1fae5');
   upGrad.addColorStop(1, '#ffffff');
   ctx.fillStyle = upGrad;
   ctx.fill();
-
-  // Lower Blade Facet (Deep Imperial Emerald Shade)
-  ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(0, w * 0.92);
-  ctx.lineTo(len * 0.14, w * 0.72);
-  ctx.lineTo(len * 0.20, w * 1.02);
-  ctx.lineTo(len * 0.78, w * 0.78);
-  ctx.lineTo(len, 0);
-  ctx.closePath();
-
-  const lowGrad = ctx.createLinearGradient(0, w, len, 0);
+  ctx.beginPath(); ctx.moveTo(0, 0); edge(1); ctx.closePath();
+  const lowGrad = ctx.createLinearGradient(0, w, len, 0);   // shaded facet: deep imperial emerald
   lowGrad.addColorStop(0, '#064e3b');
   lowGrad.addColorStop(0.45, '#047857');
   lowGrad.addColorStop(0.85, '#10b981');
@@ -890,27 +880,38 @@ function drawEmeraldSwordBlade(ctx, x, y, ang, scale, alpha, isColossal = false)
   ctx.fillStyle = lowGrad;
   ctx.fill();
 
-  // Razor-sharp outer blade edge highlight
-  ctx.strokeStyle = '#ecfdf5';
-  ctx.lineWidth = (isColossal ? 2.0 : 1.0) * scale;
-  ctx.beginPath();
-  ctx.moveTo(0, -w * 0.92);
-  ctx.lineTo(len * 0.14, -w * 0.72);
-  ctx.lineTo(len * 0.20, -w * 1.02);
-  ctx.lineTo(len * 0.78, -w * 0.78);
-  ctx.lineTo(len, 0);
-  ctx.lineTo(len * 0.78, w * 0.78);
-  ctx.lineTo(len * 0.20, w * 1.02);
-  ctx.lineTo(len * 0.14, w * 0.72);
-  ctx.lineTo(0, w * 0.92);
-  ctx.stroke();
+  ctx.shadowBlur = 0; // fine detail below must stay crisp
+  // Soft specular sheen running down the lit facet
+  const sheen = ctx.createLinearGradient(0, -w * 0.7, 0, -w * 0.1);
+  sheen.addColorStop(0, 'rgba(255, 255, 255, 0)');
+  sheen.addColorStop(0.55, 'rgba(255, 255, 255, 0.45)');
+  sheen.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = sheen;
+  ctx.beginPath(); ctx.moveTo(len * 0.06, -w * 0.62); ctx.lineTo(len * 0.82, -w * 0.48); ctx.lineTo(len * 0.86, -w * 0.18); ctx.lineTo(len * 0.06, -w * 0.22); ctx.closePath(); ctx.fill();
 
-  // Central Spine Ridge (Jian脊) & Blood/Qi Fuller Groove (Huyết Tào)
+  // Fuller (Huyết Tào): a dark groove just below the spine, fading out before the point
+  const fuller = ctx.createLinearGradient(0, 0, len * 0.7, 0);
+  fuller.addColorStop(0, 'rgba(2, 44, 34, 0.75)');
+  fuller.addColorStop(1, 'rgba(2, 44, 34, 0)');
+  ctx.strokeStyle = fuller;
+  ctx.lineWidth = Math.max(0.6, w * 0.22);
+  ctx.beginPath(); ctx.moveTo(len * 0.04, w * 0.2); ctx.lineTo(len * 0.7, w * 0.16); ctx.stroke();
+
+  // Edges: a thin bright cutting edge, plus a faint inner bevel line on each facet
+  ctx.strokeStyle = 'rgba(236, 253, 245, 0.95)';
+  ctx.lineWidth = (isColossal ? 1.6 : 0.8) * scale;
+  ctx.beginPath(); ctx.moveTo(0, -w * 0.9); ctx.lineTo(len * 0.8, -w * 0.72); ctx.quadraticCurveTo(len * 0.94, -w * 0.55, len, 0);
+  ctx.quadraticCurveTo(len * 0.94, w * 0.55, len * 0.8, w * 0.72); ctx.lineTo(0, w * 0.9); ctx.stroke();
+  ctx.strokeStyle = 'rgba(209, 250, 229, 0.4)';
+  ctx.lineWidth = (isColossal ? 0.9 : 0.5) * scale;
+  ctx.beginPath(); ctx.moveTo(len * 0.04, -w * 0.62); ctx.lineTo(len * 0.86, -w * 0.4); ctx.moveTo(len * 0.04, w * 0.62); ctx.lineTo(len * 0.86, w * 0.4); ctx.stroke();
+
+  // Central spine ridge (Jian脊): bright, thinner than the edge glow, ending just short of the point
   ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = (isColossal ? 2.4 : 1.1) * scale;
+  ctx.lineWidth = (isColossal ? 1.8 : 0.85) * scale;
   ctx.beginPath();
   ctx.moveTo(0, 0);
-  ctx.lineTo(len * 0.96, 0);
+  ctx.lineTo(len * 0.93, 0);
   ctx.stroke();
 
   if (isColossal) {
@@ -929,21 +930,21 @@ function drawEmeraldSwordBlade(ctx, x, y, ang, scale, alpha, isColossal = false)
   }
 
   // 5. Ornate Winged Cloud-Dragon Crossguard (Kiếm Cách / Hộ Thủ)
+  // Smooth cloud-wings sweeping toward the blade (curves, not facets), mirrored top and bottom.
   ctx.beginPath();
-  ctx.moveTo(len * 0.06, 0); // Forward prong over blade base
-  ctx.lineTo(-len * 0.02, -w * 1.1);
-  ctx.lineTo(len * 0.08, -w * 2.25); // Swept forward wingtip (Upper)
-  ctx.lineTo(-len * 0.07, -w * 1.85);
-  ctx.lineTo(-len * 0.09, -w * 0.65);
-  ctx.lineTo(-len * 0.09, w * 0.65);
-  ctx.lineTo(-len * 0.07, w * 1.85);
-  ctx.lineTo(len * 0.08, w * 2.25); // Swept forward wingtip (Lower)
-  ctx.lineTo(-len * 0.02, w * 1.1);
+  ctx.moveTo(len * 0.06, 0); // forward prong over the blade base
+  for (const s of [-1, 1]) {
+    ctx.quadraticCurveTo(len * 0.01, s * w * 0.9, len * 0.075, s * w * 2.2);   // wing sweeps out and forward to its tip
+    ctx.quadraticCurveTo(-len * 0.03, s * w * 2.05, -len * 0.09, s * w * 0.75); // rolls back toward the grip
+    ctx.lineTo(-len * 0.09, 0);
+    if (s < 0) ctx.moveTo(len * 0.06, 0);
+  }
   ctx.closePath();
 
-  const guardGrad = ctx.createLinearGradient(-len * 0.08, -w * 2, len * 0.06, w * 2);
-  guardGrad.addColorStop(0, '#fde047');
-  guardGrad.addColorStop(0.5, '#f59e0b');
+  const guardGrad = ctx.createLinearGradient(-len * 0.08, -w * 2, len * 0.06, w * 2);  // polished gold: bright, warm core, bright
+  guardGrad.addColorStop(0, '#fef3c7');
+  guardGrad.addColorStop(0.3, '#fde047');
+  guardGrad.addColorStop(0.55, '#d97706');
   guardGrad.addColorStop(1, '#fef08a');
   ctx.fillStyle = guardGrad;
   ctx.fill();
@@ -963,6 +964,15 @@ function drawEmeraldSwordBlade(ctx, x, y, ang, scale, alpha, isColossal = false)
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
+
+  // Glint on the point: a small four-ray star
+  const g = (isColossal ? 7 : 2.6) * scale;
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = 'rgba(236, 253, 245, 0.9)';
+  ctx.beginPath();
+  ctx.moveTo(len + g * 1.6, 0); ctx.lineTo(len + g * 0.18, g * 0.18); ctx.lineTo(len, g * 1.6); ctx.lineTo(len - g * 0.18, g * 0.18);
+  ctx.lineTo(len - g * 1.6, 0); ctx.lineTo(len - g * 0.18, -g * 0.18); ctx.lineTo(len, -g * 1.6); ctx.lineTo(len + g * 0.18, -g * 0.18);
+  ctx.closePath(); ctx.fill();
 
   ctx.restore();
 }
