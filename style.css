@@ -1370,3 +1370,14 @@ dialog#modal .ready-panel { border: 0; background: transparent; padding: 0; box-
 .map-only .map-node { width: 40px; height: 40px; } .map-only .map-node > span { font-size: 19px; }
 .map-only .map-node.available { animation: nodePulse 1.8s ease-in-out infinite; }
 @keyframes nodePulse { 0%, 100% { box-shadow: 0 0 0 4px rgba(233,196,106,.12); } 50% { box-shadow: 0 0 0 9px rgba(233,196,106,.04); } }
+
+/* ---- Card text: one-line brief + keyword icons; keyword glossary in Details ---- */
+.card-summary { -webkit-line-clamp: 2; }
+.card-keywords { display: flex; gap: 6px; margin-top: 8px; }
+.kw { display: inline-grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 50%; color: var(--kw);
+  background: color-mix(in srgb, var(--kw) 14%, transparent); border: 1px solid color-mix(in srgb, var(--kw) 42%, transparent); }
+.kw svg { width: 13px; height: 13px; }
+.kw-glossary { display: grid; gap: 8px; margin: 12px 0 16px; }
+.kw-row { display: grid; grid-template-columns: 22px auto 1fr; gap: 10px; align-items: center; font-size: 13px; }
+.kw-row b { color: var(--ink); font-weight: 600; }
+.kw-row span:last-child { color: var(--muted); }
