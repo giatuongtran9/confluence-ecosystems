@@ -26,7 +26,7 @@ jobs:
       - name: Prepare static game site
         run: |
           mkdir -p public
-          cp index.html data.js engine.js app.js style.css public/
+          cp index.html *.js style.css public/   # every root script, so new ones (e.g. battlefield-view.js) ship automatically
           cp -R assets public/assets
           touch public/.nojekyll
       - name: Configure GitHub Pages
