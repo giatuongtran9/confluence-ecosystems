@@ -1,4 +1,4 @@
-import { STORYBOARDED, storyChannel, storyOwnsUlt, storyRelease } from './effects/storyboard.js';
+import { STORYBOARDED, storyChannel, storyOwnsUlt, storyPersistent, storyRelease } from './effects/storyboard.js';
 import { applyCamera, combatFeedback, drawFlash, isFrozen } from './feedback.js';
 import { cardCellCenter, routePoint } from './battlefield.js';
 import { blackoutHUDHTML, bloodlineTrialHUDHTML, cosmicTrialHUDHTML, cyberTrialHUDHTML, detail, fieldUnit, huntTrialHUDHTML, urbanContainmentHUDHTML, urbanLegendTrialHUDHTML, xenoTrialHUDHTML } from './board.js';
@@ -260,6 +260,8 @@ export function draw() {
     }
   }
 
+  storyPersistent(ctx, size);   // 5 s toxin mire / solar pyre extras
+
   // PASS 3: Aerial VFX (9 Distinct Per-Genre Projectiles, Slashes & Spells)
   for (const f of S.battle.effects) {
     let from = routePoint(f.x, f.y, size), to = routePoint(f.tx, f.ty, size);
@@ -300,6 +302,7 @@ export function draw() {
     } else if (ELEMENT_FX[f.type] || ELEMENT_FX[kind]) {
       if (ULT_ENV[f.type] || ULT_IMPACT[f.type]) drawUltRealism(ctx, f, size);
       (ELEMENT_FX[f.type] || ELEMENT_FX[kind])(ctx, f, size, x, y, tx, ty, prog);
+      storyRelease(ctx, f, size);   // storyboard beats for the Bloodline Apexes (no-op for others)
     } else if (kind === 'sword-pierce') {
       drawSwordPierce(ctx, f, size);
     } else if (kind === 'harmony-chord') {

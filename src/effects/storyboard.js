@@ -7,6 +7,7 @@ import { addTrauma } from '../feedback.js';
 import { S } from '../state.js';
 import { VFX } from '../vfx.js';
 import { additiveGlow, dimFocus, hash01 } from './core.js';
+import { drawBolt } from './elements.js';
 import { addDecal } from './environment.js';
 import { drawGoStoneDisc, drawStarPoint, ringTile, trackPoint, visualTrackP } from './formation-ink.js';
 import { guqinStrings, nudgeEnemy } from './sword-music.js';
@@ -623,8 +624,342 @@ function bodhiRelease(ctx, f, size, st) {
   if (t > 1.2 && t < 1.6) VFX.sprite(ctx, 'light_02', GOLD_HOT, o.x, o.y - 24, 30, 30, 0.6 * (1 - beat(t, 1.4, 1.6)));   // palms together at the chest
 }
 
-const CHANNEL = { 'cult-vajraBody': vajraChannel, 'cult-bodhisattva': bodhiChannel, 'blood-domain': bloodChannel, 'soul-reap-detonation': soulChannel, 'formation-star-river': formationChannel, 'landscape-dragon': landscapeChannel, 'melodic-resonance': melodicChannel };
-const RELEASE = { vajraBody: vajraRelease, bodhisattva: bodhiRelease, 'blood-domain': bloodRelease, 'soul-reap-detonation': soulRelease, 'formation-star-river': formationRelease, 'landscape-dragon': landscapeRelease, 'melodic-resonance': melodicRelease };
+// ---------- Bloodline Apexes: shared pieces ----------
+const quadrantOf = e => Math.floor(wrap16(visualTrackP(e)) / 4);
+const densestQuadrant = () => { const n = [0, 0, 0, 0]; for (const e of live()) n[quadrantOf(e)]++; return n.indexOf(Math.max(...n)); };
+const tileC = (i, size) => trackPoint(wrap16(i) + 0.5, size);
+const tint = (ctx, size, rgb, a, mode = 'source-over') => { if (a <= 0.005) return; ctx.save(); ctx.globalCompositeOperation = mode; ctx.fillStyle = `rgba(${rgb}, ${a})`; ctx.fillRect(0, 0, size, size); ctx.restore(); };
+
+// ---------- Primordial Azure Dragon · Primordial Wrath ----------
+const AZ = '56, 189, 248', AZ_HOT = '224, 242, 254', AZ_VIOLET = '167, 139, 250';
+const stormEye = size => { const c = at(2, 2, size); return { x: c.x, y: c.y - 175 }; };
+function stormClouds(ctx, size, a, t) {
+  if (a <= 0) return;
+  const eye = stormEye(size);
+  for (let i = 0; i < 7; i++) VFX.sprite(ctx, 'smoke_05', '15, 23, 42', eye.x + (i - 3) * 95 + Math.sin(t * 0.6 + i) * 12, eye.y + Math.sin(i * 2.1) * 26, 230, 120, 0.55 * a, t * 0.15 + i, 'source-over');
+}
+function azureChannel(ctx, cx, cy, prog, size, st) {
+  const t = S.battle.time, eye = stormEye(size), seed = Math.floor(t * 18);
+  // 0-0.4 s: the roar; thunderheads blacken the sky; arcs crackle over scales and horns
+  if (prog >= 0.05 && once(st, 'roar')) { addTrauma(0.22, 0.5); VFX.burst('small', cx, cy - 20, AZ, AZ_HOT); }
+  shockRing(ctx, cx, cy + 10, 30 + 200 * eOut(beat(prog, 0.05, 0.35)), AZ, 0.6 * (1 - beat(prog, 0.05, 0.35)), 2);
+  dimFocus(ctx, size, cx, cy, 0.5 * beat(prog, 0, 0.3), '2, 6, 20');
+  stormClouds(ctx, size, beat(prog, 0, 0.35), t);
+  for (let i = 0; i < 3; i++) { const a = hash01(seed + i) * Math.PI * 2; drawBolt(ctx, cx + Math.cos(a) * 10, cy - 24 + Math.sin(a) * 10, cx + Math.cos(a) * 34, cy - 30 + Math.sin(a) * 24, seed + i, AZ_HOT, 0.8 * beat(prog, 0.05, 0.25), 1.2); }
+  // 0.4-0.9 s: the eye of the hurricane opens over the board; plasma arcs spiral down into the raised claws
+  const vortex = beat(prog, 0.33, 0.55);
+  if (vortex > 0) {
+    VFX.sprite(ctx, 'twirl_01', '30, 41, 59', eye.x, eye.y, 360 * vortex, 150 * vortex, 0.7 * vortex, t * 1.4, 'source-over');
+    VFX.sprite(ctx, 'twirl_02', AZ, eye.x, eye.y, 300 * vortex, 120 * vortex, 0.55 * vortex, -t * 2);
+    VFX.sprite(ctx, 'light_02', AZ_HOT, eye.x, eye.y, 90 * vortex, 50 * vortex, 0.8 * vortex);
+    for (let k = 0; k < 2; k++) drawBolt(ctx, eye.x + (k ? 30 : -30), eye.y + 10, cx + (k ? 12 : -12), cy - 34, seed * 3 + k, k ? AZ_VIOLET : AZ_HOT, 0.9 * vortex, 2);
+    if (Math.random() < 0.5 * vortex) {                                  // ground lightning crawls along the rails; runners strobe
+      const i = Math.floor(Math.random() * 16), p = tileC(i, size), q = tileC(i + 1, size);
+      drawBolt(ctx, p.x, p.y + 6, q.x, q.y + 6, seed + i * 7, AZ, 0.9, 1.4);
+      for (const e of live()) if (Math.random() < 0.3) { const r = trackPoint(visualTrackP(e), size); additiveGlow(ctx, r.x, r.y - 14, 22, AZ_HOT, 0.6); }
+    }
+  }
+  // 0.9-1.2 s: the cloud flashes cyan as the coils reach full charge
+  const over = beat(prog, 0.75, 1);
+  if (over > 0) { tint(ctx, size, AZ, 0.12 * over * (0.6 + 0.4 * Math.sin(t * 40)), 'lighter'); VFX.sprite(ctx, 'flare_01', AZ_HOT, eye.x, eye.y, 120 + 140 * over, 80 + 90 * over, over, t * 4); }
+}
+function azureRelease(ctx, f, size, st) {
+  const t = sinceRelease(f), eye = stormEye(size), c = at(2, 2, size), now = S.battle.time, seed = Math.floor(now * 22);
+  stormClouds(ctx, size, 1 - beat(t, 1, 1.6), now);                     // 2.2-3.0 s: the clouds part
+  // 1.2-1.25 s: a dragon head of pure lightning plunges from the eye, with dozens of bolts
+  const dive = beat(t, 0, 0.14);
+  if (dive < 1) {
+    const hx = eye.x + (c.x - eye.x) * eIn(dive), hy = eye.y + (c.y - eye.y) * eIn(dive);
+    drawBolt(ctx, eye.x, eye.y, hx, hy - 10, seed, AZ_HOT, 1, 6);
+    for (const s of [-1, 1]) { drawBolt(ctx, hx, hy - 10, hx + s * 34, hy + 18, seed + s, AZ_HOT, 1, 3); drawBolt(ctx, hx, hy - 6, hx + s * 26, hy - 34, seed + 5 + s, AZ, 0.9, 2); }   // jaws and horns
+    VFX.sprite(ctx, 'flare_01', AZ_HOT, hx, hy, 140, 140, 1, now * 6);
+    for (const s of [-1, 1]) VFX.sprite(ctx, 'star_07', '255, 255, 255', hx + s * 10, hy - 8, 18, 18, 1);
+  }
+  if (t < 0.32) for (let i = 0; i < 3; i++) { const p = tileC(Math.floor(Math.random() * 16), size); drawBolt(ctx, p.x + VFX.rnd(-60, 60), 0, p.x, p.y, seed + i * 13, i % 2 ? AZ_VIOLET : AZ_HOT, 0.85, 2.2); }
+  if (dive >= 1 && once(st, 'crack')) { VFX.burst('medium', c.x, c.y, AZ, AZ_HOT); addTrauma(0.85, 1); }
+  // 1.25-1.6 s: a vertical lightning pillar on every runner, arcs chaining between them, plasma cages while stunned
+  const hits = f.schedule?.hits || [], struck = [];
+  for (const h of hits) {
+    const e = S.battle.enemies.find(v => v.uid === h.uid); if (!e || e.gone) continue;
+    const p = trackPoint(visualTrackP(e), size);
+    if (t >= h.at) struck.push(p);
+    if (t >= h.at && t < h.at + 0.3) { drawBolt(ctx, p.x + VFX.rnd(-8, 8), p.y - 300, p.x, p.y, seed + h.uid, AZ_HOT, 1 - (t - h.at) / 0.3, 4); lightPillar(ctx, p.x, p.y, 220, 18, AZ, 1 - (t - h.at) / 0.3); }
+    if (t >= h.at && once(st, 'sc' + h.uid)) { addDecal('scorch', p.x, p.y + 6, 0.8, 3.5); VFX.burst('small', p.x, p.y, AZ, AZ_HOT); }
+    if ((e.frozenUntil || 0) > now) for (let k = 0; k < 3; k++) { const a = (k / 3) * Math.PI * 2 + now * 5; drawBolt(ctx, p.x + Math.cos(a) * 14, p.y - 30, p.x + Math.cos(a + 1.2) * 14, p.y + 2, seed + k + h.uid, AZ, 0.8, 1.2); }
+  }
+  if (t > 0.1 && t < 0.6) for (let i = 1; i < struck.length; i++) drawBolt(ctx, struck[i - 1].x, struck[i - 1].y - 16, struck[i].x, struck[i].y - 16, seed + i * 5, AZ_VIOLET, 0.7 * (1 - beat(t, 0.4, 0.6)), 1.6);
+  // 1.6-2.2 s: the storm recedes into blue sparks and rising ozone
+  if (t > 0.35 && t < 1.4 && Math.random() < 0.7) { const p = tileC(Math.random() * 16, size); VFX.emit({ x: p.x, y: p.y, vx: VFX.rnd(-10, 10), vy: VFX.rnd(-40, -15), tex: Math.random() < 0.5 ? 'spark_01' : 'smoke_05', rgb: AZ_HOT, s0: 6, s1: 22, a0: 0.5, a1: 0, life: 1, blend: 'lighter' }); }
+}
+
+// ---------- White Tiger God of Slaughter · Roar of Terror ----------
+const PLAT = '241, 245, 249', CRIM = '220, 38, 38';
+function tigerChannel(ctx, cx, cy, prog, size, st) {
+  const t = S.battle.time, moon = { x: cx, y: cy - 96 }, mouth = { x: cx, y: cy - 24 };
+  // 0-0.4 s: the predator crouch gouges furrows; the sky turns crimson under a blood moon
+  if (prog >= 0.08 && once(st, 'crouch')) { addDecal('crack', cx, cy + 14, 1, 3.5); addTrauma(0.15, 0.4); }
+  const sky = beat(prog, 0, 0.3);
+  tint(ctx, size, '90, 6, 6', 0.28 * sky);
+  ctx.save(); ctx.strokeStyle = `rgba(28, 10, 8, ${0.8 * beat(prog, 0.08, 0.3)})`; ctx.lineWidth = 2.5; ctx.lineCap = 'round';   // claw furrows
+  for (let k = -1; k <= 1; k++) { ctx.beginPath(); ctx.moveTo(cx - 6 + k * 7, cy + 18); ctx.lineTo(cx - 6 + k * 7 - 26 * beat(prog, 0.08, 0.3), cy + 30); ctx.stroke(); }
+  ctx.restore();
+  VFX.sprite(ctx, 'light_02', CRIM, moon.x, moon.y, 150, 150, 0.45 * sky);
+  const g = ctx.createRadialGradient(moon.x - 8, moon.y - 8, 2, moon.x, moon.y, 30);
+  g.addColorStop(0, `rgba(252, 165, 165, ${sky})`); g.addColorStop(0.7, `rgba(185, 28, 28, ${sky})`); g.addColorStop(1, `rgba(127, 29, 29, ${sky})`);
+  ctx.save(); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(moon.x, moon.y, 30, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = `rgba(69, 10, 10, ${0.35 * sky})`; for (const [dx, dy, r] of [[-9, 4, 6], [8, -7, 4], [5, 11, 3.5]]) { ctx.beginPath(); ctx.arc(moon.x + dx, moon.y + dy, r, 0, Math.PI * 2); ctx.fill(); }   // maria
+  ctx.restore();
+  // 0.4-0.9 s: wind blades shred the air; slaughter runes ignite; darkness except the burning platinum eyes
+  const blades = beat(prog, 0.33, 0.55) * (1 - beat(prog, 0.85, 1.05));
+  dimFocus(ctx, size, cx, cy, 0.72 * beat(prog, 0.33, 0.6), '4, 2, 2');
+  if (blades > 0) {
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+    for (let i = 0; i < 9; i++) { const a = t * 9 + i * 0.7, r = 40 + 50 * hash01(i), ax = cx + Math.cos(a) * r, ay = cy - 10 + Math.sin(a) * r * 0.5;
+      ctx.strokeStyle = `rgba(${i % 3 ? PLAT : CRIM}, ${0.75 * blades})`; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(ax, ay, 14, a, a + 1.6); ctx.stroke(); }
+    ctx.font = '700 13px "Noto Serif SC", "SimSun", serif'; ctx.textAlign = 'center';
+    for (let i = 0; i < 4; i++) { ctx.fillStyle = `rgba(${i % 2 ? CRIM : PLAT}, ${blades * (0.5 + 0.5 * Math.sin(t * 12 + i))})`; ctx.fillText('殺', cx - 24 + i * 16, cy - 2 + (i % 2) * 8); }
+    ctx.restore();
+    if (Math.random() < 0.5) VFX.emit({ x: cx + VFX.rnd(-60, 60), y: cy + 14, vx: VFX.rnd(-90, 90), vy: VFX.rnd(-120, -40), ay: 400, tex: 'light_02', rgb: '87, 83, 78', blend: 'source-over', s0: 5, s1: 3, a0: 0.9, life: 0.5 });
+  }
+  const eyes = beat(prog, 0.4, 0.6);
+  for (const s of [-1, 1]) VFX.sprite(ctx, 'flare_01', PLAT, cx + s * 6, cy - 32, 22 * eyes, 10 * eyes, eyes);
+  // 0.9-1.2 s: the deep inhale — air rushes into the maw; a platinum-crimson aura gathers before the fangs
+  const inhale = beat(prog, 0.75, 1);
+  if (inhale > 0) {
+    if (Math.random() < 0.9) { const a = VFX.rnd(0, Math.PI * 2), d = VFX.rnd(90, 150); VFX.emit({ x: mouth.x + Math.cos(a) * d, y: mouth.y + Math.sin(a) * d * 0.6, vx: -Math.cos(a) * d * 3, vy: -Math.sin(a) * d * 1.8, drag: 1, tex: 'trace_02', rgb: PLAT, s0: 8, s1: 3, a0: 0.8, life: 0.3, stretch: 0.05 }); }
+    VFX.sprite(ctx, 'circle_02', CRIM, mouth.x, mouth.y + 6, 40 + 30 * inhale, 20 + 14 * inhale, inhale);
+    VFX.sprite(ctx, 'light_02', PLAT, mouth.x, mouth.y, 50 * inhale, 50 * inhale, inhale);
+  }
+}
+function tigerRelease(ctx, f, size, st) {
+  const t = sinceRelease(f), o = at(f.x, f.y, size), now = S.battle.time;
+  tint(ctx, size, '90, 6, 6', 0.22 * (1 - beat(t, 0.4, 1.2)));
+  dimFocus(ctx, size, o.x, o.y, 0.6 * (1 - beat(t, 0.1, 0.6)), '4, 2, 2');
+  // 1.2-1.25 s: the roar — a visible wall of distorted air and platinum wind blades blasts across the arena
+  if (once(st, 'roar')) { VFX.burst('medium', o.x, o.y - 20, PLAT, '255, 255, 255'); for (let i = 0; i < 40; i++) { const a = VFX.rnd(0, Math.PI * 2), v = VFX.rnd(500, 900); VFX.emit({ x: o.x, y: o.y - 20, vx: Math.cos(a) * v, vy: Math.sin(a) * v * 0.5, tex: 'trace_02', rgb: i % 4 ? PLAT : CRIM, s0: 14, s1: 8, a0: 0.9, a1: 0, life: 0.45, stretch: 0.06 }); } }
+  for (let k = 0; k < 3; k++) { const w = beat(t, k * 0.07, 0.5 + k * 0.07); if (w > 0) shockRing(ctx, o.x, o.y, 30 + 600 * eOut(w), k === 1 ? CRIM : PLAT, (k === 1 ? 0.35 : 0.6) * (1 - w), 2.5 - k * 0.6); }
+  // 1.25-1.6 s: every runner flips and flees; razor wind opens crimson wounds
+  for (const h of f.schedule?.hits || []) {
+    const e = S.battle.enemies.find(v => v.uid === h.uid); if (!e || e.gone) continue;
+    const p = trackPoint(visualTrackP(e), size);
+    if (t >= h.at && t < h.at + 0.35) {
+      const k = (t - h.at) / 0.35; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = `rgba(${CRIM}, ${1 - k})`; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+      for (let s = -1; s <= 1; s++) { ctx.beginPath(); ctx.moveTo(p.x - 12, p.y - 26 + s * 6); ctx.lineTo(p.x + 12, p.y - 14 + s * 6); ctx.stroke(); }
+      ctx.restore();
+      if (once(st, 'w' + h.uid)) for (let i = 0; i < 6; i++) VFX.emit({ x: p.x, y: p.y - 20, vx: VFX.rnd(-80, 80), vy: VFX.rnd(-90, -20), ay: 500, tex: 'light_02', rgb: '185, 28, 28', blend: 'source-over', s0: 4, s1: 3, a0: 1, life: 0.5 });
+    }
+  }
+  // 1.6-2.2 s: claw scratches gouged along every wall; trembling runners wear white claw marks while slowed
+  const scr = beat(t, 0.25, 0.45) * (1 - beat(t, 1.2, 1.6));
+  if (scr > 0) { ctx.save(); ctx.strokeStyle = `rgba(30, 8, 8, ${0.55 * scr})`; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
+    for (let i = 0; i < 16; i += 2) { const p = tileC(i, size); for (let k = -1; k <= 1; k++) { ctx.beginPath(); ctx.moveTo(p.x - 14, p.y + 10 + k * 4); ctx.lineTo(p.x + 14, p.y + 7 + k * 4); ctx.stroke(); } }
+    ctx.restore(); }
+  for (const e of live()) {
+    const p = trackPoint(visualTrackP(e), size);
+    if ((e.retreatingUntil || 0) > now && Math.random() < 0.4) VFX.emit({ x: p.x, y: p.y - 14, vx: VFX.rnd(-30, 30), vy: VFX.rnd(-10, 10), tex: 'trace_02', rgb: PLAT, s0: 6, s1: 3, a0: 0.6, life: 0.25 });
+    else if (e.slows?.some(s => s.until > now) && t > 0.3) { ctx.save(); ctx.strokeStyle = `rgba(${PLAT}, 0.85)`; ctx.lineWidth = 1.6; ctx.lineCap = 'round'; const j = Math.sin(now * 40); for (let k = -1; k <= 1; k++) { ctx.beginPath(); ctx.moveTo(p.x - 6 + k * 5 + j, p.y - 40); ctx.lineTo(p.x - 2 + k * 5 + j, p.y - 30); ctx.stroke(); } ctx.restore(); }
+  }
+  if (t > 1.1 && t < 1.5) VFX.sprite(ctx, 'star_07', '255, 255, 255', o.x + 14, o.y - 8, 20, 20, 1 - beat(t, 1.3, 1.5), now * 6);   // a glint on the platinum claw
+}
+
+// ---------- Xuanwu Divine Heaven-Bearer · Abyssal Toxin Domain ----------
+const TOX = '74, 222, 128', TOX_DARK = '20, 83, 45', TOX_PURP = '126, 34, 206';
+function serpent(ctx, x, y, rise, t, alpha) {                           // the black serpent rearing off the shell
+  if (alpha <= 0.01 || rise <= 0) return null;
+  const hx = x + 34, hy = y - 40 - 60 * rise;
+  ctx.save(); ctx.globalAlpha = alpha; ctx.lineCap = 'round';
+  ctx.strokeStyle = '#0b1f14'; ctx.lineWidth = 11; ctx.beginPath(); ctx.moveTo(x + 8, y - 6); ctx.bezierCurveTo(x + 52, y - 18, x + 4, hy + 30, hx, hy + 8); ctx.stroke();
+  ctx.strokeStyle = `rgba(${TOX}, 0.4)`; ctx.lineWidth = 3; ctx.stroke();
+  ctx.fillStyle = '#0b1f14'; ctx.beginPath(); ctx.ellipse(hx, hy, 18, 12, Math.sin(t * 3) * 0.15, 0, Math.PI * 2); ctx.fill();   // flared hood
+  ctx.fillStyle = '#14532d'; ctx.beginPath(); ctx.ellipse(hx + 6, hy + 4, 7, 4, 0.3, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  for (const s of [-1, 1]) VFX.sprite(ctx, 'star_06', TOX, hx + 4 + s * 5, hy - 2, 12, 12, alpha);
+  if (Math.random() < 0.3 * alpha) VFX.emit({ x: hx, y: hy + 6, vy: VFX.rnd(40, 80), ay: 300, tex: 'light_02', rgb: TOX, s0: 4, s1: 3, a0: 1, life: 0.5 });   // venom drips
+  return { x: hx, y: hy };
+}
+function toxicBubble(ctx, x, y, k, a) {                                  // a sludge bubble swelling to 30 px, then bursting
+  if (k >= 1 || a <= 0) return;
+  const r = 15 * k;
+  ctx.save(); ctx.globalAlpha = a;
+  const g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.4, 1, x, y, Math.max(1.5, r)); g.addColorStop(0, 'rgba(187, 247, 208, 0.8)'); g.addColorStop(0.5, `rgba(${TOX}, 0.55)`); g.addColorStop(1, `rgba(${TOX_DARK}, 0.7)`);
+  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y - r * 0.6, r, r * 0.8, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+}
+function xuanwuChannel(ctx, cx, cy, prog, size, st) {
+  const t = S.battle.time, q = (st.q ??= densestQuadrant()), qm = trackPoint(q * 4 + 2, size);
+  // 0-0.4 s: forelegs smash the ground; the serpent uncoils, fangs dripping emerald venom
+  if (prog >= 0.12 && once(st, 'smash')) { addDecal('crack', cx, cy + 14, 1.3, 3.5); addTrauma(0.32, 0.6); for (let i = 0; i < 12; i++) VFX.emit({ x: cx + VFX.rnd(-24, 24), y: cy + 14, vx: VFX.rnd(-150, 150), vy: VFX.rnd(-30, -5), drag: 2.4, tex: 'smoke_05', rgb: '87, 83, 78', blend: 'source-over', s0: 16, s1: 46, a0: 0.4, a1: 0, life: 0.7 }); }
+  shockRing(ctx, cx, cy + 12, 30 + 220 * eOut(beat(prog, 0.12, 0.42)), '161, 140, 100', 0.6 * (1 - beat(prog, 0.12, 0.42)), 2);
+  const head = serpent(ctx, cx, cy, eOut(beat(prog, 0.1, 0.35)), t, 1);
+  // 0.4-0.9 s: toxic sludge geysers burst up around the densest quadrant; the serpent exhales emerald mist over it
+  tint(ctx, size, '6, 24, 10', 0.3 * beat(prog, 0.33, 0.6));
+  const liq = beat(prog, 0.33, 0.7), boil = beat(prog, 0.75, 1);
+  if (liq > 0) {
+    for (let i = 0; i < 4; i++) { const p = trackPoint(q * 4 + i + 0.5, size); ctx.save(); ctx.fillStyle = `rgba(${TOX_DARK}, ${0.55 * liq})`; ctx.beginPath(); ctx.ellipse(p.x, p.y + 6, 30 * liq, 13 * liq, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore(); VFX.sprite(ctx, 'light_02', TOX, p.x, p.y + 6, 70 * liq, 30 * liq, 0.4 * liq); }
+    if (Math.random() < 0.6) { const p = trackPoint(q * 4 + Math.random() * 4, size); VFX.emit({ x: p.x, y: p.y + 4, vx: VFX.rnd(-40, 40), vy: VFX.rnd(-260, -140), ay: 700, tex: 'light_02', rgb: Math.random() < 0.6 ? TOX : TOX_PURP, blend: 'source-over', s0: VFX.rnd(5, 9), s1: 5, a0: 0.9, life: 0.7 }); }
+    if (head && Math.random() < 0.7) VFX.emit({ x: head.x + 8, y: head.y, vx: (qm.x - head.x) * 1.4, vy: (qm.y - 90 - head.y) * 1.4, drag: 1.2, tex: 'smoke_05', rgb: TOX, s0: 16, s1: 70, a0: 0.3, a1: 0, life: 1.1, vr: VFX.rnd(-1, 1) });
+  }
+  // 0.9-1.2 s: the pools boil violently; bubbles swell to 30 px and burst
+  if (boil > 0) for (let i = 0; i < 6; i++) { const ph = (t * 1.8 + hash01(i * 3.7)) % 1, p = trackPoint(q * 4 + hash01(i * 5.3) * 4, size); toxicBubble(ctx, p.x + (hash01(i) - 0.5) * 20, p.y + 6, ph, boil); }
+}
+function xuanwuRelease(ctx, f, size, st) {
+  const t = sinceRelease(f), o = at(f.x, f.y, size);
+  // 1.2-1.25 s: the whole obsidian shell crashes down; mud and acid erupt
+  if (once(st, 'slam')) { VFX.burst('medium', o.x, o.y, TOX, '220, 252, 231'); addTrauma(0.6, 0.8); addDecal('crack', o.x, o.y + 14, 1.6, 4); }
+  shockRing(ctx, o.x, o.y + 12, 30 + 420 * eOut(beat(t, 0, 0.45)), '161, 140, 100', 0.7 * (1 - beat(t, 0, 0.45)), 3);
+  serpent(ctx, o.x, o.y, 1 - beat(t, 0.6, 1), S.battle.time, 1 - beat(t, 0.7, 1));
+}
+// The mire itself lasts 5 s (b.xuanwuToxins): boiling bubbles, waist-deep runners, poison skulls, toxic haze.
+function xuanwuMire(ctx, size) {
+  const now = S.battle.time;
+  for (const z of S.battle.xuanwuToxins || []) {
+    if (now >= z.until) continue;
+    const a = Math.min(1, (now - z.at) / 0.3) * Math.min(1, (z.until - now) / 0.6);
+    for (let i = 0; i < 7; i++) { const ph = (now * 1.3 + hash01(i * 2.9 + z.quadrant)) % 1, p = trackPoint(z.quadrant * 4 + hash01(i * 4.1) * 4, size); toxicBubble(ctx, p.x + (hash01(i * 7) - 0.5) * 24, p.y + 8, ph, a); }
+    if (Math.random() < 0.5 * a) { const p = trackPoint(z.quadrant * 4 + Math.random() * 4, size); VFX.emit({ x: p.x, y: p.y, vx: VFX.rnd(-8, 8), vy: VFX.rnd(-30, -12), tex: 'smoke_05', rgb: TOX, s0: 20, s1: 70, a0: 0.22, a1: 0, life: 1.6, vr: VFX.rnd(-0.6, 0.6) }); }
+    for (const e of live()) if (quadrantOf(e) === z.quadrant) {
+      const p = trackPoint(visualTrackP(e), size);
+      ctx.save(); ctx.fillStyle = `rgba(${TOX_DARK}, ${0.65 * a})`; ctx.beginPath(); ctx.ellipse(p.x, p.y + 2, 16, 6, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();   // waist-deep in the mire
+      if ((now + e.uid * 0.37) % 1 < 0.45) skull(ctx, p.x, p.y - 42 - ((now + e.uid * 0.37) % 1) * 20, 7, a * 0.9);
+    }
+  }
+}
+
+// ---------- Immortal Vermilion Phoenix · Rebirth Inferno ----------
+const FIRE = '251, 146, 60', FIRE_HOT = '254, 240, 138', FIRE_RED = '220, 38, 38';
+function fireWings(ctx, x, y, spread, alpha, t) {                        // two wings of translucent ruby-gold fire
+  if (alpha <= 0.01 || spread <= 0) return;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+  for (const s of [-1, 1]) for (let i = 0; i < 9; i++) {
+    const a = -Math.PI / 2 + s * (0.35 + i * 0.15) * spread, len = (60 + 60 * Math.sin((i + 1) / 10 * Math.PI)) * spread, fl = 0.85 + 0.15 * Math.sin(t * 14 + i);
+    const tx = x + Math.cos(a) * len * fl, ty = y + Math.sin(a) * len * 0.75 * fl;
+    const g = ctx.createLinearGradient(x, y, tx, ty); g.addColorStop(0, `rgba(${FIRE_HOT}, ${0.7 * alpha})`); g.addColorStop(0.6, `rgba(${FIRE}, ${0.5 * alpha})`); g.addColorStop(1, `rgba(${FIRE_RED}, 0)`);
+    ctx.strokeStyle = g; ctx.lineWidth = 9 - i * 0.5; ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + Math.cos(a - s * 0.4) * len * 0.5, y + Math.sin(a - s * 0.4) * len * 0.4, tx, ty); ctx.stroke();
+  }
+  ctx.restore();
+  VFX.sprite(ctx, 'light_02', FIRE, x, y - 20, 220 * spread, 120 * spread, 0.45 * alpha);
+}
+function phoenixChannel(ctx, cx, cy, prog, size, st) {
+  const t = S.battle.time, body = { x: cx, y: cy - 24 - 24 * beat(prog, 0, 0.25) };
+  // 0-0.4 s: colossal wings of fire spread as it soars 24 px; molten feathers fall and scorch the ground
+  const tuck = beat(prog, 0.33, 0.55);
+  fireWings(ctx, body.x, body.y, eOut(beat(prog, 0, 0.3)) * (1 - tuck), 1, t);
+  if (prog < 0.45 && Math.random() < 0.5) VFX.emit({ x: body.x + VFX.rnd(-90, 90), y: body.y + VFX.rnd(-30, 10), vx: VFX.rnd(-20, 20), vy: VFX.rnd(40, 90), ay: 120, tex: 'flare_01', rgb: FIRE, s0: 10, s1: 4, a0: 1, life: 0.6, vr: VFX.rnd(-4, 4) });
+  if (prog >= 0.2 && once(st, 'scorch')) for (let i = 0; i < 3; i++) addDecal('scorch', cx + VFX.rnd(-40, 40), cy + 14 + VFX.rnd(-6, 6), 0.6, 3);
+  // 0.4-0.9 s: it becomes a miniature sun; heatwaves roll across the board; the light turns amber
+  const sun = beat(prog, 0.33, 0.6), crit = beat(prog, 0.75, 1);
+  tint(ctx, size, FIRE, 0.14 * sun, 'lighter');
+  if (sun > 0) {
+    const r = (24 + 26 * sun) * (1 + 0.12 * crit * Math.sin(t * 30));
+    VFX.sprite(ctx, 'light_02', FIRE, body.x, body.y, r * 6, r * 6, 0.7 * sun);
+    VFX.sprite(ctx, 'flare_01', FIRE_HOT, body.x, body.y, r * 3, r * 3, sun, t * 2);
+    VFX.sprite(ctx, 'star_07', '255, 255, 255', body.x, body.y, r * 1.4, r * 1.4, sun, -t * 3);
+    const ph = (t * 1.6) % 1; shockRing(ctx, body.x, cy + 10, 40 + 420 * ph, FIRE, 0.35 * sun * (1 - ph), 1.5);   // heat waves
+  }
+  // 0.9-1.2 s: solar flares lash out and every ember is pulled into the orb
+  if (crit > 0) {
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+    for (let i = 0; i < 5; i++) { const a = t * 3 + i * 1.26, r = 40; ctx.strokeStyle = `rgba(${FIRE_HOT}, ${0.7 * crit})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(body.x + Math.cos(a) * r, body.y + Math.sin(a) * r * 0.8, 16 + 8 * Math.sin(t * 9 + i), a, a + 2.4); ctx.stroke(); }
+    ctx.restore();
+    if (Math.random() < 0.9) { const a = VFX.rnd(0, Math.PI * 2), d = VFX.rnd(110, 180); VFX.emit({ x: body.x + Math.cos(a) * d, y: body.y + Math.sin(a) * d * 0.6, vx: -Math.cos(a) * d * 2.8, vy: -Math.sin(a) * d * 1.7, drag: 1, tex: 'spark_01', rgb: FIRE, s0: 8, s1: 3, a0: 1, life: 0.35, stretch: 0.05 }); }
+  }
+}
+function phoenixRelease(ctx, f, size, st) {
+  const t = sinceRelease(f), o = at(f.x, f.y, size), body = { x: o.x, y: o.y - 48 }, now = S.battle.time;
+  // 1.2-1.25 s: the sun detonates in a supernova
+  if (once(st, 'nova')) { VFX.burst('medium', body.x, body.y, FIRE, FIRE_HOT); addTrauma(0.75, 1); }
+  for (let k = 0; k < 2; k++) { const w = beat(t, k * 0.08, 0.5 + k * 0.08); if (w > 0) shockRing(ctx, body.x, o.y + 10, 40 + 640 * eOut(w), k ? FIRE_RED : FIRE_HOT, (k ? 0.35 : 0.7) * (1 - w), 3); }
+  tint(ctx, size, FIRE, 0.2 * (1 - beat(t, 0.05, 0.6)), 'lighter');
+  // 1.25-1.6 s: solar pillars shoot up from all 16 tiles at once
+  for (let i = 0; i < 16; i++) { const k = beat(t, 0.04 + (i % 4) * 0.02, 0.2 + (i % 4) * 0.02), p = tileC(i, size); if (k > 0) lightPillar(ctx, p.x, p.y + 6, 60 * eOut(k), 16, FIRE, 0.9 * (1 - beat(t, 0.5, 1))); }
+  // 2.2-3.0 s: the phoenix unfurls from the ashes and hovers over the burning arena
+  fireWings(ctx, body.x, body.y, eOut(beat(t, 0.9, 1.4)), 1 - beat(t, 1.4, 1.6), now);
+}
+// The pyre lasts 5 s (b.phoenixFlames): flames on every tile, rising ash, runners trailing fire.
+function phoenixPyre(ctx, size) {
+  const now = S.battle.time;
+  for (const z of S.battle.phoenixFlames || []) {
+    if (now < z.start || now > z.start + z.dur) continue;
+    const a = Math.min(1, (now - z.start) / 0.2) * Math.min(1, (z.start + z.dur - now) / 0.6);
+    for (let i = 0; i < 16; i++) { const p = tileC(i, size), fl = 0.75 + 0.25 * Math.sin(now * 13 + i * 2.3); VFX.sprite(ctx, 'flare_01', FIRE, p.x + Math.sin(now * 7 + i) * 3, p.y - 6, 30 * fl, 42 * fl, 0.55 * a); VFX.sprite(ctx, 'light_02', FIRE_RED, p.x, p.y + 6, 70, 28, 0.35 * a); }
+    if (Math.random() < 0.8 * a) { const p = tileC(Math.random() * 16, size); VFX.emit({ x: p.x + VFX.rnd(-12, 12), y: p.y - 10, vx: VFX.rnd(-10, 10), vy: VFX.rnd(-60, -30), tex: 'spark_01', rgb: Math.random() < 0.5 ? FIRE : FIRE_HOT, s0: 5, s1: 2, a0: 1, life: 0.9 }); }
+    for (const e of live()) if (Math.random() < 0.35 * a) { const p = trackPoint(visualTrackP(e), size); VFX.emit({ x: p.x + VFX.rnd(-6, 6), y: p.y - 16, vx: VFX.rnd(-15, 15), vy: VFX.rnd(-50, -20), tex: 'flare_01', rgb: FIRE, s0: 10, s1: 3, a0: 0.9, life: 0.45 }); }
+  }
+}
+
+// ---------- Great Sage Equal to Heaven · Pillar of Heaven Cudgel ----------
+const SAGE_GOLD = '250, 204, 21';
+// The Ruyi Jingu Bang from (x0, y0) to (x1, y1), w px thick: red-lacquered ends, gold shaft, burning inscription.
+function cudgel(ctx, x0, y0, x1, y1, w, alpha, glow = 0) {
+  const len = Math.hypot(x1 - x0, y1 - y0), ang = Math.atan2(y1 - y0, x1 - x0);
+  if (alpha <= 0.01 || len < 2) return;
+  if (glow > 0) VFX.sprite(ctx, 'light_02', SAGE_GOLD, (x0 + x1) / 2, (y0 + y1) / 2, len * 1.2, w * 4, 0.5 * glow * alpha, ang);
+  ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x0, y0); ctx.rotate(ang);
+  const g = ctx.createLinearGradient(0, -w / 2, 0, w / 2); g.addColorStop(0, '#fde68a'); g.addColorStop(0.45, '#ca8a04'); g.addColorStop(1, '#713f12');
+  ctx.fillStyle = g; ctx.fillRect(0, -w / 2, len, w);
+  const cap = Math.min(len * 0.12, w * 1.6), rg = ctx.createLinearGradient(0, -w / 2, 0, w / 2); rg.addColorStop(0, '#fca5a5'); rg.addColorStop(0.5, '#b91c1c'); rg.addColorStop(1, '#450a0a');
+  ctx.fillStyle = rg; ctx.fillRect(0, -w / 2 - 1, cap, w + 2); ctx.fillRect(len - cap, -w / 2 - 1, cap, w + 2);
+  if (w > 12 && len > 120) {                                              // the inscription burns along the shaft
+    ctx.font = `700 ${Math.round(w * 0.55)}px "Noto Serif SC", "SimSun", serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = `rgba(254, 240, 138, ${0.6 + 0.4 * glow})`;
+    ctx.fillText('如意金箍棒 · 一萬三千五百斤', len / 2, 1, len - cap * 2.4);
+  }
+  ctx.restore();
+}
+function somersaultCloud(ctx, x, y, a, t) { if (a <= 0) return; for (let i = 0; i < 5; i++) VFX.sprite(ctx, 'smoke_05', '254, 243, 199', x + (i - 2) * 16 + Math.sin(t * 3 + i) * 3, y + Math.sin(i * 1.7) * 4, 46, 26, 0.6 * a, t + i, 'source-over'); VFX.sprite(ctx, 'twirl_02', SAGE_GOLD, x, y, 100, 34, 0.5 * a, t * 4); }
+// The square canvas is cropped top and bottom on widescreen, so the raised cudgel stays below y = 190.
+function quadrantEnds(q, size, lift = 0) { const a = trackPoint(q * 4 + 0.05, size), b = trackPoint(q * 4 + 3.95, size), l = Math.max(0, Math.min(lift, Math.min(a.y, b.y) - 190)); return [{ x: a.x, y: a.y - l }, { x: b.x, y: b.y - l }]; }
+function sageChannel(ctx, cx, cy, prog, size, st) {
+  const t = S.battle.time, q = (st.q ??= densestQuadrant()), hover = { x: cx, y: cy - 30 - 24 * beat(prog, 0, 0.2) };
+  // 0-0.4 s: he leaps onto the Somersault Cloud and twirls the needle-sized cudgel out of his ear, throwing sparks
+  somersaultCloud(ctx, hover.x, hover.y + 34, beat(prog, 0, 0.2), t);
+  const grow = beat(prog, 0.33, 0.75), aim = eOut(beat(prog, 0.75, 1));
+  const len = 20 + 60 * beat(grow, 0, 0.4) + 220 * eIn(beat(grow, 0.4, 1)), w = 4 + 36 * eIn(grow), spin = t * (14 - 9 * grow);
+  if (aim <= 0) {
+    const dx = Math.cos(spin) * len / 2, dy = Math.sin(spin) * len / 2 * 0.5;
+    cudgel(ctx, hover.x - dx, hover.y - 30 - dy, hover.x + dx, hover.y - 30 + dy, w, 1, grow);
+    if (Math.random() < 0.6) VFX.emit({ x: hover.x + dx, y: hover.y - 30 + dy, vx: VFX.rnd(-60, 60), vy: VFX.rnd(-60, 20), tex: 'spark_01', rgb: SAGE_GOLD, s0: 6, s1: 2, a0: 1, life: 0.35 });
+  }
+  // 0.4-0.9 s: it grows to a 300 px pillar; the light dims and clouds gather around it
+  dimFocus(ctx, size, cx, cy, 0.4 * beat(prog, 0.33, 0.6), '12, 10, 4');
+  if (grow > 0.4) for (let i = 0; i < 3; i++) VFX.sprite(ctx, 'smoke_05', '68, 64, 60', hover.x + (i - 1) * 110, hover.y - 90, 180, 90, 0.35 * grow, t * 0.3 + i, 'source-over');
+  // 0.9-1.2 s: raised high over the densest quadrant — red crosshairs and a falling shadow mark the target
+  if (aim > 0) {
+    const [a0, a1] = quadrantEnds(q, size, 0), [h0, h1] = quadrantEnds(q, size, 220), mid = trackPoint(q * 4 + 2, size);
+    const lerp = (p, r) => ({ x: p.x + (r.x - p.x) * aim, y: p.y + (r.y - p.y) * aim });
+    const e0 = lerp({ x: hover.x - 150, y: hover.y - 30 }, h0), e1 = lerp({ x: hover.x + 150, y: hover.y - 30 }, h1);
+    ctx.save(); ctx.fillStyle = `rgba(0, 0, 0, ${0.3 * aim})`; ctx.beginPath(); ctx.ellipse(mid.x, mid.y + 6, 90 * aim, 26 * aim, Math.atan2(a1.y - a0.y, a1.x - a0.x), 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = `rgba(239, 68, 68, ${0.85 * aim * (0.6 + 0.4 * Math.sin(t * 20))})`; ctx.lineWidth = 2; ctx.setLineDash([8, 6]); ctx.beginPath(); ctx.moveTo(a0.x, a0.y + 6); ctx.lineTo(a1.x, a1.y + 6); ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(mid.x, mid.y + 6, 16, 0, Math.PI * 2); ctx.moveTo(mid.x - 26, mid.y + 6); ctx.lineTo(mid.x + 26, mid.y + 6); ctx.moveTo(mid.x, mid.y - 14); ctx.lineTo(mid.x, mid.y + 26); ctx.stroke(); ctx.restore();
+    cudgel(ctx, e0.x, e0.y, e1.x, e1.y, 40, 1, 1);
+    if (Math.random() < 0.5) VFX.emit({ x: mid.x + VFX.rnd(-60, 60), y: mid.y - 120, vy: VFX.rnd(160, 260), ay: 500, tex: 'light_02', rgb: '87, 83, 78', blend: 'source-over', s0: 4, s1: 3, a0: 0.9, life: 0.4 });   // falling debris
+  }
+}
+function sageRelease(ctx, f, size, st) {
+  const t = sinceRelease(f), sch = f.schedule || {}, q = sch.quadrant ?? 0, imp = sch.impactAt ?? 0.55, o = at(f.x, f.y, size);
+  const [g0, g1] = quadrantEnds(q, size, 0), [h0, h1] = quadrantEnds(q, size, 220), mid = trackPoint(q * 4 + 2, size);
+  // 1.2-1.25 s: the pillar of heaven comes crashing down onto the quadrant (on the engine's impact beat)
+  const fall = eIn(beat(t, imp - 0.15, imp)), shrink = beat(t, imp + 0.45, imp + 0.85);
+  const e0 = { x: h0.x + (g0.x - h0.x) * fall, y: h0.y + (g0.y - h0.y) * fall }, e1 = { x: h1.x + (g1.x - h1.x) * fall, y: h1.y + (g1.y - h1.y) * fall };
+  const back = (p, k) => ({ x: p.x + (o.x - p.x) * k, y: p.y + (o.y - 40 - p.y) * k });
+  // deep rectangular crater along the pulverized quadrant
+  const crater = beat(t, imp, imp + 0.1) * (1 - beat(t, imp + 0.8, imp + 1.05));
+  if (crater > 0) { ctx.save(); ctx.lineCap = 'round'; ctx.lineWidth = 28; ctx.strokeStyle = `rgba(20, 16, 10, ${0.45 * crater})`; ctx.beginPath(); ctx.moveTo(g0.x, g0.y + 4); ctx.lineTo(g1.x, g1.y + 4); ctx.stroke(); ctx.restore(); }
+  if (shrink < 1) { const s0 = back(e0, shrink), s1 = back(e1, shrink); cudgel(ctx, s0.x, s0.y, s1.x, s1.y, 40 * (1 - 0.9 * shrink), 1, 1 - shrink); }   // 1.6-2.2 s: it zips back to hand size
+  // 1.25-1.6 s: the quadrant is pulverized — geysers of stone and gold sparks blast from both sides
+  if (t >= imp && once(st, 'slam')) {
+    VFX.burst('medium', mid.x, mid.y, SAGE_GOLD, '254, 249, 195'); addTrauma(1, 1);
+    for (let k = 0; k < 4; k++) { const p = trackPoint(q * 4 + k + 0.5, size); addDecal('crack', p.x, p.y + 6, 1.4, 4.5);
+      for (let i = 0; i < 8; i++) { const side = i % 2 ? 1 : -1; VFX.emit({ x: p.x, y: p.y, vx: side * VFX.rnd(60, 200), vy: VFX.rnd(-380, -160), ay: 1000, tex: 'light_02', rgb: i % 3 ? '120, 98, 60' : SAGE_GOLD, blend: i % 3 ? 'source-over' : 'lighter', s0: VFX.rnd(5, 10), s1: 5, a0: 1, a1: 0.6, life: VFX.rnd(0.6, 1), vr: VFX.rnd(-6, 6) }); } }
+    for (const e of live()) if (quadrantOf(e) === q) nudgeEnemy(e.uid, 0, -30, 0.6);   // thrown 30 px into the air
+  }
+  if (t >= imp) { const k = beat(t, imp, imp + 0.45); shockRing(ctx, mid.x, mid.y, 40 + 360 * eOut(k), '254, 249, 195', 0.9 * (1 - k), 3); }
+}
+
+// Effects that outlive their release (5 s pools of toxin and fire), drawn every frame.
+export function storyPersistent(ctx, size) { if (S.battle?.xuanwuToxins?.length) xuanwuMire(ctx, size); if (S.battle?.phoenixFlames?.length) phoenixPyre(ctx, size); }
+
+const CHANNEL = { 'azure-dragon': azureChannel, 'white-tiger': tigerChannel, 'xuanwu-toxin': xuanwuChannel, 'phoenix-inferno': phoenixChannel, 'great-sage-staff': sageChannel, 'cult-vajraBody': vajraChannel, 'cult-bodhisattva': bodhiChannel, 'blood-domain': bloodChannel, 'soul-reap-detonation': soulChannel, 'formation-star-river': formationChannel, 'landscape-dragon': landscapeChannel, 'melodic-resonance': melodicChannel };
+const RELEASE = { 'azure-wrath': azureRelease, 'tiger-roar': tigerRelease, 'xuanwu-lob': xuanwuRelease, 'phoenix-inferno': phoenixRelease, 'sage-staff': sageRelease, vajraBody: vajraRelease, bodhisattva: bodhiRelease, 'blood-domain': bloodRelease, 'soul-reap-detonation': soulRelease, 'formation-star-river': formationRelease, 'landscape-dragon': landscapeRelease, 'melodic-resonance': melodicRelease };
 export const STORYBOARDED = new Set(Object.keys(CHANNEL));
 
 // Called after the base channel drawer; `u.channeling` is new for every channel, so its one-shots reset each time.

@@ -159,7 +159,7 @@ function drawTigerHead(ctx, x, y, s, alpha, roar) {
 function drawTigerRoar(ctx, f, size) {
   const t = fxTime(f), o = routePoint(f.x, f.y, size), sch = f.schedule || { hits: [] };
   dimFocus(ctx, size, o.x, o.y, 0.45 * Math.max(0, 1 - Math.max(0, t - 0.9) / 0.5), '8, 8, 10');
-  if (t < 1.0) { const pop = t < 0.15 ? 0.6 + 0.4 * (t / 0.15) : 1; drawTigerHead(ctx, o.x, Math.max(95, o.y - 125), 1.55 * pop, Math.min(1, t / 0.1) * (t > 0.7 ? 1 - (t - 0.7) / 0.3 : 1), Math.min(1, Math.max(0, (t - 0.15) / 0.12))); }
+  // (the roar itself is drawn by the storyboard layer)
   const R = Math.max(0, (t - 0.25) * 6);
   if (R > 0 && R < 5) waveRing(ctx, size, f.x, f.y, R, (x, y, rx, ry) => {
     ctx.save(); ctx.globalCompositeOperation = 'lighter';

@@ -82,7 +82,7 @@ export function tintOf(id) {
 // Per battle: which effects already fired feedback, and who was channelling last frame.
 const scan = { battle: null, seen: new WeakSet(), channel: new Map(), shake: null };
 // These draw their own storyboarded charge (effects/storyboard.js); they still get the large release bundle.
-const OWN_CHANNEL = new Set(['melodicSaint', 'bloodFiendMaster', 'soulReapingDemon', 'formationMaster', 'landscapeSage', 'vajraBody', 'bodhisattva']);
+const OWN_CHANNEL = new Set(['melodicSaint', 'bloodFiendMaster', 'soulReapingDemon', 'formationMaster', 'landscapeSage', 'vajraBody', 'bodhisattva', 'dragonCubApex', 'tigerCubApex', 'xuanwuCubApex', 'phoenixCubApex', 'monkeyCubApex']);
 
 // Turns this frame's engine events into feedback, and draws the textured channel of every Mythic.
 export function combatFeedback(ctx, b, size) {
