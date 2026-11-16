@@ -1,4 +1,4 @@
-import { storyChannel, storyRelease } from './effects/storyboard.js';
+import { STORYBOARDED, storyChannel, storyOwnsUlt, storyRelease } from './effects/storyboard.js';
 import { applyCamera, combatFeedback, drawFlash, isFrozen } from './feedback.js';
 import { cardCellCenter, routePoint } from './battlefield.js';
 import { blackoutHUDHTML, bloodlineTrialHUDHTML, cosmicTrialHUDHTML, cyberTrialHUDHTML, detail, fieldUnit, huntTrialHUDHTML, urbanContainmentHUDHTML, urbanLegendTrialHUDHTML, xenoTrialHUDHTML } from './board.js';
@@ -254,7 +254,7 @@ export function draw() {
       else if (u.channeling.type === 'soul-reap-detonation') drawSoulGather(ctx, pt.x, pt.y, chProg, size, u);
       else if (u.channeling.type === 'blood-domain') drawBloodGather(ctx, pt.x, pt.y, chProg, size);
       else if (ELEMENT_GATHER[u.channeling.type]) { drawEnvironment(ctx, size, CHANNEL_ENV[u.channeling.type], Math.min(1, chProg / 0.3)); ELEMENT_GATHER[u.channeling.type](ctx, pt.x, pt.y, chProg, size, u); }
-      else if (rdChannelId(u.channeling.type)) drawRedesignChannel(ctx, pt.x, pt.y, chProg, size, rdChannelId(u.channeling.type));
+      else if (rdChannelId(u.channeling.type)) { if (!STORYBOARDED.has(u.channeling.type)) drawRedesignChannel(ctx, pt.x, pt.y, chProg, size, rdChannelId(u.channeling.type)); }
       else drawSwordTorrentChannel(ctx, pt.x, pt.y, chProg, size, u.channeling.type);
       storyChannel(ctx, u.channeling.type, pt.x, pt.y, chProg, size, u);   // storyboard beats (5 Cultivation Mythics)
     }
@@ -276,7 +276,7 @@ export function draw() {
     } else if (f.type === 'ult-channel') {
       // drawn by the live channel pass above
     } else if (kind === 'ult-burst') {
-      drawUltBurst(ctx, f, size);
+      if (storyOwnsUlt(f.ult)) storyRelease(ctx, f, size); else drawUltBurst(ctx, f, size);
     } else if (kind === 'citation') {
       drawOrderCitation(ctx, x, y, tx, ty, prog);
     } else if (f.type === 'sword-channel' || kind === 'sword-channel') {

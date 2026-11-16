@@ -6,10 +6,10 @@ import { routePoint } from '../battlefield.js';
 import { addTrauma } from '../feedback.js';
 import { S } from '../state.js';
 import { VFX } from '../vfx.js';
-import { additiveGlow, hash01 } from './core.js';
+import { additiveGlow, dimFocus, hash01 } from './core.js';
 import { addDecal } from './environment.js';
 import { drawGoStoneDisc, drawStarPoint, ringTile, trackPoint, visualTrackP } from './formation-ink.js';
-import { guqinStrings } from './sword-music.js';
+import { guqinStrings, nudgeEnemy } from './sword-music.js';
 
 const cl = x => Math.max(0, Math.min(1, x)), beat = (p, a, b) => cl((p - a) / (b - a));
 const eOut = k => 1 - (1 - k) ** 3, eIn = k => k * k;
@@ -392,11 +392,244 @@ function melodicRelease(ctx, f, size, st) {
   }
 }
 
-const CHANNEL = { 'blood-domain': bloodChannel, 'soul-reap-detonation': soulChannel, 'formation-star-river': formationChannel, 'landscape-dragon': landscapeChannel, 'melodic-resonance': melodicChannel };
-const RELEASE = { 'blood-domain': bloodRelease, 'soul-reap-detonation': soulRelease, 'formation-star-river': formationRelease, 'landscape-dragon': landscapeRelease, 'melodic-resonance': melodicRelease };
+// ---------- Monastic path: shared pieces ----------
+const GOLD = '250, 204, 21', GOLD_HOT = '254, 249, 195', LOTUS = '244, 114, 182';
+const wrap16 = p => ((p % 16) + 16) % 16;
+const wallMid = (w, size) => trackPoint(wrap16(w * 4 + 2), size);
+const onWall = (e, w) => Math.floor(wrap16(visualTrackP(e)) / 4) === w;
+// A translucent golden temple bell (Kim Chung) standing on baseY, h px tall.
+function goldenBell(ctx, x, baseY, h, alpha, t) {
+  if (alpha <= 0.01) return;
+  const w = h * 0.82, top = baseY - h;
+  const outline = () => { ctx.beginPath(); ctx.moveTo(x - w * 0.5, baseY); ctx.bezierCurveTo(x - w * 0.46, baseY - h * 0.35, x - w * 0.36, top + h * 0.12, x - w * 0.22, top + h * 0.04); ctx.quadraticCurveTo(x, top - h * 0.04, x + w * 0.22, top + h * 0.04); ctx.bezierCurveTo(x + w * 0.36, top + h * 0.12, x + w * 0.46, baseY - h * 0.35, x + w * 0.5, baseY); ctx.ellipse(x, baseY, w * 0.5, w * 0.16, 0, 0, Math.PI); ctx.closePath(); };
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  const g = ctx.createLinearGradient(x - w / 2, 0, x + w / 2, 0);
+  g.addColorStop(0, `rgba(${GOLD}, ${0.28 * alpha})`); g.addColorStop(cl(0.35 + 0.15 * Math.sin(t * 2)), `rgba(${GOLD_HOT}, ${0.12 * alpha})`); g.addColorStop(1, `rgba(${GOLD}, ${0.3 * alpha})`);
+  outline(); ctx.fillStyle = g; ctx.fill();
+  ctx.strokeStyle = `rgba(${GOLD_HOT}, ${0.75 * alpha})`; ctx.lineWidth = 1.6; ctx.stroke();
+  ctx.strokeStyle = `rgba(${GOLD}, ${0.6 * alpha})`; ctx.lineWidth = 1.2;              // cast bands and the lip
+  for (const k of [0.3, 0.62]) { const yy = top + h * k, ww = w * (0.28 + 0.2 * k); ctx.beginPath(); ctx.ellipse(x, yy, ww, ww * 0.18, 0, 0, Math.PI); ctx.stroke(); }
+  ctx.beginPath(); ctx.ellipse(x, baseY, w * 0.5, w * 0.16, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = `rgba(${GOLD_HOT}, ${0.8 * alpha})`; ctx.beginPath(); ctx.ellipse(x, top - 2, Math.max(2, h * 0.04), Math.max(1.5, h * 0.033), 0, 0, Math.PI * 2); ctx.fill();   // knob
+  ctx.restore();
+}
+// A tiny swinging bell over a stunned runner's head.
+function bellIcon(ctx, x, y, t, a) {
+  VFX.sprite(ctx, 'light_02', GOLD, x, y, 26, 26, 0.5 * a);
+  ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(t * 9) * 0.35); goldenBell(ctx, 0, 7, 14, a, t); ctx.restore();
+}
+// The astral fist, knuckles forward along `ang`, s = width in px.
+function astralFist(ctx, x, y, s, ang, alpha) {
+  if (alpha <= 0.01) return;
+  VFX.sprite(ctx, 'light_02', GOLD, x, y, s * 2.2, s * 1.6, 0.8 * alpha);
+  ctx.save(); ctx.translate(x, y); ctx.rotate(ang); ctx.scale(s / 80, s / 80);
+  ctx.globalCompositeOperation = 'lighter';
+  const g = ctx.createLinearGradient(-40, 0, 40, 0); g.addColorStop(0, `rgba(${GOLD}, ${0.15 * alpha})`); g.addColorStop(1, `rgba(${GOLD_HOT}, ${0.9 * alpha})`);
+  ctx.fillStyle = g; ctx.strokeStyle = `rgba(255, 255, 255, ${0.8 * alpha})`; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.roundRect(-40, -24, 56, 48, 14); ctx.fill(); ctx.stroke();                         // back of the hand
+  for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.ellipse(20, -18 + i * 12, 14, 7, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }   // four knuckles
+  ctx.beginPath(); ctx.ellipse(-2, 22, 18, 7, 0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke();                 // thumb
+  ctx.restore();
+}
+const MANTRA = '唵嘛呢叭咪吽';
+
+// ---------- Indestructible Vajra Body · Mountain-Splitting Fist ----------
+function vajraChannel(ctx, cx, cy, prog, size, st) {
+  const t = S.battle.time, ground = cy + 14, fist = { x: cx + 26, y: cy - 30 };
+  // 0-0.4 s: horse-stance stomp cracks the tile; the skin turns molten gold; a golden bell forms around him
+  if (prog >= 0.1 && once(st, 'stomp')) {
+    addDecal('crack', cx, ground, 1.2, 3.5); addTrauma(0.28, 0.6);
+    for (let i = 0; i < 12; i++) VFX.emit({ x: cx + VFX.rnd(-20, 20), y: ground, vx: VFX.rnd(-160, 160), vy: VFX.rnd(-30, -5), drag: 2.4, tex: 'smoke_05', rgb: '120, 113, 108', blend: 'source-over', s0: 16, s1: 46, a0: 0.4, a1: 0, life: 0.7 });
+  }
+  if (prog >= 0.1 && prog < 0.45) shockRing(ctx, cx, ground, 40 + 160 * beat(prog, 0.1, 0.4), GOLD, 0.7 * (1 - beat(prog, 0.1, 0.4)), 2);
+  const gilt = beat(prog, 0.05, 0.35), bell = eOut(beat(prog, 0.08, 0.38));
+  VFX.sprite(ctx, 'light_02', GOLD, cx, cy - 16, 90, 120, 0.55 * gilt * (0.85 + 0.15 * Math.sin(t * 7)));   // molten-gold skin
+  goldenBell(ctx, cx, ground + 6, 150 * (0.8 + 0.2 * bell), bell * (0.85 + 0.15 * Math.sin(t * 5)), t);
+  // 0.4-0.9 s: mantra rings orbit the drawn-back fist; heat shimmer; loose stones float up
+  const comp = beat(prog, 0.33, 0.55), sing = beat(prog, 0.75, 1);
+  if (comp > 0) {
+    for (let i = 0; i < 8; i++) {                                   // levitating stones (4 px and bobbing), with shadows
+      const a = (i / 8) * Math.PI * 2 + 0.3, r = 64 + 24 * hash01(i * 3.1), sx = cx + Math.cos(a) * r, sy = ground + Math.sin(a) * r * 0.45, lift = (4 + 3 * Math.sin(t * 4 + i)) * comp;
+      ctx.save(); ctx.fillStyle = `rgba(0, 0, 0, ${0.25 * comp})`; ctx.beginPath(); ctx.ellipse(sx, sy + 2, 6, 2.5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = `rgba(${i % 2 ? '120, 113, 108' : '87, 83, 78'}, ${comp})`; ctx.beginPath(); ctx.ellipse(sx, sy - lift, 5 + 2 * hash01(i), 3.5, hash01(i * 7) * 3, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    }
+    VFX.sprite(ctx, 'smoke_05', GOLD, cx, cy - 30, 120 + 10 * Math.sin(t * 13), 150, 0.12 * comp, t * 0.7);   // heat haze
+    ctx.save(); ctx.font = '700 12px "Noto Serif SC", "SimSun", serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.globalCompositeOperation = 'lighter';
+    for (let ring = 0; ring < 3; ring++) {                          // three rings of the six-syllable mantra around the forearm
+      const r = (24 + ring * 12) * (1 - sing), spin = t * (2.4 - ring * 0.5) + ring;
+      for (let i = 0; i < MANTRA.length; i++) {
+        const a = spin + (i / MANTRA.length) * Math.PI * 2, depth = 0.55 + 0.45 * Math.cos(a);
+        ctx.globalAlpha = comp * depth * (1 - 0.6 * sing); ctx.fillStyle = `rgb(${depth > 0.6 ? GOLD_HOT : GOLD})`;
+        ctx.fillText(MANTRA[i], fist.x - 10 + ring * 8 + Math.cos(a) * r, fist.y + Math.sin(a) * r * 0.35);
+      }
+    }
+    ctx.restore();
+  }
+  // 0.9-1.2 s: the mantras collapse into the knuckle; the fist burns like the sun
+  if (sing > 0) {
+    VFX.sprite(ctx, 'flare_01', GOLD_HOT, fist.x, fist.y, 30 + 120 * sing, 30 + 120 * sing, 0.5 + 0.5 * sing, t * 3);
+    VFX.sprite(ctx, 'star_07', '255, 255, 255', fist.x, fist.y, 16 + 44 * sing, 16 + 44 * sing, sing, -t * 5);
+    if (Math.random() < 0.8) { const a = VFX.rnd(0, Math.PI * 2), d = VFX.rnd(60, 110); VFX.emit({ x: fist.x + Math.cos(a) * d, y: fist.y + Math.sin(a) * d * 0.6, vx: -Math.cos(a) * d * 3, vy: -Math.sin(a) * d * 1.8, drag: 1, tex: 'spark_01', rgb: GOLD, s0: 9, s1: 3, a0: 1, life: 0.3, stretch: 0.05 }); }
+  }
+}
+function vajraRelease(ctx, f, size, st) {
+  const t = sinceRelease(f), o = at(f.x, f.y, size), now = S.battle.time;
+  if (st.wall == null) { const top = live().sort((a, z) => z.hp - a.hp)[0]; st.wall = f.wall ?? (top ? Math.floor(wrap16(visualTrackP(top)) / 4) : 0); }
+  const w = st.wall, mid = wallMid(w, size), walls = [w, (w + 1) % 4, (w + 3) % 4];
+  // 1.2-1.25 s: he punches the air; an 80 px astral fist shoots across the board
+  const fly = beat(t, 0, 0.16), from = { x: o.x + 26, y: o.y - 30 }, ang = Math.atan2(mid.y - 20 - from.y, mid.x - from.x);
+  if (fly < 1) {
+    const x = from.x + (mid.x - from.x) * eIn(fly), y = from.y + (mid.y - 20 - from.y) * eIn(fly);
+    VFX.sprite(ctx, 'trace_02', GOLD, (x + from.x) / 2, (y + from.y) / 2, 50, Math.hypot(x - from.x, y - from.y) + 40, 0.7, ang - Math.PI / 2);
+    astralFist(ctx, x, y, 80 * (0.7 + 0.3 * fly), ang, 1);
+  }
+  // 1.25-1.6 s: impact — rock fragments erupt from the struck wall, the shock rolls along the walls beside it
+  if (fly >= 1 && once(st, 'impact')) {
+    VFX.burst('medium', mid.x, mid.y, GOLD, GOLD_HOT); addTrauma(0.9, 1);
+    for (let i = 0; i < 26; i++) VFX.emit({ x: mid.x + VFX.rnd(-30, 30), y: mid.y, vx: VFX.rnd(-200, 200), vy: VFX.rnd(-420, -150), ay: 1100, drag: 0.3, tex: 'light_02', rgb: i % 3 ? '120, 98, 60' : GOLD, blend: i % 3 ? 'source-over' : 'lighter', s0: VFX.rnd(5, 11), s1: 5, a0: 1, a1: 0.6, life: VFX.rnd(0.6, 1), vr: VFX.rnd(-6, 6) });
+    for (let k = 0; k < 4; k++) { const p = trackPoint(w * 4 + k + 0.5, size); addDecal('gold', p.x, p.y + 6, 1.2, 4); }   // molten fractures along the struck wall
+    addDecal('crack', mid.x, mid.y + 6, 1.6, 4);
+    for (const e of live()) if (walls.some(wi => onWall(e, wi))) nudgeEnemy(e.uid, 0, -18, 0.6);   // thrown into the air
+  }
+  if (fly >= 1) {
+    const k = beat(t, 0.16, 0.3);
+    if (k < 1) { astralFist(ctx, mid.x, mid.y - 20, 80 * (1 + 0.4 * k), ang, 1 - k); shockRing(ctx, mid.x, mid.y, 30 + 120 * eOut(k), GOLD_HOT, 1 - k, 3); }
+    const lat = beat(t, 0.18, 0.55);
+    for (const side of [-1, 1]) if (lat > 0 && lat < 1) {
+      const p = trackPoint(wrap16(w * 4 + 2 + side * lat * 4.5), size);
+      shockRing(ctx, p.x, p.y, 24 + 10 * Math.sin(now * 30), GOLD, 0.8 * (1 - lat), 2);
+      if (Math.random() < 0.7) VFX.emit({ x: p.x, y: p.y, vx: VFX.rnd(-40, 40), vy: VFX.rnd(-120, -40), ay: 500, tex: 'smoke_05', rgb: '161, 140, 100', blend: 'source-over', s0: 14, s1: 40, a0: 0.4, a1: 0, life: 0.6 });
+    }
+  }
+  // stunned runners on the struck walls wear a little swinging golden bell
+  for (const e of live()) if ((e.frozenUntil || 0) > now && walls.some(wi => onWall(e, wi))) { const p = trackPoint(visualTrackP(e), size); bellIcon(ctx, p.x, p.y - 34, now, 0.9); }
+  // 1.6-2.2 s: golden dust and mantra embers drift over the ruined walls; 2.2-3.0 s: a long white exhale
+  if (t > 0.4 && t < 1.4 && Math.random() < 0.7) { const wi = walls[Math.floor(Math.random() * 3)], p = trackPoint(wi * 4 + Math.random() * 4, size); VFX.emit({ x: p.x, y: p.y - 6, vx: VFX.rnd(-15, 15), vy: VFX.rnd(-30, -10), tex: 'star_06', rgb: GOLD, s0: 5, s1: 1, a0: 0.9, life: 1.1 }); }
+  if (t > 0.9 && t < 1.45 && Math.random() < 0.6) VFX.emit({ x: o.x - 6, y: o.y - 46, vx: VFX.rnd(-70, -40), vy: VFX.rnd(-12, 4), drag: 1.5, tex: 'smoke_05', rgb: '241, 245, 249', blend: 'source-over', s0: 8, s1: 34, a0: 0.4, a1: 0, life: 0.9 });
+}
+
+// ---------- Thousand-Hand Bodhisattva · Thousand-Hand Palm ----------
+// Isometric lotus: layers of petals, pink at the tips, gold at the heart.
+function lotus(ctx, x, y, r, open, alpha, t) {
+  if (alpha <= 0.01 || open <= 0) return;
+  VFX.sprite(ctx, 'light_02', GOLD, x, y, r * 2.6, r * 1.1, 0.5 * alpha * open);
+  ctx.save();
+  for (let layer = 0; layer < 3; layer++) {
+    const n = 8 + layer * 2, rr = r * (1 - layer * 0.26) * open, lift = layer * r * 0.07 * open;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + layer * 0.3 + t * 0.1, px = x + Math.cos(a) * rr * 0.55, py = y + Math.sin(a) * rr * 0.25 - lift;
+      const g = ctx.createRadialGradient(x, y - lift, 0, x, y - lift, rr);
+      g.addColorStop(0, `rgba(${GOLD_HOT}, ${0.9 * alpha})`); g.addColorStop(1, `rgba(${LOTUS}, ${0.75 * alpha})`);
+      ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(px, py, rr * 0.5, rr * 0.2, a, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+// The golden halo wheel behind the back.
+function haloWheel(ctx, x, y, r, alpha, t) {
+  if (alpha <= 0.01) return;
+  VFX.sprite(ctx, 'light_02', GOLD, x, y, r * 3, r * 3, 0.55 * alpha);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = `rgba(${GOLD_HOT}, ${0.8 * alpha})`;
+  for (const k of [1, 0.78, 0.4]) { ctx.lineWidth = k === 1 ? 2.4 : 1.2; ctx.beginPath(); ctx.arc(x, y, r * k, 0, Math.PI * 2); ctx.stroke(); }
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2 + t * 0.4; ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * r * 0.4, y + Math.sin(a) * r * 0.4); ctx.lineTo(x + Math.cos(a) * r * 0.78, y + Math.sin(a) * r * 0.78); ctx.stroke(); }
+  ctx.restore();
+}
+// The mandala of arms fanned behind the back; spread 0 = folded, 1 = fully fanned.
+const ITEMS = ['lotus', 'jewel', 'wheel', 'vajra', 'willow', 'scroll'];
+function thousandArms(ctx, x, y, spread, alpha, t) {
+  if (alpha <= 0.01 || spread <= 0) return;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+  const N = 42;
+  for (let i = 0; i < N; i++) {
+    const layer = i % 3, k = Math.floor(i / 3) / (N / 3 - 1), fan = (k - 0.5) * Math.PI * 1.25 * spread;
+    const a = -Math.PI / 2 + fan * 1.15 + Math.sin(t * 1.5 + i) * 0.02, len = (95 + layer * 28) * (0.4 + 0.6 * spread), sx = x + Math.cos(a) * 16, sy = y + Math.sin(a) * 12, hx = x + Math.cos(a) * len, hy = y + Math.sin(a) * len * 0.8;
+    const appear = cl(spread * 1.4 - layer * 0.2);
+    const ex = x + Math.cos(a - 0.25) * len * 0.5, ey = y + Math.sin(a - 0.25) * len * 0.42;      // elbow bend
+    for (const [lw, al] of [[8 - layer * 1.5, 0.16], [3.2 - layer * 0.6, 0.38]]) { ctx.strokeStyle = `rgba(${GOLD}, ${al * alpha * appear})`; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.quadraticCurveTo(ex, ey, hx, hy); ctx.stroke(); }
+    ctx.save(); ctx.translate(hx, hy); ctx.rotate(a + Math.PI / 2); ctx.fillStyle = `rgba(${GOLD_HOT}, ${0.55 * alpha * appear})`;   // the open hand, fingers up
+    ctx.beginPath(); ctx.ellipse(0, 0, 4.5, 5.5, 0, 0, Math.PI * 2); ctx.fill(); for (let fg = -1.5; fg <= 1.5; fg++) { ctx.beginPath(); ctx.ellipse(fg * 2.2, -7, 1, 3, 0, 0, Math.PI * 2); ctx.fill(); }
+    ctx.restore();
+    if (i % 6 === 0 && appear > 0.5) {                               // a sacred object in every sixth hand
+      const it = ITEMS[(i / 6) % ITEMS.length], ox = hx + Math.cos(a) * 7, oy = hy + Math.sin(a) * 7;
+      ctx.fillStyle = `rgba(${it === 'lotus' ? LOTUS : it === 'willow' ? '134, 239, 172' : GOLD_HOT}, ${0.9 * alpha})`; ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = 1.4;
+      if (it === 'jewel') { ctx.beginPath(); ctx.moveTo(ox, oy - 4); ctx.lineTo(ox + 3, oy); ctx.lineTo(ox, oy + 4); ctx.lineTo(ox - 3, oy); ctx.fill(); }
+      else if (it === 'wheel') { ctx.beginPath(); ctx.arc(ox, oy, 4, 0, Math.PI * 2); ctx.moveTo(ox - 4, oy); ctx.lineTo(ox + 4, oy); ctx.moveTo(ox, oy - 4); ctx.lineTo(ox, oy + 4); ctx.stroke(); }
+      else if (it === 'vajra') { ctx.beginPath(); ctx.moveTo(ox - 4, oy); ctx.lineTo(ox + 4, oy); ctx.stroke(); ctx.beginPath(); ctx.arc(ox - 4, oy, 1.8, 0, 7); ctx.arc(ox + 4, oy, 1.8, 0, 7); ctx.fill(); }
+      else if (it === 'willow') { ctx.beginPath(); ctx.moveTo(ox, oy - 5); ctx.quadraticCurveTo(ox + 4, oy, ox + 1, oy + 6); ctx.stroke(); }
+      else if (it === 'scroll') ctx.fillRect(ox - 4, oy - 2, 8, 4);
+      else { ctx.beginPath(); ctx.arc(ox, oy, 3, 0, 7); ctx.fill(); }
+    }
+  }
+  ctx.restore();
+}
+// The cosmic palm, fingers away from the viewer; sy squashes it flat onto the floor.
+function cosmicPalm(ctx, x, y, w, sy, alpha) {
+  if (alpha <= 0.01) return;
+  VFX.sprite(ctx, 'light_02', GOLD, x, y - w * 0.1 * sy, w * 1.4, w * 1.4 * sy, 0.4 * alpha);
+  ctx.save(); ctx.translate(x, y); ctx.scale(w / 200, (w / 200) * sy); ctx.globalCompositeOperation = 'lighter';
+  ctx.shadowColor = `rgba(${GOLD}, ${alpha})`; ctx.shadowBlur = 18;
+  const g = ctx.createRadialGradient(0, 10, 10, 0, 0, 130); g.addColorStop(0, `rgba(${GOLD_HOT}, ${0.3 * alpha})`); g.addColorStop(1, `rgba(${GOLD}, ${0.08 * alpha})`);
+  ctx.fillStyle = g; ctx.strokeStyle = `rgba(${GOLD_HOT}, ${0.35 * alpha})`; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.ellipse(0, 20, 62, 58, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();                       // palm
+  for (const [fx, len, rot] of [[-42, 70, -0.18], [-15, 92, -0.05], [12, 96, 0.04], [38, 80, 0.16]]) {           // four tapering fingers
+    ctx.save(); ctx.translate(fx, -18); ctx.rotate(rot); ctx.beginPath(); ctx.moveTo(-13, 10); ctx.lineTo(-10, -len + 10); ctx.quadraticCurveTo(0, -len - 6, 10, -len + 10); ctx.lineTo(13, 10); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+  }
+  ctx.save(); ctx.translate(-58, 30); ctx.rotate(-0.9); ctx.beginPath(); ctx.roundRect(-12, -62, 24, 72, 12); ctx.fill(); ctx.stroke(); ctx.restore();   // thumb
+  ctx.strokeStyle = `rgba(${GOLD_HOT}, ${0.45 * alpha})`; ctx.lineWidth = 2;                                    // palm lines
+  ctx.beginPath(); ctx.moveTo(-40, 0); ctx.quadraticCurveTo(0, 18, 46, 0); ctx.moveTo(-36, 30); ctx.quadraticCurveTo(0, 40, 30, 58); ctx.stroke();
+  ctx.restore();
+}
+function bodhiChannel(ctx, cx, cy, prog, size, st) {
+  const t = S.battle.time, ground = cy + 14, back = { x: cx, y: cy - 42 };
+  // 0-0.4 s: a pink-gold lotus blooms underfoot; a golden halo wheel ignites behind the back
+  dimFocus(ctx, size, cx, cy, 0.4 * beat(prog, 0.3, 0.5), '28, 18, 4');   // 0.4-0.9 s: lighting dims 40%, warm
+  lotus(ctx, cx, ground, 70, eOut(beat(prog, 0, 0.3)), 1, t);
+  haloWheel(ctx, back.x, back.y, 40, beat(prog, 0.08, 0.33), t);
+  // 0.4-0.9 s: hundreds of golden arms fan out behind him, each hand in a mudra or holding a sacred object
+  thousandArms(ctx, back.x, back.y, eOut(beat(prog, 0.33, 0.72)), 1, t);
+  // 0.9-1.2 s: a cosmic golden palm forms from swirling clouds high above the battlefield; its shadow falls over the board
+  const sky = beat(prog, 0.72, 1), c = at(2, 2, size), py = c.y - 120;
+  if (sky > 0) {
+    if (Math.random() < 0.9) VFX.emit({ x: c.x + VFX.rnd(-160, 160), y: py + VFX.rnd(-50, 60), vx: VFX.rnd(-30, 30), vy: VFX.rnd(-10, 10), tex: 'smoke_05', rgb: GOLD, s0: 40, s1: 110, a0: 0.3, a1: 0, life: 1, vr: VFX.rnd(-1, 1) });
+    ctx.save(); ctx.fillStyle = `rgba(20, 12, 0, ${0.3 * sky})`; ctx.beginPath(); ctx.ellipse(c.x, c.y, 260 * sky, 110 * sky, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    cosmicPalm(ctx, c.x, py, 200, 1, sky);
+  }
+}
+function bodhiRelease(ctx, f, size, st) {
+  const t = sinceRelease(f), o = at(f.x, f.y, size), c = at(2, 2, size), now = S.battle.time, back = { x: o.x, y: o.y - 42 };
+  // 1.2-1.25 s: the palm slams down flat over the whole arena in a white-gold flash
+  const fall = beat(t, 0, 0.08), lift = beat(t, 0.45, 1);
+  const py = c.y - 120 * (1 - eIn(fall)) - 120 * eIn(lift), sy = 1 - 0.58 * fall + 0.4 * lift;
+  if (fall >= 1 && once(st, 'slam')) {
+    VFX.burst('medium', c.x, c.y, GOLD, GOLD_HOT); addTrauma(0.75, 1);
+    for (const e of live()) nudgeEnemy(e.uid, 0, 8, 0.85);      // every runner pressed flat into the ground
+  }
+  // 1.6-2.2 s: a faint palm print stays etched on the floor, with rising incense
+  const print = beat(t, 0.1, 0.3) * (1 - beat(t, 1.1, 1.6));
+  if (print > 0) {
+    cosmicPalm(ctx, c.x, c.y, 460, 0.42, 0.35 * print);
+    if (Math.random() < 0.4) VFX.emit({ x: c.x + VFX.rnd(-120, 120), y: c.y + VFX.rnd(-30, 30), vx: VFX.rnd(-5, 5), vy: VFX.rnd(-35, -20), tex: 'smoke_05', rgb: '214, 211, 209', blend: 'source-over', s0: 6, s1: 30, a0: 0.3, a1: 0, life: 1.5, vr: VFX.rnd(-1, 1) });
+  }
+  cosmicPalm(ctx, c.x, py, 200 + 260 * fall, sy, 0.75 * (1 - lift));
+  if (fall >= 1) shockRing(ctx, c.x, c.y, 60 + 520 * eOut(beat(t, 0.08, 0.5)), GOLD_HOT, 0.8 * (1 - beat(t, 0.08, 0.5)), 3);
+  // board-wide stun: little golden lotus wheels spin over every runner
+  for (const e of live()) if ((e.frozenUntil || 0) > now) { const p = trackPoint(visualTrackP(e), size); lotus(ctx, p.x, p.y - 34, 13, 1, 0.9, now * 30); }
+  // the palm lifts and dissolves into drifting lotus petals
+  if (lift > 0 && lift < 1) for (let i = 0; i < 3; i++) VFX.emit({ x: c.x + VFX.rnd(-150, 150), y: py + VFX.rnd(-60, 60), vx: VFX.rnd(-40, 40), vy: VFX.rnd(-10, 30), drag: 0.6, tex: 'light_02', rgb: i % 2 ? LOTUS : GOLD_HOT, s0: 9, s1: 6, a0: 0.9, a1: 0, life: 1.4, squash: 0.45, vr: VFX.rnd(-3, 3) });
+  // 2.2-3.0 s: the arms fold back as the hands meet in prayer
+  thousandArms(ctx, back.x, back.y, 1 - eOut(beat(t, 0.8, 1.4)), 1 - beat(t, 1.3, 1.6), now);
+  haloWheel(ctx, back.x, back.y, 40, 1 - beat(t, 1, 1.6), now);
+  if (t > 1.2 && t < 1.6) VFX.sprite(ctx, 'light_02', GOLD_HOT, o.x, o.y - 24, 30, 30, 0.6 * (1 - beat(t, 1.4, 1.6)));   // palms together at the chest
+}
+
+const CHANNEL = { 'cult-vajraBody': vajraChannel, 'cult-bodhisattva': bodhiChannel, 'blood-domain': bloodChannel, 'soul-reap-detonation': soulChannel, 'formation-star-river': formationChannel, 'landscape-dragon': landscapeChannel, 'melodic-resonance': melodicChannel };
+const RELEASE = { vajraBody: vajraRelease, bodhisattva: bodhiRelease, 'blood-domain': bloodRelease, 'soul-reap-detonation': soulRelease, 'formation-star-river': formationRelease, 'landscape-dragon': landscapeRelease, 'melodic-resonance': melodicRelease };
 export const STORYBOARDED = new Set(Object.keys(CHANNEL));
 
 // Called after the base channel drawer; `u.channeling` is new for every channel, so its one-shots reset each time.
 export function storyChannel(ctx, type, cx, cy, prog, size, u) { const fn = CHANNEL[type]; if (fn) fn(ctx, cx, cy, prog, size, (u.channeling._story ??= {})); }
 // Called after the base release drawer.
-export function storyRelease(ctx, f, size) { const fn = RELEASE[f.type]; if (fn) fn(ctx, f, size, (f._story ??= {})); }
+export function storyRelease(ctx, f, size) { const fn = RELEASE[f.type === 'ult-burst' ? f.ult : f.type]; if (fn) fn(ctx, f, size, (f._story ??= {})); }
+// Ultimates whose whole release is storyboarded here (the generic ult-burst drawer stands aside).
+export const storyOwnsUlt = id => id === 'vajraBody' || id === 'bodhisattva';

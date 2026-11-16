@@ -1384,9 +1384,11 @@ function fx(b, type, u, e, text, extra = {}) {
  // Pill Alchemist: Lotus and Cauldron Qi gains +25%, doubled to +50% when the Alchemist stands beside the Cauldron.
  const alchemyBonus = b => { const a = b.units.find(v => !v.removed && v.id === 'pillAlchemist'); if (!a) return 1; return neighbors(b, a, false).some(v => !v.removed && v.id === 'cauldron') ? 1.5 : 1.25; };
  function resolveCultUlt(b, u, id, power) {
-  if (id === 'vajraBody') { const t = [...living(b)].sort((a, z) => z.hp - a.hp)[0]; if (t) for (const e of living(b).filter(e => [0, 1, 3].includes((wallOf(e) - wallOf(t) + 4) % 4))) { hit(b, u, e, power * (wallOf(e) === wallOf(t) ? 3 : 1.5), false); status(b, e, 'stun', 1.5, 0, u); } }
+  let wall = null;
+  if (id === 'vajraBody') { const t = [...living(b)].sort((a, z) => z.hp - a.hp)[0]; if (t) wall = wallOf(t); if (t) for (const e of living(b).filter(e => [0, 1, 3].includes((wallOf(e) - wallOf(t) + 4) % 4))) { hit(b, u, e, power * (wallOf(e) === wallOf(t) ? 3 : 1.5), false); status(b, e, 'stun', 1.5, 0, u); } }
   else if (id === 'bodhisattva') { for (const e of living(b)) { hit(b, u, e, power * 1.5, false); status(b, e, 'stun', 1, 0, u); } }
   ultFx(b, u, id, CULT_ULTS[id]);
+  if (wall != null) b.effects.at(-1).wall = wall;   // which wall the Mountain-Splitting Fist struck (for the renderer)
  }
  const acceptsDread = u => !token(u) && (isUrbanInvestigator(u) || isUrbanAuthority(u));
  function addQi(b, u, amount) {
