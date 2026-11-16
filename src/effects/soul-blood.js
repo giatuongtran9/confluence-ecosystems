@@ -88,6 +88,7 @@ function drawSoulBanner(ctx, g, unfurl, glow, alpha, time) {
 }
 export function drawSoulGather(ctx, cx, cy, prog, size, u) {
   const time = S.battle.time, souls = u?.souls || 0, g = bannerGeom(cx, cy);
+  const drop = 90 * (1 - Math.min(1, prog / 0.22) ** 2); g.top -= drop; g.bottom -= drop; g.cy -= drop;   // the banner is slammed down (storyboard 0-0.4s)
   dimFocus(ctx, size, cx, cy, 0.5 * Math.min(1, prog / 0.25), '2, 10, 5');
   drawSoulBanner(ctx, g, easeOut(Math.min(1, prog / 0.45)), prog, 1, time);
   const n = Math.min(36, 8 + Math.floor(souls / 3)), appear = Math.min(1, prog / 0.25);
@@ -232,7 +233,8 @@ function drawBloodBlade(ctx, x, y, h, alpha, crack = 1) {
   ctx.restore();
 }
 export function drawBloodGather(ctx, cx, cy, prog, size) {
-  const time = S.battle.time, r = 96 * easeOut(Math.min(1, prog / 0.85));
+  // Storyboard: the pool boils up after the blade plunge (0.35-0.85), then compresses into the blade (0.9-1.2)
+  const time = S.battle.time, r = 96 * easeOut(Math.min(1, Math.max(0, (prog - 0.35) / 0.5))) * (1 - 0.7 * Math.max(0, (prog - 0.9) / 0.3));
   dimFocus(ctx, size, cx, cy, 0.45 * Math.min(1, prog / 0.25), '20, 2, 2');
   drawBloodPool(ctx, cx, cy + 10, r, r * 0.45, 1, time);
   additiveGlow(ctx, cx, cy, 46 + 36 * prog, BLOOD_RGB, 0.2 + 0.45 * prog);

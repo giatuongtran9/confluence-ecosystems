@@ -315,7 +315,7 @@ export function drawColossalNumber(ctx, x, y, f) {
 // then a sound wave spreads at schedule.waveSpeed tiles/s. Each enemy is hit and stunned when the wave
 // reaches it; notes circle its head while the 1.5s stun lasts.
 const MELODIC_RGB = '129, 140, 248', MELODIC_CORE = '199, 210, 254';
-function guqinStrings(ctx, cx, cy, width, amp, alpha, time, snap = 0) {
+export function guqinStrings(ctx, cx, cy, width, amp, alpha, time, snap = 0) {
   if (alpha <= 0) return;
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
@@ -356,7 +356,7 @@ function drawNoteGlyphs(ctx, pts, alpha) {
 
 export function drawMelodicGather(ctx, cx, cy, prog, size) {
   const now = S.battle.time, appear = Math.min(1, prog / 0.2);
-  dimFocus(ctx, size, cx, cy, 0.45 * Math.min(1, prog / 0.25));
+  dimFocus(ctx, size, cx, cy, 0.35 * Math.min(1, prog / 0.25));   // storyboard: ambient light dims 35%
   additiveGlow(ctx, cx, cy, 48 + 44 * prog, MELODIC_RGB, 0.2 + 0.5 * prog);
   VFX.sprite(ctx, 'light_02', MELODIC_RGB, cx, cy + 8, 170 * (.6 + .4 * prog), 74 * (.6 + .4 * prog), .25 + .35 * prog); // aura pooling under the Saint
   for (let r = 0; r < 3; r++) {                             // sound rings contracting toward the Saint

@@ -1,7 +1,7 @@
 // Tiered combat feedback: one event -> one consistent bundle, picked by tier.
 //   small  = a normal hit:  3 sparks; the faintest shake (shake is trauma², so 0.1 trauma barely moves)
 //   medium = a critical:    flash + ring + 9 sparks, light shake (no freeze)
-//   large  = an ultimate:   flare + shock rings + 30 sparks, heavy shake with a punch-in, 110 ms freeze, screen flash
+//   large  = an ultimate:   flare + shock rings + 30 sparks, heavy shake (~8 px) with a punch-in, 50 ms hit-stop, screen flash
 // Only ultimates freeze, and ultimates released
 // within 0.5 s of a freeze share it.
 // Renderer only: the camera, freezes and particles never change the simulation's results. Shake and freezes run on
@@ -15,7 +15,7 @@ import { VFX } from './vfx.js';
 const TIER = {
   small:  { trauma: 0.10, cap: 0.10, stop: 0 },
   medium: { trauma: 0.20, cap: 0.50, stop: 0 },
-  large:  { trauma: 0.85, cap: 1.00, stop: 0.11, gap: 0.5, flash: 0.55 },
+  large:  { trauma: 0.75, cap: 1.00, stop: 0.05, gap: 0.5, flash: 0.55 },   // storyboards: 0.05 s hit-stop, ~8 px shake
 };
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const cam = { trauma: 0, t: 0, stop: 0, lastStop: -1, flash: 0, flashRgb: '255, 255, 255', flashes: [], fx: 350, fy: 350 };
@@ -63,7 +63,7 @@ export function drawFlash(ctx, size, realDt) {
 // Colours: a Mythic's own palette when it has one, else its genre's.
 const MYTHIC_TINT = {
   swordImmortal: ['92, 225, 230', '220, 255, 250'], melodicSaint: ['129, 140, 248', '253, 230, 138'], formationMaster: ['203, 213, 225', '255, 255, 255'],
-  talismanSovereign: ['250, 204, 21', '255, 247, 210'], landscapeSage: ['125, 211, 252', '240, 249, 255'], soulReapingDemon: ['167, 139, 250', '237, 233, 254'],
+  talismanSovereign: ['250, 204, 21', '255, 247, 210'], landscapeSage: ['110, 231, 183', '236, 253, 245'], soulReapingDemon: ['134, 239, 172', '240, 253, 244'],
   bloodFiendMaster: ['239, 68, 68', '254, 202, 202'], dragonCubApex: ['56, 189, 248', '224, 242, 254'], tigerCubApex: ['226, 232, 240', '255, 255, 255'],
   xuanwuCubApex: ['74, 222, 128', '220, 252, 231'], phoenixCubApex: ['251, 146, 60', '254, 240, 138'], monkeyCubApex: ['250, 204, 21', '254, 249, 195'],
   magmaLord: ['249, 115, 22', '254, 215, 170'], tempestArchon: ['251, 113, 133', '255, 228, 230'], steamSovereign: ['203, 213, 225', '255, 255, 255'],
@@ -81,7 +81,8 @@ export function tintOf(id) {
 
 // Per battle: which effects already fired feedback, and who was channelling last frame.
 const scan = { battle: null, seen: new WeakSet(), channel: new Map(), shake: null };
-const OWN_CHANNEL = new Set(['melodicSaint']); // already has its own textured charge (vfx.js melodic)
+// These draw their own storyboarded charge (effects/storyboard.js); they still get the large release bundle.
+const OWN_CHANNEL = new Set(['melodicSaint', 'bloodFiendMaster', 'soulReapingDemon', 'formationMaster', 'landscapeSage']);
 
 // Turns this frame's engine events into feedback, and draws the textured channel of every Mythic.
 export function combatFeedback(ctx, b, size) {

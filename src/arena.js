@@ -1,3 +1,4 @@
+import { storyChannel, storyRelease } from './effects/storyboard.js';
 import { applyCamera, combatFeedback, drawFlash, isFrozen } from './feedback.js';
 import { cardCellCenter, routePoint } from './battlefield.js';
 import { blackoutHUDHTML, bloodlineTrialHUDHTML, cosmicTrialHUDHTML, cyberTrialHUDHTML, detail, fieldUnit, huntTrialHUDHTML, urbanContainmentHUDHTML, urbanLegendTrialHUDHTML, xenoTrialHUDHTML } from './board.js';
@@ -255,6 +256,7 @@ export function draw() {
       else if (ELEMENT_GATHER[u.channeling.type]) { drawEnvironment(ctx, size, CHANNEL_ENV[u.channeling.type], Math.min(1, chProg / 0.3)); ELEMENT_GATHER[u.channeling.type](ctx, pt.x, pt.y, chProg, size, u); }
       else if (rdChannelId(u.channeling.type)) drawRedesignChannel(ctx, pt.x, pt.y, chProg, size, rdChannelId(u.channeling.type));
       else drawSwordTorrentChannel(ctx, pt.x, pt.y, chProg, size, u.channeling.type);
+      storyChannel(ctx, u.channeling.type, pt.x, pt.y, chProg, size, u);   // storyboard beats (5 Cultivation Mythics)
     }
   }
 
@@ -284,17 +286,17 @@ export function draw() {
     } else if (f.type === 'sword-torrent' || kind === 'sword-torrent') {
       drawSwordTorrent(ctx, f, size);
     } else if (f.type === 'melodic-resonance') {
-      drawMelodicResonance(ctx, f, size);
+      drawMelodicResonance(ctx, f, size); storyRelease(ctx, f, size);
     } else if (f.type === 'formation-star-river') {
-      drawFormationRiver(ctx, f, size);
+      drawFormationRiver(ctx, f, size); storyRelease(ctx, f, size);
     } else if (f.type === 'talisman-decree') {
       drawTalismanDecree(ctx, f, size);
     } else if (f.type === 'landscape-dragon') {
-      drawLandscapeDragon(ctx, f, size);
+      drawLandscapeDragon(ctx, f, size); storyRelease(ctx, f, size);
     } else if (f.type === 'soul-reap-detonation') {
-      drawSoulDetonation(ctx, f, size);
+      drawSoulDetonation(ctx, f, size); storyRelease(ctx, f, size);
     } else if (f.type === 'blood-domain') {
-      drawBloodDomain(ctx, f, size);
+      drawBloodDomain(ctx, f, size); storyRelease(ctx, f, size);
     } else if (ELEMENT_FX[f.type] || ELEMENT_FX[kind]) {
       if (ULT_ENV[f.type] || ULT_IMPACT[f.type]) drawUltRealism(ctx, f, size);
       (ELEMENT_FX[f.type] || ELEMENT_FX[kind])(ctx, f, size, x, y, tx, ty, prog);

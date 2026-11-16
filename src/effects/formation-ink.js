@@ -54,7 +54,7 @@ function drawWeiqiGrid(ctx, size, cx, cy, r, alpha) {
   ctx.stroke();
   ctx.restore();
 }
-function drawStarPoint(ctx, x, y, r, alpha, rgb = SILVER_RGB) {
+export function drawStarPoint(ctx, x, y, r, alpha, rgb = SILVER_RGB) {
   if (alpha <= 0) return;
   additiveGlow(ctx, x, y, r * 2.2, RIVER_RGB, 0.45 * alpha);
   ctx.save();
@@ -69,7 +69,7 @@ function drawStarPoint(ctx, x, y, r, alpha, rgb = SILVER_RGB) {
   ctx.closePath(); ctx.fill();
   ctx.restore();
 }
-function drawGoStoneDisc(ctx, x, y, r, white, alpha) {
+export function drawGoStoneDisc(ctx, x, y, r, white, alpha) {
   if (alpha <= 0) return;
   ctx.save();
   ctx.globalAlpha = Math.min(1, alpha);
@@ -87,8 +87,8 @@ function drawGoStoneDisc(ctx, x, y, r, white, alpha) {
 }
 
 export function drawFormationGather(ctx, cx, cy, prog, size) {
-  const time = S.battle.time, maxR = size * 0.95, R = maxR * easeOut(Math.min(1, prog / 0.8));
-  dimFocus(ctx, size, cx, cy, 0.55 * Math.min(1, prog / 0.25), NIGHT_RGB);
+  const time = S.battle.time, maxR = size * 0.95, R = maxR * easeOut(Math.min(1, prog / 0.4));   // grid projected in 0-0.4s
+  dimFocus(ctx, size, cx, cy, 0.5 * Math.min(1, prog / 0.25), NIGHT_RGB);
   drawStarfield(ctx, size, Math.min(1, prog / 0.3), time);
   drawWeiqiGrid(ctx, size, cx, cy, R, 1);
   ctx.save();                                              // leading edge of the spreading grid
@@ -591,9 +591,12 @@ export function drawLandscapeGather(ctx, cx, cy, prog, size) {
   const pts = [];
   for (let i = 0; i <= 56; i++) {
     const u = i / 56;
-    pts.push({ x: cx - 140 + 280 * u, y: Math.max(40, cy - 96) + Math.sin(u * Math.PI * 3) * 26 * (0.6 + 0.4 * u) });
+    const wave = { x: cx - 140 + 280 * u, y: Math.max(40, cy - 96) + Math.sin(u * Math.PI * 3) * 26 * (0.6 + 0.4 * u) };
+    const th = u * Math.PI * 2.6 + now * 1.5, rr = 34 + 70 * (1 - u), coil = { x: cx + Math.cos(th) * rr, y: Math.max(60, cy - 100) + Math.sin(th) * rr * 0.45 - u * 30 };
+    const c = easeOut(Math.min(1, Math.max(0, (prog - 0.82) / 0.3)));   // storyboard 0.9-1.2s: the dragon coils tightly above the Sage
+    pts.push({ x: wave.x + (coil.x - wave.x) * c, y: wave.y + (coil.y - wave.y) * c });
   }
-  drawInkDragon(ctx, pts, Math.min(1, prog / 0.9), 1, now, 1.25);
+  drawInkDragon(ctx, pts, Math.min(1, Math.max(0, (prog - 0.3) / 0.6)), 1, now, 1.25);   // ink lifts off the scroll 0.4-0.9s
   if (Math.random() < 0.3 && prog < 0.9) {                                       // ink flicks off the brush
     const i = Math.floor(pts.length * Math.min(1, prog / 0.9)) - 1, p = pts[Math.max(0, i)];
     emitParticle(2, p.x, p.y, (Math.random() - 0.5) * 120, -40 - Math.random() * 80, 0.5, 1.5 + Math.random() * 1.5, INK);
