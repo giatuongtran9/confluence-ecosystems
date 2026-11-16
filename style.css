@@ -1244,3 +1244,10 @@ body.has-dock .shell{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))
 .field-card.rd-cocoon::after{content:'COCOON ' attr(data-cocoon);position:absolute;left:0;right:0;top:4px;text-align:center;font:800 10px system-ui,sans-serif;color:#bef264;text-shadow:0 0 4px #000;z-index:5;pointer-events:none}
 .field-card.rd-channel{filter:drop-shadow(0 0 16px rgb(var(--rd-rgb,226,232,240)))}
 @media (prefers-reduced-motion:reduce){.field-card.rd-redline{animation:none}}
+
+/* 2.5D battlefield: a theme's perspective image fills .battle-stage at its own aspect; the square .board (cards,
+   runners, effects) spans the stage's full width, centred vertically; that is the frame BattleView.projector maps into. */
+.battle-stage{position:relative;width:min(100%,calc((100vh - 320px)*var(--stage-aspect,1.5)));aspect-ratio:1.5;margin:0 auto;border-radius:10px;overflow:hidden;background:#0b0f12 center/100% 100% no-repeat;box-shadow:0 18px 60px #0009;isolation:isolate}
+.in-combat .battle-stage>.board,.lab .battle-stage>.board{position:absolute!important;left:0;top:50%;transform:translateY(-50%);width:100%!important;max-width:none!important;height:auto!important;aspect-ratio:1/1;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;overflow:visible!important}
+.in-combat .combat-layout:has(.battle-stage),.in-combat .arena-panel:has(.battle-stage){max-width:none;width:100%}
+@media (max-width:720px){.battle-stage{width:100%;border-radius:0}}

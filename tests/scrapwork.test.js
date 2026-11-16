@@ -32,7 +32,7 @@ test('Titan HTML merges horizontal and vertical cells with working new art',()=>
  const code=source.slice(source.indexOf('function fieldUnit('),source.indexOf('function board('));
  for(const [a,z,w,h] of [[3,4,200/3,100/3],[1,4,100/3,200/3]]){
  const b=battle(['scrapFrame'],[a]),u=b.units[0];G.addAlloy(b,u,120);u.extraSlot=z;
- const ctx={Game:G,CARD:D.CARD,GENRES:D.GENRES,battle:b,selected:null,art:c=>`<img src="assets/scrapwork/${c.scrapworkAsset}.webp">`,u};vm.createContext(ctx);vm.runInContext(code+';globalThis.html=fieldUnit(u);',ctx);
+ const ctx={Game:G,CARD:D.CARD,GENRES:D.GENRES,battle:b,selected:null,cardCell:(x,y)=>({left:x*100/3,top:y*100/3,width:100/3,height:100/3}),art:c=>`<img src="assets/scrapwork/${c.scrapworkAsset}.webp">`,u};vm.createContext(ctx);vm.runInContext(code+';globalThis.html=fieldUnit(u);',ctx);
  assert.ok(ctx.html.includes(`--unit-width:${w}%`));assert.ok(ctx.html.includes(`--unit-height:${h}%`));assert.ok(ctx.html.includes('2 SLOTS'));assert.ok(fs.existsSync(require('node:path').join(__dirname,'../assets/scrapwork',D.CARD[u.id].scrapworkAsset+'.webp')));
  }
 });
