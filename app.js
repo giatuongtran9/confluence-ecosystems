@@ -1638,15 +1638,15 @@ function drawMelodicGather(ctx, cx, cy, prog, size) {
   const now = battle.time, appear = Math.min(1, prog / 0.2);
   dimFocus(ctx, size, cx, cy, 0.45 * Math.min(1, prog / 0.25));
   additiveGlow(ctx, cx, cy, 48 + 44 * prog, MELODIC_RGB, 0.2 + 0.5 * prog);
-  ctx.save();                                              // sound rings contracting toward the Saint
-  ctx.globalCompositeOperation = 'lighter';
-  for (let r = 0; r < 3; r++) {
+  VFX.sprite(ctx, 'light_02', MELODIC_RGB, cx, cy + 8, 170 * (.6 + .4 * prog), 74 * (.6 + .4 * prog), .25 + .35 * prog); // aura pooling under the Saint
+  for (let r = 0; r < 3; r++) {                             // sound rings contracting toward the Saint
     const ph = (now * 1.4 + r / 3) % 1, rad = 130 - ph * 105;
-    ctx.strokeStyle = `rgba(${MELODIC_RGB}, ${ph * 0.55 * appear})`;
-    ctx.lineWidth = 1.5 + ph * 1.5;
-    ctx.beginPath(); ctx.ellipse(cx, cy + 10, rad, rad * 0.45, 0, 0, Math.PI * 2); ctx.stroke();
+    VFX.melodic.soundRing(ctx, cx, cy + 10, rad, rad * 0.45, ph * 0.6 * appear);
   }
-  ctx.restore();
+  if (Math.random() < 0.5 + prog) {                         // motes of light drawn in by the music
+    const a = Math.random() * Math.PI * 2, r0 = 120 + Math.random() * 40, x0 = cx + Math.cos(a) * r0, y0 = cy + 6 + Math.sin(a) * r0 * 0.45;
+    VFX.emit({ x: x0, y: y0, vx: (cx - x0) * 2.2, vy: (cy - 10 - y0) * 2.2, drag: 0.5, tex: 'star_06', rgb: Math.random() < 0.3 ? VFX.melodic.GOLD : MELODIC_CORE, s0: 9, s1: 3, a0: 0.9, life: 0.45 });
+  }
   guqinStrings(ctx, cx, cy, 150, 1 + prog * 6, appear * 0.9, now);
   const notes = [];                                         // notes orbiting, drawing in and rising
   for (let i = 0; i < 6; i++) {
@@ -1680,6 +1680,7 @@ function drawMelodicResonance(ctx, f, size) {
   dimFocus(ctx, size, o.x, o.y, 0.45 * Math.max(0, 1 - Math.max(0, waveR - 2.2) / 2.4));
 
   // Pluck: the strings snap bright and settle
+  if (!f._pluck) { f._pluck = true; VFX.melodic.pluck(o.x, o.y); }
   if (t < 0.5) {
     const k = Math.min(1, t / 0.12), fade = 1 - t / 0.5;
     guqinStrings(ctx, o.x, o.y, 150, 8 * fade, fade, now, 1 - k);
@@ -1704,9 +1705,10 @@ function drawMelodicResonance(ctx, f, size) {
       if (r <= 0.05 || r > maxR) continue;
       const fade = Math.max(0, 1 - r / maxR);
       if (e === 0) {
-        ring(r, 0.022);                                      // the front: wide indigo glow, then a thin bright core
-        ctx.strokeStyle = `rgba(${MELODIC_RGB}, ${0.22 * fade})`; ctx.lineWidth = 20; ctx.stroke();
-        ctx.strokeStyle = `rgba(${MELODIC_RGB}, ${0.6 * fade})`; ctx.lineWidth = 6; ctx.stroke();
+        VFX.melodic.soundRing(ctx, o.x, o.y, r * pxX, r * pxY, 0.95 * fade); // the front: textured glow ring...
+        if (Math.random() < 0.9) VFX.melodic.waveMotes(o.x, o.y, r * pxX, r * pxY, 3);
+        ring(r, 0.022);                                                   // ...with its rippling bright core
+        ctx.strokeStyle = `rgba(${MELODIC_RGB}, ${0.5 * fade})`; ctx.lineWidth = 4; ctx.stroke();
         ctx.strokeStyle = `rgba(${MELODIC_CORE}, ${0.95 * fade})`; ctx.lineWidth = 1.8; ctx.stroke();
       } else {
         ring(r, 0.012);
@@ -1723,6 +1725,7 @@ function drawMelodicResonance(ctx, f, size) {
     if (!p) continue;
     if (!f._landed[h.uid]) {
       f._landed[h.uid] = true;
+      VFX.melodic.resonanceHit(p.x, p.y);
       for (let i = 0; i < 7; i++) {
         const a = -Math.PI * (0.15 + Math.random() * 0.7), v = 50 + Math.random() * 70;
         const n = emitParticle(4, p.x, p.y - 10, Math.cos(a) * v, Math.sin(a) * v, 0.8 + Math.random() * 0.5, 0.7 + Math.random() * 0.5, i % 3 ? '#c7d2fe' : '#fde68a');
@@ -1744,6 +1747,7 @@ function drawMelodicResonance(ctx, f, size) {
     }
     const e = battle.enemies.find(v => v.uid === h.uid);
     if (e && !e.gone && e.hp > 0 && (e.frozenUntil || 0) > battle.time) {
+      VFX.melodic.stunHalo(ctx, p.x, p.y, now);
       const pts = [];
       for (let i = 0; i < 3; i++) {
         const a = now * 4 + i * 2.094;
@@ -2810,12 +2814,14 @@ function drawHarmonyChord(ctx, f, size) {
     ctx.stroke();
   }
   ctx.restore();
+  if (R > 4) VFX.melodic.soundRing(ctx, o.x, o.y, R, R * 0.5, 0.7 * fade, VFX.melodic.GOLD);
   for (const uid of f.schedule?.allies || []) {
     const v = battle.units.find(x => x.uid === uid && !x.removed);
     if (!v || f._reached[uid]) continue;
     const p = routePoint(v.x + 1, v.y + 1, size), d = Math.hypot(p.x - o.x, (p.y - o.y) * 2);
     if (d > R) continue;
     f._reached[uid] = true;
+    VFX.melodic.harmonyAlly(p.x, p.y);
     for (let i = 0; i < 3; i++) { const n = emitParticle(4, p.x + (i - 1) * 10, p.y - 24, (i - 1) * 12, -55 - Math.random() * 25, 0.9, 0.75, '#fde68a'); if (n) n.glyph = (uid + i) % NOTE_GLYPHS.length; }
     additiveGlow(ctx, p.x, p.y - 10, 30, '253, 230, 138', 0.6);
   }
@@ -2841,6 +2847,7 @@ function drawDissonanceChord(ctx, f, size) {
     ctx.stroke();
   }
   ctx.restore();
+  if (R > 4) VFX.melodic.soundRing(ctx, o.x, o.y, R, R * 0.5, 0.6 * fade, VFX.melodic.VIOLET);
   for (const uid of f.schedule?.hits || []) {
     const p = enemyPt(f, uid, size);
     if (!p) continue;
@@ -2848,6 +2855,7 @@ function drawDissonanceChord(ctx, f, size) {
     if (d > R) continue;
     if (!f._reached[uid]) {
       f._reached[uid] = t;
+      VFX.melodic.dissonanceHit(p.x, p.y);
       for (let i = 0; i < 4; i++) { const a = Math.random() * 6.28, n = emitParticle(4, p.x, p.y - 14, Math.cos(a) * 50, Math.sin(a) * 30 - 30, 0.6, 0.7, i % 2 ? '#f472b6' : '#a855f7'); if (n) { n.glyph = i % NOTE_GLYPHS.length; n.vr = 20; } }
       const dx = p.x - o.x, dy = p.y - o.y, dd = Math.hypot(dx, dy) || 1;
       nudgeEnemy(uid, dx / dd * 5, dy / dd * 5, 0.4);
@@ -4517,7 +4525,9 @@ function draw() {
   let vfxDt = Math.min(0.05, (vfxNow - (draw.lastT || vfxNow)) / 1000);
   draw.lastT = vfxNow;
   if (paused || (battle.hitStopRemaining || 0) > 0) vfxDt = 0;
-  updateParticles(vfxDt * simSpeed() * (battle.slowMo ? battle.slowMo.scale : 1));
+  const vfxStep = vfxDt * simSpeed() * (battle.slowMo ? battle.slowMo.scale : 1);
+  updateParticles(vfxStep);
+  VFX.update(vfxStep);                                    // textured VFX layer (vfx.js)
 
   // Impact camera: 4% punch-in toward the impact point and a mostly vertical, downward-first shake
   ctx.save();
@@ -4887,6 +4897,7 @@ function draw() {
   }
 
   drawParticles(ctx);
+  VFX.draw(ctx);
 
 // LAYER 4: Mythic Showstopper Radial Vignette Spotlight
   if (battle.showstopper && battle.showstopper.ttl > 0) {
