@@ -3594,6 +3594,7 @@ function fx(b, type, u, e, text, extra = {}) {
    persist(b, u); src.threshold = abilityGauge(u) ? u.threshold.current : 0; src.naniteCrits = u.naniteCrits || 0; src.critCount = u.critCount || 0
   }
   r.recap = { ...b.metrics, time: b.time, ...report(b) };
+  if (r.node) { r.reports ??= {}; r.reports[r.node.id] = r.recap; } // reopened from the map
   r.battleHistory ??= []; r.battleHistory.push({ stage: r.depth + 1, leaks: b.metrics.leaks, closeCalls: b.metrics.closeCalls || 0, trial: b.metrics.trial || null, xenoTrial: b.metrics.xenoTrial || null, cosmicTrial: b.metrics.cosmicTrial || null, heavenlyTribulation: b.metrics.heavenlyTribulation || null, bloodlineTrial: b.metrics.bloodlineTrial || null, arcaneTrial: b.metrics.arcaneTrial || null, scrapworkTrial: b.metrics.scrapworkTrial || null, cyberTrial: b.metrics.cyberTrial || null, urbanLegendTrial: b.metrics.urbanLegendTrial || null, huntTrial: b.metrics.huntTrial || null });
   r.battleHistory = r.battleHistory.slice(-16);
   if (won) {

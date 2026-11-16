@@ -1342,3 +1342,31 @@ button.draft-card .card-art { display: flex !important; justify-content: center 
 }
 button.draft-card .card-art .sprite { position: relative !important; left: auto !important; top: auto !important; right: auto !important; margin: 0 auto !important; }
 button.draft-card .card-art { width: 100% !important; margin: 2px 0 !important; }
+
+/* Map is the whole screen; node panels and the battle report open as pop-ups */
+.map-only { width: 100%; max-width: 760px; margin: 12px auto 0; align-self: center; }
+.map-only .map-panel { border: 0; background: transparent; padding: 0; }
+.map-only .route-map { max-width: 620px; }
+.map-node.current { box-shadow: 0 0 0 3px var(--ui-gold), 0 0 22px rgba(233,196,106,.45); }
+dialog#modal .ready-panel { border: 0; background: transparent; padding: 0; box-shadow: none; }
+.report-modal h2 { margin: 2px 0 12px; }
+.report-stats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.report-stats span { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 99px; background: var(--ui-panel); border: 1px solid var(--ui-line); font-size: 15px; }
+.damage-list { display: flex; flex-direction: column; gap: 8px; }
+.damage-row { display: grid; grid-template-columns: 34px minmax(90px, 160px) 1fr auto; align-items: center; gap: 10px; font-size: 15px; }
+.dmg-art { width: 34px; height: 34px; display: grid; place-items: center; overflow: hidden; }
+.dmg-art .sprite { width: 34px !important; height: 34px !important; position: static !important; }
+.dmg-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.damage-row .damage-meter { height: 8px; border-radius: 99px; background: rgba(255,255,255,.06); overflow: hidden; }
+.damage-row .damage-meter i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #d97706, var(--ui-gold)); transition: width .5s var(--ui-ease); }
+.damage-row b { font-variant-numeric: tabular-nums; min-width: 64px; text-align: right; }
+.report-notes p, .report-relic { font-size: 13px; color: var(--ui-dim); margin: 10px 0 0; }
+.report-continue { margin-top: 18px; width: 100%; font-size: 16px; }
+@media (max-width: 600px) { .damage-row { grid-template-columns: 28px 1fr 64px; } .damage-row .damage-meter { grid-column: 2 / 4; grid-row: 2; } }
+.map-only .map-panel { width: 100%; }
+.map-only .route-map { width: 100%; max-width: 560px; }
+.map-only .map-scroll { max-height: none; overflow: visible; }
+.map-only .map-node small { display: none; }       /* icon + hover title; the pop-up names the node */
+.map-only .map-node { width: 40px; height: 40px; } .map-only .map-node > span { font-size: 19px; }
+.map-only .map-node.available { animation: nodePulse 1.8s ease-in-out infinite; }
+@keyframes nodePulse { 0%, 100% { box-shadow: 0 0 0 4px rgba(233,196,106,.12); } 50% { box-shadow: 0 0 0 9px rgba(233,196,106,.04); } }
