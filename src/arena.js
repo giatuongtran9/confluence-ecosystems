@@ -1,8 +1,9 @@
+import { applyCamera, combatFeedback, drawFlash, isFrozen } from './feedback.js';
 import { cardCellCenter, routePoint } from './battlefield.js';
 import { blackoutHUDHTML, bloodlineTrialHUDHTML, cosmicTrialHUDHTML, cyberTrialHUDHTML, detail, fieldUnit, huntTrialHUDHTML, urbanContainmentHUDHTML, urbanLegendTrialHUDHTML, xenoTrialHUDHTML } from './board.js';
 import { drawBezierProjectile, drawCrescentSlash, drawGroundRing, drawImpactSparks, drawParticles, drawSwordTorrentChannel, updateParticles, vfxPaletteFor } from './effects/core.js';
 import { ELEMENT_FX, ELEMENT_GATHER, ELEMENT_ULTS, drawElementalMarks, drawElementalZones, drawPersistentMarks } from './effects/elements.js';
-import { CHANNEL_ENV, ULT_ENV, ULT_IMPACT, VFX_SHAKE, drawDecals, drawEnvironment, drawUltRealism } from './effects/environment.js';
+import { CHANNEL_ENV, ULT_ENV, ULT_IMPACT, drawDecals, drawEnvironment, drawUltRealism } from './effects/environment.js';
 import { CHANNEL_GLOW, drawFormationGather, drawFormationRiver, drawGoStoneShot, drawInkFlick, drawInkPuddles, drawLandscapeDragon, drawLandscapeGather, drawTalismanBurn, drawTalismanDecree, drawTalismanGather, drawTalismanShot, visualTrackP } from './effects/formation-ink.js';
 import { drawArcaneRunes, drawBloodlineClaws, drawCosmicTentacle, drawCultivationSword, drawCyberMonowire, drawHauntedScissors, drawHuntBroadsword, drawScifiNeedle, drawScrapworkShell } from './effects/genre-attacks.js';
 import { RD_ATTACK_TYPES, RD_ULTS, cardRedesignStates, drawLightsOn, drawMythicAttack, drawOrderCitation, drawRedesignChannel, drawRunnerStates, drawSpectrals, drawUltBurst, heatPalette, rdChannelId, rdHeatRgb, rdStyle } from './effects/mythic.js';
@@ -26,23 +27,15 @@ export function draw() {
   const vfxNow = performance.now();
   let vfxDt = Math.min(0.05, (vfxNow - (draw.lastT || vfxNow)) / 1000);
   draw.lastT = vfxNow;
-  if (S.paused || (S.battle.hitStopRemaining || 0) > 0) vfxDt = 0;
+  const realDt = vfxDt;
+  if (S.paused || (S.battle.hitStopRemaining || 0) > 0 || isFrozen()) vfxDt = 0;
   const vfxStep = vfxDt * simSpeed() * (S.battle.slowMo ? S.battle.slowMo.scale : 1);
   updateParticles(vfxStep);
   VFX.update(vfxStep);                                    // textured VFX layer (vfx.js)
 
-  // Impact camera: 4% punch-in toward the impact point and a mostly vertical, downward-first shake
+  // One camera for every impact (src/feedback.js): trauma-based shake and punch-in, decaying on real time
   ctx.save();
-  if (VFX_SHAKE.ttl > 0) VFX_SHAKE.ttl = Math.max(0, VFX_SHAKE.ttl - vfxDt * simSpeed());   // renderer-only shake from ability impacts
-  const shakeSrc = S.battle.shake && S.battle.shake.ttl > 0 ? S.battle.shake : VFX_SHAKE.ttl > 0 ? VFX_SHAKE : null;
-  if (shakeSrc) {
-    const sh = shakeSrc, k = Math.min(1, sh.ttl / (sh.max || 0.25)), m = sh.mag * k, z = 1 + Math.min(0.04, 0.006 * sh.mag) * k;
-    const fp = sh.x != null ? routePoint(sh.x, sh.y, size) : { x: size / 2, y: size / 2 };
-    ctx.translate(fp.x, fp.y);
-    ctx.scale(z, z);
-    ctx.translate(-fp.x, -fp.y);
-    ctx.translate((Math.random() * 2 - 1) * m * 0.3, Math.cos((0.25 - sh.ttl) * 70) * m);
-  }
+  applyCamera(ctx, S.paused ? 0 : realDt);
 
   // The channelling Sword Immortal lifts and glows (DOM card over the canvas)
   for (const u of S.battle.units) {
@@ -399,6 +392,7 @@ export function draw() {
   }
 
   drawParticles(ctx);
+  combatFeedback(ctx, S.battle, size);                    // tiered hit / crit / ultimate bundles + every Mythic's textured channel
   VFX.draw(ctx);
 
 // LAYER 4: Mythic Showstopper Radial Vignette Spotlight
@@ -418,6 +412,7 @@ export function draw() {
   }
   ctx.globalAlpha = 1;
   ctx.restore(); // shake transform
+  drawFlash(ctx, size, S.paused ? 0 : realDt);
 }
 export function liveUI() {
   if (!$('#field')) return;

@@ -3,12 +3,13 @@ import { fxTime, onceEach, softPuff } from './elements.js';
 import { enemyPt, ringTile } from './formation-ink.js';
 import { rdDecal } from './mythic.js';
 import { S } from '../state.js';
+import { addTrauma } from '../feedback.js';
 
 // ==== Realism layer for the Bloodline + Arcane Mythic channels and ultimates ====
 // Environment: the whole board reacts (storm, wind, toxin, fire, gold light, steam, mud, frost).
 // Impact: renderer camera shake, flashes, debris, smoke, and ground decals (scorch, cracks, frost, mud, toxin).
-export const VFX_SHAKE = { ttl: 0, max: 0.25, mag: 0, x: null, y: null };
-export function vfxShake(mag, gx = null, gy = null, ttl = 0.22) { if (mag >= VFX_SHAKE.mag * (VFX_SHAKE.ttl / (VFX_SHAKE.max || 1))) { VFX_SHAKE.ttl = ttl; VFX_SHAKE.max = ttl; VFX_SHAKE.mag = mag; VFX_SHAKE.x = gx; VFX_SHAKE.y = gy; } }
+// Ability drawers ask for shake by magnitude (1-10); it feeds the one trauma camera in src/feedback.js.
+export function vfxShake(mag) { addTrauma(Math.min(1, mag / 10), Math.min(1, mag / 9)); }
 export function smoke(x, y, n, rgb = '68, 64, 60', scale = 1) {
   for (let i = 0; i < n; i++) emitParticle(1, x + (Math.random() - 0.5) * 16 * scale, y, (Math.random() - 0.5) * 30, -30 - Math.random() * 40, 0.9 + Math.random() * 0.6, (8 + Math.random() * 8) * scale, `rgb(${rgb})`);
 }

@@ -103,5 +103,39 @@ export const VFX = (() => {
     for (let i = 0; i < 7; i++) { const a = rnd(0, Math.PI * 2), v = rnd(90, 200); emit({ x, y: y - 10, vx: Math.cos(a) * v, vy: Math.sin(a) * v * .6 - 30, drag: 3, tex: 'trace_02', rgb: i % 2 ? PINK : VIOLET, s0: 5, s1: 2, a0: 1, life: rnd(.2, .4), stretch: .045 }); }
   }
 
-  return { update, draw, emit, sprite, rnd, melodic: { soundRing, waveMotes, pluck, resonanceHit, stunHalo, harmonyAlly, dissonanceHit, INDIGO, PALE, GOLD, VIOLET, PINK } };
+  // ---- Tiered hit bursts (src/feedback.js picks the tier): the same look for every unit, tinted by its colour
+  function burst(tier, x, y, rgb, hot = '255, 248, 230') {
+    if (tier === 'small') {                                   // normal hit: a few short sparks
+      for (let i = 0; i < 3; i++) { const a = rnd(0, Math.PI * 2), v = rnd(70, 150); emit({ x, y: y - 8, vx: Math.cos(a) * v, vy: Math.sin(a) * v * .6 - 20, drag: 4, tex: 'spark_01', rgb, s0: 9, s1: 2, a0: .85, life: .2, stretch: .05 }); }
+      return;
+    }
+    if (tier === 'medium') {                                  // critical: flash, crisp ring, spray of sparks
+      emit({ x, y: y - 8, tex: 'star_06', rgb: hot, s0: 26, s1: 84, a0: 1, life: .2, flash: true, rot: rnd(0, 6) });
+      emit({ x, y: y - 4, tex: 'circle_02', rgb, s0: 12, s1: 74, a0: .85, life: .26, squash: .5 });
+      for (let i = 0; i < 9; i++) { const a = rnd(0, Math.PI * 2), v = rnd(140, 300); emit({ x, y: y - 8, vx: Math.cos(a) * v, vy: Math.sin(a) * v * .6 - 30, drag: 3.5, tex: 'spark_02', rgb: i % 3 ? rgb : hot, s0: rnd(10, 15), s1: 2, a0: 1, life: rnd(.22, .36), stretch: .045 }); }
+      return;
+    }
+    // ultimate release: flare, double shock ring, 30 sparks, a little smoke
+    emit({ x, y: y - 6, tex: 'flare_01', rgb: hot, s0: 70, s1: 320, a0: 1, life: .34, flash: true });
+    emit({ x, y: y - 4, tex: 'light_02', rgb, s0: 120, s1: 300, a0: .8, life: .5, flash: true });
+    emit({ x, y, tex: 'circle_02', rgb, s0: 40, s1: 480, a0: .9, a1: 0, life: .55, squash: .55 });
+    emit({ x, y, tex: 'circle_03', rgb: hot, s0: 30, s1: 360, a0: .5, a1: 0, life: .7, squash: .55 });
+    for (let i = 0; i < 30; i++) { const a = rnd(0, Math.PI * 2), v = rnd(260, 640); emit({ x, y: y - 6, vx: Math.cos(a) * v, vy: Math.sin(a) * v * .6, drag: 3, tex: i % 2 ? 'spark_02' : 'trace_02', rgb: i % 3 ? rgb : hot, s0: rnd(10, 18), s1: 2, a0: 1, life: rnd(.35, .7), stretch: .045 }); }
+    for (let i = 0; i < 4; i++) emit({ x: x + rnd(-30, 30), y: y + rnd(-20, 10), vx: rnd(-40, 40), vy: rnd(-60, -20), tex: 'smoke_05', rgb, s0: 60, s1: 170, a0: .26, a1: 0, life: rnd(.8, 1.3), vr: rnd(-1, 1), blend: 'source-over' });
+  }
+
+  // ---- Mythic channel (the 1.2s before a 10th attack): rune circle on the ground, core glow, motes drawn inward
+  function mythicChannel(ctx, x, y, rgb, hot, prog, t) {
+    const k = Math.min(1, prog * 1.3), r = 110 + 80 * k;
+    sprite(ctx, 'magic_05', rgb, x, y + 8, r, r * .42, .22 + .5 * k, t * 1.5);
+    sprite(ctx, 'twirl_02', hot, x, y + 8, r * .7, r * .3, .15 + .35 * k, -t * 2.2);
+    sprite(ctx, 'light_02', rgb, x, y - 6, 80 + 70 * k, 80 + 70 * k, (.25 + .5 * k) * (.85 + .15 * Math.sin(t * 18)));
+    sprite(ctx, 'star_07', hot, x, y - 6, 22 + 34 * k, 22 + 34 * k, .35 + .55 * k, -t * 2.4);
+    for (let n = Math.random() < .4 + k ? 1 + (k > .6) : 0; n > 0; n--) {
+      const a = rnd(0, Math.PI * 2), d = rnd(80, 130);
+      emit({ x: x + Math.cos(a) * d, y: y - 6 + Math.sin(a) * d * .6, vx: -Math.cos(a) * d * 2.4, vy: -Math.sin(a) * d * 1.45, drag: 1.2, tex: 'spark_01', rgb: n % 2 ? hot : rgb, s0: 10, s1: 3, a0: .9, a1: 0, life: .4, stretch: .05 });
+    }
+  }
+
+  return { update, draw, emit, sprite, rnd, burst, mythicChannel, melodic: { soundRing, waveMotes, pluck, resonanceHit, stunHalo, harmonyAlly, dissonanceHit, INDIGO, PALE, GOLD, VIOLET, PINK } };
 })();
