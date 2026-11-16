@@ -228,7 +228,9 @@ const activeFieldGrid=()=>FIELD_GRIDS[fieldLeader()];
 // 2.5D: a theme's optional `view` ({image, aspect, corners}) is a perspective battlefield image; BattleView maps engine
 // coordinates onto its painted floor. Themes without one keep the flat top-down JPG and its FIELD_GRIDS calibration.
 const viewProjectors=new Map();
-const fieldProject=()=>{const f=battlefield();if(!f.view)return null;if(!viewProjectors.has(f))viewProjectors.set(f,BattleView.projector(f.view));return viewProjectors.get(f)};
+// The Ability Lab's column is narrow, so it shows a square crop centred on the arena instead of the whole widescreen image.
+const stageAspect=v=>screen==='lab'?1:v.aspect;
+const fieldProject=()=>{const f=battlefield();if(!f.view)return null;const S=stageAspect(f.view),k=f.view.image+S;if(!viewProjectors.has(k))viewProjectors.set(k,BattleView.projector(f.view,S));return viewProjectors.get(k)};
 // Board-percent box of grid cell (0–2): in 2.5D an upright square standing on the cell's front edge, else the flat cell.
 const cardCell=(x,y)=>{const P=fieldProject();if(P){const l=P(x+.5,y+1),r=P(x+1.5,y+1),f=P(x+1,y+1.5),w=(r.u-l.u)*100;return {left:l.u*100,top:f.v*100-w,width:w,height:w}}const g=activeFieldGrid(),cw=g.width/3,ch=g.height/3;return {left:g.left+x*cw,top:g.top+y*ch,width:cw,height:ch}};
 // Map logical center-grid coordinates (1–3) and perimeter-route coordinates (0–4) onto the battlefield.
@@ -350,7 +352,7 @@ function fieldUnit(u){
 }
 // 2.5D: the .battle-stage shows the perspective image at its own aspect; the square .board (cards, runners, effects)
 // spans the stage's full width, centred vertically, which is the frame BattleView.projector maps into.
-function board(){const field=battlefield(),v=field.view;return `${v?`<div class="battle-stage" style="aspect-ratio:${v.aspect};--stage-aspect:${v.aspect};background-image:url('${v.image}')">`:``}<div class="board ${v?'board-25d':''}" style="${v?'':`--battlefield-image:url('${field.asset}')`}" role="group" aria-label="Three by three card grid inside a sixteen-tile perimeter"><div id="field" style="left:0;top:0;width:100%;height:100%">${battle.units.filter(u=>!u.removed).map(fieldUnit).join('')}</div>${devourGhosts()}<canvas id="arena" width="700" height="700" aria-label="Animated enemy route around the outside of the nine card slots"></canvas></div>${v?`</div>`:``}`}
+function board(){const field=battlefield(),v=field.view;return `${v?`<div class="battle-stage" style="aspect-ratio:${stageAspect(v)};--stage-aspect:${stageAspect(v)};background-image:url('${v.image}')">`:``}<div class="board ${v?'board-25d':''}" style="${v?'':`--battlefield-image:url('${field.asset}')`}" role="group" aria-label="Three by three card grid inside a sixteen-tile perimeter"><div id="field" style="left:0;top:0;width:100%;height:100%">${battle.units.filter(u=>!u.removed).map(fieldUnit).join('')}</div>${devourGhosts()}<canvas id="arena" width="700" height="700" aria-label="Animated enemy route around the outside of the nine card slots"></canvas></div>${v?`</div>`:``}`}
 function cosmicDetail(u){
  if(CARD[u.id].genre!=='Lovecraft')return '';
  let lines=[];

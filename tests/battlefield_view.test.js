@@ -30,3 +30,11 @@ test('a 3×3-square (grid) calibration is the same mapping as the equivalent out
   const a = V.projector({ aspect: 1.5, corners: quad }), b = V.projector({ aspect: 1.5, grid });
   for (const [x, y] of [[-.5, -.5], [0, 0], [2, 2], [4, 1], [4.5, 4.5]]) { const p = a(x, y), q = b(x, y); near(p.u, q.u, 'u'); near(p.v, q.v, 'v'); }
 });
+
+test('a narrower stage crops the image at the sides (cover) and the mapping follows the crop', () => {
+  const view = { aspect: 1.75, corners: quad }, wide = V.projector(view), square = V.projector(view, 1);
+  const p = wide(2, 2), q = square(2, 2);
+  near(q.u - .5, (p.u - .5) * 1.75, 'u scales by A/S about the centre');
+  near(q.v - .5, (p.v - .5) * 1.75, 'v scales by A/S about the centre');
+  const r = square(-.5, -.5); near(r.u, (quad[0][0] - .5) * 1.75 + .5, 'corner u'); near(r.v, quad[0][1], 'corner v (S = 1)');
+});

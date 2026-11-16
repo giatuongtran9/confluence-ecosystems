@@ -17,11 +17,13 @@
       return { U: (a * s + b * t + x0) / w, V: (d * s + e * t + y0) / w };
     };
   }
-  // The square .board (cards + effects canvas) spans the stage's full width and is centred vertically, so a point at
-  // image fraction (U, V) on a stage of aspect A = width / height sits at board fraction (U, (V - .5) / A + .5).
-  function projector(view) {
-    const H = view.grid ? homography(view.grid, .5, 3.5) : homography(view.corners), A = view.aspect;
-    return (x, y) => { const p = H(x, y); return { u: p.U, v: (p.V - .5) / A + .5 }; };
+  // The square .board (cards + effects canvas) spans the stage's full width and is centred vertically. The image covers
+  // the stage (cropped at the sides when the stage is narrower than the image, e.g. the square Ability Lab), so a point
+  // at image fraction (U, V) on a stage of aspect S sits at board fraction ((U - .5) * A / S + .5, (V - .5) / S + .5),
+  // with A = the image aspect. S = A (the widescreen battle stage) gives (U, (V - .5) / A + .5).
+  function projector(view, stageAspect = view.aspect) {
+    const H = view.grid ? homography(view.grid, .5, 3.5) : homography(view.corners), A = view.aspect, S = stageAspect;
+    return (x, y) => { const p = H(x, y); return { u: (p.U - .5) * A / S + .5, v: (p.V - .5) / S + .5 }; };
   }
   const api = { homography, projector };
   if (typeof module !== 'undefined') module.exports = api; else root.BattleView = api;
